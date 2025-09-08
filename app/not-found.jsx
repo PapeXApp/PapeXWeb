@@ -5,8 +5,8 @@ export default function NotFound() {
     <html>
       <head>
         <title>PapeX - Page Not Found</title>
-        <link rel="icon" href="/papex-favicon.png" />
-        <link rel="shortcut icon" href="/papex-favicon.ico" />
+        <link rel="icon" href="/favlogo.png" />
+        <link rel="shortcut icon" href="/favlogo.png" />
       </head>
       <body>
         <div className="min-h-screen flex flex-col items-center justify-center bg-[#d0e4f4]">

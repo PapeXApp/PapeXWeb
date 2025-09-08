@@ -14,7 +14,7 @@ export default function Home() {
     "name": "PapeX",
     "alternateName": "PapeX Digital Receipts",
     "url": "https://papex.app",
-    "logo": "https://papex.app/apple-icon.png",
+    "logo": "https://papex.app/favlogo.png",
     "description": "PapeX revolutionizes digital receipts by eliminating paper waste and streamlining financial management. Our platform integrates with POS systems to deliver instant digital receipts.",
     "foundingDate": "2024",
     "founders": [
