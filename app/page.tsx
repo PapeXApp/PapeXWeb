@@ -475,6 +475,21 @@ export default function Home() {
         </section>
       </main>
 
+      <section className="bg-white/80 backdrop-blur-sm border-t border-[#0a3d62]/10 py-6">
+        <div className="container mx-auto px-4 flex flex-col sm:flex-row items-center justify-center gap-3 text-sm text-[#0a3d62]/80">
+          <span>Looking for the fine print?</span>
+          <div className="flex items-center gap-3">
+            <Link href="/privacy" className="hover:text-[#ff9933] transition-colors duration-300">
+              Privacy Policy
+            </Link>
+            <span className="hidden sm:inline-block">•</span>
+            <Link href="/terms" className="hover:text-[#ff9933] transition-colors duration-300">
+              Terms of Service
+            </Link>
+          </div>
+        </div>
+      </section>
+
       <MainFooter />
     </div>
     </>

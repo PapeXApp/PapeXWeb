@@ -274,8 +274,23 @@ export function MainFooter() {
           </Link>
         </div>
         
-        <div className="border-t border-white/20 mt-8 pt-8 text-center text-sm animate-slide-in-up">
-          <div className="flex items-center justify-center gap-4">
+        <div className="border-t border-white/20 mt-8 pt-8 text-center text-sm animate-slide-in-up space-y-3">
+          <div className="flex items-center justify-center gap-4 flex-wrap text-white/80">
+            <Link
+              href="/privacy"
+              className="hover:text-[#ff9933] transition-colors duration-300"
+            >
+              Privacy Policy
+            </Link>
+            <span className="hidden sm:inline-block">•</span>
+            <Link
+              href="/terms"
+              className="hover:text-[#ff9933] transition-colors duration-300"
+            >
+              Terms of Service
+            </Link>
+          </div>
+          <div className="flex items-center justify-center gap-4 flex-wrap">
             <p className="opacity-80">&copy; {new Date().getFullYear()} PapeX. All rights reserved.</p>
             <AdminLogin />
           </div>
