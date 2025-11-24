@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,9 +8,8 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { blogService, BlogPost, CreateBlogPost } from '@/lib/blogService'
-import { X, Bold, Italic, Type, Link, Crop as CropIcon } from 'lucide-react'
-import ReactCrop, { Crop, PixelCrop } from 'react-image-crop'
-import 'react-image-crop/dist/ReactCrop.css'
+import { X, Bold, Italic, Type, Link, Upload } from 'lucide-react'
+import { fileToBase64 } from '@/lib/imageProcessing'
 
 interface EditBlogModalProps {
   isOpen: boolean
@@ -30,12 +29,11 @@ export function EditBlogModal({ isOpen, onClose, onBlogUpdated, blog }: EditBlog
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [croppedImageUrl, setCroppedImageUrl] = useState<string | null>(null)
-  const [showCrop, setShowCrop] = useState(false)
-  const [crop, setCrop] = useState<Crop>()
-  const [completedCrop, setCompletedCrop] = useState<PixelCrop>()
-  const imgRef = useRef<HTMLImageElement>(null)
+  const [newImageData, setNewImageData] = useState<string | null>(null)
+  const [imageRemoved, setImageRemoved] = useState(false)
+  const [isProcessingImage, setIsProcessingImage] = useState(false)
   const contentTextareaRef = useRef<HTMLTextAreaElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Initialize form data when blog prop changes
   useEffect(() => {
@@ -47,9 +45,11 @@ export function EditBlogModal({ isOpen, onClose, onBlogUpdated, blog }: EditBlog
         readTime: blog.readTime,
         published: blog.published
       })
-      // Set existing image as preview
-      if (blog.image) {
-        setCroppedImageUrl(blog.image)
+      setImagePreview(blog.image || null)
+      setNewImageData(null)
+      setImageRemoved(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
       }
     }
   }, [blog])
@@ -58,133 +58,43 @@ export function EditBlogModal({ isOpen, onClose, onBlogUpdated, blog }: EditBlog
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = () => {
-        setImagePreview(reader.result as string)
-        setShowCrop(true)
-        setCroppedImageUrl(null)
+    if (!file) return
+
+    setIsProcessingImage(true)
+    setError('')
+
+    try {
+      const { previewUrl, base64Data } = await fileToBase64(file)
+      setImagePreview(previewUrl)
+      setNewImageData(base64Data)
+      setImageRemoved(false)
+    } catch (processingError) {
+      console.error('Error processing image:', processingError)
+      setError('Unable to process that image. Please try a different file.')
+    } finally {
+      setIsProcessingImage(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
       }
-      reader.readAsDataURL(file)
-      handleInputChange('image', file)
     }
   }
 
   const removeImage = () => {
     setImagePreview(null)
-    setCroppedImageUrl(null)
-    setShowCrop(false)
-    setCrop(undefined)
-    setCompletedCrop(undefined)
-    // Keep the existing image from the original blog post
-    if (blog.image) {
-      setCroppedImageUrl(blog.image)
+    setNewImageData(null)
+    setImageRemoved(true)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
     }
   }
 
-  const onImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
-    const { width, height } = e.currentTarget
-    
-    // Calculate crop area for square images (1:1 aspect ratio)
-    const size = Math.min(width, height)
-    const cropX = (width - size) / 2
-    const cropY = (height - size) / 2
-    
-    setCrop({
-      unit: 'px',
-      width: size,
-      height: size,
-      x: cropX,
-      y: cropY
-    })
-    
-    // Also set completed crop immediately
-    setCompletedCrop({
-      unit: 'px',
-      width: size,
-      height: size,
-      x: cropX,
-      y: cropY
-    })
-  }, [])
-
-  const getCroppedImg = useCallback((image: HTMLImageElement, crop: PixelCrop): Promise<string> => {
-    const canvas = document.createElement('canvas')
-    const ctx = canvas.getContext('2d')
-    
-    if (!ctx) {
-      throw new Error('No 2d context')
-    }
-
-    // Set canvas size to square dimensions (400x400)
-    canvas.width = 400
-    canvas.height = 400
-
-    // Calculate scale factors between natural image size and displayed size
-    const scaleX = image.naturalWidth / image.width
-    const scaleY = image.naturalHeight / image.height
-
-    // Scale crop coordinates to natural image dimensions
-    const scaledCrop = {
-      x: crop.x * scaleX,
-      y: crop.y * scaleY,
-      width: crop.width * scaleX,
-      height: crop.height * scaleY
-    }
-
-    ctx.drawImage(
-      image,
-      scaledCrop.x,
-      scaledCrop.y,
-      scaledCrop.width,
-      scaledCrop.height,
-      0,
-      0,
-      400,
-      400
-    )
-
-    return new Promise((resolve) => {
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          throw new Error('Canvas is empty')
-        }
-        const url = URL.createObjectURL(blob)
-        resolve(url)
-      }, 'image/jpeg', 0.9)
-    })
-  }, [])
-
-  const handleCropComplete = useCallback(async () => {
-    if (completedCrop && imgRef.current) {
-      try {
-        const croppedImageUrl = await getCroppedImg(imgRef.current, completedCrop)
-        setCroppedImageUrl(croppedImageUrl)
-        setShowCrop(false)
-      } catch (error) {
-        console.error('Error cropping image:', error)
-        setError('Failed to crop image')
-      }
-    }
-  }, [completedCrop, getCroppedImg])
-
-  const handleCropCancel = () => {
-    // If we were re-cropping an existing image, restore the original state
-    if (croppedImageUrl && imagePreview === croppedImageUrl) {
-      setImagePreview(null)
-    }
-    setShowCrop(false)
-    setCrop(undefined)
-    setCompletedCrop(undefined)
-  }
-
-  const handleReCrop = () => {
-    if (croppedImageUrl) {
-      // Set the existing image as the preview so we can crop it
-      setImagePreview(croppedImageUrl)
-      setShowCrop(true)
+  const restoreOriginalImage = () => {
+    if (blog?.image) {
+      setImagePreview(blog.image)
+      setNewImageData(null)
+      setImageRemoved(false)
     }
   }
 
@@ -270,51 +180,11 @@ export function EditBlogModal({ isOpen, onClose, onBlogUpdated, blog }: EditBlog
       const htmlContent = convertMarkdownToHTML(formData.content)
       let blogDataWithHTML = { ...formData, content: htmlContent }
       
-      // If we have a crop in progress but haven't applied it yet, apply it automatically
-      if (showCrop && completedCrop && imgRef.current && !croppedImageUrl) {
-        try {
-          const autoCroppedImageUrl = await getCroppedImg(imgRef.current, completedCrop)
-          setCroppedImageUrl(autoCroppedImageUrl)
-          setShowCrop(false)
-          
-          // Convert the auto-cropped image to base64
-          const response = await fetch(autoCroppedImageUrl)
-          const blob = await response.blob()
-          const reader = new FileReader()
-          const base64Promise = new Promise<string>((resolve) => {
-            reader.onload = () => resolve(reader.result as string)
-            reader.readAsDataURL(blob)
-          })
-          const base64Data = await base64Promise
-          blogDataWithHTML = { ...blogDataWithHTML, image: base64Data }
-        } catch (error) {
-          console.error('Error auto-applying crop:', error)
-          setError('Failed to process image crop')
-          setIsLoading(false)
-          return
-        }
-      }
-      // If we have a cropped image, convert it to base64 and use that instead
-      else if (croppedImageUrl && croppedImageUrl !== blog.image) {
-        try {
-          const response = await fetch(croppedImageUrl)
-          const blob = await response.blob()
-          const reader = new FileReader()
-          const base64Promise = new Promise<string>((resolve) => {
-            reader.onload = () => resolve(reader.result as string)
-            reader.readAsDataURL(blob)
-          })
-          const base64Data = await base64Promise
-          blogDataWithHTML = { ...blogDataWithHTML, image: base64Data }
-        } catch (error) {
-          console.error('Error converting cropped image:', error)
-          setError('Failed to process cropped image')
-          setIsLoading(false)
-          return
-        }
-      }
-      // If using existing image, don't include image in update
-      else if (croppedImageUrl === blog.image) {
+      if (newImageData) {
+        blogDataWithHTML = { ...blogDataWithHTML, image: newImageData }
+      } else if (imageRemoved) {
+        blogDataWithHTML = { ...blogDataWithHTML, image: '/blog/blog_image.png' }
+      } else {
         delete blogDataWithHTML.image
       }
       
@@ -322,8 +192,11 @@ export function EditBlogModal({ isOpen, onClose, onBlogUpdated, blog }: EditBlog
       
       // Reset and close
       setImagePreview(null)
-      setCroppedImageUrl(null)
-      setShowCrop(false)
+      setNewImageData(null)
+      setImageRemoved(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
       onClose()
       
       // Notify parent component
@@ -467,122 +340,72 @@ export function EditBlogModal({ isOpen, onClose, onBlogUpdated, blog }: EditBlog
 
           <div className="space-y-2">
             <Label htmlFor="image">Featured Image</Label>
+            <Input
+              ref={fileInputRef}
+              id="edit-blog-image"
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="hidden"
+            />
             <div className="space-y-4">
-              {showCrop && imagePreview && (
-                <div className="space-y-4">
-                  <div className="text-sm text-muted-foreground">
-                    <p>Position the crop area to select what will show on blog cards (square format):</p>
-                    <p className="text-xs text-muted-foreground mt-1">Drag the crop area to reposition. The crop will be square to match the new blog layout.</p>
-                  </div>
-                  <div className="relative bg-gray-50 p-4 rounded-lg border max-h-[70vh] overflow-auto">
-                    <ReactCrop
-                      crop={crop}
-                      onChange={(c) => setCrop(c)}
-                      onComplete={(c) => setCompletedCrop(c)}
-                      aspect={1}
-                      disabled={false}
-                      locked={false}
-                      ruleOfThirds={true}
-                      className="blog-crop-area"
-                    >
-                      <img
-                        ref={imgRef}
-                        src={imagePreview}
-                        alt="Crop preview"
-                        onLoad={onImageLoad}
-                        className="max-w-full h-auto block mx-auto"
-                        style={{ maxHeight: 'none' }}
-                      />
-                    </ReactCrop>
-                  </div>
-                  <style jsx>{`
-                    :global(.blog-crop-area .ReactCrop__crop-selection) {
-                      border: 2px solid #ff9933 !important;
-                      box-shadow: 0 0 0 2px rgba(255, 153, 51, 0.3) !important;
-                    }
-                    :global(.blog-crop-area .ReactCrop__drag-handle) {
-                      display: none !important;
-                    }
-                    :global(.blog-crop-area .ReactCrop__crop-selection::after) {
-                      content: 'Square Blog Preview (400×400)';
-                      position: absolute;
-                      top: -30px;
-                      left: 0;
-                      background: #ff9933;
-                      color: white;
-                      padding: 4px 8px;
-                      border-radius: 4px;
-                      font-size: 12px;
-                      font-weight: 500;
-                      white-space: nowrap;
-                    }
-                  `}</style>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      onClick={handleCropComplete}
-                      disabled={!completedCrop}
-                      className="flex items-center gap-2"
-                    >
-                      <CropIcon className="h-4 w-4" />
-                      Apply Crop
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleCropCancel}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              )}
-              
-              {croppedImageUrl && (
-                <div className="space-y-2">
-                  <div className="text-sm text-muted-foreground">
-                    <p>Preview (as it will appear on blog cards):</p>
-                  </div>
+              {imagePreview ? (
+                <div className="space-y-3">
                   <div className="relative inline-block">
                     <img
-                      src={croppedImageUrl}
-                      alt="Cropped preview"
+                      src={imagePreview}
+                      alt="Blog preview"
                       className="w-60 h-60 object-cover rounded-lg border shadow-sm bg-gray-50"
                     />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      className="absolute top-2 right-2"
-                      onClick={removeImage}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="absolute bottom-2 right-2"
-                      onClick={handleReCrop}
-                    >
-                      <CropIcon className="h-4 w-4" />
-                    </Button>
+                    <div className="absolute top-2 right-2 flex gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        Replace
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="destructive"
+                        onClick={removeImage}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    Original aspect ratio is preserved—upload any size JPG or PNG.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="edit-blog-image"
+                    className="cursor-pointer flex items-center justify-center gap-2 px-4 py-2 border border-dashed border-input rounded-md hover:bg-accent hover:text-accent-foreground w-full sm:w-auto"
+                  >
+                    <Upload className="h-4 w-4" />
+                    Upload Image
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    JPG or PNG. We keep the dimensions you upload (larger images may slow down loads).
+                  </p>
+                  {imageRemoved && blog.image && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={restoreOriginalImage}
+                    >
+                      Restore original image
+                    </Button>
+                  )}
                 </div>
               )}
-              
-              {!imagePreview && (
-                <div className="flex items-center gap-4">
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#0a3d62] file:text-white hover:file:bg-[#ff9933] transition-colors"
-                  />
-                  <span className="text-sm text-muted-foreground">
-                    Upload a new image or keep the existing one
-                  </span>
-                </div>
+              {isProcessingImage && (
+                <p className="text-xs text-muted-foreground">Processing image…</p>
               )}
             </div>
           </div>
