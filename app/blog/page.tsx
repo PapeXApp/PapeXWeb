@@ -6,7 +6,7 @@ import Link from "next/link"
 import { ArrowRight, Calendar, Clock } from "lucide-react"
 import { MainNavigation, MainFooter } from "@/components/main-navigation"
 import { CreateBlogModal } from "@/components/CreateBlogModal"
-import { blogService, BlogPost } from "@/lib/blogService"
+import { blogService, BlogPost } from "@/lib/blogServiceFree"
 
 // Static fallback blogs (in case Firebase is empty)
 const staticBlogPosts: BlogPost[] = [

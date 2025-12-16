@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Switch } from "@/components/ui/switch"
 import { Plus, Upload, X, Bold, Type, Link, Italic } from "lucide-react"
-import { blogService, CreateBlogPost } from '@/lib/blogService'
+import { blogService, CreateBlogPost } from '@/lib/blogServiceFree'
 import { useAdminAuth } from '@/hooks/useAdmin'
 import { fileToBase64 } from '@/lib/imageProcessing'
 
@@ -34,6 +34,7 @@ export function CreateBlogModal({ onBlogCreated }: CreateBlogModalProps) {
     readTime: '5 min read',
     published: true
   })
+  const [imageFile, setImageFile] = useState<File | null>(null)
 
   const handleInputChange = (field: keyof CreateBlogPost, value: string | boolean | File) => {
     setFormData(prev => ({
@@ -50,9 +51,11 @@ export function CreateBlogModal({ onBlogCreated }: CreateBlogModalProps) {
     setError('')
 
     try {
-      const { previewUrl, base64Data } = await fileToBase64(file)
+      // Create preview from file (for display)
+      const { previewUrl } = await fileToBase64(file)
       setImagePreview(previewUrl)
-      handleInputChange('image', base64Data)
+      // Store the File object for upload to Storage
+      setImageFile(file)
     } catch (processingError) {
       console.error('Error processing image:', processingError)
       setError('Unable to process that image. Please try a different file.')
@@ -66,6 +69,7 @@ export function CreateBlogModal({ onBlogCreated }: CreateBlogModalProps) {
 
   const removeImage = () => {
     setFormData(prev => ({ ...prev, image: undefined }))
+    setImageFile(null)
     setImagePreview(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
@@ -158,8 +162,9 @@ export function CreateBlogModal({ onBlogCreated }: CreateBlogModalProps) {
       const htmlContent = convertMarkdownToHTML(formData.content)
       let blogDataWithHTML = { ...formData, content: htmlContent }
       
-      if (formData.image && typeof formData.image === 'string') {
-        blogDataWithHTML = { ...blogDataWithHTML, image: formData.image }
+      // Pass File object if available (will upload to Storage), otherwise use default
+      if (imageFile) {
+        blogDataWithHTML = { ...blogDataWithHTML, image: imageFile }
       } else {
         blogDataWithHTML = { ...blogDataWithHTML, image: '/blog/blog_image.png' }
       }
@@ -175,6 +180,7 @@ export function CreateBlogModal({ onBlogCreated }: CreateBlogModalProps) {
         readTime: '5 min read',
         published: true
       })
+      setImageFile(null)
       setImagePreview(null)
       setIsOpen(false)
       

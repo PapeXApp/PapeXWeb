@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
-import { blogService, BlogPost, CreateBlogPost } from '@/lib/blogService'
+import { blogService, BlogPost, CreateBlogPost } from '@/lib/blogServiceFree'
 import { X, Bold, Italic, Type, Link, Upload } from 'lucide-react'
 import { fileToBase64 } from '@/lib/imageProcessing'
 
@@ -29,7 +29,7 @@ export function EditBlogModal({ isOpen, onClose, onBlogUpdated, blog }: EditBlog
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [newImageData, setNewImageData] = useState<string | null>(null)
+  const [newImageFile, setNewImageFile] = useState<File | null>(null)
   const [imageRemoved, setImageRemoved] = useState(false)
   const [isProcessingImage, setIsProcessingImage] = useState(false)
   const contentTextareaRef = useRef<HTMLTextAreaElement>(null)
@@ -46,7 +46,7 @@ export function EditBlogModal({ isOpen, onClose, onBlogUpdated, blog }: EditBlog
         published: blog.published
       })
       setImagePreview(blog.image || null)
-      setNewImageData(null)
+      setNewImageFile(null)
       setImageRemoved(false)
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
@@ -66,9 +66,11 @@ export function EditBlogModal({ isOpen, onClose, onBlogUpdated, blog }: EditBlog
     setError('')
 
     try {
-      const { previewUrl, base64Data } = await fileToBase64(file)
+      // Create preview from file (for display)
+      const { previewUrl } = await fileToBase64(file)
       setImagePreview(previewUrl)
-      setNewImageData(base64Data)
+      // Store the File object for upload to Storage
+      setNewImageFile(file)
       setImageRemoved(false)
     } catch (processingError) {
       console.error('Error processing image:', processingError)
@@ -83,7 +85,7 @@ export function EditBlogModal({ isOpen, onClose, onBlogUpdated, blog }: EditBlog
 
   const removeImage = () => {
     setImagePreview(null)
-    setNewImageData(null)
+    setNewImageFile(null)
     setImageRemoved(true)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
@@ -93,7 +95,7 @@ export function EditBlogModal({ isOpen, onClose, onBlogUpdated, blog }: EditBlog
   const restoreOriginalImage = () => {
     if (blog?.image) {
       setImagePreview(blog.image)
-      setNewImageData(null)
+      setNewImageFile(null)
       setImageRemoved(false)
     }
   }
@@ -178,13 +180,15 @@ export function EditBlogModal({ isOpen, onClose, onBlogUpdated, blog }: EditBlog
     try {
       // Convert markdown content to HTML before saving
       const htmlContent = convertMarkdownToHTML(formData.content)
-      let blogDataWithHTML = { ...formData, content: htmlContent }
+      let blogDataWithHTML: any = { ...formData, content: htmlContent }
       
-      if (newImageData) {
-        blogDataWithHTML = { ...blogDataWithHTML, image: newImageData }
+      // Handle image: pass File for new uploads, or handle removal
+      if (newImageFile) {
+        blogDataWithHTML = { ...blogDataWithHTML, image: newImageFile }
       } else if (imageRemoved) {
         blogDataWithHTML = { ...blogDataWithHTML, image: '/blog/blog_image.png' }
       } else {
+        // Keep existing image (don't update image field)
         delete blogDataWithHTML.image
       }
       
@@ -192,7 +196,7 @@ export function EditBlogModal({ isOpen, onClose, onBlogUpdated, blog }: EditBlog
       
       // Reset and close
       setImagePreview(null)
-      setNewImageData(null)
+      setNewImageFile(null)
       setImageRemoved(false)
       if (fileInputRef.current) {
         fileInputRef.current.value = ''

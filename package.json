@@ -6,7 +6,9 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "migrate:images": "tsx scripts/migrateBlogImages.ts",
+    "migrate:images:dry": "tsx scripts/migrateBlogImages.ts --dry-run"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.3",
@@ -37,6 +39,8 @@
     "@radix-ui/react-toggle-group": "^1.1.2",
     "@radix-ui/react-tooltip": "^1.1.8",
     "@vercel/analytics": "^1.5.0",
+    "@vercel/blob": "^1.1.1",
+    "browser-image-compression": "^1.0.17",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -60,6 +64,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@types/browser-image-compression": "^1.0.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -67,6 +72,7 @@
     "eslint-config-next": "15.1.7",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }
