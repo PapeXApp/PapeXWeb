@@ -1,6 +1,12 @@
-import { db, storage } from '@/firebase/firebaseConfig'
+import { db } from '@/firebase/firebaseConfig'
 import { collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, updateDoc, getDoc } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { uploadImageToImgBB } from './imageUploadImgBB'
+import { 
+  isBase64Image, 
+  isStorageUrl, 
+  isLocalPath 
+} from './imageUpload'
+import { fileToBase64 } from './imageProcessing'
 
 export interface BlogPost {
   id: string
@@ -12,6 +18,7 @@ export interface BlogPost {
   readTime: string
   createdAt: any
   published: boolean
+  imageMigrated?: boolean // Flag to track if image was migrated from base64
 }
 
 export interface CreateBlogPost {
@@ -25,16 +32,6 @@ export interface CreateBlogPost {
 
 const COLLECTION_NAME = 'blogs'
 
-// Helper function to convert image to base64
-const convertImageToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result as string)
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
-}
-
 export const blogService = {
   async createBlog(blogData: CreateBlogPost): Promise<string> {
     try {
@@ -43,46 +40,36 @@ export const blogService = {
       
       // Upload image if provided
       if (blogData.image) {
-        // Check if image is already a base64 string (from cropping)
+        // If image is already a string (Storage URL or local path), use it directly
         if (typeof blogData.image === 'string') {
-          console.log('Using provided base64 image data')
-          imageUrl = blogData.image
+          // Check if it's base64 (should not be used - exceeds Firestore limit)
+          if (isBase64Image(blogData.image)) {
+            console.warn('Base64 image detected - this may exceed Firestore 1MB limit. Using default image instead.')
+            // Don't use base64 - it exceeds Firestore's 1MB limit
+            // Instead, use default placeholder or attempt to upload to Storage
+            imageUrl = '/blog/blog_image.png'
+          } else if (isStorageUrl(blogData.image) || isLocalPath(blogData.image)) {
+            console.log('Using provided image URL')
+            imageUrl = blogData.image
+          } else {
+            console.warn('Unknown image format, using default')
+            imageUrl = '/blog/blog_image.png'
+          }
         } else {
-          console.log('Uploading image...', blogData.image.name)
-          
-          // Skip Firebase Storage and use base64 directly for development
-          // This avoids CORS issues in localhost
+          // New file upload - use ImgBB (free image hosting)
+          console.log('Uploading new image to ImgBB...', blogData.image.name)
           try {
-            console.log('Converting image to base64 (skipping Firebase Storage due to CORS)...')
-            const base64 = await convertImageToBase64(blogData.image)
-            imageUrl = base64
-            console.log('Base64 conversion successful, length:', base64.length)
-          } catch (base64Error) {
-            console.error('Base64 conversion failed, using default:', base64Error)
+            imageUrl = await uploadImageToImgBB(blogData.image)
+            console.log('Image uploaded to ImgBB successfully:', imageUrl)
+          } catch (uploadError) {
+            console.error('ImgBB upload failed:', uploadError)
+            // Use default placeholder image instead of failing
+            console.warn('Using default placeholder image due to upload failure')
             imageUrl = '/blog/blog_image.png'
+            // Optionally throw error to notify user:
+            // throw new Error('Failed to upload image. Please check your ImgBB API key and try again.')
           }
         }
-        
-        /* Firebase Storage version (enable when CORS is fixed):
-        try {
-          console.log('Uploading to Firebase Storage...')
-          const timestamp = Date.now()
-          const imageRef = ref(storage, `blog-images/${timestamp}-${blogData.image.name}`)
-          const snapshot = await uploadBytes(imageRef, blogData.image)
-          imageUrl = await getDownloadURL(snapshot.ref)
-          console.log('Firebase Storage upload successful:', imageUrl)
-        } catch (storageError) {
-          console.error('Firebase Storage failed, trying base64:', storageError)
-          try {
-            const base64 = await convertImageToBase64(blogData.image)
-            imageUrl = base64
-            console.log('Base64 fallback successful')
-          } catch (base64Error) {
-            console.error('All upload methods failed:', base64Error)
-            imageUrl = '/blog/blog_image.png'
-          }
-        }
-        */
       } else {
         // Use default image when no image is provided
         imageUrl = '/blog/blog_image.png'
@@ -104,7 +91,9 @@ export const blogService = {
         slug,
         readTime: blogData.readTime,
         published: blogData.published,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        // Mark as migrated if it's a Storage URL
+        imageMigrated: isStorageUrl(imageUrl)
       }
 
       console.log('Creating document in Firestore...', blogDoc)
@@ -170,21 +159,51 @@ export const blogService = {
   async updateBlog(id: string, blogData: Partial<CreateBlogPost>): Promise<void> {
     try {
       console.log('Starting blog update...', id, blogData.title)
-      let imageUrl = blogData.image
+      
+      // Get existing blog to check current image format
+      const existingBlog = await this.getBlogById(id)
+      let imageUrl: string | undefined = undefined
       
       // Handle image update if provided
-      if (blogData.image && typeof blogData.image !== 'string') {
-        console.log('Processing new image for update...')
-        try {
-          const base64 = await convertImageToBase64(blogData.image as File)
-          imageUrl = base64
-          console.log('Base64 conversion successful for update')
-        } catch (base64Error) {
-          console.error('Base64 conversion failed during update:', base64Error)
-          // Keep existing image if conversion fails
-          delete blogData.image
+      if (blogData.image !== undefined) {
+        if (typeof blogData.image === 'string') {
+          // String provided - could be base64, Storage URL, or local path
+          if (isBase64Image(blogData.image)) {
+            console.warn('Base64 image detected in update - this may exceed Firestore 1MB limit. Using default image instead.')
+            // Don't use base64 - it exceeds Firestore's 1MB limit
+            imageUrl = '/blog/blog_image.png'
+          } else if (isStorageUrl(blogData.image) || isLocalPath(blogData.image)) {
+            console.log('Using provided image URL')
+            imageUrl = blogData.image
+          } else {
+            // Unknown format, keep existing or use default
+            imageUrl = existingBlog?.image || '/blog/blog_image.png'
+          }
+        } else {
+          // New file upload - upload to ImgBB
+          console.log('Uploading new image to ImgBB...')
+          try {
+            imageUrl = await uploadImageToImgBB(blogData.image)
+            console.log('New image uploaded to ImgBB successfully')
+          } catch (uploadError) {
+            console.error('ImgBB upload failed:', uploadError)
+            // Keep existing image if available, otherwise use default
+            if (existingBlog?.image && !isBase64Image(existingBlog.image)) {
+              console.log('Keeping existing image due to upload failure')
+              imageUrl = existingBlog.image
+            } else {
+              console.warn('Using default placeholder image due to upload failure')
+              imageUrl = '/blog/blog_image.png'
+            }
+            // Optionally throw error to notify user:
+            // throw new Error('Failed to upload image. Please check your ImgBB API key and try again.')
+          }
         }
+      } else if (blogData.image === null || (existingBlog && !existingBlog.image)) {
+        // Explicitly removing image or no existing image
+        imageUrl = '/blog/blog_image.png'
       }
+      // If blogData.image is undefined, we don't update the image field
 
       // Generate new slug if title changed
       let updateData: any = { ...blogData }
@@ -196,8 +215,9 @@ export const blogService = {
       }
 
       // Update image URL if processed
-      if (imageUrl && typeof imageUrl === 'string') {
+      if (imageUrl !== undefined) {
         updateData.image = imageUrl
+        updateData.imageMigrated = isStorageUrl(imageUrl)
       }
 
       // Add updated timestamp
@@ -211,4 +231,4 @@ export const blogService = {
       throw error
     }
   }
-} 
+}
