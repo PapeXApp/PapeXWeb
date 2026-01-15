@@ -11,6 +11,6 @@
 
 export type StorageProvider = 'vercel' | 'imgbb' | 'base64'
 
-export const STORAGE_PROVIDER: StorageProvider = 
-  (process.env.NEXT_PUBLIC_STORAGE_PROVIDER as StorageProvider) || 'vercel'
+export const STORAGE_PROVIDER: StorageProvider = 'imgbb'
+
 
