@@ -64,10 +64,10 @@ export default function BlogPage() {
     try {
       setLoading(true)
       const firebaseBlogs = await blogService.getPublishedBlogs()
-      
+
       // Combine Firebase blogs with static blogs, Firebase blogs first
       // If Firebase returns empty array (due to permissions), just use static blogs
-      const allBlogs = firebaseBlogs.length > 0 
+      const allBlogs = firebaseBlogs.length > 0
         ? [...firebaseBlogs, ...staticBlogPosts]
         : staticBlogPosts
       setBlogPosts(allBlogs)
@@ -99,6 +99,36 @@ export default function BlogPage() {
     return new Date(date).toLocaleDateString()
   }
 
+  /**
+   * Sanitizes image URLs to ensure no localhost URLs are used
+   * Returns a valid external URL or falls back to default image
+   */
+  const sanitizeImageUrl = (imageUrl: string | undefined): string => {
+    if (!imageUrl) {
+      return "/blog/blog_image.png"
+    }
+
+    // Check if URL contains localhost
+    if (imageUrl.includes('localhost') || imageUrl.includes('127.0.0.1')) {
+      console.warn('Localhost URL detected and replaced with fallback:', imageUrl)
+      return "/blog/blog_image.png"
+    }
+
+    // Check if it's a valid external URL (https/http) or relative path
+    if (imageUrl.startsWith('https://') || imageUrl.startsWith('http://') || imageUrl.startsWith('/')) {
+      return imageUrl
+    }
+
+    // If it's a base64 image, allow it
+    if (imageUrl.startsWith('data:image/')) {
+      return imageUrl
+    }
+
+    // For any other format, use fallback
+    console.warn('Invalid image URL format, using fallback:', imageUrl.substring(0, 50))
+    return "/blog/blog_image.png"
+  }
+
   return (
     <div className="min-h-screen gradient-mesh flex flex-col">
       <MainNavigation />
@@ -106,9 +136,9 @@ export default function BlogPage() {
       <main className="flex-1 container mx-auto py-8 px-4 relative overflow-hidden">
         {/* Floating background elements - reduced opacity */}
         <div className="absolute top-10 left-20 w-32 h-32 gradient-primary rounded-full opacity-5 blur-xl animate-float"></div>
-        <div className="absolute top-40 right-10 w-40 h-40 gradient-accent rounded-full opacity-5 blur-xl animate-float" style={{animationDelay: '1s'}}></div>
-        <div className="absolute bottom-60 left-10 w-36 h-36 gradient-secondary rounded-full opacity-5 blur-xl animate-float" style={{animationDelay: '3s'}}></div>
-        <div className="absolute bottom-20 right-1/4 w-28 h-28 gradient-hero rounded-full opacity-5 blur-xl animate-float" style={{animationDelay: '5s'}}></div>
+        <div className="absolute top-40 right-10 w-40 h-40 gradient-accent rounded-full opacity-5 blur-xl animate-float" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute bottom-60 left-10 w-36 h-36 gradient-secondary rounded-full opacity-5 blur-xl animate-float" style={{ animationDelay: '3s' }}></div>
+        <div className="absolute bottom-20 right-1/4 w-28 h-28 gradient-hero rounded-full opacity-5 blur-xl animate-float" style={{ animationDelay: '5s' }}></div>
 
         <div className="text-center mb-12 animate-slide-in-up relative z-10">
           <h1 className="text-4xl md:text-5xl font-bold text-[#0a3d62] mb-4">
@@ -147,66 +177,66 @@ export default function BlogPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
             {blogPosts.map((post, index) => (
-            <Link key={post.id} href={`/blog/${post.slug}`} className="group h-full">
-              <article 
-                className={`bg-white/95 backdrop-blur-sm rounded-2xl overflow-hidden card-hover border border-white/30 shadow-lg animate-slide-in-up relative cursor-pointer h-full flex flex-col`}
-                style={{animationDelay: `${index * 0.15}s`}}
-              >
-                {/* Decorative gradient overlay - reduced opacity */}
-                <div className="absolute top-0 right-0 w-20 h-20 gradient-accent rounded-full blur-xl opacity-5 group-hover:opacity-10 transition-opacity duration-300"></div>
-                
-                <div className="relative overflow-hidden flex-shrink-0">
-                  {post.image && post.image.trim() !== '' ? (
-                    <Image
-                      src={post.image}
-                      alt={post.title}
-                      width={400}
-                      height={400}
-                      className={`w-full aspect-square group-hover:scale-105 transition-transform duration-500 object-cover`}
-                    />
-                  ) : (
-                    <div className="w-full aspect-square bg-gradient-to-br from-[#0a3d62]/10 to-[#ff9933]/10 flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="w-16 h-16 mx-auto mb-4 bg-[#0a3d62]/20 rounded-full flex items-center justify-center">
-                          <svg className="w-8 h-8 text-[#0a3d62]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
+              <Link key={post.id} href={`/blog/${post.slug}`} className="group h-full">
+                <article
+                  className={`bg-white/95 backdrop-blur-sm rounded-2xl overflow-hidden card-hover border border-white/30 shadow-lg animate-slide-in-up relative cursor-pointer h-full flex flex-col`}
+                  style={{ animationDelay: `${index * 0.15}s` }}
+                >
+                  {/* Decorative gradient overlay - reduced opacity */}
+                  <div className="absolute top-0 right-0 w-20 h-20 gradient-accent rounded-full blur-xl opacity-5 group-hover:opacity-10 transition-opacity duration-300"></div>
+
+                  <div className="relative overflow-hidden flex-shrink-0">
+                    {post.image && post.image.trim() !== '' ? (
+                      <Image
+                        src={sanitizeImageUrl(post.image)}
+                        alt={post.title}
+                        width={400}
+                        height={400}
+                        className={`w-full aspect-square group-hover:scale-105 transition-transform duration-500 object-cover`}
+                      />
+                    ) : (
+                      <div className="w-full aspect-square bg-gradient-to-br from-[#0a3d62]/10 to-[#ff9933]/10 flex items-center justify-center">
+                        <div className="text-center">
+                          <div className="w-16 h-16 mx-auto mb-4 bg-[#0a3d62]/20 rounded-full flex items-center justify-center">
+                            <svg className="w-8 h-8 text-[#0a3d62]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                          </div>
+                          <p className="text-[#0a3d62] font-medium">Blog Image</p>
                         </div>
-                        <p className="text-[#0a3d62] font-medium">Blog Image</p>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  </div>
+
+                  <div className="p-6 relative z-10 flex flex-col flex-grow">
+                    <div className="flex items-center gap-4 mb-3 flex-shrink-0">
+                      <div className="flex items-center gap-1 text-[#0a3d62] bg-[#0a3d62]/10 px-3 py-1 rounded-full">
+                        <Calendar className="h-3 w-3" />
+                        <span className="text-xs font-medium">{formatDate(post.createdAt)}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-[#ff9933] bg-[#ff9933]/10 px-3 py-1 rounded-full">
+                        <Clock className="h-3 w-3" />
+                        <span className="text-xs font-medium">{post.readTime}</span>
                       </div>
                     </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                </div>
-                
-                <div className="p-6 relative z-10 flex flex-col flex-grow">
-                  <div className="flex items-center gap-4 mb-3 flex-shrink-0">
-                    <div className="flex items-center gap-1 text-[#0a3d62] bg-[#0a3d62]/10 px-3 py-1 rounded-full">
-                      <Calendar className="h-3 w-3" />
-                      <span className="text-xs font-medium">{formatDate(post.createdAt)}</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-[#ff9933] bg-[#ff9933]/10 px-3 py-1 rounded-full">
-                      <Clock className="h-3 w-3" />
-                      <span className="text-xs font-medium">{post.readTime}</span>
+
+                    <h2 className="text-2xl font-bold text-[#0a3d62] mb-3 group-hover:text-[#ff9933] transition-colors duration-300 line-clamp-2 flex-shrink-0 min-h-[3.5rem]">
+                      {post.title}
+                    </h2>
+
+                    <p className="text-[#0a3d62] mb-4 text-sm leading-relaxed font-medium line-clamp-2 flex-grow min-h-[2.5rem]">
+                      {post.excerpt}
+                    </p>
+
+                    <div className="inline-flex items-center gap-2 bg-[#0a3d62] group-hover:bg-[#ff9933] text-white px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 shadow-md group-hover:scale-105 self-start mt-auto">
+                      Read More
+                      <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
                     </div>
                   </div>
-                  
-                  <h2 className="text-2xl font-bold text-[#0a3d62] mb-3 group-hover:text-[#ff9933] transition-colors duration-300 line-clamp-2 flex-shrink-0 min-h-[3.5rem]">
-                    {post.title}
-                  </h2>
-                  
-                  <p className="text-[#0a3d62] mb-4 text-sm leading-relaxed font-medium line-clamp-2 flex-grow min-h-[2.5rem]">
-                    {post.excerpt}
-                  </p>
-                  
-                  <div className="inline-flex items-center gap-2 bg-[#0a3d62] group-hover:bg-[#ff9933] text-white px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 shadow-md group-hover:scale-105 self-start mt-auto">
-                    Read More
-                    <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
-                  </div>
-                </div>
-              </article>
-            </Link>
-          ))}
+                </article>
+              </Link>
+            ))}
           </div>
         )}
 
@@ -214,7 +244,7 @@ export default function BlogPage() {
           <div className="bg-white/95 backdrop-blur-sm p-8 rounded-2xl max-w-2xl mx-auto border border-white/30 shadow-lg relative overflow-hidden">
             {/* Decorative background element - reduced opacity */}
             <div className="absolute bottom-0 right-0 w-32 h-32 gradient-primary rounded-full blur-xl opacity-5"></div>
-            
+
             <div className="relative z-10">
               <h2 className="text-2xl font-bold text-[#0a3d62] mb-3">
                 Stay <span className="bg-gradient-to-r from-[#ff9933] to-[#e67e22] bg-clip-text text-transparent">Updated</span>
@@ -222,7 +252,7 @@ export default function BlogPage() {
               <p className="text-[#0a3d62] mb-6 font-medium">
                 Join our community to get the latest insights on digital receipts, sustainability, and business innovation.
               </p>
-              <Link 
+              <Link
                 href="/waitlist"
                 className="btn-modern gradient-accent hover:shadow-2xl text-white font-medium border-none rounded-full px-8 py-3 h-auto text-lg transform hover:scale-105 transition-all duration-300"
               >
