@@ -225,12 +225,17 @@ export const blogService = {
           }
         } else {
           // New file upload
-          try {
-            imageUrl = await uploadImage(blogData.image)
-          } catch (uploadError) {
-            console.error('Upload failed, keeping existing image:', uploadError)
-            imageUrl = existingBlog?.image
-          }
+        try {
+  if (blogData.image instanceof File) {
+    imageUrl = await uploadImage(blogData.image)
+  } else {
+    imageUrl = blogData.image || '/blog/blog_image.png'
+  }
+} catch (uploadError) {
+  console.error('Upload failed, using default image:', uploadError)
+  imageUrl = '/blog/blog_image.png'
+}
+
         }
       } else if (blogData.image === null || (existingBlog && !existingBlog.image)) {
         imageUrl = '/blog/blog_image.png'
