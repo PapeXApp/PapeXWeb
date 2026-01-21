@@ -9,6 +9,18 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'i.ibb.co',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.public.blob.vercel-storage.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
     dangerouslyAllowSVG: true,
     unoptimized: false,

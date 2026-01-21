@@ -79,15 +79,45 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
     return new Date(date).toLocaleDateString()
   }
 
+  /**
+   * Sanitizes image URLs to ensure no localhost URLs are used
+   * Returns a valid external URL or falls back to default image
+   */
+  const sanitizeImageUrl = (imageUrl: string | undefined): string => {
+    if (!imageUrl) {
+      return "/blog/blog_image.png"
+    }
+
+    // Check if URL contains localhost
+    if (imageUrl.includes('localhost') || imageUrl.includes('127.0.0.1')) {
+      console.warn('Localhost URL detected and replaced with fallback:', imageUrl)
+      return "/blog/blog_image.png"
+    }
+
+    // Check if it's a valid external URL (https/http) or relative path
+    if (imageUrl.startsWith('https://') || imageUrl.startsWith('http://') || imageUrl.startsWith('/')) {
+      return imageUrl
+    }
+
+    // If it's a base64 image, allow it
+    if (imageUrl.startsWith('data:image/')) {
+      return imageUrl
+    }
+
+    // For any other format, use fallback
+    console.warn('Invalid image URL format, using fallback:', imageUrl.substring(0, 50))
+    return "/blog/blog_image.png"
+  }
+
   useEffect(() => {
     const fetchPost = async () => {
       try {
         setLoading(true)
-        
+
         // First try to get from Firebase
         const firebaseBlogs = await blogService.getPublishedBlogs()
         const firebasePost = firebaseBlogs.find(blog => blog.slug === resolvedParams.slug)
-        
+
         if (firebasePost) {
           setPost(firebasePost)
         } else {
@@ -101,7 +131,7 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
         }
       } catch (error) {
         console.error('Error fetching blog post:', error)
-        
+
         // Try static fallback
         const staticPost = getStaticPost(resolvedParams.slug)
         if (staticPost) {
@@ -122,11 +152,11 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
     const fetchPost = async () => {
       try {
         setLoading(true)
-        
+
         // First try to get from Firebase
         const firebaseBlogs = await blogService.getPublishedBlogs()
         const firebasePost = firebaseBlogs.find(blog => blog.slug === resolvedParams.slug)
-        
+
         if (firebasePost) {
           setPost(firebasePost)
         } else {
@@ -248,7 +278,7 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
   return (
     <div className="min-h-screen gradient-mesh flex flex-col">
       <MainNavigation />
-      
+
       <main className="flex-1 container mx-auto py-8 px-4">
         <div className="max-w-4xl mx-auto">
           <Link href="/blog" className="inline-flex items-center gap-2 text-[#0a3d62] hover:text-[#ff9933] transition-colors duration-300 mb-8">
@@ -259,7 +289,7 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
           <article className="bg-white/95 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/30 shadow-lg">
             <div className="relative">
               <Image
-                src={post.image || "/blog/blog_image.png"}
+                src={sanitizeImageUrl(post.image)}
                 alt={post.title}
                 width={800}
                 height={400}
@@ -280,7 +310,7 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
                     <span className="text-sm font-medium">{post.readTime}</span>
                   </div>
                 </div>
-                
+
                 {/* Admin Edit Button - only show for Firebase posts and admins */}
                 {isAdmin && post.id && !post.id.startsWith('static-') && (
                   <Button
@@ -303,13 +333,13 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
                 <p className="text-xl text-[#0a3d62] mb-8 font-medium leading-relaxed">
                   {post.excerpt}
                 </p>
-                
-                <div 
+
+                <div
                   className="text-[#0a3d62] leading-relaxed space-y-6 prose prose-lg max-w-none blog-content"
                   style={{
                     lineHeight: '1.8'
                   }}
-                  dangerouslySetInnerHTML={{ 
+                  dangerouslySetInnerHTML={{
                     __html: (post.content || staticBlogContent[post.slug] || "")
                       .replace(/<h2>/g, '<h2 style="font-size: 1.875rem; font-weight: bold; color: #0a3d62; margin: 1.5rem 0 1rem 0; font-family: var(--font-kameron), Georgia, serif;">')
                       .replace(/<h3>/g, '<h3 style="font-size: 1.5rem; font-weight: bold; color: #0a3d62; margin: 1.25rem 0 0.75rem 0; font-family: var(--font-kameron), Georgia, serif;">')
@@ -329,7 +359,7 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
               <p className="text-[#0a3d62] mb-6 font-medium">
                 Join our waitlist to be among the first to experience the future of digital receipts.
               </p>
-              <Link 
+              <Link
                 href="/waitlist"
                 className="btn-modern gradient-accent hover:shadow-2xl text-white font-medium border-none rounded-full px-8 py-3 h-auto text-lg transform hover:scale-105 transition-all duration-300"
               >
@@ -341,7 +371,7 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
       </main>
 
       <MainFooter />
-      
+
       {/* Edit Modal - only render if we have a valid Firebase post */}
       {post && post.id && !post.id.startsWith('static-') && (
         <EditBlogModal
