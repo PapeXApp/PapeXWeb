@@ -61,6 +61,8 @@ export async function uploadImageToImgBB(
 
     // Get API key from environment or parameter
     const imgbbApiKey = apiKey || process.env.NEXT_PUBLIC_IMGBB_API_KEY
+    console.log('IMGBB KEY:', process.env.NEXT_PUBLIC_IMGBB_API_KEY)
+
     
     if (!imgbbApiKey) {
       throw new Error('ImgBB API key not found. Get one free at https://api.imgbb.com/')

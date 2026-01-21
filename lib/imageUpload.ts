@@ -11,11 +11,7 @@ import {
   getDoc
 } from 'firebase/firestore'
 import { uploadImageToImgBB } from './imageUploadImgBB'
-import {
-  isBase64Image,
-  isStorageUrl,
-  isLocalPath
-} from './imageUpload'
+
 
 /* -------------------------------------------------------------------------- */
 /*                                  CONSTANTS                                 */
@@ -41,6 +37,18 @@ export interface BlogPost {
   createdAt: any
   published: boolean
   imageMigrated?: boolean
+}
+
+export function isBase64Image(value: string): boolean {
+  return /^data:image\/[a-zA-Z]+;base64,/.test(value)
+}
+
+export function isStorageUrl(value: string): boolean {
+  return value.startsWith('https://firebasestorage.googleapis.com')
+}
+
+export function isLocalPath(value: string): boolean {
+  return value.startsWith('/') || value.startsWith('./')
 }
 
 export interface CreateBlogPost {
