@@ -1,7 +1,7 @@
 'use client'
 
 import Link from "next/link"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
   calculatePosValuePropModel,
   posValuePropDefaults,
@@ -64,6 +64,40 @@ interface AssumptionFieldProps {
 function AssumptionField({ field, value, onChange }: AssumptionFieldProps) {
   const isCurrency = field.unit === "currency"
   const isPercentage = field.unit === "percentage"
+  const [draftValue, setDraftValue] = useState(String(value))
+
+  useEffect(() => {
+    setDraftValue(String(value))
+  }, [value])
+
+  const commitDraftValue = () => {
+    const trimmedValue = draftValue.trim()
+
+    if (trimmedValue === "") {
+      setDraftValue(String(value))
+      return
+    }
+
+    const parsedValue = Number(trimmedValue)
+
+    if (!Number.isFinite(parsedValue)) {
+      setDraftValue(String(value))
+      return
+    }
+
+    let normalizedValue = parsedValue
+
+    if (typeof field.min === "number") {
+      normalizedValue = Math.max(field.min, normalizedValue)
+    }
+
+    if (typeof field.max === "number") {
+      normalizedValue = Math.min(field.max, normalizedValue)
+    }
+
+    onChange(field.key, normalizedValue)
+    setDraftValue(String(normalizedValue))
+  }
 
   return (
     <div className="space-y-2">
@@ -79,16 +113,22 @@ function AssumptionField({ field, value, onChange }: AssumptionFieldProps) {
         <Input
           id={field.key}
           type="number"
-          value={value}
+          value={draftValue}
           min={field.min}
           max={field.max}
           step={field.step}
+          inputMode="decimal"
           onChange={(event) => {
-            const parsedValue = Number(event.target.value)
-            onChange(field.key, Number.isFinite(parsedValue) ? parsedValue : 0)
+            setDraftValue(event.target.value)
+          }}
+          onBlur={commitDraftValue}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.currentTarget.blur()
+            }
           }}
           className={[
-            "border-[#0a3d62]/20 bg-white",
+            "border-[#0a3d62]/25 bg-white text-[#0a3d62] placeholder:text-[#0a3d62]/40 focus-visible:ring-[#0a3d62]/30",
             isCurrency ? "pl-8" : "",
             isPercentage ? "pr-8" : "",
           ].join(" ")}
@@ -136,8 +176,7 @@ export default function PosValuePropPage() {
                 </h1>
                 <p className="text-[#0a3d62]/80 max-w-3xl">
                   Partners can plug in assumptions and instantly explore margin impact, analytics lift,
-                  and projected revenue upside. All default model numbers are centralized in{" "}
-                  <code className="text-[#0a3d62] font-semibold">lib/posValuePropModel.ts</code>.
+                  and projected revenue upside.
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-3">
