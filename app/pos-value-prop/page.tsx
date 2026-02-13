@@ -232,11 +232,11 @@ export default function PosValuePropPage() {
             <Card className="bg-white/95 border border-white/40">
               <CardHeader className="pb-2">
                 <CardDescription className="text-[#0a3d62]/70">
-                  Additional annual POS revenue (with PayX)
+                  Additional annual POS revenue (with PapeX)
                 </CardDescription>
                 <CardTitle className="text-[#0a3d62] text-2xl flex items-center gap-2">
                   <TrendingUp className="h-5 w-5 text-[#ff9933]" />
-                  {formatCurrency(model.analytics.additionalAnnualPosRevenueWithPayX)}
+                  {formatCurrency(model.analytics.additionalAnnualPosRevenueWithPapeX)}
                 </CardTitle>
               </CardHeader>
             </Card>
@@ -297,7 +297,7 @@ export default function PosValuePropPage() {
                           <TableHead className="text-right text-[#0a3d62]">Monthly cost</TableHead>
                         </TableRow>
                       </TableHeader>
-                      <TableBody>
+                      <TableBody className="text-[#0a3d62]">
                         <TableRow>
                           <TableCell>Printed</TableCell>
                           <TableCell className="text-right">
@@ -368,81 +368,81 @@ export default function PosValuePropPage() {
                       <TableHeader>
                         <TableRow>
                           <TableHead className="text-[#0a3d62]">Metric</TableHead>
-                          <TableHead className="text-right text-[#0a3d62]">Without PayX</TableHead>
-                          <TableHead className="text-right text-[#0a3d62]">With PayX</TableHead>
+                          <TableHead className="text-right text-[#0a3d62]">Without PapeX</TableHead>
+                          <TableHead className="text-right text-[#0a3d62]">With PapeX</TableHead>
                         </TableRow>
                       </TableHeader>
-                      <TableBody>
+                      <TableBody className="text-[#0a3d62]">
                         <TableRow>
                           <TableCell>Identifiable customers / merchant</TableCell>
                           <TableCell className="text-right">
-                            {formatDecimal(model.analytics.identifiableCustomersWithoutPayXPerMerchant)}
+                            {formatDecimal(model.analytics.identifiableCustomersWithoutPapeXPerMerchant)}
                           </TableCell>
                           <TableCell className="text-right">
-                            {formatDecimal(model.analytics.identifiableCustomersWithPayXPerMerchant)}
+                            {formatDecimal(model.analytics.identifiableCustomersWithPapeXPerMerchant)}
                           </TableCell>
                         </TableRow>
                         <TableRow>
                           <TableCell>Repeat customers / merchant</TableCell>
                           <TableCell className="text-right">
-                            {formatDecimal(model.analytics.repeatCustomersWithoutPayXPerMerchant)}
+                            {formatDecimal(model.analytics.repeatCustomersWithoutPapeXPerMerchant)}
                           </TableCell>
                           <TableCell className="text-right">
-                            {formatDecimal(model.analytics.repeatCustomersWithPayXPerMerchant)}
+                            {formatDecimal(model.analytics.repeatCustomersWithPapeXPerMerchant)}
                           </TableCell>
                         </TableRow>
                         <TableRow>
                           <TableCell>Estimated repeat spend / merchant</TableCell>
                           <TableCell className="text-right">
-                            {formatCurrency(model.analytics.estimatedRepeatSpendWithoutPayXPerMerchant)}
+                            {formatCurrency(model.analytics.estimatedRepeatSpendWithoutPapeXPerMerchant)}
                           </TableCell>
                           <TableCell className="text-right">
-                            {formatCurrency(model.analytics.estimatedRepeatSpendWithPayXPerMerchant)}
+                            {formatCurrency(model.analytics.estimatedRepeatSpendWithPapeXPerMerchant)}
                           </TableCell>
                         </TableRow>
                         <TableRow>
                           <TableCell>Monthly incremental merchant revenue</TableCell>
                           <TableCell className="text-right">
-                            {formatCurrency(model.analytics.monthlyIncrementalMerchantRevenueWithoutPayX)}
+                            {formatCurrency(model.analytics.monthlyIncrementalMerchantRevenueWithoutPapeX)}
                           </TableCell>
                           <TableCell className="text-right">
-                            {formatCurrency(model.analytics.monthlyIncrementalMerchantRevenueWithPayX)}
+                            {formatCurrency(model.analytics.monthlyIncrementalMerchantRevenueWithPapeX)}
                           </TableCell>
                         </TableRow>
                         <TableRow>
                           <TableCell>Yearly incremental merchant revenue (per merchant)</TableCell>
                           <TableCell className="text-right">
-                            {formatCurrency(model.analytics.yearlyIncrementalMerchantRevenueWithoutPayX)}
+                            {formatCurrency(model.analytics.yearlyIncrementalMerchantRevenueWithoutPapeX)}
                           </TableCell>
                           <TableCell className="text-right">
-                            {formatCurrency(model.analytics.yearlyIncrementalMerchantRevenueWithPayX)}
+                            {formatCurrency(model.analytics.yearlyIncrementalMerchantRevenueWithPapeX)}
                           </TableCell>
                         </TableRow>
                         <TableRow>
                           <TableCell>Total added merchant revenue (network)</TableCell>
                           <TableCell className="text-right">
-                            {formatCurrency(model.analytics.totalAddedMerchantRevenueWithoutPayX)}
+                            {formatCurrency(model.analytics.totalAddedMerchantRevenueWithoutPapeX)}
                           </TableCell>
                           <TableCell className="text-right">
-                            {formatCurrency(model.analytics.totalAddedMerchantRevenueWithPayX)}
+                            {formatCurrency(model.analytics.totalAddedMerchantRevenueWithPapeX)}
                           </TableCell>
                         </TableRow>
                         <TableRow>
                           <TableCell>Total added POS revenue (network)</TableCell>
                           <TableCell className="text-right">
-                            {formatCurrency(model.analytics.totalAddedPosRevenueWithoutPayX)}
+                            {formatCurrency(model.analytics.totalAddedPosRevenueWithoutPapeX)}
                           </TableCell>
                           <TableCell className="text-right">
-                            {formatCurrency(model.analytics.totalAddedPosRevenueWithPayX)}
+                            {formatCurrency(model.analytics.totalAddedPosRevenueWithPapeX)}
                           </TableCell>
                         </TableRow>
                       </TableBody>
                     </Table>
 
                     <div className="rounded-lg border border-[#ff9933]/40 bg-[#ff9933]/10 p-4">
-                      <p className="text-sm text-[#0a3d62]/80">Incremental annual POS upside with PayX</p>
+                      <p className="text-sm text-[#0a3d62]/80">Incremental annual POS upside with PapeX</p>
                       <p className="text-2xl font-bold text-[#0a3d62]">
-                        {formatCurrency(model.analytics.additionalAnnualPosRevenueWithPayX)}
+                        {formatCurrency(model.analytics.additionalAnnualPosRevenueWithPapeX)}
                       </p>
                     </div>
                   </TabsContent>

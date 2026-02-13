@@ -10,11 +10,11 @@ export interface PosValuePropInputs {
   costPerPrintedReceipt: number
   costPerThousandEmails: number
   costPerThousandTexts: number
-  identifiedTransactionRateWithoutPayXPct: number
-  identifiedTransactionRateWithPayXPct: number
+  identifiedTransactionRateWithoutPapeXPct: number
+  identifiedTransactionRateWithPapeXPct: number
   repeatRatePct: number
-  monthlyIncrementalMerchantRevenueWithoutPayX: number
-  payXRevenueLiftPct: number
+  monthlyIncrementalMerchantRevenueWithoutPapeX: number
+  papeXRevenueLiftPct: number
   posRevenueSharePct: number
 }
 
@@ -59,22 +59,22 @@ export interface PosValuePropOutputs {
     yearlyCombinedReceiptCostOffsetPotential: number
   }
   analytics: {
-    identifiableCustomersWithoutPayXPerMerchant: number
-    identifiableCustomersWithPayXPerMerchant: number
+    identifiableCustomersWithoutPapeXPerMerchant: number
+    identifiableCustomersWithPapeXPerMerchant: number
     additionalIdentifiableCustomersPerMerchant: number
-    repeatCustomersWithoutPayXPerMerchant: number
-    repeatCustomersWithPayXPerMerchant: number
-    estimatedRepeatSpendWithoutPayXPerMerchant: number
-    estimatedRepeatSpendWithPayXPerMerchant: number
-    monthlyIncrementalMerchantRevenueWithoutPayX: number
-    monthlyIncrementalMerchantRevenueWithPayX: number
-    yearlyIncrementalMerchantRevenueWithoutPayX: number
-    yearlyIncrementalMerchantRevenueWithPayX: number
-    totalAddedMerchantRevenueWithoutPayX: number
-    totalAddedMerchantRevenueWithPayX: number
-    totalAddedPosRevenueWithoutPayX: number
-    totalAddedPosRevenueWithPayX: number
-    additionalAnnualPosRevenueWithPayX: number
+    repeatCustomersWithoutPapeXPerMerchant: number
+    repeatCustomersWithPapeXPerMerchant: number
+    estimatedRepeatSpendWithoutPapeXPerMerchant: number
+    estimatedRepeatSpendWithPapeXPerMerchant: number
+    monthlyIncrementalMerchantRevenueWithoutPapeX: number
+    monthlyIncrementalMerchantRevenueWithPapeX: number
+    yearlyIncrementalMerchantRevenueWithoutPapeX: number
+    yearlyIncrementalMerchantRevenueWithPapeX: number
+    totalAddedMerchantRevenueWithoutPapeX: number
+    totalAddedMerchantRevenueWithPapeX: number
+    totalAddedPosRevenueWithoutPapeX: number
+    totalAddedPosRevenueWithPapeX: number
+    additionalAnnualPosRevenueWithPapeX: number
   }
   diagnostics: {
     receiptRateTotalPct: number
@@ -94,11 +94,11 @@ export const posValuePropDefaults: PosValuePropInputs = {
   costPerPrintedReceipt: 0.03,
   costPerThousandEmails: 0.1,
   costPerThousandTexts: 0.1,
-  identifiedTransactionRateWithoutPayXPct: 45,
-  identifiedTransactionRateWithPayXPct: 63,
+  identifiedTransactionRateWithoutPapeXPct: 45,
+  identifiedTransactionRateWithPapeXPct: 63,
   repeatRatePct: 45,
-  monthlyIncrementalMerchantRevenueWithoutPayX: 20000,
-  payXRevenueLiftPct: 12.5,
+  monthlyIncrementalMerchantRevenueWithoutPapeX: 20000,
+  papeXRevenueLiftPct: 12.5,
   posRevenueSharePct: 0.4,
 }
 
@@ -215,8 +215,8 @@ export const posValuePropFieldSections: PosValuePropFieldSection[] = [
     description: "Input levers for identity coverage and partner revenue upside.",
     fields: [
       {
-        key: "identifiedTransactionRateWithoutPayXPct",
-        label: "Identified transaction rate (without PayX)",
+        key: "identifiedTransactionRateWithoutPapeXPct",
+        label: "Identified transaction rate (without PapeX)",
         description: "Percent of transactions tied to an identifiable customer profile.",
         unit: "percentage",
         min: 0,
@@ -224,9 +224,9 @@ export const posValuePropFieldSections: PosValuePropFieldSection[] = [
         step: 1,
       },
       {
-        key: "identifiedTransactionRateWithPayXPct",
-        label: "Identified transaction rate (with PayX)",
-        description: "Expected identifiable coverage after PayX rollout.",
+        key: "identifiedTransactionRateWithPapeXPct",
+        label: "Identified transaction rate (with PapeX)",
+        description: "Expected identifiable coverage after PapeX rollout.",
         unit: "percentage",
         min: 0,
         max: 100,
@@ -242,17 +242,17 @@ export const posValuePropFieldSections: PosValuePropFieldSection[] = [
         step: 1,
       },
       {
-        key: "monthlyIncrementalMerchantRevenueWithoutPayX",
-        label: "Monthly incremental merchant revenue (without PayX)",
+        key: "monthlyIncrementalMerchantRevenueWithoutPapeX",
+        label: "Monthly incremental merchant revenue (without PapeX)",
         description: "Current monthly merchant-side incremental revenue baseline.",
         unit: "currency",
         min: 0,
         step: 100,
       },
       {
-        key: "payXRevenueLiftPct",
-        label: "PayX revenue lift",
-        description: "Expected percentage lift in incremental merchant revenue with PayX.",
+        key: "papeXRevenueLiftPct",
+        label: "PapeX revenue lift",
+        description: "Expected percentage lift in incremental merchant revenue with PapeX.",
         unit: "percentage",
         min: 0,
         step: 0.1,
@@ -324,43 +324,44 @@ export function calculatePosValuePropModel(inputs: PosValuePropInputs): PosValue
   const yearlyPosReceiptInfrastructureCost = monthlyPosReceiptInfrastructureCost * YEARLY_MULTIPLIER
   const yearlyPaperReceiptCost = monthlyPaperReceiptCost * YEARLY_MULTIPLIER
 
-  const identifiedWithoutRatio = toRatio(inputs.identifiedTransactionRateWithoutPayXPct)
-  const identifiedWithRatio = toRatio(inputs.identifiedTransactionRateWithPayXPct)
+  const identifiedWithoutRatio = toRatio(inputs.identifiedTransactionRateWithoutPapeXPct)
+  const identifiedWithRatio = toRatio(inputs.identifiedTransactionRateWithPapeXPct)
   const repeatRatio = toRatio(inputs.repeatRatePct)
-  const monthlyIncrementalMerchantRevenueWithoutPayX = clampToZero(
-    inputs.monthlyIncrementalMerchantRevenueWithoutPayX
+  const monthlyIncrementalMerchantRevenueWithoutPapeX = clampToZero(
+    inputs.monthlyIncrementalMerchantRevenueWithoutPapeX
   )
-  const payXRevenueLiftRatio = toRatio(inputs.payXRevenueLiftPct)
+  const papeXRevenueLiftRatio = toRatio(inputs.papeXRevenueLiftPct)
   const posRevenueShareRatio = toRatio(inputs.posRevenueSharePct)
 
-  const identifiableCustomersWithoutPayXPerMerchant =
+  const identifiableCustomersWithoutPapeXPerMerchant =
     uniqueCustomersPerMerchantPerMonth * identifiedWithoutRatio
-  const identifiableCustomersWithPayXPerMerchant =
+  const identifiableCustomersWithPapeXPerMerchant =
     uniqueCustomersPerMerchantPerMonth * identifiedWithRatio
   const additionalIdentifiableCustomersPerMerchant =
-    identifiableCustomersWithPayXPerMerchant - identifiableCustomersWithoutPayXPerMerchant
+    identifiableCustomersWithPapeXPerMerchant - identifiableCustomersWithoutPapeXPerMerchant
 
-  const repeatCustomersWithoutPayXPerMerchant =
-    identifiableCustomersWithoutPayXPerMerchant * repeatRatio
-  const repeatCustomersWithPayXPerMerchant = identifiableCustomersWithPayXPerMerchant * repeatRatio
-  const estimatedRepeatSpendWithoutPayXPerMerchant =
-    repeatCustomersWithoutPayXPerMerchant * averageOrderValue
-  const estimatedRepeatSpendWithPayXPerMerchant =
-    repeatCustomersWithPayXPerMerchant * averageOrderValue
+  const repeatCustomersWithoutPapeXPerMerchant =
+    identifiableCustomersWithoutPapeXPerMerchant * repeatRatio
+  const repeatCustomersWithPapeXPerMerchant = identifiableCustomersWithPapeXPerMerchant * repeatRatio
+  const estimatedRepeatSpendWithoutPapeXPerMerchant =
+    repeatCustomersWithoutPapeXPerMerchant * averageOrderValue
+  const estimatedRepeatSpendWithPapeXPerMerchant =
+    repeatCustomersWithPapeXPerMerchant * averageOrderValue
 
-  const monthlyIncrementalMerchantRevenueWithPayX =
-    monthlyIncrementalMerchantRevenueWithoutPayX * (1 + payXRevenueLiftRatio)
+  const monthlyIncrementalMerchantRevenueWithPapeX =
+    monthlyIncrementalMerchantRevenueWithoutPapeX * (1 + papeXRevenueLiftRatio)
 
-  const yearlyIncrementalMerchantRevenueWithoutPayX =
-    monthlyIncrementalMerchantRevenueWithoutPayX * YEARLY_MULTIPLIER
-  const yearlyIncrementalMerchantRevenueWithPayX =
-    monthlyIncrementalMerchantRevenueWithPayX * YEARLY_MULTIPLIER
+  const yearlyIncrementalMerchantRevenueWithoutPapeX =
+    monthlyIncrementalMerchantRevenueWithoutPapeX * YEARLY_MULTIPLIER
+  const yearlyIncrementalMerchantRevenueWithPapeX =
+    monthlyIncrementalMerchantRevenueWithPapeX * YEARLY_MULTIPLIER
 
-  const totalAddedMerchantRevenueWithoutPayX = yearlyIncrementalMerchantRevenueWithoutPayX * merchants
-  const totalAddedMerchantRevenueWithPayX = yearlyIncrementalMerchantRevenueWithPayX * merchants
+  const totalAddedMerchantRevenueWithoutPapeX =
+    yearlyIncrementalMerchantRevenueWithoutPapeX * merchants
+  const totalAddedMerchantRevenueWithPapeX = yearlyIncrementalMerchantRevenueWithPapeX * merchants
 
-  const totalAddedPosRevenueWithoutPayX = totalAddedMerchantRevenueWithoutPayX * posRevenueShareRatio
-  const totalAddedPosRevenueWithPayX = totalAddedMerchantRevenueWithPayX * posRevenueShareRatio
+  const totalAddedPosRevenueWithoutPapeX = totalAddedMerchantRevenueWithoutPapeX * posRevenueShareRatio
+  const totalAddedPosRevenueWithPapeX = totalAddedMerchantRevenueWithPapeX * posRevenueShareRatio
 
   return {
     grossMargin: {
@@ -379,23 +380,23 @@ export function calculatePosValuePropModel(inputs: PosValuePropInputs): PosValue
         yearlyPaperReceiptCost + yearlyPosReceiptInfrastructureCost,
     },
     analytics: {
-      identifiableCustomersWithoutPayXPerMerchant,
-      identifiableCustomersWithPayXPerMerchant,
+      identifiableCustomersWithoutPapeXPerMerchant,
+      identifiableCustomersWithPapeXPerMerchant,
       additionalIdentifiableCustomersPerMerchant,
-      repeatCustomersWithoutPayXPerMerchant,
-      repeatCustomersWithPayXPerMerchant,
-      estimatedRepeatSpendWithoutPayXPerMerchant,
-      estimatedRepeatSpendWithPayXPerMerchant,
-      monthlyIncrementalMerchantRevenueWithoutPayX,
-      monthlyIncrementalMerchantRevenueWithPayX,
-      yearlyIncrementalMerchantRevenueWithoutPayX,
-      yearlyIncrementalMerchantRevenueWithPayX,
-      totalAddedMerchantRevenueWithoutPayX,
-      totalAddedMerchantRevenueWithPayX,
-      totalAddedPosRevenueWithoutPayX,
-      totalAddedPosRevenueWithPayX,
-      additionalAnnualPosRevenueWithPayX:
-        totalAddedPosRevenueWithPayX - totalAddedPosRevenueWithoutPayX,
+      repeatCustomersWithoutPapeXPerMerchant,
+      repeatCustomersWithPapeXPerMerchant,
+      estimatedRepeatSpendWithoutPapeXPerMerchant,
+      estimatedRepeatSpendWithPapeXPerMerchant,
+      monthlyIncrementalMerchantRevenueWithoutPapeX,
+      monthlyIncrementalMerchantRevenueWithPapeX,
+      yearlyIncrementalMerchantRevenueWithoutPapeX,
+      yearlyIncrementalMerchantRevenueWithPapeX,
+      totalAddedMerchantRevenueWithoutPapeX,
+      totalAddedMerchantRevenueWithPapeX,
+      totalAddedPosRevenueWithoutPapeX,
+      totalAddedPosRevenueWithPapeX,
+      additionalAnnualPosRevenueWithPapeX:
+        totalAddedPosRevenueWithPapeX - totalAddedPosRevenueWithoutPapeX,
     },
     diagnostics: {
       receiptRateTotalPct: receiptRateTotal * 100,
