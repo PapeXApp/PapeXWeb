@@ -1,14 +1,16 @@
 'use client'
 
 import Link from "next/link"
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import {
   calculatePosValuePropModel,
   posValuePropDefaults,
   posValuePropSources,
+  type PosValuePropInputs,
 } from "@/lib/posValuePropModel"
 import { MainNavigation, MainFooter } from "@/components/main-navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Table,
@@ -59,9 +61,35 @@ function formatPercent(value: number) {
 }
 
 export default function PosValuePropPage() {
-  const model = useMemo(() => calculatePosValuePropModel(posValuePropDefaults), [])
+  const [inputs, setInputs] = useState<PosValuePropInputs>({ ...posValuePropDefaults })
+  const model = useMemo(() => calculatePosValuePropModel(inputs), [inputs])
+
+  const handleYellowInputChange = (
+    field: "merchantCount" | "transactionsPerMerchantPerMonth",
+    rawValue: string
+  ) => {
+    if (rawValue.trim() === "") {
+      setInputs((previous) => ({
+        ...previous,
+        [field]: 0,
+      }))
+      return
+    }
+
+    const parsedValue = Number(rawValue)
+
+    if (!Number.isFinite(parsedValue)) {
+      return
+    }
+
+    setInputs((previous) => ({
+      ...previous,
+      [field]: Math.max(0, Math.round(parsedValue)),
+    }))
+  }
+
   const combinedPrintedAndEmailedRate =
-    posValuePropDefaults.printedReceiptRatePct + posValuePropDefaults.emailedReceiptRatePct
+    inputs.printedReceiptRatePct + inputs.emailedReceiptRatePct
   const combinedPrintedAndEmailedVolume =
     model.grossMargin.printedReceiptsPerMonth + model.grossMargin.emailedReceiptsPerMonth
 
@@ -117,17 +145,17 @@ export default function PosValuePropPage() {
                         <TableBody className="text-[#0a3d62]">
                           <TableRow>
                             <TableCell>Per printed receipt</TableCell>
-                            <TableCell className="text-right">{formatCurrency(posValuePropDefaults.costPerPrintedReceipt)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(inputs.costPerPrintedReceipt)}</TableCell>
                             <TableCell>Thermal paper + printer wear</TableCell>
                           </TableRow>
                           <TableRow>
                             <TableCell>Per 1,000 emails sent</TableCell>
-                            <TableCell className="text-right">{formatCurrency(posValuePropDefaults.costPerThousandEmails)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(inputs.costPerThousandEmails)}</TableCell>
                             <TableCell>Delivery + compliance overhead</TableCell>
                           </TableRow>
                           <TableRow>
                             <TableCell>Per 1,000 texts sent</TableCell>
-                            <TableCell className="text-right">{formatCurrency(posValuePropDefaults.costPerThousandTexts)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(inputs.costPerThousandTexts)}</TableCell>
                             <TableCell>Carrier + anti-fraud overhead</TableCell>
                           </TableRow>
                         </TableBody>
@@ -180,21 +208,46 @@ export default function PosValuePropPage() {
                           <TableRow>
                             <TableCell>Merchants</TableCell>
                             <TableCell className="text-right bg-[#fff59a]/60 font-medium">
-                              {formatInteger(posValuePropDefaults.merchantCount)}
+                              <Input
+                                aria-label="Merchants"
+                                type="number"
+                                inputMode="numeric"
+                                min={0}
+                                step={100}
+                                value={inputs.merchantCount}
+                                onChange={(event) =>
+                                  handleYellowInputChange("merchantCount", event.target.value)
+                                }
+                                className="h-8 border-[#0a3d62]/25 bg-[#fff59a]/20 text-right text-[#0a3d62]"
+                              />
                             </TableCell>
                             <TableCell className="text-right">-</TableCell>
                           </TableRow>
                           <TableRow>
                             <TableCell>Transactions total (typical SMB)</TableCell>
                             <TableCell className="text-right bg-[#fff59a]/60 font-medium">
-                              {formatInteger(posValuePropDefaults.transactionsPerMerchantPerMonth)}
+                              <Input
+                                aria-label="Transactions total per merchant per month"
+                                type="number"
+                                inputMode="numeric"
+                                min={0}
+                                step={10}
+                                value={inputs.transactionsPerMerchantPerMonth}
+                                onChange={(event) =>
+                                  handleYellowInputChange(
+                                    "transactionsPerMerchantPerMonth",
+                                    event.target.value
+                                  )
+                                }
+                                className="h-8 border-[#0a3d62]/25 bg-[#fff59a]/20 text-right text-[#0a3d62]"
+                              />
                             </TableCell>
                             <TableCell className="text-right">-</TableCell>
                           </TableRow>
                           <TableRow>
                             <TableCell>Printed</TableCell>
                             <TableCell className="text-right bg-[#9dd39f]/35">
-                              {formatPercent(posValuePropDefaults.printedReceiptRatePct)}
+                              {formatPercent(inputs.printedReceiptRatePct)}
                             </TableCell>
                             <TableCell className="text-right bg-[#d7a6d8]/35">
                               {formatInteger(model.grossMargin.printedReceiptsPerMonth)}
@@ -203,7 +256,7 @@ export default function PosValuePropPage() {
                           <TableRow>
                             <TableCell>Emailed</TableCell>
                             <TableCell className="text-right bg-[#9dd39f]/35">
-                              {formatPercent(posValuePropDefaults.emailedReceiptRatePct)}
+                              {formatPercent(inputs.emailedReceiptRatePct)}
                             </TableCell>
                             <TableCell className="text-right bg-[#d7a6d8]/35">
                               {formatInteger(model.grossMargin.emailedReceiptsPerMonth)}
@@ -221,7 +274,7 @@ export default function PosValuePropPage() {
                           <TableRow>
                             <TableCell>Texted</TableCell>
                             <TableCell className="text-right bg-[#9dd39f]/35">
-                              {formatPercent(posValuePropDefaults.textedReceiptRatePct)}
+                              {formatPercent(inputs.textedReceiptRatePct)}
                             </TableCell>
                             <TableCell className="text-right bg-[#d7a6d8]/35">
                               {formatInteger(model.grossMargin.textedReceiptsPerMonth)}
@@ -230,7 +283,7 @@ export default function PosValuePropPage() {
                           <TableRow>
                             <TableCell>No receipt</TableCell>
                             <TableCell className="text-right bg-[#9dd39f]/35">
-                              {formatPercent(posValuePropDefaults.noReceiptRatePct)}
+                              {formatPercent(inputs.noReceiptRatePct)}
                             </TableCell>
                             <TableCell className="text-right bg-[#d7a6d8]/35">
                               {formatInteger(model.grossMargin.noReceiptTransactionsPerMonth)}
@@ -303,27 +356,27 @@ export default function PosValuePropPage() {
                           <TableBody className="text-[#0a3d62]">
                             <TableRow>
                               <TableCell>Average Order Value ($)</TableCell>
-                              <TableCell className="text-right">{formatCurrency(posValuePropDefaults.averageOrderValue)}</TableCell>
+                              <TableCell className="text-right">{formatCurrency(inputs.averageOrderValue)}</TableCell>
                               <TableCell>site source</TableCell>
                             </TableRow>
                             <TableRow>
                               <TableCell>Transactions per Month</TableCell>
-                              <TableCell className="text-right">{formatInteger(posValuePropDefaults.transactionsPerMerchantPerMonth)}</TableCell>
+                              <TableCell className="text-right">{formatInteger(inputs.transactionsPerMerchantPerMonth)}</TableCell>
                               <TableCell>per merchant baseline</TableCell>
                             </TableRow>
                             <TableRow>
                               <TableCell>Unique Customers per Month</TableCell>
-                              <TableCell className="text-right">{formatInteger(posValuePropDefaults.uniqueCustomersPerMerchantPerMonth)}</TableCell>
+                              <TableCell className="text-right">{formatInteger(inputs.uniqueCustomersPerMerchantPerMonth)}</TableCell>
                               <TableCell>estimated active profiles</TableCell>
                             </TableRow>
                             <TableRow>
                               <TableCell>Total POS Customer Count (# Merchants)</TableCell>
-                              <TableCell className="text-right">{formatInteger(posValuePropDefaults.merchantCount)}</TableCell>
+                              <TableCell className="text-right">{formatInteger(inputs.merchantCount)}</TableCell>
                               <TableCell>network-wide footprint</TableCell>
                             </TableRow>
                             <TableRow>
                               <TableCell>Typical POS Processing Fee (%)</TableCell>
-                              <TableCell className="text-right">{formatPercent(posValuePropDefaults.posRevenueSharePct)}</TableCell>
+                              <TableCell className="text-right">{formatPercent(inputs.posRevenueSharePct)}</TableCell>
                               <TableCell>share of added merchant revenue</TableCell>
                             </TableRow>
                           </TableBody>
@@ -359,8 +412,8 @@ export default function PosValuePropPage() {
                         <TableBody className="text-[#0a3d62]">
                           <TableRow>
                             <TableCell>Identified Transactions Rate (%)</TableCell>
-                            <TableCell className="text-right">{formatPercent(posValuePropDefaults.identifiedTransactionRateWithoutPapeXPct)}</TableCell>
-                            <TableCell className="text-right">{formatPercent(posValuePropDefaults.identifiedTransactionRateWithPapeXPct)}</TableCell>
+                            <TableCell className="text-right">{formatPercent(inputs.identifiedTransactionRateWithoutPapeXPct)}</TableCell>
+                            <TableCell className="text-right">{formatPercent(inputs.identifiedTransactionRateWithPapeXPct)}</TableCell>
                             <TableCell>because not everyone has PapeX YET</TableCell>
                           </TableRow>
                           <TableRow>
@@ -371,8 +424,8 @@ export default function PosValuePropPage() {
                           </TableRow>
                           <TableRow>
                             <TableCell>6-Day Repeat Rate (%)</TableCell>
-                            <TableCell className="text-right">{formatPercent(posValuePropDefaults.repeatRatePct)}</TableCell>
-                            <TableCell className="text-right">{formatPercent(posValuePropDefaults.repeatRatePct)}</TableCell>
+                            <TableCell className="text-right">{formatPercent(inputs.repeatRatePct)}</TableCell>
+                            <TableCell className="text-right">{formatPercent(inputs.repeatRatePct)}</TableCell>
                             <TableCell>-</TableCell>
                           </TableRow>
                           <TableRow>
