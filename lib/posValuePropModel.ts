@@ -271,9 +271,19 @@ export const posValuePropFieldSections: PosValuePropFieldSection[] = [
 
 export const posValuePropSources: PosValuePropSource[] = [
   {
-    label: "Retail marketing pricing benchmarks",
-    url: "https://research.aimultiple.com/retail-marketing-pricing/",
-    note: "Reference link used in the POS model source tab.",
+    label: "US average order value benchmarks",
+    url: "https://www.shopify.com/blog/average-order-value",
+    note: "Reference for AOV baselining by merchant segment.",
+  },
+  {
+    label: "SendGrid email pricing",
+    url: "https://sendgrid.com/en-us/pricing",
+    note: "Reference for cost-per-thousand email delivery assumptions.",
+  },
+  {
+    label: "Twilio SMS pricing",
+    url: "https://www.twilio.com/en-us/messaging/pricing/us",
+    note: "Reference for cost-per-thousand SMS delivery assumptions.",
   },
 ]
 
