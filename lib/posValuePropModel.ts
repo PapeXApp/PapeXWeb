@@ -93,10 +93,10 @@ export const posValuePropDefaults: PosValuePropInputs = {
   noReceiptRatePct: 10,
   costPerPrintedReceipt: 0.03,
   costPerThousandEmails: 0.1,
-  costPerThousandTexts: 0.1,
+  costPerThousandTexts: 10,
   identifiedTransactionRateWithoutPapeXPct: 45,
   identifiedTransactionRateWithPapeXPct: 63,
-  repeatRatePct: 45,
+  repeatRatePct: 40,
   monthlyIncrementalMerchantRevenueWithoutPapeX: 20000,
   papeXRevenueLiftPct: 12.5,
   posRevenueSharePct: 0.4,
@@ -271,19 +271,19 @@ export const posValuePropFieldSections: PosValuePropFieldSection[] = [
 
 export const posValuePropSources: PosValuePropSource[] = [
   {
-    label: "US average order value benchmarks",
-    url: "https://www.shopify.com/blog/average-order-value",
-    note: "Reference for AOV baselining by merchant segment.",
+    label: "SMS pricing (United States)",
+    url: "https://www.twilio.com/en-us/sms/pricing/us",
+    note: "Reference for cost per 1,000 texts sent.",
   },
   {
-    label: "SendGrid email pricing",
-    url: "https://sendgrid.com/en-us/pricing",
-    note: "Reference for cost-per-thousand email delivery assumptions.",
+    label: "Paper receipt survey",
+    url: "https://greenamerica.org/paper-receipt-survey?utm_source=chatgpt.com",
+    note: "Green America survey on paper receipts and customer preferences.",
   },
   {
-    label: "Twilio SMS pricing",
-    url: "https://www.twilio.com/en-us/messaging/pricing/us",
-    note: "Reference for cost-per-thousand SMS delivery assumptions.",
+    label: "Email marketing pricing comparison",
+    url: "https://research.aimultiple.com/email-marketing-pricing/",
+    note: "Reference for email delivery and marketing cost assumptions.",
   },
 ]
 

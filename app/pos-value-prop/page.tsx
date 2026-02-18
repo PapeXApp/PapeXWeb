@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { ExternalLink } from "lucide-react"
+import Link from "next/link"
 
 const integerFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
@@ -123,10 +124,16 @@ export default function PosValuePropPage() {
         <div className="relative z-10 space-y-6">
           <section className="bg-white/95 border border-white/40 rounded-2xl p-6 md:p-8 shadow-lg">
             <div className="space-y-2 text-center">
-              <div className="flex justify-center">
+              <div className="flex justify-center items-center gap-2 flex-wrap">
                 <Badge className="bg-[#0a3d62] text-white hover:bg-[#0a3d62] w-fit">
-                  POS Partner Calculator
+                  Full model
                 </Badge>
+                <Link
+                  href="/pos-calculator"
+                  className="text-sm text-[#ff9933] hover:underline font-medium"
+                >
+                  Condensed view
+                </Link>
               </div>
               <h1 className="text-3xl md:text-4xl font-bold text-[#0a3d62]">POS Value Prop Model</h1>
               <p className="text-[#0a3d62]/80 max-w-3xl mx-auto">
@@ -226,10 +233,10 @@ export default function PosValuePropPage() {
                       </TableHeader>
                       <TableBody className="text-[#0a3d62]">
                         <TableRow>
-                          <TableCell>Merchants</TableCell>
+                          <TableCell>Merchant locations</TableCell>
                           <TableCell className={`text-right font-medium ${BLUE_INPUT_CELL_CLASS}`}>
                             <Input
-                              aria-label="Merchants"
+                              aria-label="Merchant locations"
                               type="number"
                               inputMode="numeric"
                               min={0}
@@ -402,11 +409,6 @@ export default function PosValuePropPage() {
                     </Table>
                   </div>
 
-                  <p className="text-sm text-[#0a3d62]/80">
-                    <span className="font-semibold">Pitch Sentence:</span> PapeX removes the need for
-                    POS-generated paper and email receipts by handling receipt delivery post-checkout,
-                    reducing per-transaction receipt infrastructure costs and improving gross margins.
-                  </p>
                 </section>
 
                 <section className="space-y-4 border-t border-[#0a3d62]/15 pt-6">
@@ -457,6 +459,13 @@ export default function PosValuePropPage() {
                               {formatPercent(inputs.posRevenueSharePct)}
                             </TableCell>
                             <TableCell>share of added merchant revenue</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell>Per 1,000 texts sent</TableCell>
+                            <TableCell className="text-right">
+                              {formatCurrency(inputs.costPerThousandTexts)}
+                            </TableCell>
+                            <TableCell>SMS delivery cost</TableCell>
                           </TableRow>
                         </TableBody>
                       </Table>
@@ -510,13 +519,13 @@ export default function PosValuePropPage() {
                           <TableCell>-</TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell>6-Day Repeat Rate (%)</TableCell>
+                          <TableCell>60-Day Repeat Rate (%)</TableCell>
                           <TableCell className="text-right">{formatPercent(inputs.repeatRatePct)}</TableCell>
                           <TableCell className="text-right">{formatPercent(inputs.repeatRatePct)}</TableCell>
                           <TableCell>-</TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell>6-Day Repeat Customers</TableCell>
+                          <TableCell>60-Day Repeat Customers</TableCell>
                           <TableCell className="text-right">
                             {formatDecimal(model.analytics.repeatCustomersWithoutPapeXPerMerchant)}
                           </TableCell>
@@ -581,22 +590,6 @@ export default function PosValuePropPage() {
                     </p>
                   </div>
 
-                  <div className="space-y-2 text-sm text-[#0a3d62]/85">
-                    <p className="font-semibold text-[#0a3d62]">Pitch Sentences</p>
-                    <p>
-                      <span className="font-semibold">POS:</span> Once integrated with the POS and once
-                      users are signed into PapeX, every transaction can be tied to an identity-safe
-                      profile connected to that POS environment.
-                    </p>
-                    <p>
-                      <span className="font-semibold">GPT:</span> Once integrated with the POS and adopted
-                      by users, PapeX links transactions to a persistent, privacy-safe customer profile.
-                      This enables POS vendors and their merchants to better understand buying behavior,
-                      optimize marketing spend, and increase repeat visits — directly driving merchant
-                      retention and POS revenue.
-                    </p>
-                    <p>Direct, intentional, and specific information on spend amongst ad campaigns.</p>
-                  </div>
                 </section>
 
                 <section className="space-y-3 border-t border-[#0a3d62]/15 pt-6">

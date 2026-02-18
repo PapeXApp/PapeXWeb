@@ -68,6 +68,13 @@ export function MainNavigation() {
             <NavigationMenuItem>
               <Link href="/pos-value-prop" legacyBehavior passHref>
                 <NavigationMenuLink className="px-1 lg:px-2 xl:px-4 py-2 text-[#0a3d62] hover:text-[#ff9933] bg-transparent font-semibold text-xs lg:text-sm xl:text-lg transition-colors duration-300 whitespace-nowrap">
+                  POS Calculator (Full)
+                </NavigationMenuLink>
+              </Link>
+            </NavigationMenuItem>
+            <NavigationMenuItem>
+              <Link href="/pos-calculator" legacyBehavior passHref>
+                <NavigationMenuLink className="px-1 lg:px-2 xl:px-4 py-2 text-[#0a3d62] hover:text-[#ff9933] bg-transparent font-semibold text-xs lg:text-sm xl:text-lg transition-colors duration-300 whitespace-nowrap">
                   POS Calculator
                 </NavigationMenuLink>
               </Link>
@@ -154,11 +161,18 @@ export function MainNavigation() {
               Business Model
             </Link>
             <Link 
-              href="/pos-value-prop"
+              href="/pos-calculator"
               className="block py-4 px-4 text-[#0a3d62] hover:text-[#ff9933] hover:bg-gradient-to-r hover:from-white/20 hover:to-white/5 font-semibold text-lg transition-all duration-300 rounded-lg backdrop-blur-sm"
               onClick={() => setIsMobileMenuOpen(false)}
             >
               POS Calculator
+            </Link>
+            <Link 
+              href="/pos-value-prop"
+              className="block py-4 px-4 text-[#0a3d62] hover:text-[#ff9933] hover:bg-gradient-to-r hover:from-white/20 hover:to-white/5 font-semibold text-lg transition-all duration-300 rounded-lg backdrop-blur-sm"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              POS Value Prop (Full)
             </Link>
             <Link 
               href={pathname === "/" ? "#market-opportunity" : "/#market-opportunity"}
@@ -240,8 +254,12 @@ export function MainFooter() {
               <span className="relative z-10">Business Model</span>
               <div className="absolute inset-0 bg-gradient-to-r from-[#ff9933]/10 to-[#e67e22]/10 rounded-md transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left -z-10"></div>
             </Link>
-            <Link href="/pos-value-prop" className="text-white hover:text-[#ff9933] transition-all duration-300 font-semibold text-base relative group">
+            <Link href="/pos-calculator" className="text-white hover:text-[#ff9933] transition-all duration-300 font-semibold text-base relative group">
               <span className="relative z-10">POS Calculator</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-[#ff9933]/10 to-[#e67e22]/10 rounded-md transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left -z-10"></div>
+            </Link>
+            <Link href="/pos-value-prop" className="text-white hover:text-[#ff9933] transition-all duration-300 font-semibold text-base relative group">
+              <span className="relative z-10">POS Value Prop (Full)</span>
               <div className="absolute inset-0 bg-gradient-to-r from-[#ff9933]/10 to-[#e67e22]/10 rounded-md transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left -z-10"></div>
             </Link>
             <Link href="/#market-opportunity" className="text-white hover:text-[#ff9933] transition-all duration-300 font-semibold text-base relative group">
