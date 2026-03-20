@@ -12,7 +12,8 @@ export interface PosValuePropInputs {
   costPerThousandTexts: number
   identifiedTransactionRateWithoutPapeXPct: number
   identifiedTransactionRateWithPapeXPct: number
-  repeatRatePct: number
+  repeatRateWithoutPapeXPct: number
+  repeatRateWithPapeXPct: number
   monthlyIncrementalMerchantRevenueWithoutPapeX: number
   papeXRevenueLiftPct: number
   posRevenueSharePct: number
@@ -96,7 +97,8 @@ export const posValuePropDefaults: PosValuePropInputs = {
   costPerThousandTexts: 10,
   identifiedTransactionRateWithoutPapeXPct: 45,
   identifiedTransactionRateWithPapeXPct: 63,
-  repeatRatePct: 40,
+  repeatRateWithoutPapeXPct: 35,
+  repeatRateWithPapeXPct: 40,
   monthlyIncrementalMerchantRevenueWithoutPapeX: 20000,
   papeXRevenueLiftPct: 12.5,
   posRevenueSharePct: 0.4,
@@ -233,9 +235,18 @@ export const posValuePropFieldSections: PosValuePropFieldSection[] = [
         step: 1,
       },
       {
-        key: "repeatRatePct",
-        label: "Repeat rate",
-        description: "Share of identifiable customers who return in period.",
+        key: "repeatRateWithoutPapeXPct",
+        label: "Repeat rate (without PapeX)",
+        description: "Share of identifiable customers who return in period without PapeX.",
+        unit: "percentage",
+        min: 0,
+        max: 100,
+        step: 1,
+      },
+      {
+        key: "repeatRateWithPapeXPct",
+        label: "Repeat rate (with PapeX)",
+        description: "Share of identifiable customers who return in period with PapeX.",
         unit: "percentage",
         min: 0,
         max: 100,
@@ -294,6 +305,11 @@ const toRatio = (percent: number) => Math.max(percent, 0) / 100
 
 const clampToZero = (value: number) => (Number.isFinite(value) ? Math.max(value, 0) : 0)
 
+const safeRatio = (numerator: number, denominator: number) => {
+  if (denominator <= 0) return 1
+  return numerator / denominator
+}
+
 export function calculatePosValuePropModel(inputs: PosValuePropInputs): PosValuePropOutputs {
   const merchants = clampToZero(inputs.merchantCount)
   const transactionsPerMerchantPerMonth = clampToZero(inputs.transactionsPerMerchantPerMonth)
@@ -326,8 +342,9 @@ export function calculatePosValuePropModel(inputs: PosValuePropInputs): PosValue
 
   const identifiedWithoutRatio = toRatio(inputs.identifiedTransactionRateWithoutPapeXPct)
   const identifiedWithRatio = toRatio(inputs.identifiedTransactionRateWithPapeXPct)
-  const repeatRatio = toRatio(inputs.repeatRatePct)
-  const monthlyIncrementalMerchantRevenueWithoutPapeX = clampToZero(
+  const repeatWithoutRatio = toRatio(inputs.repeatRateWithoutPapeXPct)
+  const repeatWithRatio = toRatio(inputs.repeatRateWithPapeXPct)
+  const configuredMonthlyIncrementalMerchantRevenueWithoutPapeX = clampToZero(
     inputs.monthlyIncrementalMerchantRevenueWithoutPapeX
   )
   const papeXRevenueLiftRatio = toRatio(inputs.papeXRevenueLiftPct)
@@ -341,15 +358,44 @@ export function calculatePosValuePropModel(inputs: PosValuePropInputs): PosValue
     identifiableCustomersWithPapeXPerMerchant - identifiableCustomersWithoutPapeXPerMerchant
 
   const repeatCustomersWithoutPapeXPerMerchant =
-    identifiableCustomersWithoutPapeXPerMerchant * repeatRatio
-  const repeatCustomersWithPapeXPerMerchant = identifiableCustomersWithPapeXPerMerchant * repeatRatio
+    identifiableCustomersWithoutPapeXPerMerchant * repeatWithoutRatio
+  const repeatCustomersWithPapeXPerMerchant =
+    identifiableCustomersWithPapeXPerMerchant * repeatWithRatio
   const estimatedRepeatSpendWithoutPapeXPerMerchant =
     repeatCustomersWithoutPapeXPerMerchant * averageOrderValue
   const estimatedRepeatSpendWithPapeXPerMerchant =
     repeatCustomersWithPapeXPerMerchant * averageOrderValue
 
+  const defaultVolumeValueBase =
+    posValuePropDefaults.transactionsPerMerchantPerMonth * posValuePropDefaults.averageOrderValue
+  const currentVolumeValueBase = transactionsPerMerchantPerMonth * averageOrderValue
+  const volumeValueScale = safeRatio(currentVolumeValueBase, defaultVolumeValueBase)
+
+  const customerScale = safeRatio(
+    uniqueCustomersPerMerchantPerMonth,
+    posValuePropDefaults.uniqueCustomersPerMerchantPerMonth
+  )
+  const blendedScale = (volumeValueScale + customerScale) / 2
+
+  const defaultWithoutRateFactor =
+    toRatio(posValuePropDefaults.identifiedTransactionRateWithoutPapeXPct) *
+    toRatio(posValuePropDefaults.repeatRateWithoutPapeXPct)
+  const currentWithoutRateFactor = identifiedWithoutRatio * repeatWithoutRatio
+  const withoutRateScale = safeRatio(currentWithoutRateFactor, defaultWithoutRateFactor)
+
+  const defaultWithRateFactor =
+    toRatio(posValuePropDefaults.identifiedTransactionRateWithPapeXPct) *
+    toRatio(posValuePropDefaults.repeatRateWithPapeXPct)
+  const currentWithRateFactor = identifiedWithRatio * repeatWithRatio
+  const withRateScale = safeRatio(currentWithRateFactor, defaultWithRateFactor)
+
+  const monthlyIncrementalMerchantRevenueWithoutPapeX =
+    configuredMonthlyIncrementalMerchantRevenueWithoutPapeX * blendedScale * withoutRateScale
   const monthlyIncrementalMerchantRevenueWithPapeX =
-    monthlyIncrementalMerchantRevenueWithoutPapeX * (1 + papeXRevenueLiftRatio)
+    configuredMonthlyIncrementalMerchantRevenueWithoutPapeX *
+    blendedScale *
+    withRateScale *
+    (1 + papeXRevenueLiftRatio)
 
   const yearlyIncrementalMerchantRevenueWithoutPapeX =
     monthlyIncrementalMerchantRevenueWithoutPapeX * YEARLY_MULTIPLIER
