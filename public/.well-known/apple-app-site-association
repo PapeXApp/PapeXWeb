@@ -1,0 +1,13 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "U78Z2HWA5Q.com.app.papex",
+        "paths": [
+          "/invite/*"
+        ]
+      }
+    ]
+  }
+}
