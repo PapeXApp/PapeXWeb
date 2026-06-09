@@ -9,53 +9,16 @@ export const FAQ_ITEMS = [
   {
     question: "Do I still need paper receipts?",
     answer:
-      "Not for purchases PapeX captures automatically. Forward email receipts, scan paper ones when needed, and keep everything searchable in one place—without digging through wallets or shoeboxes.",
+      "Not for purchases PapeX captures automatically. Forward email receipts, scan paper ones when needed, and keep everything searchable in one place without digging through wallets or shoeboxes.",
   },
   {
     question: "Which POS systems work today?",
     answer:
-      "PapeX connects with major retail and restaurant POS platforms so digital receipts can flow straight to your phone after checkout. We're expanding integrations—contact us if you need a specific system.",
+      "PapeX connects with major retail and restaurant POS platforms so digital receipts can flow straight to your phone after checkout. We're expanding integrations, so contact us if you need a specific system.",
   },
   {
     question: "What does the app cost for consumers?",
-    answer:
-      "PapeX Free includes unlimited receipt capture, email and scan ingestion, and organization. Plus is $9.99/month for tax-ready exports and priority support. Teams plans are custom for multi-seat and accounting integrations.",
-  },
-] as const
-
-export const PRICING_PLANS = [
-  {
-    name: "Free",
-    price: "$0",
-    period: "/ month",
-    features: ["Unlimited receipt capture", "Email and scan ingestion", "Organization and search"],
-    ctaLabel: "Download the app",
-    ctaType: "download" as const,
-    featured: false,
-    tag: undefined,
-    ctaHref: undefined,
-  },
-  {
-    name: "Plus",
-    price: "$9.99",
-    period: "/ month",
-    features: ["Everything in Free", "Tax-ready exports", "Priority support"],
-    ctaLabel: "Get Plus",
-    ctaType: "link" as const,
-    ctaHref: "/contact",
-    featured: true,
-    tag: "Exports",
-  },
-  {
-    name: "Teams",
-    price: "Custom",
-    period: "pricing",
-    features: ["Multi-seat administration", "Accounting integrations", "Dedicated onboarding"],
-    ctaLabel: "Talk to sales",
-    ctaType: "link" as const,
-    ctaHref: "/contact",
-    featured: false,
-    tag: undefined,
+    answer: "We do not currently charge users.",
   },
 ] as const
 

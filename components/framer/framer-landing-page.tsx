@@ -7,7 +7,6 @@ import { FramerHero } from "./framer-hero"
 import { FramerHowItWorks } from "./framer-how-it-works"
 import { FramerIntegrations } from "./framer-integrations"
 import { FramerNav } from "./framer-nav"
-import { FramerPricing } from "./framer-pricing"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -23,7 +22,6 @@ export function FramerLandingPage() {
         <FramerFeatures />
         <FramerIntegrations />
         <FramerHowItWorks />
-        <FramerPricing />
         <FramerFaq />
       </main>
       <FramerFooter />

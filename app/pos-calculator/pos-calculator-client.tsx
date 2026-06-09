@@ -11,7 +11,6 @@ import {
 import { FramerPageShell } from "@/components/framer/framer-page-shell"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Table,
@@ -87,23 +86,14 @@ export default function PosCalculatorClient() {
 
   return (
     <FramerPageShell>
-      <div className="container mx-auto py-8 px-4 relative overflow-hidden">
-        <div className="absolute top-12 left-10 h-40 w-40 gradient-accent rounded-full blur-3xl opacity-10" />
-        <div className="absolute bottom-10 right-10 h-40 w-40 gradient-primary rounded-full blur-3xl opacity-10" />
+      <div className="framer-container subpage-inner">
+        <header className="pos-subpage-header">
+          <span className="pos-badge">Unified</span>
+          <h1>POS Calculator</h1>
+          <p>Use the tabs to switch between a quick calculator and the full value prop model.</p>
+        </header>
 
         <div className="relative z-10 space-y-6">
-          <section className="bg-white/95 border border-white/40 rounded-2xl p-6 md:p-8 shadow-lg">
-            <div className="space-y-2 text-center">
-              <Badge className="bg-[#0a3d62] text-white hover:bg-[#0a3d62] w-fit mx-auto">
-                Unified
-              </Badge>
-              <h1 className="text-3xl md:text-4xl font-bold text-[#0a3d62]">POS Calculator</h1>
-              <p className="text-[#0a3d62]/80 max-w-3xl mx-auto">
-                Use the tabs to switch between a quick calculator and the full value prop model.
-              </p>
-            </div>
-          </section>
-
           <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
             <TabsList className="bg-white/90 border border-[#0a3d62]/20 h-auto p-1 w-full sm:w-auto inline-flex">
               <TabsTrigger

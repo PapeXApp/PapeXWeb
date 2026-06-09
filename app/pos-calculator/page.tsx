@@ -5,8 +5,8 @@ import { FramerPageShell } from "@/components/framer/framer-page-shell"
 function PosCalculatorFallback() {
   return (
     <FramerPageShell>
-      <div className="container mx-auto py-8 px-4 flex items-center justify-center">
-        <p className="text-[#0a3d62] text-lg font-medium">Loading calculator…</p>
+      <div className="framer-container subpage-inner flex items-center justify-center">
+        <p className="text-[#605f5f] text-lg font-medium">Loading calculator…</p>
       </div>
     </FramerPageShell>
   )

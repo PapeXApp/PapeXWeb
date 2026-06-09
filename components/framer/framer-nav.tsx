@@ -17,14 +17,13 @@ export function FramerNav() {
   return (
     <>
       <header className="site-header">
-        <nav className="site-nav container" aria-label="Primary">
+        <nav className="site-nav" aria-label="Primary">
           <Link href="/" className="nav-logo" aria-label="PapeX home">
             <Image src="/framer-assets/logo.svg" alt="PapeX" width={112} height={35} priority />
           </Link>
           <div className="nav-links">
             <Link href={anchorHref(pathname, "#feature")}>Features</Link>
             <Link href="/blog">Blog</Link>
-            <Link href={anchorHref(pathname, "#pricing")}>Pricing</Link>
             <Link href="/contact">Contact</Link>
           </div>
           <div className="nav-actions">
@@ -60,9 +59,6 @@ export function FramerNav() {
           </Link>
           <Link href="/blog" onClick={() => setMenuOpen(false)}>
             Blog
-          </Link>
-          <Link href={anchorHref(pathname, "#pricing")} onClick={() => setMenuOpen(false)}>
-            Pricing
           </Link>
           <Link href="/contact" onClick={() => setMenuOpen(false)}>
             Contact

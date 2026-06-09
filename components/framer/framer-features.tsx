@@ -4,7 +4,7 @@ import { FEATURES_BOTTOM, FEATURES_TOP } from "./constants"
 export function FramerFeatures() {
   return (
     <section id="feature" className="features">
-      <div className="container">
+      <div className="framer-container">
         <header className="features-head">
           <p className="section-label">Features</p>
           <h2 className="section-title">Streamline finances with smart features.</h2>

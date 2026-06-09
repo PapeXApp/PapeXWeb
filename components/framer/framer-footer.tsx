@@ -4,7 +4,7 @@ import Link from "next/link"
 export function FramerFooter() {
   return (
     <footer className="site-footer">
-      <div className="container">
+      <div className="framer-container">
         <div className="footer-top">
           <div>
             <Link href="/" className="footer-logo" aria-label="PapeX">

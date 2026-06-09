@@ -4,7 +4,7 @@ import { HOW_STEPS } from "./constants"
 export function FramerHowItWorks() {
   return (
     <section id="how" className="how">
-      <div className="container how-layout">
+      <div className="framer-container how-layout">
         <header className="how-head">
           <p className="section-label">How it works</p>
           <h2 className="section-title">Start getting value today.</h2>

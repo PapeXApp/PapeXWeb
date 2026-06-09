@@ -36,7 +36,7 @@ function LogoTrack({ logos, reverse }: { logos: readonly string[]; reverse?: boo
 export function FramerIntegrations() {
   return (
     <section id="integration" className="integrations">
-      <div className="container">
+      <div className="framer-container">
         <header className="integrations-head">
           <p className="section-label">Integrations</p>
           <h2 className="section-title">Works with the tools you already use.</h2>

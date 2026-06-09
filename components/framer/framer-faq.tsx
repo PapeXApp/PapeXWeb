@@ -9,7 +9,7 @@ export function FramerFaq() {
 
   return (
     <section id="faq" className="faq">
-      <div className="container faq-layout">
+      <div className="framer-container faq-layout">
         <header className="faq-head">
           <p className="section-label">FAQ</p>
           <h2 className="section-title">Questions you might have.</h2>
