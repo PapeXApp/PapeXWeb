@@ -48,11 +48,6 @@ export function FramerHero() {
             <div className="card-detail">Across 37 receipts</div>
           </div>
 
-          <div className="hero-float hero-float--pos hero-pill">
-            <div className="pill-title">POS Connected</div>
-            <div className="pill-sub">Receipts flow directly to your phone</div>
-          </div>
-
           <div className="hero-float hero-float--tax hero-pill">
             <div className="pill-title">Tax Ready</div>
             <div className="pill-sub">Business expenses organized year-round</div>

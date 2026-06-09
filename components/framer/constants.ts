@@ -75,14 +75,6 @@ export const HOW_STEPS = [
     image: "/framer-assets/how-step-2.png",
     alt: "Scan a paper receipt with your phone",
   },
-  {
-    num: "03",
-    title: "Share Your Expenses in One Click",
-    description:
-      "Export all your receipts to your tax or expense management system. Never spend hours on manual entry again.",
-    image: "/framer-assets/how-step-3.png",
-    alt: "Export receipts to your expense system",
-  },
 ] as const
 
 export const INTEGRATION_LOGOS = [

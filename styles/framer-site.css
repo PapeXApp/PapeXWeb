@@ -357,7 +357,6 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 /* Desktop card positions (1440px reference) */
 .hero-float--receipt { top: 54px; left: 7%; width: min(320px, 28vw); }
 .hero-float--expense { top: 248px; left: 8%; width: min(320px, 28vw); }
-.hero-float--pos { top: 158px; left: 5%; width: min(300px, 26vw); }
 .hero-float--tax { top: 80px; right: 7%; width: min(320px, 28vw); left: auto; }
 .hero-float--find { top: 278px; right: 9%; width: min(280px, 24vw); left: auto; }
 .hero-float--family { top: 156px; right: 5%; width: min(310px, 27vw); left: auto; }
