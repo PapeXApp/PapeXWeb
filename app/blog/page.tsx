@@ -4,8 +4,8 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight, Calendar, Clock } from "lucide-react"
-import { MainNavigation, MainFooter } from "@/components/main-navigation"
 import { CreateBlogModal } from "@/components/CreateBlogModal"
+import { FramerPageShell } from "@/components/framer/framer-page-shell"
 import { blogService, BlogPost } from "@/lib/blogServiceFree"
 
 // Static fallback blogs (in case Firebase is empty)
@@ -130,10 +130,8 @@ export default function BlogPage() {
   }
 
   return (
-    <div className="min-h-screen gradient-mesh flex flex-col">
-      <MainNavigation />
-
-      <main className="flex-1 container mx-auto py-8 px-4 relative overflow-hidden">
+    <FramerPageShell>
+      <div className="container mx-auto py-8 px-4 relative overflow-hidden">
         {/* Floating background elements - reduced opacity */}
         <div className="absolute top-10 left-20 w-32 h-32 gradient-primary rounded-full opacity-5 blur-xl animate-float"></div>
         <div className="absolute top-40 right-10 w-40 h-40 gradient-accent rounded-full opacity-5 blur-xl animate-float" style={{ animationDelay: '1s' }}></div>
@@ -261,10 +259,8 @@ export default function BlogPage() {
             </div>
           </div>
         </div>
-      </main>
-
-      <MainFooter />
+      </div>
       <CreateBlogModal onBlogCreated={handleBlogCreated} />
-    </div>
+    </FramerPageShell>
   )
 } 

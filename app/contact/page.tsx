@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Linkedin, Mail } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { TeamImage } from "@/components/team-image"
-import { MainNavigation, MainFooter } from "@/components/main-navigation"
+import { FramerPageShell } from "@/components/framer/framer-page-shell"
 
 interface TeamMember {
   name: string
@@ -102,10 +102,8 @@ const teamMembers: TeamMember[] = [
 
 export default function ContactPage() {
   return (
-    <div className="min-h-screen gradient-mesh flex flex-col">
-      <MainNavigation />
-
-      <main className="flex-1 container mx-auto py-6 px-4 relative overflow-hidden">
+    <FramerPageShell>
+      <div className="container mx-auto py-6 px-4 relative overflow-hidden">
         {/* Floating background elements - reduced opacity */}
         <div className="absolute top-20 left-10 w-40 h-40 gradient-accent rounded-full opacity-5 blur-xl animate-float"></div>
         <div className="absolute top-60 right-20 w-32 h-32 gradient-primary rounded-full opacity-5 blur-xl animate-float" style={{animationDelay: '2s'}}></div>
@@ -200,9 +198,7 @@ export default function ContactPage() {
             </div>
           </div>
         </div>
-      </main>
-
-      <MainFooter />
-    </div>
+      </div>
+    </FramerPageShell>
   )
 }

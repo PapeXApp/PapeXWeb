@@ -8,7 +8,7 @@ import {
   posValuePropSources,
   type PosValuePropInputs,
 } from "@/lib/posValuePropModel"
-import { MainNavigation, MainFooter } from "@/components/main-navigation"
+import { FramerPageShell } from "@/components/framer/framer-page-shell"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -86,10 +86,8 @@ export default function PosCalculatorClient() {
     model.grossMargin.printedReceiptsPerMonth + model.grossMargin.emailedReceiptsPerMonth
 
   return (
-    <div className="min-h-screen gradient-mesh flex flex-col">
-      <MainNavigation />
-
-      <main className="flex-1 container mx-auto py-8 px-4 relative overflow-hidden">
+    <FramerPageShell>
+      <div className="container mx-auto py-8 px-4 relative overflow-hidden">
         <div className="absolute top-12 left-10 h-40 w-40 gradient-accent rounded-full blur-3xl opacity-10" />
         <div className="absolute bottom-10 right-10 h-40 w-40 gradient-primary rounded-full blur-3xl opacity-10" />
 
@@ -722,9 +720,7 @@ export default function PosCalculatorClient() {
             </TabsContent>
           </Tabs>
         </div>
-      </main>
-
-      <MainFooter />
-    </div>
+      </div>
+    </FramerPageShell>
   )
 }
