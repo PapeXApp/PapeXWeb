@@ -26,40 +26,20 @@ const teamMembers: TeamMember[] = [
     bio: "Leads the development and execution of PapeX, overseeing team management and driving the project from concept to market.",
   },
   {
-    name: "Michael Khoury",
-    role: "Co-founder",
-    image: "/profiles/michael_khoury.jpeg",
-    fallbackImage: "/profiles/michael.svg",
-    linkedin: "https://www.linkedin.com/in/michael-khoury-194b82240/",
-    email: "michael_khoury@icloud.com",
-    bio: "Operations and legal executive responsible for ensuring smooth functionality of all departments of the company.",
-  },
-  {
-    name: "Raasin Rahman",
-    role: "Technology",
-    image: "/profiles/raasin_rahman.jpeg",
-    fallbackImage: "/profiles/raasin.svg",
-    linkedin: "https://www.linkedin.com/in/raasin/",
-    email: "raasinr@gmail.com",
-    bio: "Leading the technical development of the PapeX application ",
-  },
-  {
-    name: "Krutartha Nagesh",
-    role: "Technology",
-    image: "/profiles/Kru.jpeg",
+    name: "Noah Raisner Thompson",
+    role: "CTO / Co-Founder",
+    image: "/profiles/noah_thompson.jpeg",
     fallbackImage: "/profiles/placeholder.svg",
-    linkedin: "https://www.linkedin.com/in/krutarthanagesh/",
-    email: "krutarthanagesh@gmail.com",
-    bio: "Leads and oversees the development of PapeX's core technology, focusing on scalable backend systems and a seamless end-user experience.",
+    email: "noah.thompson@papex.app",
+    bio: "Builds and maintains PapeX's core product, backend systems, and mobile experience.",
   },
   {
-    name: "Gus Kirkpatrick",
-    role: "Marketing",
-    image: "/profiles/gus.jpeg",
+    name: "Connor McKenna",
+    role: "CMO / Co-Founder",
+    image: "/profiles/connor_mckenna.jpeg",
     fallbackImage: "/profiles/placeholder.svg",
-    linkedin: "https://www.linkedin.com/in/gus-kirkpatrick/",
-    email: "gus.kirkpatrick@papex.app",
-    bio: "Leads the marketing team while playing a key role in investor relations.",
+    email: "connor.mckenna@papex.app",
+    bio: "Leads PapeX marketing, brand strategy, and go-to-market across channels.",
   },
   {
     name: "Magali Courbage",
@@ -99,7 +79,7 @@ const teamMembers: TeamMember[] = [
 ]
 
 function photoClass(name: string) {
-  if (name === "Gus Kirkpatrick") return "object-cover object-left-top"
+  if (name === "Connor McKenna") return "object-cover team-photo-connor"
   if (name === "Dawn Lilington") return "object-cover object-right-top"
   return "object-cover"
 }

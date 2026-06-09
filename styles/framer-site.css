@@ -1029,6 +1029,15 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   box-shadow: var(--shadow-card);
 }
 
+.team-photo-connor {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+  object-position: 50% 18%;
+  transform: scale(1.12);
+  transform-origin: 50% 32%;
+}
+
 .team-card-body {
   padding: 20px 24px 24px;
   text-align: center;
@@ -1074,16 +1083,27 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   padding: 8px 14px;
   border-radius: 999px;
   background: var(--navy);
-  color: var(--white);
+  color: var(--white) !important;
   font-family: var(--font-label);
   font-size: 13px;
   font-weight: 500;
   transition: background 0.2s, transform 0.2s;
 }
 
+.team-action-btn svg {
+  color: var(--white);
+  stroke: var(--white);
+}
+
 .team-action-btn:hover {
   background: var(--orange);
+  color: var(--white) !important;
   transform: translateY(-1px);
+}
+
+.team-action-btn:hover svg {
+  color: var(--white);
+  stroke: var(--white);
 }
 
 .blog-post-grid {
