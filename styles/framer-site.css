@@ -5,9 +5,9 @@ html:has(.framer-site) { scroll-behavior: smooth; font-size: 16px; }
   font-family: Inter, "Inter Placeholder", -apple-system, BlinkMacSystemFont, sans-serif;
   color: #0a3d62;
   background:
-    radial-gradient(120% 80% at 85% 8%, rgba(255, 153, 51, 0.14) 0%, rgba(255, 153, 51, 0) 42%),
-    radial-gradient(100% 70% at 8% 0%, rgba(112, 188, 236, 0.30) 0%, rgba(112, 188, 236, 0) 48%),
-    linear-gradient(180deg, #a0d0f0 0%, #b8daf2 22%, #d0e4f4 50%, #eaf4fc 78%, #ffffff 100%);
+    radial-gradient(120% 80% at 85% 8%, rgba(255, 153, 51, 0.20) 0%, rgba(255, 153, 51, 0) 44%),
+    radial-gradient(100% 70% at 8% 0%, rgba(44, 125, 160, 0.34) 0%, rgba(44, 125, 160, 0) 50%),
+    linear-gradient(180deg, #88c6ee 0%, #a0d0f0 22%, #c4dff2 50%, #eaf4fc 78%, #ffffff 100%);
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
@@ -117,19 +117,19 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   align-items: center;
   justify-content: center;
   padding: 8px 16px;
-  background: var(--orange);
+  background: linear-gradient(135deg, #ff9933 0%, #d35400 100%);
   color: var(--white);
   font-family: var(--font-label);
   font-size: 15px;
   font-weight: 500;
   border-radius: var(--radius-pill);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(211, 84, 0, 0.35);
   white-space: nowrap;
   transition: transform 0.2s, box-shadow 0.2s;
 }
 .btn-download:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 6px 18px rgba(211, 84, 0, 0.45);
 }
 
 .nav-menu-btn {
@@ -191,7 +191,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   font-family: var(--font-label);
   font-size: 14px;
   font-weight: 400;
-  color: var(--orange-dark);
+  color: var(--orange-deep);
   margin-bottom: 16px;
 }
 
@@ -228,8 +228,8 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(70% 60% at 88% 6%, rgba(255, 153, 51, 0.16) 0%, rgba(255, 153, 51, 0) 55%),
-    linear-gradient(180deg, rgba(112, 188, 236, 0.55) 0%, rgba(160, 208, 240, 0.30) 24%, rgba(255, 255, 255, 0) 55%);
+    radial-gradient(70% 60% at 88% 6%, rgba(255, 153, 51, 0.22) 0%, rgba(255, 153, 51, 0) 55%),
+    linear-gradient(180deg, rgba(112, 188, 236, 0.62) 0%, rgba(160, 208, 240, 0.34) 24%, rgba(255, 255, 255, 0) 55%);
 }
 .hero-sky img,
 .hero-sky > span {
@@ -425,6 +425,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 .feature-card {
   background: var(--gradient-card);
   border-radius: var(--radius-card);
+  border-left: 4px solid var(--orange);
   padding: 32px;
   min-height: 324px;
   display: flex;
@@ -502,8 +503,8 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 .integrations {
   padding: 64px 0 80px;
   background:
-    radial-gradient(60% 50% at 50% 50%, rgba(255, 153, 51, 0.08) 0%, rgba(255, 153, 51, 0) 70%),
-    radial-gradient(70% 60% at 50% 50%, #d0e4f4 0%, rgba(234, 244, 252, 0) 100%);
+    radial-gradient(60% 50% at 50% 50%, rgba(255, 153, 51, 0.18) 0%, rgba(255, 153, 51, 0) 70%),
+    linear-gradient(180deg, #0a3d62 0%, #1e5b82 100%);
   overflow: hidden;
 }
 
@@ -511,6 +512,9 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   text-align: center;
   margin-bottom: 48px;
 }
+.integrations-head .section-title { color: var(--white); }
+.integrations-head .section-intro { color: rgba(255, 255, 255, 0.78); }
+.integrations-head .section-label { color: var(--orange); }
 
 .logo-marquee {
   display: flex;
@@ -533,8 +537,8 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   height: 40px;
   width: auto;
   object-fit: contain;
-  opacity: 0.85;
-  filter: grayscale(20%);
+  opacity: 0.92;
+  filter: grayscale(100%) brightness(0) invert(1);
 }
 
 @keyframes marquee {
@@ -559,8 +563,9 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 .how-steps { display: flex; flex-direction: column; gap: 24px; }
 
 .how-step {
-  background: var(--gradient-step);
+  background: linear-gradient(314deg, #0a3d62 0%, #1e5b82 100%);
   border-radius: var(--radius-card-lg);
+  border-left: 4px solid var(--orange);
   padding: 32px;
   position: relative;
 }
@@ -569,7 +574,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   font-family: var(--font-label);
   font-size: 14px;
   font-weight: 500;
-  color: var(--text-muted);
+  color: var(--orange);
   margin-bottom: 16px;
 }
 
@@ -577,13 +582,13 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   font-size: 26px;
   font-weight: 500;
   margin-bottom: 12px;
-  color: var(--text);
+  color: var(--white);
 }
 
 .how-step p {
   font-size: 16px;
   line-height: 1.6;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.78);
   margin-bottom: 24px;
 }
 
@@ -608,8 +613,8 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 .faq {
   padding: 80px 0;
   background:
-    radial-gradient(60% 40% at 90% 4%, rgba(255, 153, 51, 0.10) 0%, rgba(255, 153, 51, 0) 60%),
-    linear-gradient(180deg, rgba(112, 188, 236, 0.35) 0%, transparent 36%);
+    radial-gradient(60% 40% at 90% 4%, rgba(255, 153, 51, 0.18) 0%, rgba(255, 153, 51, 0) 60%),
+    linear-gradient(180deg, rgba(44, 125, 160, 0.42) 0%, transparent 36%);
 }
 
 .faq-layout {
@@ -642,7 +647,8 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 .faq-item {
   background: var(--white);
   border-radius: 16px;
-  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.05);
+  border-left: 3px solid var(--orange);
+  box-shadow: 0 6px 8px rgba(10, 61, 98, 0.08);
   overflow: hidden;
 }
 
@@ -867,7 +873,24 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 }
 
 .pricing-card--featured {
-  border: 1px solid rgba(255, 153, 51, 0.25);
+  background: linear-gradient(180deg, #0a3d62 0%, #1e5b82 100%);
+  border: 2px solid var(--orange);
+}
+.pricing-card--featured .pricing-plan-name,
+.pricing-card--featured .pricing-amount {
+  color: var(--white);
+}
+.pricing-card--featured .pricing-period,
+.pricing-card--featured .pricing-features li {
+  color: rgba(255, 255, 255, 0.78);
+}
+.pricing-card--featured .pricing-tag {
+  color: var(--white);
+  background: var(--orange);
+  border-color: var(--orange);
+}
+.pricing-card--featured .pricing-features li::before {
+  background: var(--orange);
 }
 
 .pricing-card-head {
@@ -897,9 +920,9 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--orange);
-  background: rgba(255, 153, 51, 0.1);
-  border: 1px solid rgba(255, 153, 51, 0.2);
+  color: var(--orange-deep);
+  background: rgba(255, 153, 51, 0.16);
+  border: 1px solid rgba(211, 84, 0, 0.35);
   border-radius: 999px;
   padding: 4px 10px;
   flex-shrink: 0;
@@ -992,8 +1015,9 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 }
 
 .subpage-cta-card {
-  background: var(--gradient-card);
+  background: linear-gradient(180deg, #0a3d62 0%, #1e5b82 100%);
   border-radius: var(--radius-card-lg);
+  border-top: 4px solid var(--orange);
   padding: 40px 32px;
   max-width: 560px;
   margin: 0 auto;
@@ -1005,13 +1029,13 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   font-size: clamp(24px, 3vw, 32px);
   font-weight: 500;
   margin-bottom: 12px;
-  color: var(--text);
+  color: var(--white);
 }
 
 .subpage-cta-card p {
   font-size: 16px;
   line-height: 1.6;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.78);
   margin-bottom: 24px;
 }
 
