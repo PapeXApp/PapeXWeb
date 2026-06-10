@@ -502,7 +502,15 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 
 @media (max-width: 809px) {
   .features { padding: 48px 0 64px; }
-  .features-grid-bottom { display: contents; }
+  /* Real layout box (not display:contents) so the RevealGroup's whileInView
+     IntersectionObserver fires — with display:contents the element has no box,
+     the observer never triggers, and these cards stay invisible (opacity 0). */
+  .features-grid-bottom {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+    margin-top: 24px;
+  }
   .feature-card { min-height: auto; padding: 24px; }
   .feature-card h4 { font-size: 22px; }
   .integrations,
