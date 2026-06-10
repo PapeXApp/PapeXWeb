@@ -7,6 +7,7 @@ import { FramerHero } from "./framer-hero"
 import { FramerHowItWorks } from "./framer-how-it-works"
 import { FramerIntegrations } from "./framer-integrations"
 import { FramerNav } from "./framer-nav"
+import { AnimationProviders } from "./anim"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -15,16 +16,18 @@ const inter = Inter({
 
 export function FramerLandingPage() {
   return (
-    <div className={`framer-site ${inter.className}`}>
-      <FramerNav />
-      <main>
-        <FramerHero />
-        <FramerFeatures />
-        <FramerIntegrations />
-        <FramerHowItWorks />
-        <FramerFaq />
-      </main>
-      <FramerFooter />
-    </div>
+    <AnimationProviders>
+      <div className={`framer-site ${inter.className}`}>
+        <FramerNav />
+        <main>
+          <FramerHero />
+          <FramerFeatures />
+          <FramerIntegrations />
+          <FramerHowItWorks />
+          <FramerFaq />
+        </main>
+        <FramerFooter />
+      </div>
+    </AnimationProviders>
   )
 }
