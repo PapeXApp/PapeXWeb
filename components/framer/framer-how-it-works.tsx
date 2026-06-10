@@ -14,7 +14,6 @@ export function FramerHowItWorks() {
           <RevealGroup as="div" stagger={0.12} className="how-steps">
             {HOW_STEPS.map((step) => (
               <Reveal as="article" direction="up" key={step.num} className="how-step">
-                <div className="how-step-num">{step.num}</div>
                 <h4>{step.title}</h4>
                 <p>{step.description}</p>
                 <div className="how-step-img">
