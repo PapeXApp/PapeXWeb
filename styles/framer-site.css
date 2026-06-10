@@ -550,6 +550,10 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   to { transform: translateX(-50%); }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .logo-track { animation: none; }
+}
+
 /* ─── HOW IT WORKS ─── */
 .how {
   padding: 80px 0;
@@ -610,6 +614,62 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   .how-head {
     position: sticky;
     top: 120px;
+  }
+}
+
+/* Scroll-jack scaffolding. On mobile / tablet these wrappers are transparent
+   (display: contents-like) so the steps stay in normal stacked flow and the
+   non-pinned GSAP reveal drives them. */
+.how-steps-wrap { position: relative; }
+.how-progress { display: none; }
+
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  /* The pinned container fills the viewport while pinned; the layout centres
+     vertically so steps cross-fade in the middle of the screen. */
+  .how-pin {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+  }
+  .how-pin .how-layout {
+    width: 100%;
+    align-items: center;
+  }
+  .how-head {
+    position: static;
+    top: auto;
+  }
+  /* Reserve space for the absolutely-stacked steps (set by GSAP). Sized to the
+     tallest step so neither overflows during the cross-fade. */
+  .how-steps-wrap { min-height: 70vh; display: flex; align-items: center; }
+  .how-steps { position: relative; width: 100%; min-height: 60vh; }
+  .how-step { will-change: transform, opacity; }
+
+  /* Vertical progress indicator alongside the stacked steps. */
+  .how-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: absolute;
+    left: -28px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  .how-progress-track {
+    width: 4px;
+    height: 40px;
+    border-radius: 4px;
+    background: rgba(10, 61, 98, 0.18);
+    overflow: hidden;
+  }
+  .how-progress-bar {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 4px;
+    background: var(--orange);
+    transform: scaleY(0);
+    transform-origin: top;
   }
 }
 

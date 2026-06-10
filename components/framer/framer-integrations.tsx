@@ -1,7 +1,4 @@
-"use client"
-
 import Image from "next/image"
-import { useEffect, useRef } from "react"
 import { Reveal } from "./anim"
 import { INTEGRATION_LOGOS } from "./constants"
 
@@ -15,20 +12,25 @@ const TRACK_B = [
   "/framer-assets/integration-bg.png",
 ] as const
 
+/**
+ * Seamless marquee track. The logo set is rendered twice in markup (the second
+ * copy is aria-hidden so screen readers don't see duplicates). The CSS
+ * `@keyframes marquee` translates the track by -50% — because the track is
+ * exactly two identical copies wide, -50% lands precisely on the start of the
+ * second copy, so the loop is visually seamless with no jump.
+ *
+ * Rendering both copies in markup keeps this fully SSR-safe (no effect, no DOM
+ * mutation, no hydration mismatch). Hover-pause is handled in CSS
+ * (.logo-track:hover { animation-play-state: paused }).
+ */
 function LogoTrack({ logos, reverse }: { logos: readonly string[]; reverse?: boolean }) {
-  const trackRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const track = trackRef.current
-    if (!track || track.children.length > logos.length) return
-    const items = [...track.children]
-    items.forEach((logo) => track.appendChild(logo.cloneNode(true)))
-  }, [logos.length])
-
   return (
-    <div ref={trackRef} className={`logo-track${reverse ? " reverse" : ""}`}>
+    <div className={`logo-track${reverse ? " reverse" : ""}`}>
       {logos.map((src) => (
         <Image key={src} src={src} alt="Integration partner" width={80} height={40} />
+      ))}
+      {logos.map((src) => (
+        <Image key={`dup-${src}`} src={src} alt="" aria-hidden width={80} height={40} />
       ))}
     </div>
   )
