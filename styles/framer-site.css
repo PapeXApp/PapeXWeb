@@ -537,8 +537,12 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   height: 40px;
   width: auto;
   object-fit: contain;
-  opacity: 0.92;
-  filter: grayscale(100%) brightness(0) invert(1);
+  opacity: 1;
+  background: #fff;
+  padding: 10px 16px;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(10, 61, 98, 0.18);
+  filter: grayscale(10%);
 }
 
 @keyframes marquee {
