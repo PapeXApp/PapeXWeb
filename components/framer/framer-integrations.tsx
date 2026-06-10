@@ -2,6 +2,7 @@
 
 import Image from "next/image"
 import { useEffect, useRef } from "react"
+import { Reveal } from "./anim"
 import { INTEGRATION_LOGOS } from "./constants"
 
 const TRACK_B = [
@@ -37,10 +38,10 @@ export function FramerIntegrations() {
   return (
     <section id="integration" className="integrations">
       <div className="framer-container">
-        <header className="integrations-head">
+        <Reveal as="header" direction="up" className="integrations-head">
           <p className="section-label">Integrations</p>
           <h2 className="section-title">Works with the tools you already use.</h2>
-        </header>
+        </Reveal>
       </div>
       <div className="logo-marquee">
         <LogoTrack logos={INTEGRATION_LOGOS} />
