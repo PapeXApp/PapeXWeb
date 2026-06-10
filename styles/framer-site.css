@@ -3,8 +3,12 @@
 html:has(.framer-site) { scroll-behavior: smooth; font-size: 16px; }
 .framer-site {
   font-family: Inter, "Inter Placeholder", -apple-system, BlinkMacSystemFont, sans-serif;
-  color: #1a1a1a;
-  background: #fff;
+  color: #0a3d62;
+  background:
+    radial-gradient(120% 80% at 85% 8%, rgba(255, 153, 51, 0.14) 0%, rgba(255, 153, 51, 0) 42%),
+    radial-gradient(100% 70% at 8% 0%, rgba(112, 188, 236, 0.30) 0%, rgba(112, 188, 236, 0) 48%),
+    linear-gradient(180deg, #a0d0f0 0%, #b8daf2 22%, #d0e4f4 50%, #eaf4fc 78%, #ffffff 100%);
+  background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
   --pad: 70px;
@@ -15,23 +19,32 @@ html:has(.framer-site) { scroll-behavior: smooth; font-size: 16px; }
 .framer-site button { font: inherit; cursor: pointer; border: none; background: none; }
 
 :root {
-  --text: #1a1a1a;
-  --text-muted: #605f5f;
-  --text-muted-light: #6d6d6d;
-  --orange: #e06d00;
-  --navy: #021d2d;
+  --text: #0a3d62;
+  --text-muted: #3d6c8a;
+  --text-muted-light: #5a86a3;
+  --orange: #ff9933;
+  --orange-dark: #e67e22;
+  --orange-deep: #d35400;
+  --navy: #0a3d62;
+  --navy-mid: #1e5b82;
+  --navy-teal: #2c7da0;
+  --light-blue: #d0e4f4;
+  --light-blue-200: #b8daf2;
+  --light-blue-300: #a0d0f0;
+  --light-blue-400: #88c6ee;
+  --light-blue-500: #70bcec;
   --white: #fff;
   --max: 1300px;
   --pad: 70px;
   --radius-pill: 100px;
   --radius-card: 20px;
   --radius-card-lg: 24px;
-  --shadow-nav: 0 10px 20px rgba(0, 0, 0, 0.05);
-  --shadow-card: 5px 5px 20px rgba(0, 0, 0, 0.1);
-  --shadow-card-strong: 5px 5px 20px rgba(0, 0, 0, 0.15);
-  --shadow-pill: 4px 4px 12px rgba(0, 0, 0, 0.25);
-  --gradient-card: linear-gradient(180deg, #fff 0%, #f4f4f4 69.71%, #fafafa 100%);
-  --gradient-step: linear-gradient(314deg, #fafafa 0%, #f4f4f4 100%);
+  --shadow-nav: 0 10px 24px rgba(10, 61, 98, 0.12);
+  --shadow-card: 5px 5px 24px rgba(10, 61, 98, 0.12);
+  --shadow-card-strong: 5px 5px 28px rgba(10, 61, 98, 0.18);
+  --shadow-pill: 4px 4px 14px rgba(10, 61, 98, 0.28);
+  --gradient-card: linear-gradient(180deg, #ffffff 0%, #ffffff 60%, #eaf4fc 100%);
+  --gradient-step: linear-gradient(314deg, #eaf4fc 0%, #d0e4f4 100%);
   --font-display: Inter, sans-serif;
   --font-label: "Geist", Inter, sans-serif;
 }
@@ -178,7 +191,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   font-family: var(--font-label);
   font-size: 14px;
   font-weight: 400;
-  color: var(--text-muted);
+  color: var(--orange-dark);
   margin-bottom: 16px;
 }
 
@@ -214,7 +227,9 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(101, 155, 255, 0.12) 0%, rgba(255, 255, 255, 0) 45%);
+  background:
+    radial-gradient(70% 60% at 88% 6%, rgba(255, 153, 51, 0.16) 0%, rgba(255, 153, 51, 0) 55%),
+    linear-gradient(180deg, rgba(112, 188, 236, 0.55) 0%, rgba(160, 208, 240, 0.30) 24%, rgba(255, 255, 255, 0) 55%);
 }
 .hero-sky img,
 .hero-sky > span {
@@ -328,7 +343,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #ffc220;
+  background: var(--orange);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -393,7 +408,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 /* ─── FEATURES ─── */
 .features {
   padding: 64px 0 80px;
-  background: var(--white);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.55) 100%);
 }
 
 .features-head {
@@ -486,7 +501,9 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 /* ─── INTEGRATIONS ─── */
 .integrations {
   padding: 64px 0 80px;
-  background: radial-gradient(50% 50%, #f4f4f4 0%, #fff 100%);
+  background:
+    radial-gradient(60% 50% at 50% 50%, rgba(255, 153, 51, 0.08) 0%, rgba(255, 153, 51, 0) 70%),
+    radial-gradient(70% 60% at 50% 50%, #d0e4f4 0%, rgba(234, 244, 252, 0) 100%);
   overflow: hidden;
 }
 
@@ -528,7 +545,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 /* ─── HOW IT WORKS ─── */
 .how {
   padding: 80px 0;
-  background: var(--white);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 100%);
 }
 
 .how-layout {
@@ -590,7 +607,9 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 /* ─── FAQ ─── */
 .faq {
   padding: 80px 0;
-  background: linear-gradient(180deg, rgba(101, 155, 255, 0.08) 0%, transparent 32%);
+  background:
+    radial-gradient(60% 40% at 90% 4%, rgba(255, 153, 51, 0.10) 0%, rgba(255, 153, 51, 0) 60%),
+    linear-gradient(180deg, rgba(112, 188, 236, 0.35) 0%, transparent 36%);
 }
 
 .faq-layout {
@@ -637,14 +656,14 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   text-align: left;
   font-size: 16px;
   font-weight: 500;
-  color: #3d3d3d;
+  color: var(--navy);
 }
 
 .faq-icon {
   width: 24px;
   height: 24px;
   flex-shrink: 0;
-  stroke: #aeaeae;
+  stroke: var(--orange);
   transition: transform 0.3s;
 }
 .faq-item.open .faq-icon { transform: rotate(45deg); }
@@ -731,7 +750,9 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 .page-hero {
   padding: 160px 0 80px;
   text-align: center;
-  background: radial-gradient(50% 50%, #f4f4f4 0%, #fff 100%);
+  background:
+    radial-gradient(60% 50% at 85% 8%, rgba(255, 153, 51, 0.12) 0%, rgba(255, 153, 51, 0) 55%),
+    radial-gradient(80% 70% at 50% 0%, #a0d0f0 0%, rgba(255, 255, 255, 0) 70%);
 }
 .page-hero h1 {
   font-family: var(--font-display);
@@ -813,7 +834,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 /* ─── PRICING ─── */
 .pricing {
   padding: 64px 0 80px;
-  background: var(--white);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(208, 228, 244, 0.45) 100%);
 }
 
 .pricing-head {
@@ -846,7 +867,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 }
 
 .pricing-card--featured {
-  border: 1px solid rgba(224, 109, 0, 0.25);
+  border: 1px solid rgba(255, 153, 51, 0.25);
 }
 
 .pricing-card-head {
@@ -877,8 +898,8 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--orange);
-  background: rgba(224, 109, 0, 0.1);
-  border: 1px solid rgba(224, 109, 0, 0.2);
+  background: rgba(255, 153, 51, 0.1);
+  border: 1px solid rgba(255, 153, 51, 0.2);
   border-radius: 999px;
   padding: 4px 10px;
   flex-shrink: 0;
@@ -947,7 +968,9 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 .framer-subpage {
   padding-top: 100px;
   min-height: calc(100vh - 100px);
-  background: #fff;
+  background:
+    radial-gradient(90% 45% at 85% 0%, rgba(255, 153, 51, 0.10) 0%, rgba(255, 153, 51, 0) 50%),
+    linear-gradient(180deg, #a0d0f0 0%, #c4e0f3 18%, #eaf4fc 48%, #ffffff 100%);
 }
 
 .subpage-inner {
@@ -1016,7 +1039,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   align-items: center;
   justify-content: center;
   padding: 28px 28px 0;
-  background: linear-gradient(180deg, rgba(101, 155, 255, 0.06) 0%, transparent 100%);
+  background: linear-gradient(180deg, rgba(112, 188, 236, 0.22) 0%, transparent 100%);
 }
 
 .team-card-photo-inner {
@@ -1053,7 +1076,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   display: inline-block;
   padding: 4px 12px;
   border-radius: 999px;
-  background: rgba(224, 109, 0, 0.12);
+  background: rgba(255, 153, 51, 0.12);
   color: var(--orange);
   font-family: var(--font-label);
   font-size: 13px;
@@ -1131,7 +1154,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   position: relative;
   aspect-ratio: 1 / 1;
   overflow: hidden;
-  background: #f4f4f4;
+  background: #eaf4fc;
 }
 
 .blog-post-media img {
