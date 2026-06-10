@@ -4,6 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState } from "react"
+import { Magnetic } from "./anim"
 import { APP_DOWNLOAD_URL } from "./constants"
 
 function anchorHref(pathname: string, hash: string) {
@@ -27,9 +28,11 @@ export function FramerNav() {
             <Link href="/contact">Contact</Link>
           </div>
           <div className="nav-actions">
-            <a href={APP_DOWNLOAD_URL} className="btn-download" target="_blank" rel="noopener noreferrer">
-              Download App
-            </a>
+            <Magnetic>
+              <a href={APP_DOWNLOAD_URL} className="btn-download" target="_blank" rel="noopener noreferrer">
+                Download App
+              </a>
+            </Magnetic>
             <button type="button" className="nav-menu-btn" aria-label="Open menu" onClick={() => setMenuOpen(true)}>
               <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round">
                 <path d="M4 7h16M4 12h16M4 17h16" />

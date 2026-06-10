@@ -44,6 +44,25 @@ type CommonProps = {
   /** Element tag to render. Default: 'div'. */
   as?: ElementType
   className?: string
+  /**
+   * When true, the element also gains a tactile hover-lift + tap-press
+   * (transform only) once revealed. No-ops under reduced motion alongside the
+   * reveal. Default: false.
+   */
+  hoverLift?: boolean
+}
+
+/** Spring + targets for the optional hover-lift / tap-press gesture. */
+const HOVER_LIFT = {
+  whileHover: {
+    y: -6,
+    scale: 1.02,
+    transition: { type: "spring" as const, stiffness: 320, damping: 22, mass: 0.6 },
+  },
+  whileTap: {
+    scale: 0.99,
+    transition: { type: "spring" as const, stiffness: 320, damping: 22, mass: 0.6 },
+  },
 }
 
 /**
@@ -59,6 +78,7 @@ export function Reveal({
   direction = "up",
   as = "div",
   className,
+  hoverLift = false,
 }: CommonProps) {
   const prefersReduced = useReducedMotion()
   const inGroup = useContext(RevealGroupContext)
@@ -75,6 +95,8 @@ export function Reveal({
     visible: { opacity: 1, x: 0, y: 0 },
   }
 
+  const hoverProps = hoverLift ? HOVER_LIFT : undefined
+
   // Inside a group, the parent drives orchestration via variants/staggerChildren.
   if (inGroup) {
     return (
@@ -82,6 +104,7 @@ export function Reveal({
         className={className}
         variants={variants}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay }}
+        {...hoverProps}
       >
         {children}
       </MComponent>
@@ -96,6 +119,7 @@ export function Reveal({
       viewport={VIEWPORT}
       variants={variants}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay }}
+      {...hoverProps}
     >
       {children}
     </MComponent>

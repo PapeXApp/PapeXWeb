@@ -13,7 +13,7 @@ export function FramerFeatures() {
 
         <RevealGroup as="div" stagger={0.1} className="features-grid">
           {FEATURES_TOP.map((feature) => (
-            <Reveal as="article" direction="up" key={feature.title} className="feature-card">
+            <Reveal as="article" direction="up" hoverLift key={feature.title} className="feature-card">
               <h4>{feature.title}</h4>
               <p>{feature.description}</p>
               <div className="feature-card-img">
@@ -25,7 +25,7 @@ export function FramerFeatures() {
 
         <RevealGroup as="div" stagger={0.1} className="features-grid-bottom">
           {FEATURES_BOTTOM.map((feature) => (
-            <Reveal as="article" direction="up" key={feature.title} className="feature-card">
+            <Reveal as="article" direction="up" hoverLift key={feature.title} className="feature-card">
               <h4>{feature.title}</h4>
               <p>{feature.description}</p>
               <div className="feature-card-img">
