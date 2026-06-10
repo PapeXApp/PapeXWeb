@@ -416,6 +416,26 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   margin-bottom: 56px;
 }
 
+.features-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+@media (min-width: 810px) {
+  .features-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  .features-grid-bottom {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    max-width: calc(66.666% + 12px);
+    margin: 24px auto 0;
+  }
+}
+
 .feature-card {
   background: var(--gradient-card);
   border-radius: var(--radius-card);
@@ -482,6 +502,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 
 @media (max-width: 809px) {
   .features { padding: 48px 0 64px; }
+  .features-grid-bottom { display: contents; }
   .feature-card { min-height: auto; padding: 24px; }
   .feature-card h4 { font-size: 22px; }
   .integrations,
