@@ -430,6 +430,21 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   min-height: 324px;
   display: flex;
   flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Spotlight wrapper inside each feature card: stretches to fill the card so the
+   original flex-column layout (p margin-bottom:auto pushing the image down) is
+   preserved, and so the cursor-tracking glow can fill the card. */
+.feature-card-glow {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  /* Negative margins cancel the card padding so the glow layer can reach the
+     card edges; padding is restored inside so content keeps its inset. */
+  margin: -32px;
+  padding: 32px;
 }
 
 .feature-card h4 {

@@ -10,7 +10,7 @@ import {
 import type { MotionValue } from "motion/react"
 import { useEffect, useRef, useState } from "react"
 import type { ReactNode } from "react"
-import { Magnetic } from "./anim"
+import { Magnetic, Spotlight } from "./anim"
 import { APP_DOWNLOAD_URL } from "./constants"
 
 /* ------------------------------------------------------------------ *
@@ -175,6 +175,19 @@ export function FramerHero() {
       <div className="hero-sky" aria-hidden="true">
         <Image src="/framer-assets/hero-clouds.png" alt="" fill priority sizes="100vw" style={{ objectFit: "cover", objectPosition: "center bottom" }} />
       </div>
+
+      {/* Gentle brand spotlight that trails the cursor across the hero backdrop.
+          Sits above the cloud sky (z-index 0) and below the headline/phone/cards
+          (hero-inner z-index 1). Low opacity so navy headline text stays legible.
+          pointer-events:none (glow layer) — clicks pass straight through. */}
+      <Spotlight
+        mode="section"
+        color="rgba(255, 153, 51, 0.40)"
+        radius={620}
+        intensity={0.45}
+        style={{ position: "absolute", inset: 0, zIndex: 0 }}
+      />
+
       <div className="hero-inner">
         <div className="hero-copy">
           <Entrance as="h1" id="hero-title" delay={0.05}>
