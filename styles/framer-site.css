@@ -1601,3 +1601,100 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   .hero-float--receipt,
   .hero-float--tax { animation: none; }
 }
+
+/* ─── ALIVE LAYER: the live courier (page-long flight route) ─── */
+
+/* main is the positioning context for the full-height route overlay. */
+.framer-site main { position: relative; }
+
+/* The route overlay spans the whole document height behind the content. It is
+   absolutely positioned over <main>, never intercepts pointer input, and sits
+   below the content so headings/cards always read above the dashed line. */
+.flight-route {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+.flight-route-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* All route strokes share the same geometry; only opacity/width/colour differ.
+   preserveAspectRatio="none" stretches the viewBox to the overlay, so we set a
+   non-scaling stroke to keep dash widths crisp regardless of that stretch. */
+.flight-route-svg path {
+  fill: none;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Faint full-route ghost so the path reads even before the reader scrolls
+   there. Kept very quiet — a hint, not a line. */
+.flight-route-ghost {
+  stroke: rgba(10, 61, 98, 0.1);
+  stroke-width: 1.5;
+}
+
+/* The revealed (drawn-in) dashed route. Navy with a soft glow reads over the
+   light sections; the white companion stroke keeps it legible where the route
+   crosses the navy integrations band. */
+.flight-route-line {
+  stroke: rgba(10, 61, 98, 0.34);
+  stroke-width: 2;
+}
+
+/* Wake: a brighter orange copy revealed for ~0.65s at each section crossing —
+   the handoff cue as the courier passes. Faded via inline opacity from JS; the
+   transition makes it bloom and settle rather than blink. */
+.flight-route-wake-group {
+  transition: opacity 0.5s ease;
+}
+.flight-route-wake {
+  stroke: var(--orange);
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 4px rgba(255, 153, 51, 0.6));
+}
+
+/* The courier sprite. Rides the route tip via offset-path; its size clamps with
+   the viewport and a drop-shadow gives it lift off the page. The wrapper holds
+   the offset-path transform; the inner .flight-route-plane-flip owns the art
+   correction + facing mirror so the flip can transition independently. */
+.flight-route-plane {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: clamp(44px, 5.5vw, 72px);
+  will-change: transform, opacity;
+  filter: drop-shadow(0 6px 10px rgba(10, 61, 98, 0.28));
+}
+.flight-route-plane-flip {
+  /* Quick-but-eased turn so reversing direction reads as the plane banking
+     around (~150ms), not a hard pop. transform-origin centre keeps the mirror
+     about the sprite's own axis. */
+  transform-origin: 50% 50%;
+  transition: transform 0.15s ease;
+}
+.flight-route-plane-flip img {
+  width: 100%;
+  height: auto;
+}
+
+@media (max-width: 809px) {
+  /* Smaller courier, route already hugs the side margins via measured geometry. */
+  .flight-route-plane { width: clamp(38px, 11vw, 44px); }
+  .flight-route-line { stroke-width: 1.75; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Static, fully-drawn dashed line; no plane, no wake, no transition. */
+  .flight-route-plane,
+  .flight-route-ghost,
+  .flight-route-wake-group { display: none; }
+  .flight-route-plane-flip { transition: none; }
+}
