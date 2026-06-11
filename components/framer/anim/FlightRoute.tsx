@@ -98,13 +98,30 @@ function measure(): Geom | null {
   const midLeft = mobile ? vw * 0.16 : vw * 0.3
   const midRight = mobile ? vw * 0.84 : vw * 0.7
 
-  // Start in the hero's visual area (right side, below the headline) and weave
-  // down, alternating sides near each section heading.
+  // Weave down the page, alternating sides near each section heading.
   const pts: { x: number; y: number }[] = []
   const marks: number[] = []
 
-  // Hero anchor: ~62% down the first viewport, leaning toward the visual.
-  pts.push({ x: mobile ? midRight : rightLane, y: Math.min(vh * 0.9, window.innerHeight * 0.62) })
+  // The route starts BELOW the hero — a lead-in in the right gutter just above
+  // the Features section. Starting inside the hero tangled the line with the
+  // phone mockup and floating cards; the hero's own PlaneFlight owns that
+  // space, and the route picks the journey up where it ends.
+  const featureEl = document.querySelector("#feature") as HTMLElement | null
+  const featureTopDoc = featureEl
+    ? featureEl.getBoundingClientRect().top + scrollTop - mainTop
+    : vh * 0.25
+  // Clamp the lead-in below the hero visual (phone + float cards) so the line
+  // never climbs back into them on tall viewports, while keeping at least a
+  // short approach above the Features heading.
+  const heroVisual = document.querySelector(".hero-visual") as HTMLElement | null
+  const heroVisualBottom = heroVisual
+    ? heroVisual.getBoundingClientRect().bottom + scrollTop - mainTop
+    : 0
+  const leadIn = Math.max(featureTopDoc - window.innerHeight * 0.22, heroVisualBottom + 12)
+  pts.push({
+    x: rightLane,
+    y: Math.max(0, Math.min(leadIn, featureTopDoc - 40)),
+  })
 
   // For each measured section, drop a waypoint slightly above its heading, in
   // the gutter, alternating sides for the weaving feel.

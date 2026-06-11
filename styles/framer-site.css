@@ -1608,22 +1608,35 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 .framer-site main { position: relative; }
 
 /* The route overlay spans the whole document height. It is absolutely
-   positioned over <main> and never intercepts pointer input. Foreground by
-   design: the contrail + courier fly OVER section content (feature cards
-   included) — still below the spotlight (60), FlyToTop (95) and nav (100). */
+   positioned over <main> and never intercepts pointer input.
+
+   Split layering: the container deliberately has NO z-index (stacking-
+   transparent), so its two children can sit on opposite sides of the page
+   content — the dashed line BEHIND text/cards (z 0, with content lifted to
+   z 1 below), the courier plane IN FRONT of them (z 40, still under the
+   spotlight 60 / FlyToTop 95 / nav 100). */
 .flight-route {
   position: absolute;
   inset: 0;
-  z-index: 40;
   pointer-events: none;
   overflow: visible;
 }
 .flight-route-svg {
   position: absolute;
   inset: 0;
+  z-index: 0;
   width: 100%;
   height: 100%;
   overflow: visible;
+}
+
+/* Lift each section's content wrapper above the z-0 route line so the dashes
+   pass behind text, cards and the marquee (section backgrounds stay below the
+   line, so it still shows over the navy integrations band). */
+.framer-site main .framer-container,
+.framer-site main .logo-marquee {
+  position: relative;
+  z-index: 1;
 }
 
 /* All route strokes share the same geometry; only opacity/width/colour differ.
@@ -1670,6 +1683,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   position: absolute;
   top: 0;
   left: 0;
+  z-index: 40;
   width: clamp(44px, 5.5vw, 72px);
   will-change: transform, opacity;
   filter: drop-shadow(0 6px 10px rgba(10, 61, 98, 0.28));
