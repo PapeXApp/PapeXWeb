@@ -41,15 +41,29 @@ type Geom = {
   vw: number
   /** viewBox height = full document (main) height. */
   vh: number
+  /** Document-space top of <main>, for converting scrollY into route space. */
+  top: number
   /** The single smooth cubic-bezier path through the waypoints. */
   d: string
-  /** offsetDistance fractions (0..1) where each section waypoint sits, for wakes. */
+  /**
+   * Piecewise mapping from document position to route position: each
+   * waypoint's main-local y (yStops) paired with its approximate arc fraction
+   * along the path (fStops, chord-length parameterized). This is what lets
+   * the drawn tip track the part of the route the reader is actually looking
+   * at, instead of raw page progress.
+   */
+  yStops: number[]
+  fStops: number[]
+  /** Arc fractions (0..1) where each section waypoint sits, for wake pulses. */
   marks: number[]
   /** True when measured at mobile width (simpler, margin-hugging route). */
   mobile: boolean
 }
 
 const MOBILE_MAX = 809
+
+/** The reader's anchor: the route tip tracks this fraction of viewport height. */
+const TIP_ANCHOR = 0.55
 
 /** Section ids/selectors whose headings we weave the route past, top → bottom. */
 const SECTION_SELECTORS = ["#feature", "#integration", "#how", "#faq", ".site-footer"]
@@ -100,7 +114,6 @@ function measure(): Geom | null {
 
   // Weave down the page, alternating sides near each section heading.
   const pts: { x: number; y: number }[] = []
-  const marks: number[] = []
 
   // The route starts BELOW the hero — a lead-in in the right gutter just above
   // the Features section. Starting inside the hero tangled the line with the
@@ -137,16 +150,35 @@ function measure(): Geom | null {
     // Aim a little inside the top of each section (near its heading band).
     const isFooter = sel === ".site-footer"
     const y = isFooter
-      ? elTopDoc + r.height * 0.42 // land near the footer logo/tagline
+      ? // Land near the footer logo/tagline — but clamped within the anchor's
+        // reach at maximum scroll (docBottom − (1−TIP_ANCHOR)·viewport), so
+        // the tip (and plane) actually arrive at the destination.
+        Math.min(
+          elTopDoc + r.height * 0.42,
+          elTopDoc + r.height - window.innerHeight * (1 - TIP_ANCHOR) - 8
+        )
       : elTopDoc + r.height * 0.18
     const x = lanes[i] ?? vw * 0.5
     pts.push({ x, y: Math.max(0, Math.min(vh, y)) })
-    // Record the fraction of overall vertical travel for wake timing.
-    marks.push(Math.max(0, Math.min(1, y / vh)))
   })
 
   const d = buildSmoothPath(pts, 0.5)
-  return { vw, vh, d, marks, mobile }
+
+  // Chord-length parameterization: cumulative straight-line distance between
+  // waypoints approximates each one's arc fraction along the smooth path
+  // (close enough for a gentle Catmull-Rom weave). yStops/fStops together form
+  // the scroll → route mapping; marks are the section fractions (lead-in
+  // excluded) used for wake pulses.
+  const cum = [0]
+  for (let i = 1; i < pts.length; i++) {
+    cum.push(cum[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y))
+  }
+  const total = cum[cum.length - 1] || 1
+  const fStops = cum.map((c) => c / total)
+  const yStops = pts.map((p) => p.y)
+  const marks = fStops.slice(1)
+
+  return { vw, vh, top: mainTop, d, yStops, fStops, marks, mobile }
 }
 
 export function FlightRoute() {
@@ -155,10 +187,33 @@ export function FlightRoute() {
   const maskId = useRef(`route-mask-${Math.random().toString(36).slice(2, 8)}`).current
 
   // ── Scroll + velocity plumbing ──────────────────────────────────────────
-  const { scrollYProgress, scrollY } = useScroll()
-  // The drawn length follows a smoothed scroll progress so the line "draws"
-  // (and "un-draws") with a little inertia rather than snapping.
-  const drawn = useSpring(scrollYProgress, { stiffness: 120, damping: 28, mass: 0.45 })
+  const { scrollY } = useScroll()
+
+  // The route no longer spans the whole document (it starts below the hero),
+  // so raw page progress would draw the line too early and park the plane at
+  // a fixed offset low in the viewport. Instead, map the reader's anchor
+  // point (~55% down the viewport) through the measured yStops→fStops
+  // geometry, so the drawn tip is always the part of the route that is
+  // actually in front of the reader. The geometry lives in a ref so this
+  // transform (bound once, on first render) always reads fresh measurements.
+  const geomRef = useRef<Geom | null>(null)
+  const tipFrac = useTransform(scrollY, (sy) => {
+    const g = geomRef.current
+    if (!g) return 0
+    const anchor = sy + window.innerHeight * TIP_ANCHOR - g.top
+    const { yStops, fStops } = g
+    const last = yStops.length - 1
+    if (last < 1) return 0
+    if (anchor <= yStops[0]) return 0
+    if (anchor >= yStops[last]) return 1
+    let i = 1
+    while (i < last && yStops[i] < anchor) i++
+    const t = (anchor - yStops[i - 1]) / Math.max(1, yStops[i] - yStops[i - 1])
+    return fStops[i - 1] + t * (fStops[i] - fStops[i - 1])
+  })
+  // The drawn length follows the smoothed tip so the line "draws" (and
+  // "un-draws") with a little inertia rather than snapping.
+  const drawn = useSpring(tipFrac, { stiffness: 120, damping: 28, mass: 0.45 })
 
   // Raw scroll velocity (px/s, signed) → smoothed so the gates don't jitter.
   const rawVel = useVelocity(scrollY)
@@ -185,7 +240,10 @@ export function FlightRoute() {
     if (prefersReduced) {
       // Still measure once so the static line is drawn full-length.
       const g = measure()
-      if (g) setGeom(g)
+      if (g) {
+        geomRef.current = g
+        setGeom(g)
+      }
       return
     }
     let raf = 0
@@ -193,7 +251,12 @@ export function FlightRoute() {
       cancelAnimationFrame(raf)
       raf = requestAnimationFrame(() => {
         const g = measure()
-        if (g) setGeom(g)
+        if (g) {
+          geomRef.current = g
+          setGeom(g)
+          // Geometry changed → re-derive the tip from the current scroll.
+          scrollY.set(scrollY.get())
+        }
       })
     }
     remeasure()
