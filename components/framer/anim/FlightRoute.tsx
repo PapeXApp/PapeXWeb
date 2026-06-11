@@ -10,7 +10,7 @@ import {
   useTransform,
   useVelocity,
 } from "motion/react"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 /**
  * "The live courier" — the page-long flight route.
@@ -67,6 +67,18 @@ const TIP_ANCHOR = 0.55
 
 /** Section ids/selectors whose headings we weave the route past, top → bottom. */
 const SECTION_SELECTORS = ["#feature", "#integration", "#how", "#faq", ".site-footer"]
+
+/** Artwork nose tilt — same correction as hero PlaneFlight. */
+const PLANE_ART_ROT = "26deg"
+
+/** Inner sprite transform: forward/reverse mirror × left-leg vertical mirror × art tilt. */
+function planeSpriteTransform(facing: 1 | -1, tangentLeft: boolean): string {
+  const parts: string[] = []
+  if (facing === -1) parts.push("scaleX(-1)")
+  if (tangentLeft) parts.push("scaleY(-1)")
+  parts.push(`rotate(${PLANE_ART_ROT})`)
+  return parts.join(" ")
+}
 
 /**
  * Build a smooth path string from a list of waypoints using a Catmull-Rom →
@@ -233,7 +245,12 @@ export function FlightRoute() {
   // so it must turn around. We track a hysteretic direction sign in state and
   // map it to an inner scaleX; the CSS transition makes the turn quick-but-eased.
   const [facing, setFacing] = useState<1 | -1>(1)
+  // offset-rotate:auto inverts the sprite on leftward legs (>90° rotation). Mirror
+  // vertically in the rotated frame to keep the art upright; hysteresis avoids
+  // flicker near vertical segments.
+  const [tangentLeft, setTangentLeft] = useState(false)
   const idleTimer = useRef<number | null>(null)
+  const pathRef = useRef<SVGPathElement>(null)
 
   // ── Measurement (mount + resize + late layout) ──────────────────────────
   useEffect(() => {
@@ -352,6 +369,33 @@ export function FlightRoute() {
   // Plane position along the path as an offset-distance percentage string.
   const offsetDistance = useTransform(drawn, (p) => `${(p * 100).toFixed(3)}%`)
 
+  const sampleTangentLeft = useCallback((p: number) => {
+    const path = pathRef.current
+    if (!path) return
+    const len = path.getTotalLength()
+    if (len === 0) return
+    const pt = p * len
+    const eps = Math.max(0.5, len * 0.001)
+    const p0 = path.getPointAtLength(Math.max(0, pt - eps))
+    const p1 = path.getPointAtLength(Math.min(len, pt + eps))
+    const dx = p1.x - p0.x
+    setTangentLeft((prev) => {
+      if (!prev && dx < -1) return true
+      if (prev && dx > 1) return false
+      return prev
+    })
+  }, [])
+
+  useMotionValueEvent(drawn, "change", (p) => {
+    if (prefersReduced) return
+    sampleTangentLeft(p)
+  })
+
+  useEffect(() => {
+    if (!geom || prefersReduced) return
+    sampleTangentLeft(drawn.get())
+  }, [geom, prefersReduced, sampleTangentLeft, drawn])
+
   // Stroke dash pattern tuned to read quiet-but-legible over BOTH the light
   // sections and the navy integrations band.
   const dash = geom?.mobile ? "5 9" : "6 12"
@@ -411,6 +455,7 @@ export function FlightRoute() {
         {/* Faint un-revealed ghost of the full route, so the path reads even
             before you scroll there (very low opacity). */}
         <path
+          ref={pathRef}
           className="flight-route-ghost"
           d={geom.d}
           strokeDasharray={dash}
@@ -457,36 +502,28 @@ export function FlightRoute() {
         }}
       >
         {/*
-          FACING / FLIP COMPOSITION — worked out explicitly:
+          SPRITE ORIENTATION — four upright cases:
 
-          • offset-rotate:auto rotates this whole element so its local +x axis
-            points along the FORWARD tangent of the path.
-          • The artwork's nose points ~26° above horizontal, so an inner
-            rotate(26deg) turns the sprite to face local +x (same correction the
-            hero PlaneFlight uses). With that, forward travel = nose-first. ✓
-          • Reverse travel (scrolling up): the plane physically moves toward
-            local −x. To face that way WITHOUT going upside-down we mirror the
-            sprite left-to-right about its own vertical axis: scaleX(-1).
-              - We must mirror in the sprite's OWN frame, i.e. apply the 26°
-                correction and THEN scaleX(-1) would also flip the rotation. So
-                the order matters: we mirror FIRST, then rotate by the SAME 26°.
-                Mirroring a right-facing sprite gives a left-facing one whose
-                nose now points 26° above the −x horizontal; rotating that by
-                +26° lands the nose on −x exactly, upright. ✓  (Never inverted —
-                scaleX keeps "up" up; only left/right swaps.)
-          • The flip is gated on a hysteretic velocity sign (VEL_FLIP) so it
-            won't twitch at rest, and the CSS transition on this wrapper makes
-            the turn quick-but-eased (~150ms) so it reads as the plane banking
-            around rather than popping.
+          • offset-rotate:auto aligns local +x with the forward path tangent.
+            On leftward legs that rotation passes 90° and inverts the sprite.
+            Fix: mirror vertically in the rotated frame (scaleY(-1)) whenever
+            the sampled forward tangent points left (dx < 0, with hysteresis).
+          • Art tilt: rotate(26deg) so the nose faces local +x (PlaneFlight uses
+            the same correction).
+          • Reverse travel: mirror horizontally (scaleX(-1)) so the nose faces
+            local −x without going upside-down. Order: mirrors first, then tilt.
 
-          Implemented as: forward → transform: rotate(26deg)
-                          reverse → transform: scaleX(-1) rotate(26deg)
+          forward + right  → rotate(26deg)
+          forward + left   → scaleY(-1) rotate(26deg)
+          reverse + right  → scaleX(-1) rotate(26deg)
+          reverse + left   → scaleX(-1) scaleY(-1) rotate(26deg)
+
+          Facing flip is velocity-gated (VEL_FLIP); this wrapper transitions
+          ~150ms so direction changes read as banking, not popping.
         */}
         <div
           className="flight-route-plane-flip"
-          style={{
-            transform: facing === 1 ? "rotate(26deg)" : "scaleX(-1) rotate(26deg)",
-          }}
+          style={{ transform: planeSpriteTransform(facing, tangentLeft) }}
         >
           <img src="/logos/plane.png" alt="" width={2459} height={1417} />
         </div>
