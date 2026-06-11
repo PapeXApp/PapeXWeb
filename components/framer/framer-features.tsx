@@ -1,6 +1,37 @@
 import Image from "next/image"
-import { Reveal, RevealGroup, Spotlight } from "./anim"
+import { Reveal, RevealGroup, Spotlight, Tilt } from "./anim"
 import { FEATURES_BOTTOM, FEATURES_TOP } from "./constants"
+
+type Feature = (typeof FEATURES_TOP)[number] | (typeof FEATURES_BOTTOM)[number]
+
+/**
+ * One feature card, layered for tactility:
+ *  - Reveal (scroll entrance, staggered by the parent RevealGroup) on a
+ *    perspective wrapper so the tilt has real depth
+ *  - Tilt: 3D pointer tilt + hover lift on desktop, tap-press on touch
+ *  - Spotlight: cursor-tracking brand glow painted behind the content
+ */
+function FeatureCard({ feature }: { feature: Feature }) {
+  return (
+    <Reveal as="div" direction="up" className="feature-card-outer">
+      <Tilt className="feature-card">
+        <Spotlight
+          mode="card"
+          className="feature-card-glow"
+          color="rgba(255, 153, 51, 0.30)"
+          radius={300}
+          intensity={0.9}
+        >
+          <h4>{feature.title}</h4>
+          <p>{feature.description}</p>
+          <div className="feature-card-img">
+            <Image src={feature.image} alt={feature.alt} width={400} height={147} />
+          </div>
+        </Spotlight>
+      </Tilt>
+    </Reveal>
+  )
+}
 
 export function FramerFeatures() {
   return (
@@ -13,51 +44,13 @@ export function FramerFeatures() {
 
         <RevealGroup as="div" stagger={0.1} className="features-grid">
           {FEATURES_TOP.map((feature) => (
-            <Reveal as="article" direction="up" hoverLift key={feature.title} className="feature-card">
-              {/* Card hover-glow: a soft brand light tracks the cursor inside the
-                  card, painted behind the content (glowZIndex 0) with
-                  pointer-events:none. Sits inside the hover-lift transform as a
-                  background layer, so it composes with Phase 2 lift instead of
-                  fighting it. */}
-              <Spotlight
-                mode="card"
-                className="feature-card-glow"
-                color="rgba(255, 153, 51, 0.30)"
-                radius={300}
-                intensity={0.9}
-              >
-                <h4>{feature.title}</h4>
-                <p>{feature.description}</p>
-                <div className="feature-card-img">
-                  <Image src={feature.image} alt={feature.alt} width={400} height={147} />
-                </div>
-              </Spotlight>
-            </Reveal>
+            <FeatureCard key={feature.title} feature={feature} />
           ))}
         </RevealGroup>
 
         <RevealGroup as="div" stagger={0.1} className="features-grid-bottom">
           {FEATURES_BOTTOM.map((feature) => (
-            <Reveal as="article" direction="up" hoverLift key={feature.title} className="feature-card">
-              {/* Card hover-glow: a soft brand light tracks the cursor inside the
-                  card, painted behind the content (glowZIndex 0) with
-                  pointer-events:none. Sits inside the hover-lift transform as a
-                  background layer, so it composes with Phase 2 lift instead of
-                  fighting it. */}
-              <Spotlight
-                mode="card"
-                className="feature-card-glow"
-                color="rgba(255, 153, 51, 0.30)"
-                radius={300}
-                intensity={0.9}
-              >
-                <h4>{feature.title}</h4>
-                <p>{feature.description}</p>
-                <div className="feature-card-img">
-                  <Image src={feature.image} alt={feature.alt} width={400} height={147} />
-                </div>
-              </Spotlight>
-            </Reveal>
+            <FeatureCard key={feature.title} feature={feature} />
           ))}
         </RevealGroup>
       </div>

@@ -1,13 +1,11 @@
 'use client'
 
-import { MainNavigation, MainFooter } from "@/components/main-navigation"
+import { FramerPageShell } from "@/components/framer/framer-page-shell"
 
 export default function SurveyPage() {
   return (
-    <div className="flex flex-col min-h-screen bg-[#d0e4f4]">
-      <MainNavigation />
-      
-      <main className="flex-1 container mx-auto py-12 px-4">
+    <FramerPageShell>
+      <div className="container mx-auto py-8 px-4">
         <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-8">
           <div className="bg-[#0a3d62] text-white py-4 px-6 rounded-t-lg -mt-8 -mx-8 mb-8">
             <h1 className="text-3xl font-bold text-center font-gloock">Receipts and Coupons Survey</h1>
@@ -42,9 +40,7 @@ export default function SurveyPage() {
             </div>
           </div>
         </div>
-      </main>
-
-      <MainFooter />
-    </div>
+      </div>
+    </FramerPageShell>
   )
-} 
+}

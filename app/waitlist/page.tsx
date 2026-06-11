@@ -3,14 +3,12 @@
 import Link from "next/link"
 import Image from "next/image"
 import WaitlistFormEnhanced from "@/components/waitlist-form-enhanced"
-import { MainNavigation, MainFooter } from "@/components/main-navigation"
+import { FramerPageShell } from "@/components/framer/framer-page-shell"
 
 export default function WaitlistPage() {
   return (
-    <div className="min-h-screen bg-[#d0e4f4] flex flex-col">
-      <MainNavigation />
-
-      <main className="flex-1 flex items-center justify-center py-12 px-4">
+    <FramerPageShell>
+      <div className="container mx-auto py-8 px-4">
         <div className="max-w-3xl w-full mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-4xl md:text-5xl font-bold text-[#0a3d62] mb-4 bg-gradient-to-r from-[#0a3d62] via-[#1a6eb0] to-[#ff9933] bg-clip-text text-transparent">Join Our Waitlist</h1>
@@ -59,7 +57,7 @@ export default function WaitlistPage() {
               <div className="flex-1">
                 <div className="w-full h-0.5 border-b border-dashed border-[#ff9933]"></div>
               </div>
-              <div className="flex-shrink-0 mx-2 bg-[#d0e4f4] px-2">
+              <div className="flex-shrink-0 mx-2 px-2">
                 <Image 
                   src="/logos/plane.png"
                   alt="PapeX Logo" 
@@ -74,10 +72,8 @@ export default function WaitlistPage() {
             </div>
           </div>
         </div>
-      </main>
-
-      <MainFooter />
-    </div>
+      </div>
+    </FramerPageShell>
   )
 }
 

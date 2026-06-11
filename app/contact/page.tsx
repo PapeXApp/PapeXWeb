@@ -4,6 +4,7 @@ import Link from "next/link"
 import { Linkedin, Mail } from "lucide-react"
 import { TeamImage } from "@/components/team-image"
 import { FramerPageShell } from "@/components/framer/framer-page-shell"
+import { BtnPlane } from "@/components/framer/btn-plane"
 
 interface TeamMember {
   name: string
@@ -146,6 +147,7 @@ export default function ContactPage() {
               the team.
             </p>
             <Link href="/waitlist" className="btn-download">
+              <BtnPlane />
               Join our waitlist
             </Link>
           </div>

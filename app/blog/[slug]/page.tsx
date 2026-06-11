@@ -4,7 +4,8 @@ import { useState, useEffect, use } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { ArrowLeft, Calendar, Clock, Edit } from "lucide-react"
-import { MainNavigation, MainFooter } from "@/components/main-navigation"
+import { FramerPageShell } from "@/components/framer/framer-page-shell"
+import { BtnPlane } from "@/components/framer/btn-plane"
 import { blogService, BlogPost } from "@/lib/blogServiceFree"
 import { Button } from "@/components/ui/button"
 import { useAdminAuth } from "@/hooks/useAdmin"
@@ -229,9 +230,8 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen gradient-mesh flex flex-col">
-        <MainNavigation />
-        <main className="flex-1 container mx-auto py-8 px-4">
+      <FramerPageShell>
+        <div className="container mx-auto py-8 px-4">
           <div className="max-w-4xl mx-auto">
             <div className="animate-pulse">
               <div className="h-8 bg-gray-200 rounded w-1/4 mb-8"></div>
@@ -248,17 +248,15 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
               </div>
             </div>
           </div>
-        </main>
-        <MainFooter />
-      </div>
+        </div>
+      </FramerPageShell>
     )
   }
 
   if (error || !post) {
     return (
-      <div className="min-h-screen gradient-mesh flex flex-col">
-        <MainNavigation />
-        <main className="flex-1 container mx-auto py-8 px-4">
+      <FramerPageShell>
+        <div className="container mx-auto py-8 px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-4xl font-bold text-[#0a3d62] mb-4">Blog Post Not Found</h1>
             <p className="text-lg text-[#0a3d62] mb-8">The blog post you're looking for doesn't exist.</p>
@@ -269,17 +267,15 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
               </Button>
             </Link>
           </div>
-        </main>
-        <MainFooter />
-      </div>
+        </div>
+      </FramerPageShell>
     )
   }
 
   return (
-    <div className="min-h-screen gradient-mesh flex flex-col">
-      <MainNavigation />
+    <FramerPageShell>
 
-      <main className="flex-1 container mx-auto py-8 px-4">
+      <div className="container mx-auto py-8 px-4">
         <div className="max-w-4xl mx-auto">
           <Link href="/blog" className="inline-flex items-center gap-2 text-[#0a3d62] hover:text-[#ff9933] transition-colors duration-300 mb-8">
             <ArrowLeft className="h-4 w-4" />
@@ -359,18 +355,14 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
               <p className="text-[#0a3d62] mb-6 font-medium">
                 Join our waitlist to be among the first to experience the future of digital receipts.
               </p>
-              <Link
-                href="/waitlist"
-                className="btn-modern gradient-accent hover:shadow-2xl text-white font-medium border-none rounded-full px-8 py-3 h-auto text-lg transform hover:scale-105 transition-all duration-300"
-              >
+              <Link href="/waitlist" className="btn-download">
+                <BtnPlane />
                 Join Our Waitlist
               </Link>
             </div>
           </div>
         </div>
-      </main>
-
-      <MainFooter />
+      </div>
 
       {/* Edit Modal - only render if we have a valid Firebase post */}
       {post && post.id && !post.id.startsWith('static-') && (
@@ -381,6 +373,6 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
           blog={post}
         />
       )}
-    </div>
+    </FramerPageShell>
   )
-} 
+}

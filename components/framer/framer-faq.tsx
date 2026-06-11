@@ -35,7 +35,11 @@ export function FramerFaq() {
                     <path d="M12 5v14M5 12h14" />
                   </svg>
                 </button>
-                {item.answer ? <div className="faq-answer">{item.answer}</div> : null}
+                {item.answer ? (
+                  <div className="faq-answer-wrap">
+                    <div className="faq-answer">{item.answer}</div>
+                  </div>
+                ) : null}
               </Reveal>
             )
           })}

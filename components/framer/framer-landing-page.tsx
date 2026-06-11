@@ -7,7 +7,7 @@ import { FramerHero } from "./framer-hero"
 import { FramerHowItWorks } from "./framer-how-it-works"
 import { FramerIntegrations } from "./framer-integrations"
 import { FramerNav } from "./framer-nav"
-import { AnimationProviders } from "./anim"
+import { AnimationProviders, FlightProgress, FlyToTop } from "./anim"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -18,6 +18,8 @@ export function FramerLandingPage() {
   return (
     <AnimationProviders>
       <div className={`framer-site ${inter.className}`}>
+        <FlightProgress />
+        <FlyToTop />
         <FramerNav />
         <main>
           <FramerHero />

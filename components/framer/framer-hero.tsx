@@ -10,7 +10,8 @@ import {
 import type { MotionValue } from "motion/react"
 import { useEffect, useRef, useState } from "react"
 import type { ReactNode } from "react"
-import { Magnetic } from "./anim"
+import { Magnetic, PlaneFlight } from "./anim"
+import { BtnPlane } from "./btn-plane"
 import { APP_DOWNLOAD_URL } from "./constants"
 
 /* ------------------------------------------------------------------ *
@@ -112,12 +113,14 @@ function usePointerParallax() {
 }
 
 /**
- * A floating card with two composed behaviours:
+ * A floating card with three composed behaviours:
+ *  - a "bloom" entrance: the card pops in (scale + fade) as the intro plane
+ *    flies past it — `appear` is the per-card delay synced to the flight
  *  - pointer parallax (depth-scaled translation tracking the cursor)
  *  - a gentle continuous idle float (small y oscillation), with a
  *    per-card phase offset so cards don't bob in unison.
- * Both no-op when parallax is disabled (touch / reduced motion); the idle
- * float likewise only runs when motion is allowed.
+ * All no-op when parallax is disabled (touch / reduced motion); on mobile the
+ * two visible cards get a CSS-only pop + bob instead (see framer-site.css).
  */
 function FloatCard({
   className,
@@ -126,6 +129,7 @@ function FloatCard({
   py,
   depth,
   phase,
+  appear,
   active,
 }: {
   className: string
@@ -134,6 +138,7 @@ function FloatCard({
   py: MotionValue<number>
   depth: number
   phase: number
+  appear: number
   active: boolean
 }) {
   // Pointer parallax: map normalized -1..1 onto pixel travel scaled by depth.
@@ -144,10 +149,19 @@ function FloatCard({
     return <div className={className}>{children}</div>
   }
 
-  // Idle float layered on top of the parallax translate via a separate
-  // transform child so the two don't fight over the same `y` value.
+  // The card's background/padding lives on the outer element, so every
+  // whole-card move (bloom scale/opacity + parallax x/y) must happen THERE —
+  // Motion composes the style motion values with the animated scale into one
+  // transform. Only the gentle idle bob runs on an inner element (its y would
+  // otherwise fight the parallax y).
   return (
-    <m.div className={className} style={{ x, y }}>
+    <m.div
+      className={className}
+      style={{ x, y }}
+      initial={{ opacity: 0, scale: 0.5 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ type: "spring", stiffness: 190, damping: 17, delay: appear }}
+    >
       <m.div
         animate={{ y: [0, -8, 0] }}
         transition={{
@@ -160,6 +174,28 @@ function FloatCard({
         {children}
       </m.div>
     </m.div>
+  )
+}
+
+/**
+ * Hand-drawn orange underline that sweeps on under the key phrase right after
+ * the headline settles — drawn once, scales with the text via viewBox.
+ */
+function HeroUnderline() {
+  const prefersReduced = useReducedMotion()
+  return (
+    <svg className="hero-underline-svg" viewBox="0 0 230 14" preserveAspectRatio="none" aria-hidden="true">
+      {prefersReduced ? (
+        <path d="M4 10 C 70 13.5, 150 3, 226 7.5" />
+      ) : (
+        <m.path
+          d="M4 10 C 70 13.5, 150 3, 226 7.5"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ delay: 1.05, duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
+        />
+      )}
+    </svg>
   )
 }
 
@@ -181,7 +217,11 @@ export function FramerHero() {
           <Entrance as="h1" id="hero-title" delay={0.05}>
             Stop losing money
             <br />
-            to missing receipts.
+            to{" "}
+            <span className="hero-underline">
+              missing receipts.
+              <HeroUnderline />
+            </span>
           </Entrance>
           <Entrance as="p" className="hero-desc" delay={0.16}>
             PapeX automatically captures and organizes every transaction after purchase, so nothing gets lost, and every
@@ -190,6 +230,7 @@ export function FramerHero() {
         </div>
 
         <div className="hero-visual" ref={ref}>
+          <PlaneFlight delay={0.5} duration={2.6} />
           <div className="hero-phone">
             {enabled ? (
               <m.div style={{ x: phoneX, y: phoneY, width: "100%" }}>
@@ -218,6 +259,7 @@ export function FramerHero() {
             py={py}
             depth={26}
             phase={0}
+            appear={1.05}
             active={enabled}
           >
             <div className="card-row">
@@ -237,6 +279,7 @@ export function FramerHero() {
             py={py}
             depth={32}
             phase={0.8}
+            appear={1.25}
             active={enabled}
           >
             <div className="card-meta">August Expense Summary</div>
@@ -250,6 +293,7 @@ export function FramerHero() {
             py={py}
             depth={22}
             phase={1.6}
+            appear={2.2}
             active={enabled}
           >
             <div className="pill-title">Tax Ready</div>
@@ -262,6 +306,7 @@ export function FramerHero() {
             py={py}
             depth={28}
             phase={2.4}
+            appear={2.05}
             active={enabled}
           >
             <div className="card-title">You were added to the group &quot;Smith Family&quot;</div>
@@ -274,6 +319,7 @@ export function FramerHero() {
             py={py}
             depth={20}
             phase={3.2}
+            appear={2.35}
             active={enabled}
           >
             <div className="pill-title">Find Any Receipt</div>
@@ -284,6 +330,7 @@ export function FramerHero() {
         <Entrance className="hero-cta-wrap" delay={0.28}>
           <Magnetic>
             <a href={APP_DOWNLOAD_URL} className="btn-download" target="_blank" rel="noopener noreferrer">
+              <BtnPlane />
               Download App
             </a>
           </Magnetic>

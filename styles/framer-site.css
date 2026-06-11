@@ -16,7 +16,9 @@ html:has(.framer-site) { scroll-behavior: smooth; font-size: 16px; }
 
 .framer-site img { display: block; max-width: 100%; height: auto; }
 .framer-site a { color: inherit; text-decoration: none; }
-.framer-site button { font: inherit; cursor: pointer; border: none; background: none; }
+/* :where() keeps this reset at class-level specificity so Tailwind
+   utilities (loaded after this file) can restyle buttons inside the shell. */
+.framer-site :where(button) { font: inherit; cursor: pointer; border: none; background: none; }
 
 :root {
   --text: #0a3d62;
@@ -116,6 +118,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   padding: 8px 16px;
   background: linear-gradient(135deg, #ff9933 0%, #d35400 100%);
   color: var(--white);
@@ -387,9 +390,11 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   .hero-copy { margin-bottom: 20px; padding: 0; }
   .hero h1 { font-size: clamp(32px, 8vw, 40px); }
   .hero-desc { font-size: 16px; }
-  .hero-visual { height: 280px; max-width: 100%; }
+  /* Tall enough for the full phone mockup (width x 1.7875 aspect) so it can't
+     spill over the CTA button below. */
+  .hero-visual { height: min(86vw, 332px); max-width: 100%; }
   .hero-float { display: none; }
-  .hero-phone { width: min(188px, 48vw); }
+  .hero-phone { width: min(180px, 46vw); }
   .hero-cta-wrap { margin-top: 20px; }
 }
 
@@ -519,7 +524,8 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   .pricing { padding: 48px 0 64px; }
   .how-head .section-title { max-width: none; }
   .faq-question { padding: 16px 18px; font-size: 15px; }
-  .faq-answer { padding: 0 18px 16px; font-size: 15px; }
+  .faq-answer { padding: 0 18px; font-size: 15px; }
+  .faq-item.open .faq-answer { padding-bottom: 16px; }
 }
 
 /* ─── INTEGRATIONS ─── */
@@ -718,14 +724,37 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 }
 .faq-item.open .faq-icon { transform: rotate(45deg); }
 
+/* Silk open/close: the wrap animates its grid row 0fr -> 1fr (the modern
+   height-auto transition), while the answer itself fades + slides and its
+   bottom padding animates in so the closed state collapses to true zero. */
+.faq-answer-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.faq-item.open .faq-answer-wrap { grid-template-rows: 1fr; }
+
 .faq-answer {
-  display: none;
-  padding: 0 24px 20px;
+  overflow: hidden;
+  min-height: 0;
+  padding: 0 24px;
   font-size: 16px;
   line-height: 1.6;
   color: var(--text-muted-light);
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 0.35s ease, transform 0.35s ease, padding 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.faq-item.open .faq-answer { display: block; }
+.faq-item.open .faq-answer {
+  opacity: 1;
+  transform: none;
+  padding-bottom: 20px;
+  transition-delay: 0.06s, 0.06s, 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .faq-answer-wrap, .faq-answer { transition: none; }
+}
 
 @media (min-width: 810px) {
   .faq-layout {
@@ -1387,4 +1416,188 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 
 @media (min-width: 810px) {
   .pricing-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ─── ALIVE LAYER: brand plane + tactility ─── */
+
+/* Hero intro flight overlay (plane + contrail), unmounts after the flyby */
+.plane-flight {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  overflow: visible;
+}
+
+/* Hand-drawn orange underline under the headline's key phrase */
+.hero-underline {
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+}
+.hero-underline-svg {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.1em;
+  width: 100%;
+  height: 0.18em;
+  overflow: visible;
+}
+.hero-underline-svg path {
+  fill: none;
+  stroke: var(--orange);
+  stroke-width: 5;
+  stroke-linecap: round;
+  opacity: 0.9;
+}
+
+/* CTA paper-plane glyph: plane A darts off top-right on hover while plane B
+   swoops in from bottom-left to take its place. Reverses on leave. */
+.btn-plane {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.btn-plane svg {
+  position: absolute;
+  inset: 0;
+  width: 16px;
+  height: 16px;
+  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.32s ease;
+}
+.btn-plane-b {
+  transform: translate(-20px, 20px);
+  opacity: 0;
+}
+.btn-download:hover .btn-plane-a,
+.btn-download:focus-visible .btn-plane-a {
+  transform: translate(20px, -20px);
+  opacity: 0;
+}
+.btn-download:hover .btn-plane-b,
+.btn-download:focus-visible .btn-plane-b {
+  transform: translate(0, 0);
+  opacity: 1;
+  transition-delay: 0.1s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn-plane svg { transition: none; }
+}
+
+/* Scroll flight-path progress pinned to the top of the viewport */
+.flight-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 0;
+  z-index: 90;
+  pointer-events: none;
+}
+.flight-progress-track {
+  position: absolute;
+  top: 9px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-image: repeating-linear-gradient(90deg, rgba(10, 61, 98, 0.25) 0 5px, transparent 5px 13px);
+}
+.flight-progress-fill {
+  position: absolute;
+  top: 8px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  transform-origin: left center;
+  background: linear-gradient(90deg, rgba(255, 153, 51, 0) 0%, #ff9933 18%, #e67e22 100%);
+  border-radius: 2px;
+  box-shadow: 0 0 10px rgba(255, 153, 51, 0.55);
+}
+
+/* Feature cards: perspective wrapper so the Tilt has depth */
+.feature-card-outer {
+  perspective: 1000px;
+  display: flex;
+}
+.feature-card-outer .feature-card {
+  flex: 1 1 auto;
+  width: 100%;
+}
+
+/* "Fly me to the top" */
+.fly-top {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 95;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--white);
+  box-shadow: 0 8px 24px rgba(10, 61, 98, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.fly-top:hover { box-shadow: 0 10px 28px rgba(211, 84, 0, 0.4); }
+.fly-top img { width: 26px; height: auto; }
+@media (max-width: 809px) {
+  .fly-top { right: 16px; bottom: 16px; width: 46px; height: 46px; }
+  .fly-top img { width: 22px; }
+}
+
+/* Mobile hero: bring two float cards back (compact) so the hero isn't static.
+   The pop + bob is CSS-only and scoped to touch devices so it can't fight the
+   Motion-driven parallax transforms on narrow desktop windows. */
+@media (max-width: 809px) {
+  .hero-float--receipt,
+  .hero-float--tax { display: block; }
+  .hero-float--receipt {
+    top: 2px;
+    left: 0;
+    width: min(196px, 54vw);
+    padding: 12px 14px;
+  }
+  .hero-float--receipt .card-title { font-size: 13px; }
+  .hero-float--receipt .card-sub { font-size: 12px; }
+  .hero-float--receipt .card-icon { width: 28px; height: 28px; font-size: 14px; }
+  .hero-float--tax {
+    top: auto;
+    bottom: 10px;
+    right: 0;
+    left: auto;
+    width: auto;
+    max-width: 62vw;
+    padding: 10px 18px;
+  }
+  .hero-float--tax .pill-title { font-size: 12px; }
+  .hero-float--tax .pill-sub { font-size: 11px; }
+}
+@media (max-width: 809px) and (hover: none) {
+  .hero-float--receipt {
+    animation:
+      hero-card-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) 1.3s both,
+      hero-bob 6s ease-in-out 2.4s infinite;
+  }
+  .hero-float--tax {
+    animation:
+      hero-card-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) 1.7s both,
+      hero-bob 6s ease-in-out 3.4s infinite;
+  }
+}
+@keyframes hero-card-pop {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes hero-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-float--receipt,
+  .hero-float--tax { animation: none; }
 }

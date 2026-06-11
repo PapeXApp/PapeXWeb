@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState } from "react"
 import { Magnetic } from "./anim"
+import { BtnPlane } from "./btn-plane"
 import { APP_DOWNLOAD_URL } from "./constants"
 
 function anchorHref(pathname: string, hash: string) {
@@ -30,6 +31,7 @@ export function FramerNav() {
           <div className="nav-actions">
             <Magnetic>
               <a href={APP_DOWNLOAD_URL} className="btn-download" target="_blank" rel="noopener noreferrer">
+                <BtnPlane />
                 Download App
               </a>
             </Magnetic>

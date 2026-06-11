@@ -1,4 +1,9 @@
 import type { Metadata } from 'next'
+// framer-site.css is imported BEFORE globals.css on purpose: its `.framer-site *`
+// reset (margin/padding 0) ties with Tailwind utilities on specificity, so the
+// later stylesheet wins. Loading Tailwind last lets spacing utilities (px-*,
+// mb-*, container...) work inside the framer shell (e.g. blog post pages).
+import '@/styles/framer-site.css'
 import './globals.css'
 import { barlow, kameron } from './fonts'
 import { Analytics } from '@vercel/analytics/react'

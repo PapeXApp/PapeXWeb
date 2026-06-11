@@ -6,6 +6,7 @@ import Link from "next/link"
 import { ArrowRight, Calendar, Clock } from "lucide-react"
 import { CreateBlogModal } from "@/components/CreateBlogModal"
 import { FramerPageShell } from "@/components/framer/framer-page-shell"
+import { BtnPlane } from "@/components/framer/btn-plane"
 import { blogService, BlogPost } from "@/lib/blogServiceFree"
 
 const staticBlogPosts: BlogPost[] = [
@@ -176,6 +177,7 @@ export default function BlogPage() {
               Join our community for the latest on digital receipts, sustainability, and product updates.
             </p>
             <Link href="/waitlist" className="btn-download">
+              <BtnPlane />
               Join our newsletter
             </Link>
           </div>

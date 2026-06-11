@@ -3,14 +3,12 @@
 import Image from "next/image"
 import Link from "next/link"
 import { Calendar, ArrowLeft } from "lucide-react"
-import { MainNavigation, MainFooter } from "@/components/main-navigation"
+import { FramerPageShell } from "@/components/framer/framer-page-shell"
 
 export default function BlogPost() {
   return (
-    <div className="min-h-screen bg-[#d0e4f4] flex flex-col">
-      <MainNavigation />
-
-      <main className="flex-1 container mx-auto py-6 px-4">
+    <FramerPageShell>
+      <div className="container mx-auto py-6 px-4">
         <div className="max-w-4xl mx-auto">
           {/* Back to Blog */}
           <Link 
@@ -237,9 +235,7 @@ export default function BlogPost() {
             </Link>
           </div>
         </div>
-      </main>
-
-      <MainFooter />
-    </div>
+      </div>
+    </FramerPageShell>
   )
 } 

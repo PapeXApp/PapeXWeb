@@ -1,13 +1,11 @@
 'use client'
 
-import { MainNavigation, MainFooter } from '@/components/main-navigation'
+import { FramerPageShell } from '@/components/framer/framer-page-shell'
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen gradient-mesh flex flex-col">
-      <MainNavigation />
-
-      <main className="flex-1 container mx-auto py-12 px-4 lg:px-8 relative overflow-hidden">
+    <FramerPageShell>
+      <div className="container mx-auto py-8 px-4 relative overflow-hidden">
         <div className="absolute top-16 right-10 w-36 h-36 gradient-primary rounded-full opacity-[0.07] blur-3xl" />
         <div className="absolute bottom-20 left-16 w-32 h-32 gradient-accent rounded-full opacity-[0.08] blur-2xl" />
 
@@ -206,10 +204,8 @@ export default function TermsPage() {
             </div>
           </section>
         </article>
-      </main>
-
-      <MainFooter />
-    </div>
+      </div>
+    </FramerPageShell>
   )
 }
 
