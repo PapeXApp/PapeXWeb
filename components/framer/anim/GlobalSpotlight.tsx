@@ -34,7 +34,7 @@ type GlobalSpotlightProps = {
  * hydration mismatch. Uses the LazyMotion-compatible `m` component.
  */
 export function GlobalSpotlight({
-  color = "rgba(255, 153, 51, 0.22)",
+  color = "rgba(255, 153, 51, 0.42)",
   radius = 680,
   blendMode = "screen",
 }: GlobalSpotlightProps) {
