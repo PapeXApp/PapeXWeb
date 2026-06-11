@@ -1607,13 +1607,14 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 /* main is the positioning context for the full-height route overlay. */
 .framer-site main { position: relative; }
 
-/* The route overlay spans the whole document height behind the content. It is
-   absolutely positioned over <main>, never intercepts pointer input, and sits
-   below the content so headings/cards always read above the dashed line. */
+/* The route overlay spans the whole document height. It is absolutely
+   positioned over <main> and never intercepts pointer input. Foreground by
+   design: the contrail + courier fly OVER section content (feature cards
+   included) — still below the spotlight (60), FlyToTop (95) and nav (100). */
 .flight-route {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: 40;
   pointer-events: none;
   overflow: visible;
 }
@@ -1637,16 +1638,15 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 /* Faint full-route ghost so the path reads even before the reader scrolls
    there. Kept very quiet — a hint, not a line. */
 .flight-route-ghost {
-  stroke: rgba(10, 61, 98, 0.1);
+  stroke: rgba(255, 153, 51, 0.18);
   stroke-width: 1.5;
 }
 
-/* The revealed (drawn-in) dashed route. Navy with a soft glow reads over the
-   light sections; the white companion stroke keeps it legible where the route
-   crosses the navy integrations band. */
+/* The revealed (drawn-in) dashed route: the brand's light orange contrail.
+   Reads on the light sections and pops on the navy integrations band. */
 .flight-route-line {
-  stroke: rgba(10, 61, 98, 0.34);
-  stroke-width: 2;
+  stroke: rgba(255, 153, 51, 0.8);
+  stroke-width: 2.25;
 }
 
 /* Wake: a brighter orange copy revealed for ~0.65s at each section crossing —
@@ -1656,9 +1656,10 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   transition: opacity 0.5s ease;
 }
 .flight-route-wake {
-  stroke: var(--orange);
-  stroke-width: 2.5;
-  filter: drop-shadow(0 0 4px rgba(255, 153, 51, 0.6));
+  /* Deeper orange than the (now orange) base line so the pulse still reads. */
+  stroke: var(--orange-dark);
+  stroke-width: 2.75;
+  filter: drop-shadow(0 0 5px rgba(230, 126, 34, 0.7));
 }
 
 /* The courier sprite. Rides the route tip via offset-path; its size clamps with
