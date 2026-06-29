@@ -1,6 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { Reveal, RevealGroup } from "./anim"
+import { AdminLogin } from "@/components/AdminLogin"
 
 export function FramerFooter() {
   return (
@@ -32,6 +33,7 @@ export function FramerFooter() {
         </RevealGroup>
         <div className="footer-bottom">
           <span>© 2026 PapeX. All rights reserved.</span>
+          <AdminLogin />
         </div>
       </div>
     </footer>
