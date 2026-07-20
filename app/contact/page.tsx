@@ -36,7 +36,7 @@ const teamMembers: TeamMember[] = [
     bio: "Builds and maintains PapeX's core product, backend systems, and mobile experience.",
   },
   {
-    name: "Connor McKenna",
+    name: "Conor McKenna",
     role: "CMO / Co-Founder",
     image: "/profiles/connor_mckenna.jpeg",
     fallbackImage: "/profiles/placeholder.svg",
@@ -82,7 +82,7 @@ const teamMembers: TeamMember[] = [
 ]
 
 function photoClass(name: string) {
-  if (name === "Connor McKenna") return "object-cover team-photo-connor"
+  if (name === "Conor McKenna") return "object-cover team-photo-connor"
   if (name === "Dawn Lilington") return "object-cover object-right-top"
   return "object-cover"
 }
