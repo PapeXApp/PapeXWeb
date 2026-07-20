@@ -31,6 +31,7 @@ const teamMembers: TeamMember[] = [
     role: "CTO / Co-Founder",
     image: "/profiles/noah_thompson.jpeg",
     fallbackImage: "/profiles/placeholder.svg",
+    linkedin: "https://www.linkedin.com/in/nthomp08",
     email: "noah.thompson@papex.app",
     bio: "Builds and maintains PapeX's core product, backend systems, and mobile experience.",
   },
@@ -39,7 +40,8 @@ const teamMembers: TeamMember[] = [
     role: "CMO / Co-Founder",
     image: "/profiles/connor_mckenna.jpeg",
     fallbackImage: "/profiles/placeholder.svg",
-    email: "connor.mckenna@papex.app",
+    linkedin: "https://www.linkedin.com/in/conor-l-mckenna/",
+    email: "conor@papex.app",
     bio: "Leads PapeX marketing, brand strategy, and go-to-market across channels.",
   },
   {
