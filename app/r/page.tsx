@@ -16,12 +16,22 @@
 //
 // `loading.tsx` in this segment covers the "slow fetch" state automatically
 // via the Suspense boundary Next.js creates around this async component.
+//
+// Fallback semantics (mirrors the App Clip's own Receipt.sample handling,
+// see docs/goals/rdh-receipt-ux-clip-web/design-spec.md):
+//   - no `sid` param at all               -> sample receipt, "sample" banner
+//   - `sid` present but wrong format       -> sample receipt, "sample" banner
+//   - `sid` valid format, backend 404s     -> sample receipt, "unavailable" banner
+//   - any other backend/network error      -> retry screen, no sample
+//   - `sid` valid, backend returns bytes   -> the real receipt
 
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { fetchReceiptBytes, isValidSid } from "@/lib/rdh";
-import { parseEscPos, guessMerchantName } from "@/lib/escpos";
-import { Shell, StateCard, ReceiptCard, AppCta } from "./ui";
+import { parseEscPos } from "@/lib/escpos";
+import { summarizeReceipt, hasStructure as computeHasStructure } from "@/lib/receiptSummary";
+import { sampleReceiptLines } from "@/lib/sampleReceipt";
+import { Shell, StateCard, SampleBanner, ReceiptView, CtaRow, AppCta } from "./ui";
 import RetryButton from "./RetryButton";
 
 export const metadata: Metadata = {
@@ -46,16 +56,15 @@ export default async function ReceiptPage({
   const rawSid = Array.isArray(params.sid) ? params.sid[0] : params.sid;
   const uaHeader = (await headers()).get("user-agent") ?? "";
   const isAndroid = /android/i.test(uaHeader);
+  const isIOS = /iphone|ipad|ipod/i.test(uaHeader);
 
   if (!isValidSid(rawSid)) {
+    const summary = summarizeReceipt(sampleReceiptLines);
     return (
       <Shell>
-        <StateCard
-          icon="warning"
-          title="This receipt link isn't valid"
-          message="Double check the link, or ask the store for a new one."
-        />
-        <AppCta isAndroid={isAndroid} />
+        <SampleBanner variant="sample" />
+        <ReceiptView summary={summary} hasStructure={computeHasStructure(summary)} />
+        <CtaRow isSample isIOS={isIOS} isAndroid={isAndroid} />
       </Shell>
     );
   }
@@ -63,14 +72,12 @@ export default async function ReceiptPage({
   const result = await fetchReceiptBytes(rawSid);
 
   if (result.status === "not_found") {
+    const summary = summarizeReceipt(sampleReceiptLines);
     return (
       <Shell>
-        <StateCard
-          icon="clock"
-          title="This receipt isn't available anymore"
-          message="Receipts expire after 30 days."
-        />
-        <AppCta isAndroid={isAndroid} />
+        <SampleBanner variant="unavailable" />
+        <ReceiptView summary={summary} hasStructure={computeHasStructure(summary)} />
+        <CtaRow isSample isIOS={isIOS} isAndroid={isAndroid} />
       </Shell>
     );
   }
@@ -91,12 +98,12 @@ export default async function ReceiptPage({
   }
 
   const receipt = parseEscPos(result.bytes);
-  const merchantName = guessMerchantName(receipt.lines);
+  const summary = summarizeReceipt(receipt.lines);
 
   return (
     <Shell>
-      <ReceiptCard lines={receipt.lines} merchantName={merchantName} />
-      <AppCta isAndroid={isAndroid} />
+      <ReceiptView summary={summary} hasStructure={computeHasStructure(summary)} />
+      <CtaRow sid={rawSid} isSample={false} isIOS={isIOS} isAndroid={isAndroid} />
     </Shell>
   );
 }
