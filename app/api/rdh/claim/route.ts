@@ -20,10 +20,12 @@
 //   know about every possible upstream failure mode.
 //
 // `ADAPTER_API_BASE` is the adapter backend's *host* base (no `/api/v1`
-// suffix) — e.g. `http://3.226.96.195:3000`, not
-// `http://3.226.96.195:3000/api/v1`. The default here is derived from
+// suffix) — e.g. `http://3.90.44.195:3000`, not
+// `http://3.90.44.195:3000/api/v1`. The default here is the adapter EC2 (tag papex-adapter-backend, i-0e331185d1c29871e per
+// OCR_PIPELINE_DEPLOY_2026-04-15.md) — NOT 3.226.96.195, which is the old
+// unrelated prod backend. Originally mis-derived from
 // PapeXV2/config/api.ts's `OCR_BASE_URL` fallback
-// (`http://3.226.96.195:3000/api/v1`) with the `/api/v1` suffix stripped,
+// (`http://3.90.44.195:3000/api/v1`) with the `/api/v1` suffix stripped,
 // the same way that file's `buildEmailUsersBaseUrl()` derives a sibling
 // path. See .env.example for the documented override.
 //
@@ -34,7 +36,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isValidSid } from "@/lib/rdh";
 
-const DEFAULT_ADAPTER_HOST = "http://3.226.96.195:3000";
+const DEFAULT_ADAPTER_HOST = "http://3.90.44.195:3000";
 
 function adapterBase(): string {
   const fromEnv = process.env.ADAPTER_API_BASE?.trim();
