@@ -142,7 +142,7 @@ export function StateCard({
       >
         <Icon className="h-6 w-6" style={{ color: T.textMuted }} strokeWidth={1.75} />
       </div>
-      <h1 className="text-xl font-semibold" style={{ color: T.text }}>
+      <h1 className="font-barlow text-xl font-semibold" style={{ color: T.text }}>
         {title}
       </h1>
       <p className="mt-2 max-w-xs text-sm" style={{ color: T.textSecondary }}>
@@ -175,7 +175,7 @@ export function MerchantHeaderCard({ summary }: { summary: ReceiptSummary }) {
           </span>
         </div>
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-2xl font-medium" style={{ color: T.text }}>
+          <h1 className="font-barlow truncate text-2xl font-medium" style={{ color: T.text }}>
             {merchantName ?? "Your receipt"}
           </h1>
           {addressLines.length > 0 && (
@@ -203,7 +203,7 @@ export function ItemsCard({ summary }: { summary: ReceiptSummary }) {
   if (summary.items.length === 0) return null;
   return (
     <div>
-      <p className="mb-2 px-1 text-sm font-medium uppercase tracking-wide" style={{ color: T.blue }}>
+      <p className="mb-2 px-1 text-sm font-medium uppercase tracking-wide" style={{ color: T.textSecondary }}>
         Items Purchased
       </p>
       <GlassCard>
@@ -315,7 +315,7 @@ export function TotalsCard({ summary }: { summary: ReceiptSummary }) {
 
   return (
     <div>
-      <p className="mb-2 px-1 text-sm font-medium uppercase tracking-wide" style={{ color: T.blue }}>
+      <p className="mb-2 px-1 text-sm font-medium uppercase tracking-wide" style={{ color: T.textSecondary }}>
         Totals
       </p>
       <GlassCard>
