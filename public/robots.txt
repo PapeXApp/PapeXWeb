@@ -1,6 +1,9 @@
 # Allow all crawlers
 User-agent: *
 Allow: /
+# RDH receipt web fallback — per-session, expiring, no SEO value. Belt-and-
+# suspenders alongside the route's own noindex meta tag (app/r/page.tsx).
+Disallow: /r
 
 # Sitemap location
 Sitemap: https://papex.app/sitemap.xml 
