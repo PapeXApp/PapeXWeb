@@ -63,7 +63,9 @@ export async function POST(request: NextRequest) {
   }
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
+  // Must exceed the adapter's own 8s RDH-backend fetch budget plus its
+  // Firestore writes, or we 502 after the claim already succeeded.
+  const timeout = setTimeout(() => controller.abort(), 15000);
 
   try {
     const upstream = await fetch(`${adapterBase()}/api/v1/rdh/claim`, {
