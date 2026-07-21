@@ -461,18 +461,19 @@ class ParserContext {
       case 0x28:
         this.handleGsParen();
         break;
-      // GS v 0 m xL xH yL yH d1...dk — raster bit image
+      // GS v 0 m xL xH yL yH d1...dk — raster bit image. 8 header bytes:
+      // 0x1D 0x76 0x30, then m, xL, xH, yL, yH (index+3..index+7).
       case 0x76: {
-        if (this.index + 6 >= this.bytes.length || this.bytes[this.index + 2] !== 0x30) {
+        if (this.index + 7 >= this.bytes.length || this.bytes[this.index + 2] !== 0x30) {
           this.index += 2;
           return;
         }
-        const xL = this.bytes[this.index + 3];
-        const xH = this.bytes[this.index + 4];
-        const yL = this.bytes[this.index + 5];
-        const yH = this.bytes[this.index + 6];
+        const xL = this.bytes[this.index + 4];
+        const xH = this.bytes[this.index + 5];
+        const yL = this.bytes[this.index + 6];
+        const yH = this.bytes[this.index + 7];
         const dataLen = (xL + xH * 256) * (yL + yH * 256);
-        const take = Math.min(7 + dataLen, this.bytes.length - this.index);
+        const take = Math.min(8 + dataLen, this.bytes.length - this.index);
         this.index += take;
         break;
       }

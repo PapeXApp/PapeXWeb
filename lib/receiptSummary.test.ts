@@ -202,6 +202,29 @@ test("discount/rebate lines are captured separately from items and totals", () =
   assert.equal(summary.total, 3.0);
 });
 
+test("a bare date line consumed as the dateline is not duplicated in addressLines", () => {
+  // Regression test for the P2 dup-date bug: a bare date line directly under
+  // the merchant (no blank-line separator) used to satisfy extractAddress's
+  // "short/centered, not money/total" test AND get promoted to `dateline`,
+  // so it rendered twice.
+  const lines = [line("Corner Deli", "center"), line("Jun 8, 2026", "center"), line("1  Sandwich   6.00")];
+  const summary = summarizeReceipt(lines);
+  assert.equal(summary.dateline, "Jun 8, 2026");
+  assert.deepEqual(summary.addressLines, []);
+});
+
+test("a date line mixed among real address lines is excluded, siblings kept", () => {
+  const lines = [
+    line("Corner Deli", "center"),
+    line("123 Main St", "center"),
+    line("Jun 8, 2026", "center"),
+    line("1  Sandwich   6.00"),
+  ];
+  const summary = summarizeReceipt(lines);
+  assert.equal(summary.dateline, "Jun 8, 2026");
+  assert.deepEqual(summary.addressLines, ["123 Main St"]);
+});
+
 test("item label without a qty prefix keeps the whole label as the name", () => {
   const lines = [line("Shop"), line(""), line("Gift Card              25.00")];
   const summary = summarizeReceipt(lines);

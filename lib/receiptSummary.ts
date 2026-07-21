@@ -285,8 +285,12 @@ function extractPaymentLine(lines: ReceiptLine[]): string | undefined {
 
 export function summarizeReceipt(lines: ReceiptLine[]): ReceiptSummary {
   const merchant = extractMerchant(lines);
-  const addressLines = extractAddress(lines, merchant.index);
   const dateline = extractDateline(lines);
+  // A bare date line (e.g. right under the merchant, no blank-line separator)
+  // can also satisfy extractAddress's "short/centered, not money/total" test.
+  // Once it's been consumed as the formatted dateline, drop it from
+  // addressLines so it isn't rendered twice.
+  const addressLines = extractAddress(lines, merchant.index).filter((t) => t !== dateline);
   const totals = extractTotals(lines);
   const items = extractItems(lines);
   const paymentLine = extractPaymentLine(lines);
