@@ -390,13 +390,21 @@ export default function SupportPage() {
             </p>
             <div className="space-y-3">
               {CUSTOMER_QA.map((item) => (
-                <div
+                <details
                   key={item.q}
-                  className="rounded-2xl border border-[#0a3d62]/15 bg-white p-5 shadow-sm"
+                  className="group rounded-2xl border border-[#0a3d62]/15 bg-white p-5 open:shadow-sm"
                 >
-                  <p className="font-semibold text-[#ff9933]">{item.q}</p>
-                  <div className="mt-2 text-[#0a3d62]/85 leading-relaxed">{item.a}</div>
-                </div>
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold text-[#0a3d62]">
+                    <span>{item.q}</span>
+                    <span
+                      aria-hidden
+                      className="text-[#ff9933] transition-transform group-open:rotate-45 text-xl leading-none"
+                    >
+                      +
+                    </span>
+                  </summary>
+                  <div className="mt-4 text-[#0a3d62]/85 leading-relaxed">{item.a}</div>
+                </details>
               ))}
             </div>
           </section>
