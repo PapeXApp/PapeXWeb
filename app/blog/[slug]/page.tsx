@@ -11,50 +11,6 @@ import { Button } from "@/components/ui/button"
 import { useAdminAuth } from "@/hooks/useAdmin"
 import { EditBlogModal } from "@/components/EditBlogModal"
 
-// Static blog content for fallback
-const staticBlogContent: Record<string, string> = {
-  "hidden-cost-paper-receipts": `
-    <h2>The Environmental Impact</h2>
-    <p>Paper receipts might seem like a small part of your business operations, but their environmental impact is substantial. Every year, billions of receipts are printed, used briefly, and then discarded, contributing to deforestation and waste.</p>
-    
-    <h2>The Financial Burden</h2>
-    <p>Beyond the environmental concerns, paper receipts represent a significant financial burden for businesses. The cost of thermal paper, printer maintenance, and staff time spent dealing with receipt-related issues adds up quickly.</p>
-    
-    <h2>Why Digital is the Future</h2>
-    <p>Digital receipts offer a sustainable, cost-effective alternative that benefits both businesses and customers. With PapeX, you can eliminate paper waste while providing customers with easily accessible, organized receipts.</p>
-  `,
-  "history-of-receipts": `
-    <h2>Ancient Beginnings</h2>
-    <p>The concept of receipts dates back to ancient civilizations, where clay tablets and papyrus were used to record transactions. These early forms of documentation laid the foundation for modern receipt systems.</p>
-    
-    <h2>The Industrial Revolution</h2>
-    <p>The industrial revolution brought about mechanical cash registers and carbon paper receipts, revolutionizing how businesses tracked sales and provided proof of purchase to customers.</p>
-    
-    <h2>Digital Transformation</h2>
-    <p>Today, we're witnessing another revolutionary change with digital receipts. PapeX is at the forefront of this transformation, offering a seamless bridge between traditional receipt systems and modern digital solutions.</p>
-  `,
-  "secret-life-shopping-receipt": `
-    <h2>The Journey Begins</h2>
-    <p>When you receive a receipt and eventually throw it away, you might think its journey ends there. However, the environmental impact of that small piece of paper extends far beyond your trash can.</p>
-    
-    <h2>Landfill Accumulation</h2>
-    <p>Most receipts end up in landfills, where they can take years to decompose. The thermal paper used in receipts often contains BPA, which can leach into soil and groundwater.</p>
-    
-    <h2>The Digital Alternative</h2>
-    <p>Digital receipts offer a clean, environmentally friendly alternative. With PapeX, every digital receipt represents one less piece of paper in our landfills and one step closer to a sustainable future.</p>
-  `,
-  "why-business-owners-hate-printing-receipts": `
-    <h2>The Daily Frustrations</h2>
-    <p>Business owners face numerous challenges with traditional receipt printing: paper jams, running out of paper at crucial moments, maintenance costs, and storage issues.</p>
-    
-    <h2>Customer Experience Issues</h2>
-    <p>Long receipt printing times can slow down checkout processes, creating bottlenecks during busy periods and frustrating customers who are in a hurry.</p>
-    
-    <h2>How PapeX Solves These Problems</h2>
-    <p>PapeX eliminates all these pain points by providing instant digital receipts. No more paper jams, no more running out of supplies, and faster checkout times that improve the overall customer experience.</p>
-  `
-}
-
 interface BlogDetailPageProps {
   params: Promise<{
     slug: string
@@ -115,31 +71,17 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
       try {
         setLoading(true)
 
-        // First try to get from Firebase
         const firebaseBlogs = await blogService.getPublishedBlogs()
         const firebasePost = firebaseBlogs.find(blog => blog.slug === resolvedParams.slug)
 
         if (firebasePost) {
           setPost(firebasePost)
         } else {
-          // Fallback to static blog data
-          const staticPost = getStaticPost(resolvedParams.slug)
-          if (staticPost) {
-            setPost(staticPost)
-          } else {
-            setError('Blog post not found')
-          }
+          setError('Blog post not found')
         }
       } catch (error) {
         console.error('Error fetching blog post:', error)
-
-        // Try static fallback
-        const staticPost = getStaticPost(resolvedParams.slug)
-        if (staticPost) {
-          setPost(staticPost)
-        } else {
-          setError('Failed to load blog post')
-        }
+        setError('Failed to load blog post')
       } finally {
         setLoading(false)
       }
@@ -154,18 +96,11 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
       try {
         setLoading(true)
 
-        // First try to get from Firebase
         const firebaseBlogs = await blogService.getPublishedBlogs()
         const firebasePost = firebaseBlogs.find(blog => blog.slug === resolvedParams.slug)
 
         if (firebasePost) {
           setPost(firebasePost)
-        } else {
-          // Fallback to static blog data
-          const staticPost = getStaticPost(resolvedParams.slug)
-          if (staticPost) {
-            setPost(staticPost)
-          }
         }
       } catch (error) {
         console.error('Error refreshing blog post:', error)
@@ -175,57 +110,6 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
     }
 
     fetchPost()
-  }
-
-  const getStaticPost = (slug: string): BlogPost | null => {
-    const staticPosts: Record<string, BlogPost> = {
-      "hidden-cost-paper-receipts": {
-        id: "static-1",
-        title: "The Hidden Cost of Paper Receipts: Why Your Business Needs to Go Digital",
-        excerpt: "Discover the surprising environmental and financial impact of paper receipts on your business, and learn why digital receipts are the future.",
-        content: staticBlogContent["hidden-cost-paper-receipts"],
-        createdAt: new Date("2025-05-23"),
-        image: "/blog/blog_image.png",
-        slug: "hidden-cost-paper-receipts",
-        readTime: "5 min read",
-        published: true
-      },
-      "history-of-receipts": {
-        id: "static-2",
-        title: "A Brief History of Receipts: From Ancient Clay Tablets to Digital Innovation",
-        excerpt: "Explore the fascinating evolution of receipts throughout history and how PapeX is writing the next chapter in transaction documentation.",
-        content: staticBlogContent["history-of-receipts"],
-        createdAt: new Date("2025-05-29"),
-        image: "/blog/history 2.jpeg",
-        slug: "history-of-receipts",
-        readTime: "7 min read",
-        published: true
-      },
-      "secret-life-shopping-receipt": {
-        id: "static-3",
-        title: "The Secret Life of Your Shopping Receipt: What Happens After You Throw It Away",
-        excerpt: "Uncover the environmental journey of discarded paper receipts and why digital alternatives are crucial for our planet's future.",
-        content: staticBlogContent["secret-life-shopping-receipt"],
-        createdAt: new Date("2025-06-16"),
-        image: "/blog/blog4.png",
-        slug: "secret-life-shopping-receipt",
-        readTime: "6 min read",
-        published: true
-      },
-      "why-business-owners-hate-printing-receipts": {
-        id: "static-4",
-        title: "Why Business Owners Hate Printing Receipts (And How PapeX Solves This)",
-        excerpt: "Learn about the real frustrations business owners face with traditional receipt systems and how digital receipts can transform their operations.",
-        content: staticBlogContent["why-business-owners-hate-printing-receipts"],
-        createdAt: new Date("2025-06-07"),
-        image: "/blog/receipt-hate.png",
-        slug: "why-business-owners-hate-printing-receipts",
-        readTime: "4 min read",
-        published: true
-      }
-    }
-
-    return staticPosts[slug] || null
   }
 
   if (loading) {
@@ -307,8 +191,8 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
                   </div>
                 </div>
 
-                {/* Admin Edit Button - only show for Firebase posts and admins */}
-                {isAdmin && post.id && !post.id.startsWith('static-') && (
+                {/* Admin Edit Button - only show for admins */}
+                {isAdmin && post.id && (
                   <Button
                     onClick={() => setEditModalOpen(true)}
                     variant="outline"
@@ -336,7 +220,7 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
                     lineHeight: '1.8'
                   }}
                   dangerouslySetInnerHTML={{
-                    __html: (post.content || staticBlogContent[post.slug] || "")
+                    __html: (post.content || "")
                       .replace(/<h2>/g, '<h2 style="font-size: 1.875rem; font-weight: bold; color: #0a3d62; margin: 1.5rem 0 1rem 0; font-family: var(--font-kameron), Georgia, serif;">')
                       .replace(/<h3>/g, '<h3 style="font-size: 1.5rem; font-weight: bold; color: #0a3d62; margin: 1.25rem 0 0.75rem 0; font-family: var(--font-kameron), Georgia, serif;">')
                       .replace(/<a /g, '<a style="color: #ff9933; text-decoration: underline; font-weight: 500;" ')
@@ -364,8 +248,8 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
         </div>
       </div>
 
-      {/* Edit Modal - only render if we have a valid Firebase post */}
-      {post && post.id && !post.id.startsWith('static-') && (
+      {/* Edit Modal - only render if we have a valid post */}
+      {post && post.id && (
         <EditBlogModal
           isOpen={editModalOpen}
           onClose={() => setEditModalOpen(false)}

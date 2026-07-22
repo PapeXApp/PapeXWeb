@@ -9,57 +9,6 @@ import { FramerPageShell } from "@/components/framer/framer-page-shell"
 import { BtnPlane } from "@/components/framer/btn-plane"
 import { blogService, BlogPost } from "@/lib/blogServiceFree"
 
-const staticBlogPosts: BlogPost[] = [
-  {
-    id: "static-3",
-    title: "The Secret Life of Your Shopping Receipt: What Happens After You Throw It Away",
-    excerpt:
-      "Uncover the environmental journey of discarded paper receipts and why digital alternatives are crucial for our planet's future.",
-    content: "",
-    createdAt: new Date("2025-06-16"),
-    image: "/blog/blog4.png",
-    slug: "secret-life-shopping-receipt",
-    readTime: "6 min read",
-    published: true,
-  },
-  {
-    id: "static-4",
-    title: "Why Business Owners Hate Printing Receipts (And How PapeX Solves This)",
-    excerpt:
-      "Learn about the real frustrations business owners face with traditional receipt systems and how digital receipts can transform their operations.",
-    content: "",
-    createdAt: new Date("2025-06-07"),
-    image: "/blog/receipt-hate.png",
-    slug: "why-business-owners-hate-printing-receipts",
-    readTime: "4 min read",
-    published: true,
-  },
-  {
-    id: "static-2",
-    title: "A Brief History of Receipts: From Ancient Clay Tablets to Digital Innovation",
-    excerpt:
-      "Explore the fascinating evolution of receipts throughout history and how PapeX is writing the next chapter in transaction documentation.",
-    content: "",
-    createdAt: new Date("2025-05-29"),
-    image: "/blog/history 2.jpeg",
-    slug: "history-of-receipts",
-    readTime: "7 min read",
-    published: true,
-  },
-  {
-    id: "static-1",
-    title: "The Hidden Cost of Paper Receipts: Why Your Business Needs to Go Digital",
-    excerpt:
-      "Discover the surprising environmental and financial impact of paper receipts on your business, and learn why digital receipts are the future.",
-    content: "",
-    createdAt: new Date("2025-05-23"),
-    image: "/blog/blog_image.png",
-    slug: "hidden-cost-paper-receipts",
-    readTime: "5 min read",
-    published: true,
-  },
-]
-
 function sanitizeImageUrl(imageUrl: string | undefined): string {
   if (!imageUrl) return "/blog/blog_image.png"
   if (imageUrl.includes("localhost") || imageUrl.includes("127.0.0.1")) return "/blog/blog_image.png"
@@ -78,18 +27,17 @@ function formatDate(date: BlogPost["createdAt"]) {
 }
 
 export default function BlogPage() {
-  const [blogPosts, setBlogPosts] = useState<BlogPost[]>(staticBlogPosts)
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([])
   const [loading, setLoading] = useState(true)
 
   const fetchBlogs = async () => {
     try {
       setLoading(true)
       const firebaseBlogs = await blogService.getPublishedBlogs()
-      const allBlogs = firebaseBlogs.length > 0 ? [...firebaseBlogs, ...staticBlogPosts] : staticBlogPosts
-      setBlogPosts(allBlogs)
+      setBlogPosts(firebaseBlogs)
     } catch (error) {
       console.error("Error fetching blogs:", error)
-      setBlogPosts(staticBlogPosts)
+      setBlogPosts([])
     } finally {
       setLoading(false)
     }
