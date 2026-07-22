@@ -12,6 +12,7 @@
 // verify the device is legitimate and out of PCI scope.
 
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { FramerPageShell } from '@/components/framer/framer-page-shell'
 
 export const metadata: Metadata = {
@@ -278,6 +279,16 @@ export default function PciCompliancePage() {
                 </a>
               </p>
             </div>
+            <p className="text-sm text-[#0a3d62]/70 leading-relaxed">
+              Merchants: for device help, status light meanings, and troubleshooting, visit{' '}
+              <Link
+                href="/support"
+                className="text-[#ff9933] underline decoration-transparent hover:decoration-[#ff9933] transition"
+              >
+                papex.app/support
+              </Link>
+              .
+            </p>
           </section>
 
           <footer className="border-t border-[#0a3d62]/10 pt-6">
