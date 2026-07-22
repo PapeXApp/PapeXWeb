@@ -382,47 +382,88 @@ export default function SupportPage() {
             </div>
           </section>
 
-          {/* If a Customer Asks... */}
+          {/* FAQ's — compact dropdown boxes laid out in a 2-column grid.
+              items-start so a collapsed box next to an expanded one keeps its
+              own height instead of stretching to match its row neighbour. */}
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#0a3d62]">If a Customer Asks&hellip;</h2>
+            <h2 className="text-2xl font-semibold text-[#0a3d62]">FAQ&rsquo;s</h2>
             <p className="text-[#0a3d62]/70 leading-relaxed">
               Quick answers you can give at the counter.
             </p>
-            <div className="space-y-3">
+            <div className="grid items-start gap-3 sm:grid-cols-2">
               {CUSTOMER_QA.map((item) => (
                 <details
                   key={item.q}
-                  className="group rounded-2xl border border-[#0a3d62]/15 bg-white p-5 open:shadow-sm"
+                  className="group rounded-xl border border-[#0a3d62]/15 bg-white p-4 open:shadow-sm"
                 >
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold text-[#0a3d62]">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-sm font-semibold text-[#0a3d62]">
                     <span>{item.q}</span>
                     <span
                       aria-hidden
-                      className="text-[#ff9933] transition-transform group-open:rotate-45 text-xl leading-none"
+                      className="flex-shrink-0 text-[#ff9933] transition-transform group-open:rotate-45 text-lg leading-none"
                     >
                       +
                     </span>
                   </summary>
-                  <div className="mt-4 text-[#0a3d62]/85 leading-relaxed">{item.a}</div>
+                  <div className="mt-3 text-sm text-[#0a3d62]/85 leading-relaxed">{item.a}</div>
                 </details>
               ))}
             </div>
           </section>
 
-          {/* PCI Compliance */}
-          <section className="rounded-2xl border border-[#0a3d62]/15 bg-[#0a3d62]/[0.03] p-6">
-            <h2 className="text-lg font-semibold text-[#0a3d62]">PCI Compliance</h2>
-            <p className="mt-2 text-[#0a3d62]/80 leading-relaxed">
-              Your PapeX RDH is a POS peripheral device that does not store, process, or transmit
-              cardholder data. Full PCI DSS documentation is available at papex.app/pci.
-            </p>
-            <Link
-              href="/pci"
-              className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#0a3d62] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a3d62]/90"
-            >
-              View PCI compliance statement
-              <span aria-hidden>&rarr;</span>
-            </Link>
+          {/* PCI Compliance — navy gradient callout matching the site's subpage CTA.
+              NOTE: framer-site.css sets `.framer-site a { color: inherit }`, which
+              outranks Tailwind's `text-white` on links (class+element > class). The
+              `!text-white` important modifier is required so the button label is
+              visible (white) rather than inheriting the dark body color. */}
+          <section className="overflow-hidden rounded-2xl border-t-4 border-[#ff9933] bg-gradient-to-b from-[#0a3d62] to-[#1e5b82] p-8 shadow-md">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-white/10 text-[#ff9933]">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
+                  <path d="m9 12 2 2 4-4" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h2 className="text-xl font-semibold text-white">PCI Compliance</h2>
+                <p className="mt-2 leading-relaxed text-white/75">
+                  Your PapeX RDH is a POS peripheral device that does not store, process, or transmit
+                  cardholder data. Full PCI DSS documentation is available at papex.app/pci.
+                </p>
+                <Link
+                  href="/pci"
+                  className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#ff9933] px-6 py-3 text-sm font-semibold !text-white shadow-sm transition hover:bg-[#e67e22]"
+                >
+                  View PCI compliance statement
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <path d="M5 12h14" />
+                    <path d="m12 5 7 7-7 7" />
+                  </svg>
+                </Link>
+              </div>
+            </div>
           </section>
 
           {/* Footer contact block repeated */}
