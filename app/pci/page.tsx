@@ -16,9 +16,9 @@ import Link from 'next/link'
 import { FramerPageShell } from '@/components/framer/framer-page-shell'
 
 export const metadata: Metadata = {
-  title: 'PCI DSS Scope Exclusion — PapeX Receipt Delivery Hardware (RDH)',
+  title: 'PCI DSS Scope Exclusion Statement',
   description:
-    'PCI DSS Scope Exclusion Statement for the PapeX Receipt Delivery Hardware (RDH). Technical specifications, scope analysis, device classification, and guidance for assessors.',
+    'PapeX Receipt Delivery Hardware (RDH) PCI DSS scope exclusion documentation for qualified security assessors and compliance reviews.',
   robots: { index: true, follow: true },
   alternates: { canonical: 'https://papex.app/pci' },
 }
