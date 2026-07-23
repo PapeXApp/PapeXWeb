@@ -9,21 +9,40 @@
 // so a merchant clicking into a transaction sees byte-identical styling to
 // what their customer saw at the counter.
 //
-// `hasStructure` is forced to false whenever parseStatus === "failed",
-// regardless of what the summarizer's own heuristic says — a failed parse
-// means "trust nothing but the raw text," and that must win even if a
-// garbled receipt accidentally trips a heuristic (see lib/merchantMock.ts's
-// comment on why the failed fixture is built with zero A-Z content, which
-// keeps this belt-and-suspenders check from ever actually firing in the mock).
+// B5 fix: the merchant API does NOT hand this page a pre-built
+// ReceiptSummary anymore (that meant duplicating app/r's parse+summarize
+// logic server-side, and it drifted out of sync with the web types — see
+// the adversarial review that found this). Instead this page fetches the
+// same two things app/r's server component does — metadata + raw bytes —
+// and runs the exact same client-side pipeline (parseEscPos ->
+// summarizeReceipt) app/r/page.tsx runs server-side. `detail` (metadata:
+// sid/uploadedAt/parseStatus/confidence/rawText/etc.) and the raw bytes are
+// fetched in parallel; the two are independent failure domains, so a bytes
+// fetch/parse failure never blocks the metadata from rendering — it just
+// falls back to `detail.rawText`, same as when the backend's own parse
+// failed (parseStatus === "failed").
+//
+// `hasStructure` comes back from summarizeReceipt()/computeHasStructure()
+// on the freshly-parsed bytes now, not from the API — a failed parse means
+// "trust nothing but the raw text," which parseStatus === "failed" (backend
+// couldn't parse the stored blob at index time) forces regardless of
+// whether client-side parsing of the bytes would happen to find structure.
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { useMerchantAuth } from "../../AuthContext";
-import { getTransaction, type MerchantTransactionDetail } from "@/lib/merchantApi";
+import { getTransaction, getReceiptBytes, type MerchantTransactionDetail } from "@/lib/merchantApi";
+import { parseEscPos } from "@/lib/escpos";
+import { summarizeReceipt, hasStructure as computeHasStructure, type ReceiptSummary } from "@/lib/receiptSummary";
 import { GlassCard, ReceiptView } from "@/app/r/ui";
 import { LoadingBlock, EmptyState, ErrorBanner, ApproximateCaveat, PaymentChip, ConfidencePill, ParseFailedPill } from "../../ui/primitives";
 import { T } from "../../ui/tokens";
+
+interface ParsedReceipt {
+  summary: ReceiptSummary;
+  hasStructure: boolean;
+}
 
 function formatFullDateTime(iso: string): string {
   return new Date(iso).toLocaleString(undefined, {
@@ -44,19 +63,44 @@ export default function TransactionDetailPage() {
 
   const [detail, setDetail] = useState<MerchantTransactionDetail | null | undefined>(undefined); // undefined = loading
   const [error, setError] = useState<string | null>(null);
+  // null = no parsed receipt available (bytes fetch/parse failed, or backend
+  // parseStatus === "failed") -> render detail.rawText instead.
+  const [receipt, setReceipt] = useState<ParsedReceipt | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     async function run() {
       setError(null);
       setDetail(undefined);
+      setReceipt(null);
       const token = await getIdToken();
       if (!token) return;
-      try {
-        const d = await getTransaction(token, sid);
-        if (!cancelled) setDetail(d);
-      } catch {
-        if (!cancelled) setError("Couldn't load this receipt. Try again.");
+
+      // Independent failure domains: metadata (detail) and raw bytes are
+      // fetched in parallel, and a bytes failure must never block metadata
+      // from rendering — it just means falling back to rawText below.
+      const [detailResult, bytesResult] = await Promise.allSettled([
+        getTransaction(token, sid),
+        getReceiptBytes(token, sid),
+      ]);
+      if (cancelled) return;
+
+      if (detailResult.status === "rejected") {
+        setError("Couldn't load this receipt. Try again.");
+        return;
+      }
+      const d = detailResult.value;
+      setDetail(d);
+      if (!d || d.parseStatus === "failed") return;
+
+      if (bytesResult.status === "fulfilled") {
+        try {
+          const parsed = parseEscPos(bytesResult.value);
+          const summary = summarizeReceipt(parsed.lines);
+          if (!cancelled) setReceipt({ summary, hasStructure: computeHasStructure(summary) });
+        } catch {
+          // Parsing the bytes threw — fall back to rawText, same as a fetch failure.
+        }
       }
     }
     run();
@@ -112,11 +156,17 @@ export default function TransactionDetailPage() {
                 </pre>
               </GlassCard>
             </>
-          ) : (
+          ) : receipt ? (
             <>
               {detail.confidence === "low" && <ApproximateCaveat />}
-              <ReceiptView summary={detail.receipt} hasStructure={detail.hasStructure} />
+              <ReceiptView summary={receipt.summary} hasStructure={receipt.hasStructure} />
             </>
+          ) : (
+            <GlassCard>
+              <pre className="overflow-x-auto whitespace-pre-wrap font-mono text-xs" style={{ color: T.textSecondary }}>
+                {detail.rawText}
+              </pre>
+            </GlassCard>
           )}
         </>
       )}

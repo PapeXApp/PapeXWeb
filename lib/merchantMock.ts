@@ -19,16 +19,17 @@
 // client-hydration produce byte-identical output — required because these
 // are "use client" pages and Next still does one SSR pass before hydrating.
 
-import { defaultStyle, type ReceiptLine, type Style } from "./escpos";
+import { defaultStyle, encodeEscPos, type ReceiptLine, type Style } from "./escpos";
 import {
   summarizeReceipt,
-  hasStructure as computeHasStructure,
   detectPaymentMethod,
   extractLastFour,
   type ReceiptSummary,
+  type PaymentNetwork,
 } from "./receiptSummary";
 import type {
   ListTransactionsParams,
+  MerchantLineItem,
   MerchantTransactionDetail,
   MerchantTransactionSummary,
   MerchantDevice,
@@ -357,15 +358,58 @@ export async function mockListTransactions(params: ListTransactionsParams): Prom
   return { transactions: page.map(toSummary), nextCursor };
 }
 
+// Mirrors Papex_RDH/lambdas/indexer/lib/summarize.js's
+// PAYMENT_TYPE_TO_CARD_BRAND — maps a detected card network onto the
+// display card-brand string; wallet/ACH types (apple_pay, cash, venmo, ...)
+// intentionally have no brand.
+const NETWORK_TO_CARD_BRAND: Partial<Record<PaymentNetwork, string>> = {
+  visa: "Visa",
+  mastercard: "Mastercard",
+  amex: "Amex",
+  discover: "Discover",
+  diners_club: "Diners",
+  jcb: "JCB",
+  unionpay: "UnionPay",
+};
+
+function toLineItems(summary: ReceiptSummary): MerchantLineItem[] {
+  return summary.items.map((it) => ({ name: it.name, quantity: it.qty, price: it.amount }));
+}
+
 export async function mockGetTransaction(sid: string): Promise<MerchantTransactionDetail | null> {
   const r = DATASET.find((row) => row.sid === sid);
   if (!r) return null;
   return {
-    ...toSummary(r),
-    receipt: r.summary,
-    hasStructure: computeHasStructure(r.summary),
+    sid: r.sid,
+    uploadedAt: r.uploadedAt,
+    deviceId: r.deviceId,
+    parseStatus: r.parseStatus,
+    confidence: r.confidence,
+    total: r.total,
+    subtotal: r.summary.subtotal ?? null,
+    tax: r.summary.tax ?? null,
+    receiptNumber: r.receiptNumber,
+    paymentMethod: r.paymentMethod,
+    cardBrand: r.paymentMethod ? (NETWORK_TO_CARD_BRAND[r.paymentMethod] ?? null) : null,
+    cardLast4: r.cardLast4,
+    lineItems: toLineItems(r.summary),
     rawText: r.rawText,
   };
+}
+
+/**
+ * GET /merchant/receipt/{sid} mock — synthesizes raw ESC/POS bytes from the
+ * same ReceiptLine[] (`summary.bodyLines`) `buildReceipt()` fed into
+ * summarizeReceipt() when the dataset was built, via lib/escpos.ts's
+ * encodeEscPos(). This keeps mock mode exercising the exact same
+ * "fetch bytes -> parseEscPos -> summarizeReceipt" path the real backend
+ * will (app/merchant/tx/[sid]/page.tsx), rather than a parallel mock-only
+ * rendering path.
+ */
+export async function mockGetReceiptBytes(sid: string): Promise<Uint8Array> {
+  const r = DATASET.find((row) => row.sid === sid);
+  if (!r) throw new Error(`mock receipt not found: ${sid}`);
+  return encodeEscPos(r.summary.bodyLines);
 }
 
 export async function mockListDevices(): Promise<MerchantDevice[]> {

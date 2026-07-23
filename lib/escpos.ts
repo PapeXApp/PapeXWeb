@@ -668,6 +668,56 @@ export function parseEscPos(bytes: Uint8Array): Receipt {
 }
 
 // ---------------------------------------------------------------------------
+// Encoder — the inverse of the parser above, used only to synthesize a
+// plausible raw byte stream for mock-mode receipts (lib/merchantMock.ts).
+// Real receipts always come from the RDH device as actual ESC/POS bytes;
+// this exists purely so `/merchant/tx/[sid]`'s "parse the raw bytes" code
+// path (mirroring app/r) also has something to parse when
+// NEXT_PUBLIC_MERCHANT_MOCK=1 and there's no backend to fetch bytes from.
+// Only emits the handful of commands the parser above actually interprets
+// (ESC @ / ESC a / ESC E / GS !) — enough to round-trip text + alignment +
+// bold + double-height/width through parseEscPos, not a general-purpose
+// ESC/POS encoder. ASCII only, matching the fixture vocabulary in
+// merchantMock.ts.
+// ---------------------------------------------------------------------------
+
+function alignCode(align: Alignment): number {
+  return align === "center" ? 1 : align === "right" ? 2 : 0;
+}
+
+export function encodeEscPos(lines: ReceiptLine[]): Uint8Array {
+  const out: number[] = [0x1b, 0x40]; // ESC @ — initialize
+  let curAlign: Alignment = "left";
+  let curBold = false;
+  let curDoubleWidth = false;
+  let curDoubleHeight = false;
+
+  for (const l of lines) {
+    if (l.align !== curAlign) {
+      out.push(0x1b, 0x61, alignCode(l.align)); // ESC a n
+      curAlign = l.align;
+    }
+    if (l.style.doubleWidth !== curDoubleWidth || l.style.doubleHeight !== curDoubleHeight) {
+      const n = ((l.style.doubleWidth ? 1 : 0) << 4) | (l.style.doubleHeight ? 1 : 0);
+      out.push(0x1d, 0x21, n); // GS ! n
+      curDoubleWidth = l.style.doubleWidth;
+      curDoubleHeight = l.style.doubleHeight;
+    }
+    if (l.style.bold !== curBold) {
+      out.push(0x1b, 0x45, l.style.bold ? 1 : 0); // ESC E n
+      curBold = l.style.bold;
+    }
+    for (const ch of l.text) {
+      const code = ch.codePointAt(0) ?? 0x3f;
+      out.push(code < 0x80 ? code : 0x3f); // non-ASCII -> '?', fixtures are ASCII-only
+    }
+    out.push(0x0a); // LF
+  }
+
+  return new Uint8Array(out);
+}
+
+// ---------------------------------------------------------------------------
 // Best-effort merchant-name guess for the page header. Mirrors (loosely) the
 // App Clip's `firstHeaderLine` heuristic: pick the first non-empty, non-rule
 // centered line under a modest length as a candidate business name. Purely

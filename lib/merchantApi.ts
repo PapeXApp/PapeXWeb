@@ -21,7 +21,7 @@
 // that's simplest wired straight to client fetches with the ID token already
 // in hand from the auth context.
 
-import type { ReceiptSummary, PaymentNetwork } from "./receiptSummary";
+import type { PaymentNetwork } from "./receiptSummary";
 import * as mock from "./merchantMock";
 
 export type { PaymentNetwork };
@@ -55,13 +55,40 @@ export interface MerchantTransactionSummary {
   parseStatus: ParseStatus;
 }
 
-/** Full detail for the receipt-detail page (PRD §5.3) — wraps the same
- *  ReceiptSummary shape app/r's renderer already consumes, so tx/[sid]/page.tsx
- *  can reuse app/r/ui.tsx's cards unmodified. */
-export interface MerchantTransactionDetail extends MerchantTransactionSummary {
-  receipt: ReceiptSummary;
-  hasStructure: boolean;
-  /** Verbatim text fallback — always present; the only thing available when parseStatus === "failed". */
+/** A single line item as carried on the transaction-detail metadata (PRD
+ *  §5.3). This is informational only — the receipt-detail page does NOT
+ *  render from this; it re-derives the same information (plus merchant
+ *  name/address/dateline, which aren't part of this metadata at all) by
+ *  parsing the raw bytes from `getReceiptBytes` through the web's own
+ *  parseEscPos + summarizeReceipt, exactly like app/r does. See
+ *  app/merchant/tx/[sid]/page.tsx. */
+export interface MerchantLineItem {
+  name: string;
+  quantity: number;
+  price: number;
+}
+
+/** Full detail for the receipt-detail page (PRD §5.3). Bare top-level object,
+ *  camelCase throughout, NO `receipt`/ReceiptSummary field — B5's fix moved
+ *  rendering to a client-side "fetch bytes, parse with the same pipeline
+ *  app/r uses" flow instead of the API trying to fabricate a ReceiptSummary
+ *  server-side. This is metadata + the verbatim fallback text only. */
+export interface MerchantTransactionDetail {
+  sid: string;
+  uploadedAt: string;
+  deviceId: string | null;
+  parseStatus: ParseStatus;
+  confidence: ParseConfidence;
+  total: number | null;
+  subtotal: number | null;
+  tax: number | null;
+  receiptNumber: string | null;
+  paymentMethod: PaymentNetwork | null;
+  cardBrand: string | null;
+  cardLast4: string | null;
+  lineItems: MerchantLineItem[];
+  /** Verbatim text fallback — always present; the only thing rendered when
+   *  parseStatus === "failed", or when the bytes fetch/parse fails. */
   rawText: string;
 }
 
@@ -139,9 +166,12 @@ async function authedFetch(path: string, idToken: string, init?: RequestInit): P
   const res = await fetch(`${RDH_API_BASE}${path}`, {
     ...init,
     headers: {
+      // Default to JSON, but let a caller-supplied Accept (e.g.
+      // getReceiptBytes's application/octet-stream) win — it must come
+      // after the default and before the spread to do that.
+      Accept: "application/json",
       ...init?.headers,
       Authorization: `Bearer ${idToken}`,
-      Accept: "application/json",
     },
     cache: "no-store",
   });
@@ -184,6 +214,38 @@ export async function getTransaction(idToken: string, sid: string): Promise<Merc
   const res = await authedFetch(`/merchant/transactions/${encodeURIComponent(sid)}`, idToken);
   if (res.status === 404) return null;
   return res.json();
+}
+
+/**
+ * GET /merchant/receipt/{sid} — raw ESC/POS bytes for the receipt-detail
+ * page to parse client-side with the same parseEscPos + summarizeReceipt
+ * pipeline app/r uses (B5's fix: the API stops trying to fabricate the
+ * web's ReceiptSummary shape server-side).
+ *
+ * ASSUMPTION (unlike lib/rdh.ts's server-side fetchReceiptBytes for the
+ * CORS-less consumer `/receipt/{sid}` endpoint): this is a browser-side
+ * fetch against the merchant API, which — per this file's header comment —
+ * has CORS configured for merchant.papex.app. The Lambda
+ * (Papex_RDH/lambdas/merchant-api/handler.js getReceiptBytes) returns
+ * `{ statusCode: 200, isBase64Encoded: true, headers: {"Content-Type":
+ * "application/octet-stream"}, body: <base64> }`. API Gateway HTTP API
+ * (payload format 2.0) base64-decodes a response with `isBase64Encoded:
+ * true` before it reaches the client — the browser sees a genuine binary
+ * `application/octet-stream` body, not a base64 string — so `res.arrayBuffer()`
+ * is correct here; this is NOT re-decoding base64 in the client.
+ *
+ * Throws (via authedFetch) on any non-2xx response — 404 (sid not found /
+ * not owned by this merchant) included — so the caller (tx/[sid]/page.tsx)
+ * can catch and fall back to rendering `rawText` from the metadata call,
+ * same as a parse failure.
+ */
+export async function getReceiptBytes(idToken: string, sid: string): Promise<Uint8Array> {
+  if (MERCHANT_MOCK) return mock.mockGetReceiptBytes(sid);
+  const res = await authedFetch(`/merchant/receipt/${encodeURIComponent(sid)}`, idToken, {
+    headers: { Accept: "application/octet-stream" },
+  });
+  const buf = await res.arrayBuffer();
+  return new Uint8Array(buf);
 }
 
 /** GET /merchant/insights?window= */
