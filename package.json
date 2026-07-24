@@ -10,7 +10,9 @@
     "lint": "next lint",
     "migrate:images": "tsx scripts/migrateBlogImages.ts",
     "migrate:images:dry": "tsx scripts/migrateBlogImages.ts --dry-run",
-    "test:escpos": "tsx lib/escpos.test.ts"
+    "test:escpos": "tsx lib/escpos.test.ts",
+    "test:summary": "tsx lib/receiptSummary.test.ts",
+    "test": "npm run test:escpos && npm run test:summary"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

@@ -254,6 +254,38 @@ test("ASCII-form alignment param ('1' instead of 0x01) is normalized", () => {
   assert.equal(receipt.lines[0]?.align, "center");
 });
 
+test("raster image (GS v 0) followed by text survives — logo does not swallow the receipt", () => {
+  // Regression test for the P0 off-by-one: the GS v 0 handler used to read
+  // xL at the offset that actually holds `m`, inflating dataLen and
+  // swallowing the rest of the receipt (e.g. a receipt-top logo computing a
+  // ~2MB length). Header is 8 bytes: 0x1D 0x76 0x30 m xL xH yL yH.
+  // m=0, xL=2, xH=0, yL=16, yH=0 -> dataLen = (2+0*256)*(16+0*256) = 32.
+  const b: number[] = [];
+  b.push(0x1b, 0x40); // ESC @ init
+  b.push(0x1d, 0x76, 0x30, 0x00, 0x02, 0x00, 0x10, 0x00); // GS v 0 header
+  for (let i = 0; i < 32; i++) b.push(0xaa); // 32 dummy raster data bytes
+  b.push(..."PAPEX TEST CAFE\n2x Latte 9.00\nTOTAL 13.50\n".split("").map((c) => c.charCodeAt(0)));
+  b.push(0x1d, 0x56, 0x00); // GS V 0 cut
+
+  const receipt = parseEscPos(new Uint8Array(b));
+  assert.deepEqual(
+    receipt.lines.map((l) => l.text),
+    ["PAPEX TEST CAFE", "2x Latte 9.00", "TOTAL 13.50"]
+  );
+});
+
+test("truncated GS v 0 raster (fewer data bytes than declared) does not throw", () => {
+  const b: number[] = [0x1b, 0x40];
+  // Declares dataLen = 2*16 = 32 bytes of raster data but only supplies 5.
+  b.push(0x1d, 0x76, 0x30, 0x00, 0x02, 0x00, 0x10, 0x00);
+  b.push(0x01, 0x02, 0x03, 0x04, 0x05);
+  assert.doesNotThrow(() => parseEscPos(new Uint8Array(b)));
+  const receipt = parseEscPos(new Uint8Array(b));
+  // All bytes consumed as raster payload (clamped to remaining input) —
+  // nothing left to decode as text.
+  assert.deepEqual(receipt.lines, []);
+});
+
 test("large well-formed stream never throws (fuzz-lite smoke test)", () => {
   // Not a real fixture — just enough command variety + garbage bytes to
   // exercise every dispatch branch without a real capture available yet.
