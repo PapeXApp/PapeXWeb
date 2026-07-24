@@ -286,6 +286,24 @@ test("truncated GS v 0 raster (fewer data bytes than declared) does not throw", 
   assert.deepEqual(receipt.lines, []);
 });
 
+test("stream ending mid-GS-v-0-header consumes to EOF (no garbage text)", () => {
+  // Fewer than 8 header bytes remain after GS v 0. The old handler skipped
+  // only 2 bytes and re-parsed the partial header bytes as text; the Swift
+  // reference (ESCPOSParser.swift) consumes to EOF because there is no
+  // reliable byte to resync on. Header bytes chosen printable-ASCII so a
+  // regression shows up as visible garbage text.
+  const b: number[] = [0x1b, 0x40];
+  b.push(..."Item".split("").map((c) => c.charCodeAt(0)));
+  b.push(0x0a);
+  b.push(0x1d, 0x76, 0x30, 0x00, 0x41, 0x42); // GS v 0, m, then EOF mid-header
+  assert.doesNotThrow(() => parseEscPos(new Uint8Array(b)));
+  const receipt = parseEscPos(new Uint8Array(b));
+  assert.deepEqual(
+    receipt.lines.map((l) => l.text),
+    ["Item"]
+  );
+});
+
 test("large well-formed stream never throws (fuzz-lite smoke test)", () => {
   // Not a real fixture — just enough command variety + garbage bytes to
   // exercise every dispatch branch without a real capture available yet.
