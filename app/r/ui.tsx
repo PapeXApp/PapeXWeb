@@ -16,7 +16,7 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { AlertTriangle, Clock, Sparkles } from "lucide-react";
+import { AlertTriangle, Clock, FlaskConical, SearchX } from "lucide-react";
 import type { ReceiptLine } from "@/lib/escpos";
 import {
   type ReceiptSummary,
@@ -98,24 +98,122 @@ export function GlassCard({ children, className = "" }: { children: ReactNode; c
   );
 }
 
-// ---- Sample / unavailable banner --------------------------------------------
+// ---- Demo (sample) banner -----------------------------------------------------
+//
+// Pinned, not inline. The previous banner sat at the top of the normal flow
+// and scrolled away after ~one swipe, so a screenshot of the middle of the
+// page showed fabricated line items with nothing marking them as fake. This
+// one sticks to the top of the viewport for the life of the page.
+//
+// `sticky` (not `fixed`) so it still participates in the flex column's
+// spacing; none of its ancestors in <Shell> set overflow/transform/filter,
+// which is what would otherwise break stickiness.
 
-export function SampleBanner({ variant }: { variant: "sample" | "unavailable" }) {
-  const message =
-    variant === "sample"
-      ? "Sample receipt — here's what a real tap looks like."
-      : "This receipt isn't available anymore. Showing a sample instead.";
+export function DemoBanner() {
+  return (
+    <div className="sticky top-0 z-30 -mx-1 pb-1 pt-1">
+      <div
+        className="flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm shadow-[0_8px_24px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+        style={{
+          background: "rgba(120, 60, 0, 0.85)",
+          borderColor: "rgba(251, 133, 0, 0.55)",
+          color: "#FFD9A8",
+        }}
+      >
+        <FlaskConical className="h-4 w-4 shrink-0" style={{ color: T.orange }} strokeWidth={2} />
+        <span>
+          <strong className="font-semibold" style={{ color: "#FFF0DC" }}>
+            Sample receipt.
+          </strong>{" "}
+          Made-up data, not a real purchase.
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ---- Sample frame: watermark + dashed border + persistent chip ---------------
+//
+// The banner alone isn't enough — the receipt *body* has to carry the mark,
+// so that a crop or screenshot of any part of it is still self-evidently
+// fake. Three redundant signals: a repeating diagonal SAMPLE watermark laid
+// over the cards, a dashed orange border around the whole block, and a chip
+// riding the top edge.
+//
+// The watermark is an inline SVG data URI rather than a repeated DOM node so
+// it tiles at any content height with one element and zero layout cost.
+// Single quotes inside the SVG survive encodeURIComponent untouched, which
+// keeps the CSS `url("…")` wrapper valid.
+
+const SAMPLE_WATERMARK_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='240' height='150' viewBox='0 0 240 150'>
+  <g font-family='Barlow, Helvetica, Arial, sans-serif' font-size='26' font-weight='700' letter-spacing='7' fill='rgba(251,133,0,0.16)'>
+    <text x='4' y='58' transform='rotate(-24 4 58)'>SAMPLE</text>
+    <text x='124' y='133' transform='rotate(-24 124 133)'>SAMPLE</text>
+  </g>
+</svg>`;
+
+const SAMPLE_WATERMARK_URL = `url("data:image/svg+xml,${encodeURIComponent(SAMPLE_WATERMARK_SVG)}")`;
+
+export function SampleFrame({ children }: { children: ReactNode }) {
   return (
     <div
-      className="flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm"
+      className="relative rounded-[28px] border-2 border-dashed p-3 pt-6"
       style={{
-        background: "rgba(251, 133, 0, 0.12)",
-        borderColor: "rgba(251, 133, 0, 0.35)",
-        color: "#FFD9A8",
+        borderColor: "rgba(251, 133, 0, 0.55)",
+        background: "rgba(251, 133, 0, 0.04)",
       }}
     >
-      <Sparkles className="h-4 w-4 shrink-0" style={{ color: T.orange }} strokeWidth={2} />
-      <span>{message}</span>
+      <span
+        className="absolute -top-[11px] left-1/2 -translate-x-1/2 rounded-full border px-3 py-[3px] text-[10px] font-bold uppercase tracking-[1.5px]"
+        style={{
+          background: "#1B1408",
+          borderColor: "rgba(251, 133, 0, 0.6)",
+          color: "#FFB74D",
+        }}
+      >
+        Sample
+      </span>
+      {children}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 rounded-[28px]"
+        style={{
+          backgroundImage: SAMPLE_WATERMARK_URL,
+          backgroundRepeat: "repeat",
+          backgroundSize: "240px 150px",
+        }}
+      />
+    </div>
+  );
+}
+
+// ---- Receipt not available ----------------------------------------------------
+//
+// The heart of the fix. Reached when a sid *was* supplied but there is no
+// receipt behind it (backend 404, empty/unparseable payload, malformed sid).
+// This screen must never contain sample content of any kind — the person
+// looking at it tapped a real device and is trying to find a real purchase.
+
+export function ReceiptNotAvailable({ children }: { children?: ReactNode }) {
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center py-14 text-center">
+      <div
+        className="mb-4 flex h-14 w-14 items-center justify-center rounded-full border"
+        style={glassCardStyle}
+      >
+        <SearchX className="h-6 w-6" style={{ color: T.textMuted }} strokeWidth={1.75} />
+      </div>
+      <h1 className="font-barlow text-xl font-semibold" style={{ color: T.text }}>
+        Receipt not available
+      </h1>
+      <p className="mt-2 max-w-[19rem] text-sm" style={{ color: T.textSecondary }}>
+        We couldn&apos;t find a receipt for this link. Receipts stay available for 30 days
+        after you tap, then they&apos;re removed.
+      </p>
+      <p className="mt-3 max-w-[19rem] text-sm" style={{ color: T.textMuted }}>
+        If you just tapped, give it a moment and try again.
+      </p>
+      {children}
     </div>
   );
 }
@@ -161,7 +259,13 @@ function monogram(name?: string): string {
   return trimmed.length > 0 ? trimmed.charAt(0).toUpperCase() : "P";
 }
 
-export function MerchantHeaderCard({ summary }: { summary: ReceiptSummary }) {
+export function MerchantHeaderCard({
+  summary,
+  isSample = false,
+}: {
+  summary: ReceiptSummary;
+  isSample?: boolean;
+}) {
   const { merchantName, addressLines, dateline } = summary;
   return (
     <GlassCard>
@@ -188,8 +292,8 @@ export function MerchantHeaderCard({ summary }: { summary: ReceiptSummary }) {
               {dateline}
             </p>
           )}
-          <p className="mt-1 text-xs" style={{ color: T.textMuted }}>
-            📟 RDH Receipt
+          <p className="mt-1 text-xs" style={{ color: isSample ? "#FFB74D" : T.textMuted }}>
+            {isSample ? "Sample data — not a real purchase" : "📟 RDH Receipt"}
           </p>
         </div>
       </div>
@@ -294,7 +398,13 @@ function TotalRow({
   );
 }
 
-export function TotalsCard({ summary }: { summary: ReceiptSummary }) {
+export function TotalsCard({
+  summary,
+  isSample = false,
+}: {
+  summary: ReceiptSummary;
+  isSample?: boolean;
+}) {
   const computedSubtotal =
     summary.subtotal ?? (summary.items.length > 0 ? summary.items.reduce((s, i) => s + i.amount * i.qty, 0) : undefined);
   const taxRate =
@@ -350,7 +460,23 @@ export function TotalsCard({ summary }: { summary: ReceiptSummary }) {
               <span className="text-sm" style={{ color: T.textSecondary }}>
                 Payment
               </span>
-              <PaymentRow paymentLine={summary.paymentLine} />
+              {isSample ? (
+                // Never render a card-network chip + last-four for fabricated
+                // data: "VISA •••• 4729" reads as a genuine transaction record
+                // even in isolation. The sample's own payment line is still
+                // visible verbatim inside the (marked) Original receipt body.
+                <span
+                  className="rounded-full border px-3 py-[3px] text-[11px] font-semibold uppercase tracking-[0.5px]"
+                  style={{
+                    borderColor: "rgba(251, 133, 0, 0.5)",
+                    color: "#FFB74D",
+                  }}
+                >
+                  Demo card
+                </span>
+              ) : (
+                <PaymentRow paymentLine={summary.paymentLine} />
+              )}
             </div>
           )}
         </div>
@@ -419,12 +545,20 @@ export function OriginalReceiptCollapsible({
 
 // ---- Full receipt view (structured cards + raw fallback) -----------------------
 
-export function ReceiptView({ summary, hasStructure }: { summary: ReceiptSummary; hasStructure: boolean }) {
+export function ReceiptView({
+  summary,
+  hasStructure,
+  isSample = false,
+}: {
+  summary: ReceiptSummary;
+  hasStructure: boolean;
+  isSample?: boolean;
+}) {
   return (
     <div className="flex flex-col gap-4">
-      {hasStructure && <MerchantHeaderCard summary={summary} />}
+      {hasStructure && <MerchantHeaderCard summary={summary} isSample={isSample} />}
       {hasStructure && <ItemsCard summary={summary} />}
-      {hasStructure && <TotalsCard summary={summary} />}
+      {hasStructure && <TotalsCard summary={summary} isSample={isSample} />}
       <OriginalReceiptCollapsible lines={summary.bodyLines} defaultOpen={!hasStructure} />
     </div>
   );
