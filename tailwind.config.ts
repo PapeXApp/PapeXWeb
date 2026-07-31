@@ -28,9 +28,27 @@ export default {
           dark: "var(--primary-orange-dark)",
           deep: "#d35400",
         },
+        // Redesign brand palette (docs/design/forked-landing/README.md).
+        // Namespaced under `papex-*` on purpose: the bare `navy`/`orange`
+        // keys above still point at the OLD palette that the legacy framer
+        // landing page and every current page depend on. Do not repoint them.
+        papex: {
+          navy: "#00121D",
+          "navy-raised": "#0a2431",
+          "navy-deep": "#04161f",
+          "navy-alt": "#0c2937",
+          orange: "#EB7100",
+          "orange-dark": "#c85f00",
+          offwhite: "#F5F5F5",
+          white: "#FFFFFF",
+        },
       },
       fontFamily: {
         barlow: ["var(--font-barlow)", "Arial", "sans-serif"],
+        // Kameron is the redesign's display face. It previously existed only
+        // as a raw CSS var applied by a globals.css h1-h6 base rule, with no
+        // utility class of its own.
+        kameron: ["var(--font-kameron)", "Georgia", "serif"],
         gloock: ["var(--font-gloock)", "Georgia", "serif"],
       },
     },
