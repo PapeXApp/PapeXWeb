@@ -1,0 +1,726 @@
+/* ==========================================================================
+   PapeX brand layer — forked-landing redesign
+   Spec: docs/design/forked-landing/README.md ("Design Tokens" onward).
+
+   Base salvaged from the abandoned `origin/feat/site-redesign` branch
+   (styles/redesign.css), then extended to the full token table.
+
+   SCOPE — read before adding anything here:
+   `styles/framer-site.css` defines `--navy`, `--orange`, `--white`, `--text`
+   ... on `:root` with the OLD palette (navy #0a3d62, orange #ff9933) and the
+   legacy landing page reads them. So every token below lives under `.rd`
+   (the redesign scope class applied by components/brand/site-shell.tsx) and
+   NOTHING here may be declared on `:root`. Redefining --navy globally would
+   silently re-skin the old landing page.
+   ========================================================================== */
+
+.rd {
+  /* --- Core palette ---------------------------------------------------- */
+  --navy: #00121d;              /* primary bg, customer path, text on light  */
+  --navy-raised: #0a2431;       /* phone chassis, placeholder stripes        */
+  --navy-deep: #04161f;         /* chassis gradient end, notch               */
+  --navy-alt: #0c2937;          /* placeholder stripe alternate              */
+  --navy-glass: rgba(8, 26, 37, 0.5);   /* nav bubble fill                   */
+  --navy-glass-sheet: rgba(8, 26, 37, 0.72); /* mobile menu sheet            */
+  --orange: #eb7100;            /* accent: CTAs, eyebrows, stats, marquee    */
+  --orange-dark: #c85f00;       /* logo plane underside                      */
+  --orange-hover: #ff8a1f;
+  --offwhite: #f5f5f5;          /* light sections, text on dark              */
+  --white: #ffffff;             /* cards, elevated surfaces                  */
+  --ink: #00121d;
+
+  /* legacy aliases kept so salvaged utilities below keep resolving */
+  --navy-900: #00121d;
+  --navy-800: #04202f;
+  --navy-700: #0a2c3f;
+  --navy-600: #14405a;
+  --orange-600: #cc6300;
+  --orange-300: #ff9a3d;
+
+  /* --- Body / muted text ------------------------------------------------ */
+  --body-on-light: #4a4a4a;
+  --body-on-light-2: #5a5a5a;
+  --muted-light-1: #8a8a8a;
+  --muted-light-2: #9a9a9a;
+  --hairline-1: #ececec;
+  --hairline-2: #d8d8d8;        /* dashed receipt rule                       */
+  --hairline-3: #e6e6e6;
+
+  /* --- Alpha conventions (README "Alpha conventions") -------------------- */
+  --on-dark-text: rgba(245, 245, 245, 0.66);
+  --on-dark-muted: rgba(245, 245, 245, 0.5);
+  --on-dark-faint: rgba(245, 245, 245, 0.4);
+  --on-dark-border: rgba(255, 255, 255, 0.08);
+  --on-dark-border-strong: rgba(255, 255, 255, 0.16);
+  --on-light-text: rgba(0, 18, 29, 0.62);
+  --on-light-muted: rgba(0, 18, 29, 0.5);
+  --on-light-border: rgba(0, 18, 29, 0.08);
+  --on-light-border-strong: rgba(0, 18, 29, 0.2);
+
+  /* aliases used by the salvaged utilities */
+  --muted-on-dark: var(--on-dark-text);
+  --muted-on-light: var(--on-light-text);
+  --hairline-dark: rgba(245, 245, 245, 0.12);
+  --hairline-light: rgba(0, 18, 29, 0.1);
+
+  /* --- Type ------------------------------------------------------------- */
+  --font-display: var(--font-kameron), Georgia, serif;
+  --font-ui: var(--font-barlow), "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Courier New", Courier, monospace;
+
+  --fs-h1-customer: clamp(40px, 6vw, 84px);
+  --fs-h1-merchant: clamp(38px, 5.6vw, 80px);
+  --fs-fork-heading: clamp(34px, 5.4vw, 72px);
+  --fs-h2: clamp(30px, 4.4vw, 58px);
+  --fs-h2-emphasis: clamp(32px, 4.8vw, 66px);
+  --fs-h3: clamp(28px, 3.4vw, 46px);
+  --fs-stat: clamp(44px, 6vw, 80px);
+  --fs-stat-lg: clamp(48px, 6vw, 76px);
+  --fs-card-title: 24px;
+  --fs-step-title: clamp(21px, 2.4vw, 28px);
+  --fs-lead: clamp(17px, 1.5vw, 20px);
+  --fs-body: 16px;
+  --fs-eyebrow: 13px;
+  --fs-nav-link: 14.5px;
+  --fs-mono: 12px;
+
+  /* --- Spacing ---------------------------------------------------------- */
+  --section-pad-y: clamp(90px, 11vw, 160px);
+  --section-pad-x: clamp(20px, 5vw, 56px);
+  --section-max: 1150px;
+  --gap-cards: clamp(16px, 2vw, 26px);
+  --gap-columns: clamp(30px, 5vw, 90px);
+  --nav-pad-y: clamp(12px, 2vw, 20px);
+  --nav-pad-x: clamp(14px, 4vw, 40px);
+
+  /* --- Radii ------------------------------------------------------------ */
+  --r-pill: 999px;
+  --r-phone: 44px;
+  --r-screen: 30px;
+  --r-sheet: 22px;
+  --r-card: 20px;
+  --r-card-sm: 18px;
+  --r-16: 16px;
+  --r-12: 12px;
+  --r-10: 10px;
+
+  /* --- Shadows ---------------------------------------------------------- */
+  --sh-nav: 0 12px 34px rgba(0, 18, 29, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  --sh-menu: 0 22px 50px rgba(0, 18, 29, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  --sh-cta: 0 6px 22px rgba(235, 113, 0, 0.3);
+  --sh-cta-nav: 0 8px 24px rgba(235, 113, 0, 0.35);
+  --sh-cta-hover: 0 12px 34px rgba(235, 113, 0, 0.5);
+  --sh-phone-dark: 0 40px 80px rgba(0, 0, 0, 0.5), inset 0 0 0 8px #00121d;
+  --sh-phone-light: 0 40px 90px rgba(0, 18, 29, 0.28);
+  --sh-card-hover: 0 24px 50px rgba(0, 18, 29, 0.12);
+  --sh-card-selected: 0 26px 55px rgba(235, 113, 0, 0.22);
+  --sh-receipt: 0 10px 30px rgba(0, 18, 29, 0.1);
+
+  /* --- Easing & duration ------------------------------------------------ */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-commit: cubic-bezier(0.7, 0, 0.3, 1);
+  --ease-mask: cubic-bezier(0.7, 0, 0.15, 1);
+  --dur-commit: 620ms;
+  --dur-mask: 1100ms;
+  --dur-reveal: 900ms;
+  --dur-word: 850ms;
+  --stagger-word: 55ms;
+  --dur-stagger: 750ms;
+  --stagger-child: 80ms;
+  --dur-counter: 1600ms;
+  --dur-hover: 250ms;
+  --dur-ripple: 600ms;
+
+  /* --- Glass (nav bubbles) ---------------------------------------------- */
+  --glass-blur: blur(20px) saturate(160%);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.13);
+  --glass-light-fill: rgba(245, 245, 245, 0.6);
+  --glass-light-border: 1px solid rgba(0, 18, 29, 0.1);
+  --glass-light-shadow: 0 12px 34px rgba(0, 18, 29, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+
+  font-family: var(--font-ui);
+  color: var(--offwhite);
+  background: var(--navy);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.rd ::selection {
+  background: var(--orange);
+  color: var(--navy);
+}
+
+.rd a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.rd :where(button) {
+  font: inherit;
+}
+
+/* --- Display type --------------------------------------------------------- */
+.rd-display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+}
+.rd-kicker,
+.rd-eyebrow {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: var(--fs-eyebrow);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+.rd-eyebrow-wide {
+  letter-spacing: 0.28em;
+}
+.rd-mono {
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  letter-spacing: 0.09em;
+}
+
+/* --- Atmospheric backgrounds ---------------------------------------------- */
+.rd-dark {
+  background-color: var(--navy);
+  color: var(--offwhite);
+  position: relative;
+  isolation: isolate;
+}
+.rd-light {
+  background-color: var(--offwhite);
+  color: var(--navy);
+  position: relative;
+  isolation: isolate;
+}
+.rd-mesh {
+  background-color: var(--navy);
+  background-image:
+    radial-gradient(60% 55% at 78% 8%, rgba(235, 113, 0, 0.2) 0%, rgba(235, 113, 0, 0) 60%),
+    radial-gradient(50% 45% at 12% 92%, rgba(20, 64, 90, 0.55) 0%, rgba(20, 64, 90, 0) 60%),
+    radial-gradient(40% 40% at 50% 40%, rgba(10, 44, 63, 0.5) 0%, rgba(10, 44, 63, 0) 70%);
+}
+/* Fine film grain overlay for depth on dark sections */
+.rd-grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+}
+/* Diagonal hairline texture used on the fork's dark half */
+.rd-hairlines {
+  background-image: repeating-linear-gradient(
+    115deg,
+    rgba(255, 255, 255, 0.02),
+    rgba(255, 255, 255, 0.02) 2px,
+    transparent 2px,
+    transparent 26px
+  );
+}
+
+/* --- Buttons -------------------------------------------------------------- */
+.rd-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  position: relative;
+  overflow: hidden;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 14.5px;
+  line-height: 1;
+  padding: 12px 22px;
+  border-radius: var(--r-pill);
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform var(--dur-hover) var(--ease-out-expo),
+    background-color var(--dur-hover) ease, color var(--dur-hover) ease,
+    border-color var(--dur-hover) ease, box-shadow var(--dur-hover) ease;
+  will-change: transform;
+}
+.rd-btn-primary {
+  background: var(--orange);
+  color: var(--navy) !important;
+  box-shadow: var(--sh-cta);
+}
+.rd-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--sh-cta-hover);
+}
+.rd-btn-nav {
+  box-shadow: var(--sh-cta-nav);
+}
+.rd-btn-ghost {
+  background: transparent;
+  color: var(--offwhite) !important;
+  border-color: var(--hairline-dark);
+}
+.rd-btn-ghost:hover {
+  border-color: rgba(245, 245, 245, 0.4);
+  background: rgba(245, 245, 245, 0.04);
+}
+/* secondary on light sections (vision CTA cross-link) */
+.rd-btn-outline {
+  background: transparent;
+  color: var(--navy) !important;
+  border: 1.5px solid var(--on-light-border-strong);
+}
+.rd-btn-outline:hover {
+  border-color: var(--navy);
+  background: rgba(0, 18, 29, 0.04);
+}
+.rd-btn-dark {
+  background: var(--navy);
+  color: var(--white) !important;
+}
+.rd-btn-dark:hover {
+  background: var(--navy-700);
+}
+
+/* --- Liquid-glass bubbles (nav) ------------------------------------------ */
+.rd-glass {
+  background: var(--navy-glass);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  border-radius: var(--r-pill);
+  box-shadow: var(--sh-nav);
+  transition: background-color 0.35s ease, border-color 0.3s ease,
+    box-shadow 0.35s ease, color 0.35s ease;
+}
+/* Light variant — the dark glass washes out over the #F5F5F5 sections.
+   README "Contrast caveat": swap the fill/ink, never the geometry. */
+.rd-glass[data-glass="light"] {
+  background: var(--glass-light-fill);
+  border: var(--glass-light-border);
+  box-shadow: var(--glass-light-shadow);
+}
+
+.rd-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: var(--nav-pad-y) var(--nav-pad-x);
+  pointer-events: none;
+}
+.rd-nav > * {
+  pointer-events: auto;
+}
+.rd-nav-ink {
+  color: var(--offwhite);
+}
+.rd-nav[data-glass="light"] .rd-nav-ink {
+  color: var(--navy);
+}
+
+.rd-logo-bubble {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  padding: 9px 17px 9px 14px;
+}
+.rd-logo-bubble:hover {
+  border-color: rgba(235, 113, 0, 0.5);
+}
+
+.rd-links-bubble {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px;
+  white-space: nowrap;
+}
+.rd-navlink {
+  padding: 9px 15px;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-nav-link);
+  font-weight: 500;
+  color: rgba(245, 245, 245, 0.72);
+  cursor: pointer;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+.rd-navlink:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--offwhite);
+}
+.rd-navlink[aria-current="page"] {
+  color: var(--orange);
+  background: rgba(235, 113, 0, 0.15);
+}
+[data-glass="light"] .rd-navlink {
+  color: rgba(0, 18, 29, 0.7);
+}
+[data-glass="light"] .rd-navlink:hover {
+  background: rgba(0, 18, 29, 0.07);
+  color: var(--navy);
+}
+[data-glass="light"] .rd-navlink[aria-current="page"] {
+  color: var(--orange);
+  background: rgba(235, 113, 0, 0.14);
+}
+
+.rd-burger {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+}
+.rd-burger span {
+  width: 18px;
+  height: 2px;
+  display: block;
+  border-radius: 2px;
+  background: var(--offwhite);
+  transition: background-color 0.35s ease;
+}
+[data-glass="light"] .rd-burger span {
+  background: var(--navy);
+}
+
+.rd-menu-sheet {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: var(--nav-pad-x);
+  right: var(--nav-pad-x);
+  display: flex;
+  flex-direction: column;
+  padding: 10px 16px 16px;
+  border-radius: var(--r-sheet);
+  background: var(--navy-glass-sheet);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
+  border: var(--glass-border);
+  box-shadow: var(--sh-menu);
+}
+.rd-menu-sheet a {
+  color: var(--offwhite);
+  font-size: 17px;
+  font-weight: 500;
+  padding: 13px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+.rd-menu-sheet a:last-child {
+  border-bottom: none;
+}
+.rd-menu-sheet a[aria-current="page"] {
+  color: var(--orange);
+}
+
+/* Single breakpoint, per README "Responsive": 820px swaps the links bubble for
+   the hamburger + sheet. Done in CSS rather than matchMedia so the server and
+   client render the same markup (no hydration mismatch, no first-paint jump). */
+@media (max-width: 820px) {
+  .rd-links-bubble {
+    display: none;
+  }
+}
+@media (min-width: 821px) {
+  .rd-burger,
+  .rd-menu-sheet {
+    display: none;
+  }
+}
+
+/* --- The fork ------------------------------------------------------------- */
+.rd-fork {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--navy);
+}
+.rd-fork-half {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+  border: none;
+  width: 100%;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: center;
+  /* flex-grow drives the 620ms commit expansion */
+  transition: flex-grow var(--dur-commit) var(--ease-commit), filter 0.4s ease;
+}
+.rd-fork-half:hover {
+  filter: brightness(1.06);
+}
+.rd-fork-half[data-side="customer"] {
+  background: var(--navy);
+  color: var(--offwhite);
+}
+.rd-fork-half[data-side="business"] {
+  background: var(--offwhite);
+  color: var(--navy);
+}
+.rd-fork-half[data-state="won"] {
+  flex-grow: 40;
+}
+.rd-fork-half[data-state="lost"] {
+  flex-grow: 0.0001;
+  pointer-events: none;
+}
+.rd-fork-content {
+  position: relative;
+  padding: 0 24px;
+  transition: opacity 0.5s ease, transform 0.6s var(--ease-commit);
+}
+.rd-fork-half[data-state="lost"] .rd-fork-content {
+  opacity: 0;
+  transform: scale(0.96);
+}
+.rd-fork-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transition: transform 0.4s var(--ease-out-expo);
+}
+.rd-fork-watermark {
+  position: absolute;
+  width: min(260px, 20vw);
+  height: auto;
+  pointer-events: none;
+  transform: rotate(-8deg);
+}
+.rd-fork-seam {
+  position: relative;
+  z-index: 5;
+  flex: 0 0 auto;
+  height: 1px;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.rd-fork[data-committing="true"] .rd-fork-seam {
+  opacity: 0;
+}
+.rd-fork-cue {
+  margin-top: 26px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 500;
+}
+.rd-chevron {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+}
+.rd-chevron-up {
+  border-top: 2px solid var(--orange);
+  border-right: 2px solid var(--orange);
+  transform: rotate(-45deg);
+}
+.rd-chevron-down {
+  border-bottom: 2px solid var(--orange);
+  border-right: 2px solid var(--orange);
+  transform: rotate(45deg);
+}
+/* Set synchronously by the inline script in app/page.tsx when a returning
+   visitor already has a stored path — keeps the fork from flashing before
+   the client-side redirect lands. Scoped to .rd-fork, leaks nowhere. */
+html[data-fork-skip] .rd-fork {
+  visibility: hidden;
+}
+
+/* --- Footer --------------------------------------------------------------- */
+.rd-footer {
+  background: var(--navy);
+  color: var(--offwhite);
+  padding: clamp(60px, 7vw, 90px) var(--section-pad-x) 40px;
+  border-top: 1px solid var(--on-dark-border);
+}
+.rd-footer-grid {
+  max-width: var(--section-max);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: clamp(30px, 5vw, 60px);
+}
+.rd-foot-heading {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--on-dark-faint);
+  margin-bottom: 16px;
+}
+.rd-foot-link {
+  font-size: 15px;
+  color: rgba(245, 245, 245, 0.7);
+  transition: color 0.2s ease;
+}
+.rd-foot-link:hover {
+  color: var(--orange);
+}
+.rd-social-chip {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--on-dark-border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(245, 245, 245, 0.6);
+  font-size: 13px;
+  transition: color 0.25s ease, border-color 0.25s ease;
+}
+.rd-social-chip:hover {
+  border-color: var(--orange);
+  color: var(--orange);
+}
+.rd-foot-input {
+  flex: 1;
+  min-width: 0;
+  padding: 11px 14px;
+  border-radius: var(--r-10);
+  border: 1px solid var(--on-dark-border-strong);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--offwhite);
+  font-size: 14px;
+  outline: none;
+}
+.rd-foot-input::placeholder {
+  color: var(--on-dark-muted);
+}
+.rd-foot-join {
+  border: none;
+  cursor: pointer;
+  padding: 11px 16px;
+  border-radius: var(--r-10);
+  background: var(--orange);
+  color: var(--navy);
+  font-weight: 600;
+  font-size: 14px;
+}
+.rd-foot-bottom {
+  max-width: var(--section-max);
+  margin: 44px auto 0;
+  padding-top: 24px;
+  border-top: 1px solid var(--on-dark-border);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--on-dark-faint);
+}
+
+/* --- Motion keyframes ----------------------------------------------------- */
+@keyframes rd-ripple {
+  0% {
+    transform: translate(-50%, -50%) scale(0.35);
+    opacity: 0.6;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2.2);
+    opacity: 0;
+  }
+}
+@keyframes rd-receipt-cycle {
+  0%,
+  7% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.97);
+  }
+  17%,
+  80% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  94%,
+  100% {
+    opacity: 0;
+    transform: translateY(-14px) scale(0.98);
+  }
+}
+@keyframes rd-floaty {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+@keyframes rd-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+@keyframes rd-seam-glow {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@keyframes rd-arrow-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(7px);
+    opacity: 1;
+  }
+}
+
+.rd-floaty {
+  animation: rd-floaty 6s ease-in-out infinite;
+}
+.rd-seam-glow {
+  animation: rd-seam-glow 2.6s ease-in-out infinite;
+}
+.rd-arrow-bob {
+  animation: rd-arrow-bob 1.9s ease-in-out infinite;
+}
+.rd-marquee-run {
+  animation: rd-marquee 30s linear infinite;
+}
+
+/* --- Reduced motion ------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .rd *,
+  .rd *::after,
+  .rd *::before {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,19 @@
+/* components/motion — shared keyframes.
+   Imported directly by the components that need them (Marquee). Scoped to
+   this directory; not wired into any global stylesheet. */
+
+@keyframes papex-marquee-track {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.papex-marquee-track {
+  animation-name: papex-marquee-track;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}

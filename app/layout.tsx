@@ -5,7 +5,13 @@ import type { Metadata } from 'next'
 // mb-*, container...) work inside the framer shell (e.g. blog post pages).
 import '@/styles/framer-site.css'
 import './globals.css'
-import { barlow, kameron } from './fonts'
+// Brand layer for the redesigned site chrome + forked landing. Imported LAST so
+// its `.rd`-scoped rules win over Tailwind's base/utilities where they overlap.
+// Every token in it is scoped under `.rd` — framer-site.css owns the `:root`
+// `--navy`/`--orange`/`--white` names with the legacy palette, so nothing here
+// may be hoisted to `:root`.
+import '@/styles/papex-brand.css'
+import { barlow, gloock, kameron } from './fonts'
 import { Analytics } from '@vercel/analytics/react'
 
 export const metadata: Metadata = {
@@ -93,7 +99,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${barlow.variable} ${kameron.variable}`}>
+    <html lang="en" className={`${barlow.variable} ${kameron.variable} ${gloock.variable}`}>
       <head>
         <link rel="icon" href="/favlogo.png" sizes="any" />
         <link rel="icon" href="/favlogo.png" type="image/png" />

@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kameron:wght@400;500;600;700&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Barlow',sans-serif;background:#00121D;color:#F5F5F5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:#EB7100;text-decoration:none}
+  a:hover{color:#ff8a1f}
+  input,button,textarea,select{font-family:'Barlow',sans-serif}
+  ::selection{background:#EB7100;color:#00121D}
+  @keyframes ripple{0%{transform:translate(-50%,-50%) scale(.35);opacity:.6}100%{transform:translate(-50%,-50%) scale(2.2);opacity:0}}
+  @keyframes receiptCycle{0%,7%{opacity:0;transform:translateY(30px) scale(.97)}17%,80%{opacity:1;transform:translateY(0) scale(1)}94%,100%{opacity:0;transform:translateY(-14px) scale(.98)}}
+  @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  @keyframes pulseDot{0%,100%{opacity:.4;transform:scale(.9)}50%{opacity:1;transform:scale(1.15)}}
+  @keyframes seamGlow{0%,100%{opacity:.5}50%{opacity:1}}
+  @keyframes slideRow{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  @keyframes arrowBob{0%,100%{transform:translateY(0);opacity:.5}50%{transform:translateY(7px);opacity:1}}
+  @keyframes spinSlow{to{transform:rotate(360deg)}}
+  @keyframes glowPulse{0%,100%{opacity:.35}50%{opacity:.8}}
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;animation-iteration-count:1!important}}
+</style>
+</helmet>
+<div ref="{{ setRoot }}" style="position:relative;width:100%;min-height:100vh;background:#00121D">
+
+  <!-- ===================== NAV ===================== -->
+  <nav style="position:fixed;top:0;left:0;right:0;z-index:120;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:clamp(12px,2vw,20px) clamp(14px,4vw,40px);pointer-events:none">
+    <div onClick="{{ goSplit }}" style="pointer-events:auto;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;padding:9px 17px 9px 14px;border-radius:999px;background:rgba(8,26,37,.5);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border:1px solid rgba(255,255,255,.13);box-shadow:0 12px 34px rgba(0,18,29,.3),inset 0 1px 0 rgba(255,255,255,.16);transition:border-color .3s" style-hover="border-color:rgba(235,113,0,.5)">
+      <div style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;transform:rotate(-8deg)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M2 12L22 3L15 21L11.5 13.5L2 12Z" fill="#EB7100"></path><path d="M11.5 13.5L22 3L11.5 13.5Z" fill="#c85f00"></path></svg></div>
+      <span style="font-family:'Kameron',serif;font-weight:700;font-size:20px;letter-spacing:-.01em;color:#F5F5F5">PapeX</span>
+    </div>
+
+    <sc-if value="{{ notMobile }}" hint-placeholder-val="{{ true }}">
+    <div style="pointer-events:auto;display:flex;align-items:center;gap:2px;padding:6px;border-radius:999px;white-space:nowrap;background:rgba(8,26,37,.5);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border:1px solid rgba(255,255,255,.13);box-shadow:0 12px 34px rgba(0,18,29,.3),inset 0 1px 0 rgba(255,255,255,.16)" data-navlinks>
+      <span onClick="{{ goSplit }}" style="cursor:pointer;padding:9px 15px;border-radius:999px;font-size:14.5px;font-weight:500;color:rgba(245,245,245,.72);transition:.25s" style-hover="background:rgba(255,255,255,.1);color:#F5F5F5">Home</span>
+      <span onClick="{{ goCustomer }}" style="cursor:pointer;padding:9px 15px;border-radius:999px;font-size:14.5px;font-weight:500;color:{{ linkCust }};background:{{ linkCustBg }};transition:.25s" style-hover="background:rgba(255,255,255,.1)">For Customers</span>
+      <span onClick="{{ goMerchant }}" style="cursor:pointer;padding:9px 15px;border-radius:999px;font-size:14.5px;font-weight:500;color:{{ linkMerch }};background:{{ linkMerchBg }};transition:.25s" style-hover="background:rgba(255,255,255,.1)">For Business</span>
+      <span style="cursor:pointer;padding:9px 15px;border-radius:999px;font-size:14.5px;font-weight:500;color:rgba(245,245,245,.72);transition:.25s" style-hover="background:rgba(255,255,255,.1);color:#F5F5F5">Features</span>
+      <span style="cursor:pointer;padding:9px 15px;border-radius:999px;font-size:14.5px;font-weight:500;color:rgba(245,245,245,.72);transition:.25s" style-hover="background:rgba(255,255,255,.1);color:#F5F5F5">Blog</span>
+      <span style="cursor:pointer;padding:9px 15px;border-radius:999px;font-size:14.5px;font-weight:500;color:rgba(245,245,245,.72);transition:.25s" style-hover="background:rgba(255,255,255,.1);color:#F5F5F5">About</span>
+    </div>
+    </sc-if>
+
+    <div style="pointer-events:auto;display:flex;align-items:center;gap:10px">
+      <button onClick="{{ ctaClick }}" data-ripple="rgba(0,18,29,.22)" style="border:none;cursor:pointer;padding:12px 22px;border-radius:999px;background:#EB7100;color:#00121D;font-weight:600;font-size:14.5px;letter-spacing:.01em;white-space:nowrap;position:relative;overflow:hidden;transition:transform .25s,box-shadow .25s;box-shadow:0 8px 24px rgba(235,113,0,.35)" style-hover="transform:translateY(-1px);box-shadow:0 12px 30px rgba(235,113,0,.5)">{{ ctaLabel }}</button>
+      <sc-if value="{{ mobile }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ toggleMenu }}" style="display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;cursor:pointer;width:46px;height:46px;border-radius:999px;background:rgba(8,26,37,.5);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border:1px solid rgba(255,255,255,.13);box-shadow:0 12px 34px rgba(0,18,29,.3),inset 0 1px 0 rgba(255,255,255,.16)">
+        <span style="width:18px;height:2px;background:#F5F5F5;display:block;border-radius:2px"></span>
+        <span style="width:18px;height:2px;background:#F5F5F5;display:block;border-radius:2px"></span>
+        <span style="width:18px;height:2px;background:#F5F5F5;display:block;border-radius:2px"></span>
+      </div>
+      </sc-if>
+    </div>
+
+    <sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="pointer-events:auto;position:absolute;top:calc(100% + 4px);left:clamp(14px,4vw,40px);right:clamp(14px,4vw,40px);border-radius:22px;background:rgba(8,26,37,.72);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border:1px solid rgba(255,255,255,.13);box-shadow:0 22px 50px rgba(0,18,29,.4),inset 0 1px 0 rgba(255,255,255,.16);display:flex;flex-direction:column;padding:10px 16px 16px">
+      <span onClick="{{ goSplit }}" style="cursor:pointer;color:#F5F5F5;font-size:17px;font-weight:500;padding:13px 6px;border-bottom:1px solid rgba(255,255,255,.07)">Home</span>
+      <span onClick="{{ goCustomer }}" style="cursor:pointer;color:#F5F5F5;font-size:17px;font-weight:500;padding:13px 6px;border-bottom:1px solid rgba(255,255,255,.07)">For Customers</span>
+      <span onClick="{{ goMerchant }}" style="cursor:pointer;color:#F5F5F5;font-size:17px;font-weight:500;padding:13px 6px;border-bottom:1px solid rgba(255,255,255,.07)">For Business</span>
+      <span style="cursor:pointer;color:rgba(245,245,245,.8);font-size:17px;font-weight:500;padding:13px 6px;border-bottom:1px solid rgba(255,255,255,.07)">Features</span>
+      <span style="cursor:pointer;color:rgba(245,245,245,.8);font-size:17px;font-weight:500;padding:13px 6px;border-bottom:1px solid rgba(255,255,255,.07)">Blog</span>
+      <span style="cursor:pointer;color:rgba(245,245,245,.8);font-size:17px;font-weight:500;padding:13px 6px">About</span>
+    </div>
+    </sc-if>
+  </nav>
+
+  <!-- ===================== FORK / SPLIT ===================== -->
+  <sc-if value="{{ isSplit }}" hint-placeholder-val="{{ true }}">
+  <div style="position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;overflow:hidden;background:#00121D">
+
+    <!-- top half: customers -->
+    <div onClick="{{ goCustomer }}" style="{{ custHalfStyle }}" style-hover="filter:brightness(1.08)">
+      <div data-spotlight="70" style="position:absolute;inset:0;background:radial-gradient(120% 90% at 30% 20%,rgba(235,113,0,.16),transparent 60%);transition:transform .4s cubic-bezier(.16,1,.3,1)"></div>
+      <div style="position:absolute;inset:0;background:repeating-linear-gradient(115deg,rgba(255,255,255,.02),rgba(255,255,255,.02) 2px,transparent 2px,transparent 26px)"></div>
+      <img src="plane-white.png" alt="" style="position:absolute;top:22%;left:5%;width:min(260px,20vw);opacity:.05;pointer-events:none;transform:rotate(-8deg)">
+      <div style="position:relative;text-align:center;padding:0 24px;transition:opacity .5s,transform .6s;opacity:{{ custContentOpacity }};transform:{{ custContentTransform }}">
+        <div style="font-family:'Barlow';font-size:13px;font-weight:600;letter-spacing:.28em;text-transform:uppercase;color:#EB7100;margin-bottom:16px">For Customers</div>
+        <h2 style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(34px,5.4vw,72px);line-height:1.02;letter-spacing:-.02em;color:#F5F5F5;max-width:15ch;margin:0 auto">Never lose a receipt again.</h2>
+        <div style="margin-top:26px;display:inline-flex;align-items:center;gap:10px;font-size:15px;color:rgba(245,245,245,.62);font-weight:500">
+          <span style="display:inline-block;width:9px;height:9px;border-top:2px solid #EB7100;border-right:2px solid #EB7100;transform:rotate(-45deg)"></span>
+          Scroll up or click to enter
+        </div>
+      </div>
+    </div>
+
+    <!-- seam -->
+    <div style="{{ seamStyle }}">
+      <div style="display:flex;align-items:center;gap:14px;padding:0 22px;width:100%;pointer-events:none">
+        <div style="height:1px;flex:1;background:linear-gradient(90deg,transparent,rgba(235,113,0,.5))"></div>
+        <span style="font-family:'Kameron',serif;font-size:15px;font-weight:600;color:#EB7100;white-space:nowrap;letter-spacing:.02em;animation:seamGlow 2.6s ease-in-out infinite">Choose your path</span>
+        <div style="height:1px;flex:1;background:linear-gradient(90deg,rgba(235,113,0,.5),transparent)"></div>
+      </div>
+    </div>
+
+    <!-- bottom half: business -->
+    <div onClick="{{ goMerchant }}" style="{{ merchHalfStyle }}" style-hover="filter:brightness(1.06)">
+      <div data-spotlight="60" style="position:absolute;inset:0;background:radial-gradient(120% 90% at 70% 80%,rgba(235,113,0,.1),transparent 60%);transition:transform .4s cubic-bezier(.16,1,.3,1)"></div>
+      <img src="plane-blue.png" alt="" style="position:absolute;bottom:20%;right:5%;width:min(260px,20vw);opacity:.06;pointer-events:none;transform:rotate(-8deg)">
+      <div style="position:relative;text-align:center;padding:0 24px;transition:opacity .5s,transform .6s;opacity:{{ merchContentOpacity }};transform:{{ merchContentTransform }}">
+        <div style="font-family:'Barlow';font-size:13px;font-weight:600;letter-spacing:.28em;text-transform:uppercase;color:#EB7100;margin-bottom:16px">For Business</div>
+        <h2 style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(34px,5.4vw,72px);line-height:1.02;letter-spacing:-.02em;color:#00121D;max-width:16ch;margin:0 auto">Modern checkout. Zero paper.</h2>
+        <div style="margin-top:26px;display:inline-flex;align-items:center;gap:10px;font-size:15px;color:rgba(0,18,29,.55);font-weight:500">
+          <span style="display:inline-block;width:9px;height:9px;border-bottom:2px solid #EB7100;border-right:2px solid #EB7100;transform:rotate(45deg)"></span>
+          Scroll down or click to enter
+        </div>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ===================== CUSTOMER PATH ===================== -->
+  <sc-if value="{{ isCustomer }}" hint-placeholder-val="{{ false }}">
+  <div style="position:relative">
+
+    <!-- hero -->
+    <section style="{{ custHeroSection }}">
+      <div data-spotlight="70" style="position:absolute;inset:0;background:radial-gradient(90% 70% at 78% 30%,rgba(235,113,0,.14),transparent 55%);transition:transform .4s cubic-bezier(.16,1,.3,1)"></div>
+      <div style="{{ custHeroInner }}">
+        <div data-reveal data-stagger style="max-width:560px;{{ custHeroCopyAlign }}">
+          <div style="font-size:13px;font-weight:600;letter-spacing:.26em;text-transform:uppercase;color:#EB7100;margin-bottom:22px">Digital receipts, one tap away</div>
+          <h1 data-words style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(40px,6vw,84px);line-height:.98;letter-spacing:-.025em;color:#F5F5F5">The last receipt you'll ever lose.</h1>
+          <p style="margin-top:26px;font-size:clamp(17px,1.5vw,20px);line-height:1.5;color:rgba(245,245,245,.66);max-width:44ch;font-weight:400">Tap your phone at checkout. Your receipt appears instantly — saved, searchable, and yours forever. No paper, no app required to start.</p>
+          <div style="margin-top:36px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:{{ custHeroBtnJustify }}">
+            <button onClick="{{ ctaClick }}" data-magnetic data-ripple="rgba(0,18,29,.22)" style="border:none;cursor:pointer;padding:15px 30px;border-radius:999px;background:#EB7100;color:#00121D;font-weight:600;font-size:16px;position:relative;overflow:hidden;transition:transform .35s cubic-bezier(.16,1,.3,1),box-shadow .25s;box-shadow:0 6px 22px rgba(235,113,0,.3)" style-hover="box-shadow:0 12px 34px rgba(235,113,0,.5)">Download the App</button>
+            <span style="font-size:14px;color:rgba(245,245,245,.5)">Free on the App Store</span>
+          </div>
+        </div>
+        <!-- NFC PHONE -->
+        <div onClick="{{ tapNfc }}" style="position:relative;flex-shrink:0;cursor:pointer;animation:floaty 6s ease-in-out infinite" title="Tap to demo">
+          <div style="position:relative;width:clamp(230px,24vw,300px);height:clamp(470px,49vw,610px);border-radius:44px;background:linear-gradient(160deg,#0a2431,#04161f);border:2px solid rgba(255,255,255,.1);box-shadow:0 40px 80px rgba(0,0,0,.5),inset 0 0 0 8px #00121D;padding:16px;overflow:hidden">
+            <div style="position:absolute;top:18px;left:50%;transform:translateX(-50%);width:96px;height:26px;background:#00121D;border-radius:0 0 16px 16px;z-index:5"></div>
+            <div style="width:100%;height:100%;border-radius:30px;background:#F5F5F5;overflow:hidden;position:relative;display:flex;flex-direction:column">
+              <div style="padding:34px 18px 14px;display:flex;align-items:center;justify-content:space-between;background:#fff;border-bottom:1px solid #ececec">
+                <span style="font-family:'Kameron',serif;font-weight:700;font-size:17px;color:#00121D">Receipts</span>
+                <span style="width:30px;height:30px;border-radius:50%;background:#EB7100;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700">P</span>
+              </div>
+              <div style="flex:1;padding:14px;position:relative;background:#F5F5F5">
+                <!-- materializing receipt -->
+                <div style="background:#fff;border-radius:16px;padding:18px 16px;box-shadow:0 10px 30px rgba(0,18,29,.1);animation:receiptCycle 5.2s ease-in-out infinite">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1.5px dashed #d8d8d8;padding-bottom:11px;margin-bottom:12px">
+                    <div>
+                      <div style="font-family:'Kameron',serif;font-weight:700;font-size:15px;color:#00121D">Blue Bottle Coffee</div>
+                      <div style="font-size:10.5px;color:#9a9a9a;margin-top:2px">Jul 22, 2026 · 8:41 AM</div>
+                    </div>
+                    <div style="font-size:9px;font-weight:700;color:#EB7100;border:1px solid #EB7100;border-radius:5px;padding:3px 6px;letter-spacing:.04em">TAPPED</div>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;font-size:12px;color:#4a4a4a;margin-bottom:8px"><span>Cappuccino</span><span>$5.25</span></div>
+                  <div style="display:flex;justify-content:space-between;font-size:12px;color:#4a4a4a;margin-bottom:8px"><span>Almond croissant</span><span>$4.75</span></div>
+                  <div style="display:flex;justify-content:space-between;font-size:12px;color:#4a4a4a;margin-bottom:12px"><span>Tax</span><span>$0.90</span></div>
+                  <div style="display:flex;justify-content:space-between;border-top:1.5px solid #00121D;padding-top:11px;font-weight:700;font-size:15px;color:#00121D"><span>Total</span><span>$10.90</span></div>
+                  <div style="margin-top:14px;display:flex;gap:8px">
+                    <div style="flex:1;text-align:center;font-size:10px;font-weight:600;color:#EB7100;background:rgba(235,113,0,.1);border-radius:8px;padding:7px 0">Save</div>
+                    <div style="flex:1;text-align:center;font-size:10px;font-weight:600;color:#4a4a4a;background:#f0f0f0;border-radius:8px;padding:7px 0">Share</div>
+                  </div>
+                </div>
+              </div>
+              <!-- NFC tap zone -->
+              <div style="padding:16px;display:flex;flex-direction:column;align-items:center;gap:6px;background:#fff;border-top:1px solid #ececec">
+                <div style="position:relative;width:52px;height:52px;display:flex;align-items:center;justify-content:center">
+                  <span style="position:absolute;top:50%;left:50%;width:52px;height:52px;border-radius:50%;border:2px solid #EB7100;animation:ripple 2.2s ease-out infinite"></span>
+                  <span style="position:absolute;top:50%;left:50%;width:52px;height:52px;border-radius:50%;border:2px solid #EB7100;animation:ripple 2.2s ease-out infinite 1.1s"></span>
+                  <span style="position:relative;width:24px;height:24px;border-radius:50%;background:#EB7100;box-shadow:0 0 0 6px rgba(235,113,0,.18)"></span>
+                </div>
+                <span style="font-size:11px;font-weight:600;color:#00121D;letter-spacing:.04em">Tap to receive</span>
+              </div>
+            </div>
+          </div>
+          <div style="position:absolute;-bottom:0;top:50%;left:-52px;transform:translateY(-50%);font-size:12px;color:rgba(245,245,245,.4);writing-mode:vertical-rl;letter-spacing:.1em;font-family:'Courier New',monospace"></div>
+        </div>
+      </div>
+      <div style="position:absolute;bottom:26px;left:50%;transform:translateX(-50%);font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:rgba(245,245,245,.4);display:flex;flex-direction:column;align-items:center;gap:8px">Scroll<span style="width:1px;height:26px;background:linear-gradient(rgba(245,245,245,.7),transparent);animation:arrowBob 1.9s ease-in-out infinite"></span></div>
+    </section>
+
+    <!-- problem (light) -->
+    <section style="background:#F5F5F5;color:#00121D;padding:clamp(90px,11vw,170px) clamp(20px,5vw,56px)">
+      <div style="max-width:1100px;margin:0 auto">
+        <div data-reveal style="max-width:20ch">
+          <div style="font-size:13px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:#EB7100;margin-bottom:18px">The problem</div>
+          <h2 data-words style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(32px,4.6vw,62px);line-height:1.02;letter-spacing:-.02em">Paper receipts fade. So does the money you could get back.</h2>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:clamp(20px,3vw,44px);margin-top:clamp(50px,6vw,90px)">
+          <div data-reveal><div style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(48px,6vw,76px);color:#EB7100;line-height:1">256B</div><p style="margin-top:10px;font-size:16px;color:#4a4a4a;line-height:1.45;max-width:24ch">receipts printed every year in the US alone — most in the trash by lunch.</p></div>
+          <div data-reveal><div style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(48px,6vw,76px);color:#EB7100;line-height:1">10M</div><p style="margin-top:10px;font-size:16px;color:#4a4a4a;line-height:1.45;max-width:24ch">trees cut down annually to print receipts nobody keeps.</p></div>
+          <div data-reveal><div style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(48px,6vw,76px);color:#EB7100;line-height:1">$0</div><p style="margin-top:10px;font-size:16px;color:#4a4a4a;line-height:1.45;max-width:24ch">back on the return, warranty, or deduction — because you lost the proof.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- marquee -->
+    <div style="background:#EB7100;overflow:hidden;padding:15px 0">
+      <div style="display:inline-flex;white-space:nowrap;animation:marquee 30s linear infinite;will-change:transform">
+        <span style="display:inline-flex;align-items:center;font-family:'Kameron',serif;font-weight:700;font-size:clamp(20px,2.3vw,30px);color:#00121D">
+          <span style="padding:0 30px">One tap, done.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">No paper.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">No app to receive.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">Saved forever.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">Fully searchable.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">Zero waste.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+        </span>
+        <span aria-hidden="true" style="display:inline-flex;align-items:center;font-family:'Kameron',serif;font-weight:700;font-size:clamp(20px,2.3vw,30px);color:#00121D">
+          <span style="padding:0 30px">One tap, done.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">No paper.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">No app to receive.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">Saved forever.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">Fully searchable.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">Zero waste.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+        </span>
+      </div>
+    </div>
+
+    <!-- personas (light, interactive) -->
+    <section style="background:#fff;color:#00121D;padding:clamp(90px,11vw,160px) clamp(20px,5vw,56px)">
+      <div style="max-width:1150px;margin:0 auto">
+        <div data-reveal style="text-align:center;max-width:24ch;margin:0 auto">
+          <div style="font-size:13px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:#EB7100;margin-bottom:18px">Which one are you?</div>
+          <h2 data-words style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(30px,4.4vw,58px);line-height:1.03;letter-spacing:-.02em">Three kinds of receipt people. PapeX works for all of them.</h2>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:clamp(16px,2vw,26px);margin-top:clamp(50px,6vw,80px)">
+          <div data-reveal data-ripple="rgba(235,113,0,.15)" onClick="{{ pickKeeper }}" style="{{ keeperCard }}" style-hover="transform:translateY(-6px);box-shadow:0 24px 50px rgba(0,18,29,.12)">
+            <div style="font-family:'Courier New',monospace;font-size:12px;letter-spacing:.1em;color:#EB7100;margin-bottom:16px">THE KEEPER</div>
+            <h3 style="font-family:'Kameron',serif;font-weight:700;font-size:24px;line-height:1.15">You save every receipt. Tax season is still a nightmare.</h3>
+            <p style="margin-top:14px;font-size:15px;line-height:1.5;color:#5a5a5a">Auto-organized, searchable by store, date or amount, and exportable in one tap. Your system — upgraded. No more shoeboxes.</p>
+          </div>
+          <div data-reveal data-ripple="rgba(235,113,0,.15)" onClick="{{ pickCasual }}" style="{{ casualCard }}" style-hover="transform:translateY(-6px);box-shadow:0 24px 50px rgba(0,18,29,.12)">
+            <div style="font-family:'Courier New',monospace;font-size:12px;letter-spacing:.1em;color:#EB7100;margin-bottom:16px">THE CASUAL</div>
+            <h3 style="font-family:'Kameron',serif;font-weight:700;font-size:24px;line-height:1.15">You keep receipts… when you remember.</h3>
+            <p style="margin-top:14px;font-size:15px;line-height:1.5;color:#5a5a5a">You don't have to remember anymore. Every receipt is saved automatically when you tap. Returns, warranties, expenses — just there.</p>
+          </div>
+          <div data-reveal data-ripple="rgba(235,113,0,.15)" onClick="{{ pickNon }}" style="{{ nonCard }}" style-hover="transform:translateY(-6px);box-shadow:0 24px 50px rgba(0,18,29,.12)">
+            <div style="font-family:'Courier New',monospace;font-size:12px;letter-spacing:.1em;color:#EB7100;margin-bottom:16px">THE NON-KEEPER</div>
+            <h3 style="font-family:'Kameron',serif;font-weight:700;font-size:24px;line-height:1.15">You throw them all away. Until the one day you needed one.</h3>
+            <p style="margin-top:14px;font-size:15px;line-height:1.5;color:#5a5a5a">You've been leaving money on the table. One tap and you're covered for deductions, warranties and returns — without changing a thing.</p>
+          </div>
+        </div>
+        <div data-reveal style="text-align:center;margin-top:36px;font-size:15px;color:#8a8a8a;min-height:24px">{{ personaMsg }}</div>
+      </div>
+    </section>
+
+    <!-- feature showcase (dark) -->
+    <section style="background:#00121D;color:#F5F5F5;padding:clamp(90px,11vw,160px) clamp(20px,5vw,56px)">
+      <div style="max-width:1150px;margin:0 auto;display:grid;gap:clamp(70px,9vw,130px)">
+        <div data-reveal style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(30px,5vw,80px);align-items:center" data-feat>
+          <div>
+            <div style="font-size:13px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:#EB7100;margin-bottom:16px">Everything in one place</div>
+            <h3 style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(28px,3.4vw,46px);line-height:1.05;letter-spacing:-.02em">Your entire receipt history, always a search away.</h3>
+            <p style="margin-top:18px;font-size:17px;line-height:1.55;color:rgba(245,245,245,.62);max-width:42ch">Filter by store, date, category or amount. Categorize food, transport, business and personal. Export for taxes without lifting a finger.</p>
+          </div>
+          <div data-reveal="mask" style="aspect-ratio:4/3;border-radius:20px;background:repeating-linear-gradient(45deg,#0a2431,#0a2431 12px,#0c2937 12px,#0c2937 24px);border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-family:'Courier New',monospace;font-size:13px;color:rgba(245,245,245,.4);letter-spacing:.08em;text-align:center;padding:20px">[ app screen: receipt list + search ]</div>
+        </div>
+        <div data-reveal style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(30px,5vw,80px);align-items:center;direction:rtl">
+          <div style="direction:ltr">
+            <div style="font-size:13px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:#EB7100;margin-bottom:16px">Share in a tap</div>
+            <h3 style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(28px,3.4vw,46px);line-height:1.05;letter-spacing:-.02em">Text, email or AirDrop any receipt in seconds.</h3>
+            <p style="margin-top:18px;font-size:17px;line-height:1.55;color:rgba(245,245,245,.62);max-width:42ch">Split an expense, submit a reimbursement, or send proof of purchase — no photos of crumpled paper, no scanning.</p>
+          </div>
+          <div data-reveal="mask" style="direction:ltr;aspect-ratio:4/3;border-radius:20px;background:repeating-linear-gradient(45deg,#0a2431,#0a2431 12px,#0c2937 12px,#0c2937 24px);border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-family:'Courier New',monospace;font-size:13px;color:rgba(245,245,245,.4);letter-spacing:.08em;text-align:center;padding:20px">[ app screen: share sheet ]</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- how it works: pinned scroll sequence (desktop) -->
+    <sc-if value="{{ notMobile }}" hint-placeholder-val="{{ true }}">
+    <section data-seq style="position:relative;background:#F5F5F5;color:#00121D;height:300vh">
+      <div style="position:sticky;top:0;height:100vh;display:flex;align-items:center;overflow:hidden">
+        <div style="max-width:1150px;margin:0 auto;width:100%;padding:0 clamp(20px,5vw,56px);display:grid;grid-template-columns:1fr 1fr;gap:clamp(30px,6vw,90px);align-items:center">
+          <div data-reveal>
+            <div style="font-size:13px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:#EB7100;margin-bottom:18px">How it works</div>
+            <h2 data-words style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(34px,4.4vw,60px);line-height:1.02;letter-spacing:-.02em">Get started in three taps.</h2>
+            <div style="margin-top:clamp(30px,4vw,48px);display:grid;gap:8px">
+              <div data-seq-step style="display:flex;gap:22px;transition:opacity .45s ease,transform .45s ease">
+                <div style="position:relative;width:3px;border-radius:3px;background:rgba(0,18,29,.1);flex:0 0 3px;align-self:stretch"><div data-seq-bar-fill style="position:absolute;top:0;left:0;width:100%;height:0;background:#EB7100;border-radius:3px"></div></div>
+                <div style="padding-bottom:22px"><div style="font-family:'Kameron',serif;font-weight:700;font-size:14px;color:#EB7100;letter-spacing:.04em">01</div><h4 style="font-family:'Kameron',serif;font-weight:600;font-size:clamp(21px,2.4vw,28px);margin-top:3px">Tap at checkout</h4><p style="margin-top:7px;font-size:15px;color:#5a5a5a;line-height:1.5;max-width:34ch">Hold your phone to any PapeX device at the register. No app required.</p></div>
+              </div>
+              <div data-seq-step style="display:flex;gap:22px;transition:opacity .45s ease,transform .45s ease">
+                <div style="position:relative;width:3px;border-radius:3px;background:rgba(0,18,29,.1);flex:0 0 3px;align-self:stretch"><div data-seq-bar-fill style="position:absolute;top:0;left:0;width:100%;height:0;background:#EB7100;border-radius:3px"></div></div>
+                <div style="padding-bottom:22px"><div style="font-family:'Kameron',serif;font-weight:700;font-size:14px;color:#EB7100;letter-spacing:.04em">02</div><h4 style="font-family:'Kameron',serif;font-weight:600;font-size:clamp(21px,2.4vw,28px);margin-top:3px">Receipt appears instantly</h4><p style="margin-top:7px;font-size:15px;color:#5a5a5a;line-height:1.5;max-width:34ch">Your digital receipt lands on your phone the moment you tap.</p></div>
+              </div>
+              <div data-seq-step style="display:flex;gap:22px;transition:opacity .45s ease,transform .45s ease">
+                <div style="position:relative;width:3px;border-radius:3px;background:rgba(0,18,29,.1);flex:0 0 3px;align-self:stretch"><div data-seq-bar-fill style="position:absolute;top:0;left:0;width:100%;height:0;background:#EB7100;border-radius:3px"></div></div>
+                <div><div style="font-family:'Kameron',serif;font-weight:700;font-size:14px;color:#EB7100;letter-spacing:.04em">03</div><h4 style="font-family:'Kameron',serif;font-weight:600;font-size:clamp(21px,2.4vw,28px);margin-top:3px">Saved &amp; organized</h4><p style="margin-top:7px;font-size:15px;color:#5a5a5a;line-height:1.5;max-width:34ch">Download the app to keep, search and categorize everything automatically.</p></div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:center">
+            <div style="position:relative;height:min(560px,60vh);aspect-ratio:300/600;border-radius:44px;background:linear-gradient(160deg,#0a2431,#04161f);border:2px solid rgba(255,255,255,.1);box-shadow:0 40px 90px rgba(0,18,29,.28);padding:14px">
+              <div style="position:absolute;top:16px;left:50%;transform:translateX(-50%);width:90px;height:24px;background:#04161f;border-radius:0 0 14px 14px;z-index:8"></div>
+              <div style="position:relative;width:100%;height:100%;border-radius:30px;overflow:hidden;background:#F5F5F5">
+                <!-- state 0: tap -->
+                <div data-seq-phone style="position:absolute;inset:0;opacity:1;transition:opacity .5s ease,transform .5s ease;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:28px;background:#F5F5F5">
+                  <div style="position:relative;width:130px;height:130px;display:flex;align-items:center;justify-content:center">
+                    <span style="position:absolute;top:50%;left:50%;width:130px;height:130px;border-radius:50%;border:2px solid #EB7100;animation:ripple 2.1s ease-out infinite"></span>
+                    <span style="position:absolute;top:50%;left:50%;width:130px;height:130px;border-radius:50%;border:2px solid #EB7100;animation:ripple 2.1s ease-out infinite 1.05s"></span>
+                    <span style="position:relative;width:46px;height:46px;border-radius:50%;background:#EB7100;box-shadow:0 0 0 10px rgba(235,113,0,.16)"></span>
+                  </div>
+                  <div style="text-align:center"><div style="font-family:'Kameron',serif;font-weight:700;font-size:21px;color:#00121D">Ready to tap</div><div style="margin-top:6px;font-size:13px;color:#8a8a8a">Hold your phone to the device</div></div>
+                </div>
+                <!-- state 1: receipt appears -->
+                <div data-seq-phone style="position:absolute;inset:0;opacity:0;transition:opacity .5s ease,transform .5s ease;display:flex;flex-direction:column;justify-content:center;padding:20px;background:#F5F5F5">
+                  <div style="background:#fff;border-radius:16px;padding:18px 16px;box-shadow:0 14px 34px rgba(0,18,29,.12)">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1.5px dashed #d8d8d8;padding-bottom:11px;margin-bottom:12px"><div><div style="font-family:'Kameron',serif;font-weight:700;font-size:15px;color:#00121D">Blue Bottle Coffee</div><div style="font-size:10.5px;color:#9a9a9a;margin-top:2px">Jul 22, 2026 · 8:41 AM</div></div><div style="font-size:9px;font-weight:700;color:#EB7100;border:1px solid #EB7100;border-radius:5px;padding:3px 6px;letter-spacing:.04em">TAPPED</div></div>
+                    <div style="display:flex;justify-content:space-between;font-size:12px;color:#4a4a4a;margin-bottom:8px"><span>Cappuccino</span><span>$5.25</span></div>
+                    <div style="display:flex;justify-content:space-between;font-size:12px;color:#4a4a4a;margin-bottom:12px"><span>Almond croissant</span><span>$4.75</span></div>
+                    <div style="display:flex;justify-content:space-between;border-top:1.5px solid #00121D;padding-top:11px;font-weight:700;font-size:15px;color:#00121D"><span>Total</span><span>$10.90</span></div>
+                  </div>
+                  <div style="text-align:center;margin-top:14px;font-size:12px;color:#8a8a8a">Delivered the instant you tapped</div>
+                </div>
+                <!-- state 2: organized -->
+                <div data-seq-phone style="position:absolute;inset:0;opacity:0;transition:opacity .5s ease,transform .5s ease;display:flex;flex-direction:column;gap:11px;padding:20px 16px;background:#F5F5F5">
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px"><span style="font-family:'Kameron',serif;font-weight:700;font-size:18px;color:#00121D">Receipts</span><span style="width:28px;height:28px;border-radius:50%;background:#EB7100;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px">P</span></div>
+                  <div style="display:flex;align-items:center;gap:8px;background:#fff;border-radius:10px;padding:9px 12px;font-size:12px;color:#9a9a9a">Search receipts</div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;background:#fff;border-radius:12px;padding:12px 13px"><div><div style="font-weight:600;font-size:13px;color:#00121D">Blue Bottle</div><div style="font-size:10px;color:#EB7100;margin-top:2px">Food</div></div><span style="font-weight:700;font-size:13px;color:#00121D">$10.90</span></div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;background:#fff;border-radius:12px;padding:12px 13px"><div><div style="font-weight:600;font-size:13px;color:#00121D">Whole Foods</div><div style="font-size:10px;color:#EB7100;margin-top:2px">Groceries</div></div><span style="font-weight:700;font-size:13px;color:#00121D">$63.40</span></div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;background:#fff;border-radius:12px;padding:12px 13px"><div><div style="font-weight:600;font-size:13px;color:#00121D">Uber</div><div style="font-size:10px;color:#EB7100;margin-top:2px">Transport</div></div><span style="font-weight:700;font-size:13px;color:#00121D">$18.20</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    </sc-if>
+    <!-- how it works: simple stacked (mobile) -->
+    <sc-if value="{{ mobile }}" hint-placeholder-val="{{ false }}">
+    <section style="background:#F5F5F5;color:#00121D;padding:clamp(90px,11vw,160px) clamp(20px,5vw,56px)">
+      <div style="max-width:1150px;margin:0 auto">
+        <div data-reveal style="text-align:center;max-width:22ch;margin:0 auto"><h2 style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(30px,7vw,44px);line-height:1.03;letter-spacing:-.02em">Get started in three taps.</h2></div>
+        <div style="display:grid;gap:32px;margin-top:48px">
+          <div data-reveal style="text-align:center"><div style="width:54px;height:54px;border-radius:50%;background:#00121D;color:#EB7100;font-family:'Kameron',serif;font-weight:700;font-size:22px;display:flex;align-items:center;justify-content:center;margin:0 auto 18px">1</div><h4 style="font-family:'Kameron',serif;font-weight:600;font-size:20px">Tap at checkout</h4><p style="margin-top:8px;font-size:15px;color:#5a5a5a;line-height:1.5;max-width:30ch;margin-left:auto;margin-right:auto">Hold your phone to any PapeX device. No app required.</p></div>
+          <div data-reveal style="text-align:center"><div style="width:54px;height:54px;border-radius:50%;background:#00121D;color:#EB7100;font-family:'Kameron',serif;font-weight:700;font-size:22px;display:flex;align-items:center;justify-content:center;margin:0 auto 18px">2</div><h4 style="font-family:'Kameron',serif;font-weight:600;font-size:20px">Receipt appears</h4><p style="margin-top:8px;font-size:15px;color:#5a5a5a;line-height:1.5;max-width:30ch;margin-left:auto;margin-right:auto">Instantly on your phone, the moment you tap.</p></div>
+          <div data-reveal style="text-align:center"><div style="width:54px;height:54px;border-radius:50%;background:#00121D;color:#EB7100;font-family:'Kameron',serif;font-weight:700;font-size:22px;display:flex;align-items:center;justify-content:center;margin:0 auto 18px">3</div><h4 style="font-family:'Kameron',serif;font-weight:600;font-size:20px">Save &amp; organize</h4><p style="margin-top:8px;font-size:15px;color:#5a5a5a;line-height:1.5;max-width:30ch;margin-left:auto;margin-right:auto">Download the app to keep, search and categorize everything.</p></div>
+        </div>
+      </div>
+    </section>
+    </sc-if>
+
+    <!-- social proof (dark) -->
+    <section style="background:#00121D;color:#F5F5F5;padding:clamp(90px,11vw,160px) clamp(20px,5vw,56px);position:relative">
+      <div data-parallax="0.06" style="position:absolute;inset:0;background:radial-gradient(80% 60% at 50% 0%,rgba(235,113,0,.1),transparent 60%)"></div>
+      <div style="max-width:1100px;margin:0 auto;position:relative">
+        <div data-reveal data-counter style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:clamp(24px,4vw,60px);text-align:center">
+          <div><div style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(44px,6vw,80px);color:#EB7100;line-height:1">{{ c1 }}</div><div style="margin-top:8px;font-size:15px;color:rgba(245,245,245,.6);letter-spacing:.02em">receipts delivered</div></div>
+          <div><div style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(44px,6vw,80px);color:#EB7100;line-height:1">{{ c2 }}</div><div style="margin-top:8px;font-size:15px;color:rgba(245,245,245,.6);letter-spacing:.02em">trees saved</div></div>
+          <div><div style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(44px,6vw,80px);color:#EB7100;line-height:1">{{ c3 }}</div><div style="margin-top:8px;font-size:15px;color:rgba(245,245,245,.6);letter-spacing:.02em">merchants onboarded</div></div>
+        </div>
+        <div data-reveal style="margin-top:clamp(50px,6vw,80px);display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px">
+          <div style="height:64px;border-radius:12px;border:1px dashed rgba(245,245,245,.16);display:flex;align-items:center;justify-content:center;font-family:'Courier New',monospace;font-size:12px;color:rgba(245,245,245,.35)">[ press logo ]</div>
+          <div style="height:64px;border-radius:12px;border:1px dashed rgba(245,245,245,.16);display:flex;align-items:center;justify-content:center;font-family:'Courier New',monospace;font-size:12px;color:rgba(245,245,245,.35)">[ press logo ]</div>
+          <div style="height:64px;border-radius:12px;border:1px dashed rgba(245,245,245,.16);display:flex;align-items:center;justify-content:center;font-family:'Courier New',monospace;font-size:12px;color:rgba(245,245,245,.35)">[ press logo ]</div>
+          <div style="height:64px;border-radius:12px;border:1px dashed rgba(245,245,245,.16);display:flex;align-items:center;justify-content:center;font-family:'Courier New',monospace;font-size:12px;color:rgba(245,245,245,.35)">[ press logo ]</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- vision + cta (light) -->
+    <section style="background:#F5F5F5;color:#00121D;padding:clamp(90px,11vw,160px) clamp(20px,5vw,56px)">
+      <div style="max-width:900px;margin:0 auto;text-align:center">
+        <div data-reveal>
+          <div style="font-size:13px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:#EB7100;margin-bottom:20px">The vision</div>
+          <h2 data-words style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(32px,4.8vw,66px);line-height:1.03;letter-spacing:-.02em">A world where every receipt is useful — and none of them are wasted.</h2>
+          <p style="margin-top:24px;font-size:18px;line-height:1.55;color:#5a5a5a;max-width:52ch;margin-left:auto;margin-right:auto">We're modernizing the most ignored moment of every purchase. Less paper, less waste, and receipts that finally work for you.</p>
+        </div>
+        <div data-reveal style="margin-top:48px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
+          <button onClick="{{ ctaClick }}" data-magnetic data-ripple="rgba(0,18,29,.22)" style="border:none;cursor:pointer;padding:16px 34px;border-radius:999px;background:#EB7100;color:#00121D;font-weight:600;font-size:16px;position:relative;overflow:hidden;transition:transform .35s cubic-bezier(.16,1,.3,1),box-shadow .25s;box-shadow:0 6px 22px rgba(235,113,0,.3)" style-hover="box-shadow:0 12px 34px rgba(235,113,0,.5)">Download the App</button>
+          <button onClick="{{ goMerchant }}" style="cursor:pointer;padding:16px 34px;border-radius:999px;background:transparent;color:#00121D;font-weight:600;font-size:16px;border:1.5px solid rgba(0,18,29,.2);transition:border-color .2s,background .2s" style-hover="border-color:#00121D;background:rgba(0,18,29,.04)">Get the RDH for Business</button>
+        </div>
+      </div>
+    </section>
+
+    <dc-import name="PapeX Footer" hint-size="100%,340px"></dc-import>
+  </div>
+  </sc-if>
+
+  <!-- ===================== MERCHANT PATH ===================== -->
+  <sc-if value="{{ isMerchant }}" hint-placeholder-val="{{ false }}">
+  <div style="position:relative">
+
+    <!-- hero -->
+    <section style="min-height:100vh;background:#F5F5F5;color:#00121D;display:flex;align-items:center;padding:120px clamp(20px,5vw,56px) 80px;position:relative;overflow:hidden">
+      <div data-spotlight="70" style="position:absolute;inset:0;background:radial-gradient(80% 70% at 22% 40%,rgba(235,113,0,.16),transparent 55%);transition:transform .4s cubic-bezier(.16,1,.3,1)"></div>
+      <div style="max-width:1200px;margin:0 auto;width:100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:clamp(30px,5vw,70px);align-items:center;position:relative" data-merch-hero>
+        <div data-reveal data-stagger style="max-width:560px">
+          <div style="font-size:13px;font-weight:600;letter-spacing:.26em;text-transform:uppercase;color:#EB7100;margin-bottom:22px">For Business</div>
+          <h1 data-words style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(38px,5.6vw,80px);line-height:1;letter-spacing:-.025em">Modernize your checkout. No cost. No hassle.</h1>
+          <p style="margin-top:26px;font-size:clamp(17px,1.5vw,20px);line-height:1.5;color:rgba(0,18,29,.62);max-width:46ch">The RDH plugs into your existing POS and sends customers a digital receipt when they tap. Free hardware, free install, zero paper.</p>
+          <div style="margin-top:36px;display:flex;gap:14px;flex-wrap:wrap;align-items:center">
+            <button onClick="{{ ctaClick }}" data-magnetic data-ripple="rgba(0,18,29,.22)" style="border:none;cursor:pointer;padding:15px 30px;border-radius:999px;background:#EB7100;color:#00121D;font-weight:600;font-size:16px;position:relative;overflow:hidden;transition:transform .35s cubic-bezier(.16,1,.3,1),box-shadow .25s;box-shadow:0 6px 22px rgba(235,113,0,.3)" style-hover="box-shadow:0 12px 34px rgba(235,113,0,.5)">Request a Demo</button>
+            <span style="font-size:14px;color:rgba(0,18,29,.5)">or call 415-261-8675</span>
+          </div>
+        </div>
+        <!-- RDH device at POS -->
+        <div style="position:relative;display:flex;align-items:center;justify-content:center;animation:floaty 7s ease-in-out infinite">
+          <div style="position:relative;width:clamp(280px,32vw,400px);aspect-ratio:1/1;border-radius:24px;background:repeating-linear-gradient(45deg,#0a2431,#0a2431 12px,#0c2937 12px,#0c2937 24px);border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center">
+            <div style="font-family:'Courier New',monospace;font-size:13px;color:rgba(245,245,245,.4);letter-spacing:.08em;position:absolute;top:16px;left:16px">[ RDH device photo ]</div>
+            <!-- stylized device -->
+            <div style="width:64%;background:linear-gradient(160deg,#12303e,#081d27);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:22px 18px;box-shadow:0 30px 60px rgba(0,0,0,.4);text-align:center">
+              <div style="font-family:'Kameron',serif;font-weight:700;font-size:15px;color:#F5F5F5;letter-spacing:.02em">PapeX RDH</div>
+              <div style="margin:18px auto 0;position:relative;width:80px;height:80px;display:flex;align-items:center;justify-content:center">
+                <span style="position:absolute;top:50%;left:50%;width:80px;height:80px;border-radius:50%;border:2px solid #EB7100;animation:ripple 2.4s ease-out infinite"></span>
+                <span style="position:absolute;top:50%;left:50%;width:80px;height:80px;border-radius:50%;border:2px solid #EB7100;animation:ripple 2.4s ease-out infinite 1.2s"></span>
+                <span style="width:34px;height:34px;border-radius:50%;background:#EB7100;box-shadow:0 0 0 8px rgba(235,113,0,.16)"></span>
+              </div>
+              <div style="margin-top:16px;font-size:11px;font-weight:600;color:rgba(245,245,245,.7);letter-spacing:.06em">TAP TO RECEIVE RECEIPT</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- why merchants love it (light) -->
+    <section style="background:#F5F5F5;color:#00121D;padding:clamp(90px,11vw,160px) clamp(20px,5vw,56px)">
+      <div style="max-width:1150px;margin:0 auto">
+        <div data-reveal style="max-width:22ch"><div style="font-size:13px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:#EB7100;margin-bottom:18px">Why merchants love PapeX</div><h2 data-words style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(30px,4.4vw,58px);line-height:1.03;letter-spacing:-.02em">Every reason to switch. None to say no.</h2></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:clamp(16px,2vw,24px);margin-top:clamp(50px,6vw,80px)">
+          <div data-reveal style="background:#fff;border-radius:18px;padding:30px;box-shadow:0 12px 30px rgba(0,18,29,.05)"><div style="font-family:'Kameron',serif;font-weight:700;font-size:22px;color:#EB7100">Free forever</div><p style="margin-top:12px;font-size:15px;color:#5a5a5a;line-height:1.5">The RDH device and installation cost merchants nothing. No hardware fees, no subscription.</p></div>
+          <div data-reveal style="background:#fff;border-radius:18px;padding:30px;box-shadow:0 12px 30px rgba(0,18,29,.05)"><div style="font-family:'Kameron',serif;font-weight:700;font-size:22px;color:#EB7100">Works with your POS</div><p style="margin-top:12px;font-size:15px;color:#5a5a5a;line-height:1.5">Connects through a standard port. No new system, no software change, no retraining.</p></div>
+          <div data-reveal style="background:#fff;border-radius:18px;padding:30px;box-shadow:0 12px 30px rgba(0,18,29,.05)"><div style="font-family:'Kameron',serif;font-weight:700;font-size:22px;color:#EB7100">Customers love it</div><p style="margin-top:12px;font-size:15px;color:#5a5a5a;line-height:1.5">Digital receipts are faster at the counter, greener, and more convenient for everyone.</p></div>
+          <div data-reveal style="background:#fff;border-radius:18px;padding:30px;box-shadow:0 12px 30px rgba(0,18,29,.05)"><div style="font-family:'Kameron',serif;font-weight:700;font-size:22px;color:#EB7100">Cut paper & cost</div><p style="margin-top:12px;font-size:15px;color:#5a5a5a;line-height:1.5">Stop buying thermal paper rolls. Stand out from competitors still printing waste.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- marquee -->
+    <div style="background:#EB7100;overflow:hidden;padding:15px 0">
+      <div style="display:inline-flex;white-space:nowrap;animation:marquee 32s linear infinite;will-change:transform">
+        <span style="display:inline-flex;align-items:center;font-family:'Kameron',serif;font-weight:700;font-size:clamp(20px,2.3vw,30px);color:#00121D">
+          <span style="padding:0 30px">Free device.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">Free install.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">Works with your POS.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">Zero paper.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">PCI compliant.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">No contract.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+        </span>
+        <span aria-hidden="true" style="display:inline-flex;align-items:center;font-family:'Kameron',serif;font-weight:700;font-size:clamp(20px,2.3vw,30px);color:#00121D">
+          <span style="padding:0 30px">Free device.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">Free install.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">Works with your POS.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">Zero paper.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">PCI compliant.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">No contract.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+        </span>
+      </div>
+    </div>
+
+    <!-- how it works for business (dark) -->
+    <section style="background:#00121D;color:#F5F5F5;padding:clamp(90px,11vw,160px) clamp(20px,5vw,56px)">
+      <div style="max-width:1100px;margin:0 auto">
+        <div data-reveal style="text-align:center;max-width:22ch;margin:0 auto"><h2 data-words style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(30px,4.4vw,58px);line-height:1.03;letter-spacing:-.02em">Up and running the same afternoon.</h2></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:clamp(20px,3vw,36px);margin-top:clamp(50px,6vw,80px)">
+          <div data-reveal><div style="font-family:'Kameron',serif;font-weight:700;font-size:34px;color:#EB7100">01</div><h4 style="font-family:'Kameron',serif;font-weight:600;font-size:19px;margin-top:12px">We install the RDH</h4><p style="margin-top:8px;font-size:15px;color:rgba(245,245,245,.6);line-height:1.5">A small device fits right at your point of sale.</p></div>
+          <div data-reveal><div style="font-family:'Kameron',serif;font-weight:700;font-size:34px;color:#EB7100">02</div><h4 style="font-family:'Kameron',serif;font-weight:600;font-size:19px;margin-top:12px">It connects to your POS</h4><p style="margin-top:8px;font-size:15px;color:rgba(245,245,245,.6);line-height:1.5">Through a standard port — no terminal modification.</p></div>
+          <div data-reveal><div style="font-family:'Kameron',serif;font-weight:700;font-size:34px;color:#EB7100">03</div><h4 style="font-family:'Kameron',serif;font-weight:600;font-size:19px;margin-top:12px">Customers tap</h4><p style="margin-top:8px;font-size:15px;color:rgba(245,245,245,.6);line-height:1.5">They get a digital receipt instantly, no app required.</p></div>
+          <div data-reveal><div style="font-family:'Kameron',serif;font-weight:700;font-size:34px;color:#EB7100">04</div><h4 style="font-family:'Kameron',serif;font-weight:600;font-size:19px;margin-top:12px">You track adoption</h4><p style="margin-top:8px;font-size:15px;color:rgba(245,245,245,.6);line-height:1.5">A dashboard shows digital receipt uptake (coming soon).</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- the RDH device (light) -->
+    <section style="background:#fff;color:#00121D;padding:clamp(90px,11vw,160px) clamp(20px,5vw,56px)">
+      <div style="max-width:1150px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:clamp(30px,5vw,70px);align-items:center" data-reveal data-rdh>
+        <div data-reveal="mask" style="aspect-ratio:1/1;border-radius:22px;background:repeating-linear-gradient(45deg,#eee,#eee 12px,#e6e6e6 12px,#e6e6e6 24px);border:1px solid rgba(0,18,29,.08);display:flex;align-items:center;justify-content:center;font-family:'Courier New',monospace;font-size:13px;color:#9a9a9a;letter-spacing:.08em;text-align:center;padding:20px">[ RDH hardware render ]</div>
+        <div>
+          <div style="font-size:13px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:#EB7100;margin-bottom:16px">The RDH device</div>
+          <h2 style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(28px,3.8vw,50px);line-height:1.03;letter-spacing:-.02em">Small device. Standard ports. PCI compliant.</h2>
+          <div style="margin-top:26px;display:grid;gap:14px">
+            <div style="display:flex;gap:14px;align-items:flex-start"><span style="color:#EB7100;font-weight:700;font-size:18px;line-height:1.4">→</span><span style="font-size:16px;color:#4a4a4a;line-height:1.45">Plugs into standard POS ports — USB, serial or Ethernet. No terminal modification.</span></div>
+            <div style="display:flex;gap:14px;align-items:flex-start"><span style="color:#EB7100;font-weight:700;font-size:18px;line-height:1.4">→</span><span style="font-size:16px;color:#4a4a4a;line-height:1.45">Two installation modes: printer replacement or inline extension.</span></div>
+            <div style="display:flex;gap:14px;align-items:flex-start"><span style="color:#EB7100;font-weight:700;font-size:18px;line-height:1.4">→</span><span style="font-size:16px;color:#4a4a4a;line-height:1.45">PCI DSS compliant out of the box — <span style="color:#EB7100;cursor:pointer">see documentation</span>.</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- dashboard preview (dark) -->
+    <section style="background:#00121D;color:#F5F5F5;padding:clamp(90px,11vw,160px) clamp(20px,5vw,56px)">
+      <div style="max-width:1000px;margin:0 auto;text-align:center" data-reveal>
+        <div style="display:inline-block;font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#EB7100;border:1px solid rgba(235,113,0,.4);border-radius:999px;padding:6px 14px;margin-bottom:22px">Coming soon</div>
+        <h2 style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(30px,4.4vw,58px);line-height:1.03;letter-spacing:-.02em;max-width:20ch;margin:0 auto">A dashboard for your digital receipts.</h2>
+        <div style="margin-top:40px;aspect-ratio:16/9;border-radius:18px;background:repeating-linear-gradient(45deg,#0a2431,#0a2431 14px,#0c2937 14px,#0c2937 28px);border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-family:'Courier New',monospace;font-size:13px;color:rgba(245,245,245,.4);letter-spacing:.08em">[ merchant dashboard mockup ]</div>
+        <form onSubmit="{{ noSubmit }}" style="margin-top:36px;display:flex;gap:10px;max-width:440px;margin-left:auto;margin-right:auto;flex-wrap:wrap">
+          <input type="email" placeholder="Work email" style="flex:1;min-width:200px;padding:14px 18px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);color:#F5F5F5;font-size:15px;outline:none">
+          <button type="submit" style="border:none;cursor:pointer;padding:14px 26px;border-radius:999px;background:#EB7100;color:#00121D;font-weight:600;font-size:15px">Notify me</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- get started / demo form (light) -->
+    <section style="background:#F5F5F5;color:#00121D;padding:clamp(90px,11vw,160px) clamp(20px,5vw,56px)">
+      <div style="max-width:960px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:clamp(30px,5vw,70px);align-items:start" data-reveal data-demo>
+        <div>
+          <div style="font-size:13px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:#EB7100;margin-bottom:16px">Get started</div>
+          <h2 style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(30px,4vw,54px);line-height:1.03;letter-spacing:-.02em">Request a demo.</h2>
+          <p style="margin-top:18px;font-size:17px;line-height:1.55;color:#5a5a5a;max-width:34ch">See the RDH in action and get set up — free for qualified merchants.</p>
+          <p style="margin-top:24px;font-size:16px;color:#00121D;font-weight:600">Or call us: <span style="color:#EB7100">415-261-8675</span></p>
+        </div>
+        <form onSubmit="{{ noSubmit }}" style="display:grid;gap:12px">
+          <input placeholder="Your name" style="padding:14px 16px;border-radius:12px;border:1px solid rgba(0,18,29,.14);background:#fff;font-size:15px;outline:none;color:#00121D">
+          <input placeholder="Business name" style="padding:14px 16px;border-radius:12px;border:1px solid rgba(0,18,29,.14);background:#fff;font-size:15px;outline:none;color:#00121D">
+          <input type="email" placeholder="Email" style="padding:14px 16px;border-radius:12px;border:1px solid rgba(0,18,29,.14);background:#fff;font-size:15px;outline:none;color:#00121D">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <input placeholder="Phone" style="padding:14px 16px;border-radius:12px;border:1px solid rgba(0,18,29,.14);background:#fff;font-size:15px;outline:none;color:#00121D">
+            <input placeholder="POS system" style="padding:14px 16px;border-radius:12px;border:1px solid rgba(0,18,29,.14);background:#fff;font-size:15px;outline:none;color:#00121D">
+          </div>
+          <button type="submit" style="margin-top:6px;border:none;cursor:pointer;padding:15px;border-radius:12px;background:#EB7100;color:#00121D;font-weight:600;font-size:16px;transition:transform .2s" style-hover="transform:translateY(-1px)">Request Demo</button>
+        </form>
+      </div>
+    </section>
+
+    <dc-import name="PapeX Footer" hint-size="100%,340px"></dc-import>
+  </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:&quot;100%&quot;},&quot;forkStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;horizontal&quot;,&quot;diagonal&quot;],&quot;default&quot;:&quot;horizontal&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Fork&quot;,&quot;label&quot;:&quot;Split seam style&quot;},&quot;heroLayout&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;split&quot;,&quot;editorial&quot;],&quot;default&quot;:&quot;split&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Hero&quot;,&quot;label&quot;:&quot;Customer hero layout&quot;}}">
+class Component extends DCLogic {
+  state = { view: 'split', committing: null, persona: null, c1: '0', c2: '0', c3: '0', mobile: false, menuOpen: false };
+
+  componentDidMount() {
+    this.wheelLock = false;
+    this.onWheel = (e) => {
+      if (this.state.view !== 'split' || this.wheelLock) return;
+      if (Math.abs(e.deltaY) < 6) return;
+      this.wheelLock = true;
+      this.commit(e.deltaY < 0 ? 'customer' : 'merchant');
+    };
+    window.addEventListener('wheel', this.onWheel, { passive: true });
+    // touch swipe on split
+    this.ts = 0;
+    this.onTS = (e) => { this.ts = e.touches[0].clientY; };
+    this.onTE = (e) => {
+      if (this.state.view !== 'split' || this.wheelLock) return;
+      const dy = this.ts - e.changedTouches[0].clientY;
+      if (Math.abs(dy) < 40) return;
+      this.wheelLock = true;
+      this.commit(dy < 0 ? 'customer' : 'merchant');
+    };
+    window.addEventListener('touchstart', this.onTS, { passive: true });
+    window.addEventListener('touchend', this.onTE, { passive: true });
+    this.mq = window.matchMedia('(max-width:820px)');
+    this.applyMq = () => this.setState({ mobile: this.mq.matches });
+    this.applyMq();
+    this.mq.addEventListener('change', this.applyMq);
+    // motion engine
+    this._raf = null;
+    this.onScroll = () => { if (!this._raf) this._raf = requestAnimationFrame(this.updateScroll); };
+    window.addEventListener('scroll', this.onScroll, { passive: true });
+    this.fine = window.matchMedia('(pointer:fine)').matches;
+    this.onMove = (e) => this.handlePointer(e.clientX, e.clientY);
+    if (this.fine) window.addEventListener('pointermove', this.onMove, { passive: true });
+    this.onDown = (e) => this.spawnRipple(e);
+    window.addEventListener('pointerdown', this.onDown, { passive: true });
+  }
+  componentWillUnmount() {
+    window.removeEventListener('wheel', this.onWheel);
+    window.removeEventListener('touchstart', this.onTS);
+    window.removeEventListener('touchend', this.onTE);
+    window.removeEventListener('scroll', this.onScroll);
+    window.removeEventListener('pointermove', this.onMove);
+    window.removeEventListener('pointerdown', this.onDown);
+    if (this.mq) this.mq.removeEventListener('change', this.applyMq);
+    if (this.io) this.io.disconnect();
+  }
+  componentDidUpdate(pp, ps) {
+    if (ps.view !== this.state.view && this.state.view !== 'split') {
+      clearTimeout(this._rv);
+      this._rv = setTimeout(() => this.runReveals(), 40);
+    }
+  }
+  commit(path) {
+    this.setState({ committing: path });
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+      this.setState({ view: path, committing: null });
+      this.wheelLock = false;
+    }, 620);
+  }
+  goSplit = () => { window.scrollTo(0, 0); this.wheelLock = false; if (this.io) this.io.disconnect(); this.setState({ view: 'split', committing: null, menuOpen: false }); };
+  goCustomer = () => { if (this.state.view === 'split') { this.commit('customer'); } else { window.scrollTo(0, 0); this.setState({ view: 'customer', menuOpen: false }); } };
+  goMerchant = () => { if (this.state.view === 'split') { this.commit('merchant'); } else { window.scrollTo(0, 0); this.setState({ view: 'merchant', menuOpen: false }); } };
+  toggleMenu = () => this.setState((s) => ({ menuOpen: !s.menuOpen }));
+
+  runReveals() {
+    if (!this.root) return;
+    if (this.io) this.io.disconnect();
+    this.setupWords();
+    const EASE = 'cubic-bezier(.16,1,.3,1)';
+    const els = Array.from(this.root.querySelectorAll('[data-reveal]'));
+    els.forEach((el) => {
+      const v = el.getAttribute('data-reveal') || 'up';
+      el.style.willChange = 'opacity, transform';
+      if (v === 'mask') {
+        el.style.clipPath = 'inset(0 100% 0 0)';
+        el.style.transition = 'clip-path 1.1s cubic-bezier(.7,0,.15,1)';
+      } else {
+        el.style.opacity = '0';
+        el.style.transition = 'opacity .9s ' + EASE + ', transform .9s ' + EASE;
+        el.style.transform = v === 'left' ? 'translateX(-48px)' : v === 'right' ? 'translateX(48px)' : v === 'scale' ? 'scale(.92)' : 'translateY(46px)';
+      }
+      if (el.hasAttribute('data-stagger')) {
+        Array.from(el.children).forEach((c, i) => {
+          c.style.opacity = '0';
+          c.style.transform = 'translateY(30px)';
+          c.style.transition = 'opacity .75s ' + EASE + ' ' + (i * 0.08) + 's, transform .75s ' + EASE + ' ' + (i * 0.08) + 's';
+        });
+      }
+    });
+    this.io = new IntersectionObserver((entries) => {
+      entries.forEach((en) => {
+        if (!en.isIntersecting) return;
+        const el = en.target, v = el.getAttribute('data-reveal') || 'up';
+        if (v === 'mask') el.style.clipPath = 'inset(0 0 0 0)';
+        else { el.style.opacity = '1'; el.style.transform = 'none'; }
+        if (el.hasAttribute('data-stagger')) Array.from(el.children).forEach((c) => { c.style.opacity = '1'; c.style.transform = 'none'; });
+        el.querySelectorAll('[data-word]').forEach((w) => { w.style.transform = 'translateY(0)'; w.style.opacity = '1'; });
+        if (el.hasAttribute('data-counter')) this.startCounters();
+        this.io.unobserve(el);
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
+    els.forEach((el) => this.io.observe(el));
+    this.root.querySelectorAll('[data-spotlight]').forEach((el) => { el.style.transition = 'transform .4s ' + EASE; });
+    this.root.querySelectorAll('[data-magnetic]').forEach((el) => { el.style.transition = 'transform .35s ' + EASE + ', box-shadow .25s'; });
+    this.root.querySelectorAll('[data-parallax]').forEach((el) => { el.dataset.pbase = el.style.transform || ''; });
+    this.updateScroll();
+  }
+  setupWords() {
+    if (!this.root) return;
+    this.root.querySelectorAll('[data-words]').forEach((h) => {
+      if (h.dataset.wdone) return; h.dataset.wdone = '1';
+      const text = h.textContent.trim();
+      h.textContent = '';
+      text.split(' ').forEach((word, i) => {
+        const wrap = document.createElement('span');
+        wrap.style.cssText = 'display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.12em;margin-bottom:-.12em';
+        const inner = document.createElement('span');
+        inner.setAttribute('data-word', '');
+        inner.style.cssText = 'display:inline-block;transform:translateY(115%);opacity:0;transition:transform .85s cubic-bezier(.16,1,.3,1) ' + (i * 0.055) + 's, opacity .6s ' + (i * 0.055) + 's';
+        inner.textContent = word;
+        wrap.appendChild(inner);
+        h.appendChild(wrap);
+        h.appendChild(document.createTextNode(' '));
+      });
+    });
+  }
+  updateScroll = () => {
+    this._raf = null;
+    if (!this.root) return;
+    const vh = window.innerHeight;
+    this.root.querySelectorAll('[data-parallax]').forEach((el) => {
+      const sp = parseFloat(el.getAttribute('data-parallax')) || 0;
+      const r = el.getBoundingClientRect();
+      const center = r.top + r.height / 2 - vh / 2;
+      el.style.transform = (el.dataset.pbase || '') + ' translate3d(0,' + (-center * sp).toFixed(1) + 'px,0)';
+    });
+    this.updateSequence();
+  }
+  updateSequence() {
+    const sec = this.root && this.root.querySelector('[data-seq]');
+    if (!sec) return;
+    const r = sec.getBoundingClientRect();
+    const total = r.height - window.innerHeight;
+    let p = total > 0 ? (-r.top) / total : 0;
+    p = Math.max(0, Math.min(0.999, p));
+    const steps = sec.querySelectorAll('[data-seq-step]');
+    const n = steps.length;
+    const active = Math.min(n - 1, Math.floor(p * n));
+    const localP = (p * n) - active;
+    steps.forEach((s, i) => {
+      const on = i === active;
+      s.style.opacity = on ? '1' : '0.32';
+      s.style.transform = on ? 'translateX(0)' : 'translateX(-8px)';
+      const bar = s.querySelector('[data-seq-bar-fill]');
+      if (bar) bar.style.height = (i < active ? 100 : i === active ? Math.min(100, localP * 100) : 0) + '%';
+    });
+    sec.querySelectorAll('[data-seq-phone]').forEach((el, i) => {
+      const on = i === active;
+      el.style.opacity = on ? '1' : '0';
+      el.style.transform = on ? 'translateY(0) scale(1)' : 'translateY(24px) scale(.97)';
+      el.style.pointerEvents = on ? 'auto' : 'none';
+    });
+  }
+  handlePointer(x, y) {
+    if (!this.root) return;
+    this.root.querySelectorAll('[data-spotlight]').forEach((el) => {
+      const r = el.getBoundingClientRect(); if (!r.width) return;
+      const s = parseFloat(el.getAttribute('data-spotlight')) || 30;
+      const dx = (x - (r.left + r.width / 2)) / r.width;
+      const dy = (y - (r.top + r.height / 2)) / r.height;
+      el.style.transform = 'translate3d(' + (dx * s).toFixed(1) + 'px,' + (dy * s).toFixed(1) + 'px,0)';
+    });
+    this.root.querySelectorAll('[data-magnetic]').forEach((el) => {
+      const r = el.getBoundingClientRect(); if (!r.width) return;
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const d = Math.hypot(x - cx, y - cy);
+      if (d < r.width * 0.9 + 60) el.style.transform = 'translate(' + ((x - cx) * 0.28).toFixed(1) + 'px,' + ((y - cy) * 0.4).toFixed(1) + 'px)';
+      else el.style.transform = 'translate(0,0)';
+    });
+  }
+  spawnRipple(e) {
+    const t = e.target && e.target.closest && e.target.closest('[data-ripple]');
+    if (!t) return;
+    const r = t.getBoundingClientRect();
+    const size = Math.max(r.width, r.height) * 2.2;
+    const s = document.createElement('span');
+    s.style.cssText = 'position:absolute;pointer-events:none;border-radius:50%;left:' + (e.clientX - r.left - size / 2) + 'px;top:' + (e.clientY - r.top - size / 2) + 'px;width:' + size + 'px;height:' + size + 'px;background:' + (t.getAttribute('data-ripple') || 'rgba(0,18,29,.18)') + ';transform:scale(0);opacity:.6;transition:transform .6s ease-out,opacity .7s ease-out';
+    t.appendChild(s);
+    requestAnimationFrame(() => { s.style.transform = 'scale(1)'; s.style.opacity = '0'; });
+    setTimeout(() => s.remove(), 720);
+  }
+  startCounters() {
+    if (this._counted) return; this._counted = true;
+    const targets = [1284920, 4210, 342];
+    const fmt = (n) => n.toLocaleString('en-US');
+    const dur = 1600, t0 = performance.now();
+    const tick = (t) => {
+      const p = Math.min(1, (t - t0) / dur);
+      const e = 1 - Math.pow(1 - p, 3);
+      this.setState({ c1: fmt(Math.floor(targets[0] * e)), c2: fmt(Math.floor(targets[1] * e)), c3: fmt(Math.floor(targets[2] * e)) });
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+
+  ctaClick = () => {};
+  noSubmit = (e) => { e.preventDefault(); };
+  pickKeeper = () => this.setState({ persona: 'keeper' });
+  pickCasual = () => this.setState({ persona: 'casual' });
+  pickNon = () => this.setState({ persona: 'non' });
+
+  renderVals() {
+    const v = this.state.view;
+    const committing = this.state.committing;
+    const forkStyle = this.props.forkStyle || 'horizontal';
+    const heroLayout = this.props.heroLayout || 'split';
+    const diag = forkStyle === 'diagonal';
+
+    // fork halves
+    const baseHalf = 'position:relative;flex:1;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:flex-grow .6s cubic-bezier(.7,0,.3,1),filter .4s;overflow:hidden;';
+    let custGrow = 1, merchGrow = 1;
+    if (committing === 'customer') { custGrow = 40; merchGrow = 0.0001; }
+    if (committing === 'merchant') { custGrow = 0.0001; merchGrow = 40; }
+    const custHalfStyle = baseHalf + 'background:#00121D;flex-grow:' + custGrow + (diag ? ';clip-path:polygon(0 0,100% 0,100% 78%,0 100%)' : '') + (committing === 'merchant' ? ';pointer-events:none' : '');
+    const merchHalfStyle = baseHalf + 'background:#F5F5F5;flex-grow:' + merchGrow + (diag ? ';clip-path:polygon(0 22%,100% 0,100% 100%,0 100%);margin-top:-4%' : '') + (committing === 'customer' ? ';pointer-events:none' : '');
+
+    const seamStyle = 'position:relative;z-index:5;flex:0 0 auto;height:1px;display:flex;align-items:center;' + (committing ? 'opacity:0;transition:opacity .3s' : 'opacity:1');
+
+    // nav colors depend on view
+    const dark = v === 'split' || v === 'customer' || v === 'merchant'; // nav sits on dark heros
+    const onLight = false;
+    const navFg = '#F5F5F5';
+    const cardBase = 'background:#F5F5F5;border-radius:20px;padding:34px 30px;cursor:pointer;transition:transform .3s,box-shadow .3s,background .3s;border:1.5px solid transparent;';
+    const sel = (k) => this.state.persona === k
+      ? cardBase + 'background:#00121D;color:#F5F5F5;border-color:#EB7100;'
+      : cardBase;
+    // adjust text color inside selected card handled by inheritance; set color explicitly
+    const cardFor = (k) => this.state.persona === k
+      ? 'position:relative;overflow:hidden;background:#fff;border-radius:20px;padding:34px 30px;cursor:pointer;transition:transform .35s cubic-bezier(.16,1,.3,1),box-shadow .35s,background .35s;border:1.5px solid #EB7100;transform:translateY(-8px);box-shadow:0 26px 55px rgba(235,113,0,.22);'
+      : 'position:relative;overflow:hidden;background:#F5F5F5;border-radius:20px;padding:34px 30px;cursor:pointer;transition:transform .35s cubic-bezier(.16,1,.3,1),box-shadow .35s,background .35s;border:1.5px solid transparent;';
+
+    const pmsg = { keeper: 'The Keeper — PapeX turns your shoebox into a searchable, exportable archive.', casual: 'The Casual — no more \u201cwhere did that receipt go?\u201d It\u2019s always saved for you.', non: 'The Non-Keeper — you\u2019re now covered for every return, warranty and deduction.' };
+
+    // customer hero layout variant
+    const editorial = heroLayout === 'editorial';
+    const custHeroSection = 'min-height:100vh;background:#00121D;color:#F5F5F5;display:flex;align-items:center;padding:120px clamp(20px,5vw,56px) 80px;position:relative;overflow:hidden';
+    const custHeroInner = editorial
+      ? 'max-width:1200px;margin:0 auto;width:100%;display:flex;flex-direction:column;align-items:center;text-align:center;gap:50px;position:relative'
+      : 'max-width:1200px;margin:0 auto;width:100%;display:flex;align-items:center;justify-content:space-between;gap:clamp(30px,5vw,70px);flex-wrap:wrap;position:relative';
+
+    return {
+      setRoot: (el) => { this.root = el; if (el && this.state.view !== 'split') this.runReveals(); },
+      isSplit: v === 'split', isCustomer: v === 'customer', isMerchant: v === 'merchant',
+      goSplit: this.goSplit, goCustomer: this.goCustomer, goMerchant: this.goMerchant,
+      ctaClick: this.ctaClick, tapNfc: this.ctaClick, noSubmit: this.noSubmit,
+      pickKeeper: this.pickKeeper, pickCasual: this.pickCasual, pickNon: this.pickNon,
+      mobile: this.state.mobile, notMobile: !this.state.mobile, menuOpen: this.state.menuOpen, toggleMenu: this.toggleMenu,
+      custHalfStyle, merchHalfStyle, seamStyle,
+      custContentOpacity: committing === 'merchant' ? 0 : 1,
+      custContentTransform: committing === 'merchant' ? 'scale(.96)' : 'none',
+      merchContentOpacity: committing === 'customer' ? 0 : 1,
+      merchContentTransform: committing === 'customer' ? 'scale(.96)' : 'none',
+      navBg: v === 'split' ? 'rgba(0,18,29,0)' : 'rgba(0,18,29,.72)',
+      navFg, navFgDim: 'rgba(245,245,245,.7)',
+      linkCust: v === 'customer' ? '#EB7100' : 'rgba(245,245,245,.72)',
+      linkMerch: v === 'merchant' ? '#EB7100' : 'rgba(245,245,245,.72)',
+      linkCustBg: v === 'customer' ? 'rgba(235,113,0,.15)' : 'transparent',
+      linkMerchBg: v === 'merchant' ? 'rgba(235,113,0,.15)' : 'transparent',
+      ctaLabel: v === 'merchant' ? 'Get the RDH' : (v === 'customer' ? 'Download App' : 'Get Started'),
+      keeperCard: cardFor('keeper'), casualCard: cardFor('casual'), nonCard: cardFor('non'),
+      personaMsg: this.state.persona ? pmsg[this.state.persona] : 'Tap a card above.',
+      c1: this.state.c1, c2: this.state.c2, c3: this.state.c3,
+      custHeroSection, custHeroInner,
+      custHeroCopyAlign: editorial ? 'margin:0 auto' : '',
+      custHeroBtnJustify: editorial ? 'center' : 'flex-start',
+    };
+  }
+}
+</script>
+</body>
+</html>

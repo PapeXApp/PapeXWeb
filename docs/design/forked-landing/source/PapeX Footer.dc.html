@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="background:#00121D;color:#F5F5F5;padding:clamp(60px,7vw,90px) clamp(20px,5vw,56px) 40px;border-top:1px solid rgba(255,255,255,.08)">
+  <div style="max-width:1150px;margin:0 auto;display:grid;grid-template-columns:1.4fr 1fr 1fr 1.3fr;gap:clamp(30px,5vw,60px)">
+    <div>
+      <div style="display:flex;align-items:center;gap:11px;margin-bottom:18px">
+        <svg viewBox="0 0 24 24" width="24" height="24" style="transform:rotate(-8deg)" aria-hidden="true"><path d="M2 12L22 3L15 21L11.5 13.5L2 12Z" fill="#EB7100"></path></svg>
+        <span style="font-family:'Kameron',serif;font-weight:700;font-size:20px">PapeX</span>
+      </div>
+      <p style="font-size:15px;line-height:1.5;color:rgba(245,245,245,.55);max-width:30ch">Digital receipts, one tap at checkout. No paper, no hassle.</p>
+      <div style="margin-top:22px;display:flex;gap:12px">
+        <div style="width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;cursor:pointer;color:rgba(245,245,245,.6);font-size:13px" style-hover="border-color:#EB7100;color:#EB7100">in</div>
+        <div style="width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;cursor:pointer;color:rgba(245,245,245,.6);font-size:13px" style-hover="border-color:#EB7100;color:#EB7100">X</div>
+        <div style="width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;cursor:pointer;color:rgba(245,245,245,.6);font-size:13px" style-hover="border-color:#EB7100;color:#EB7100">IG</div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(245,245,245,.4);margin-bottom:16px">Product</div>
+      <div style="display:flex;flex-direction:column;gap:11px;font-size:15px;color:rgba(245,245,245,.7)">
+        <span style="cursor:pointer" style-hover="color:#EB7100">For Customers</span>
+        <span style="cursor:pointer" style-hover="color:#EB7100">For Business</span>
+        <span style="cursor:pointer" style-hover="color:#EB7100">Features</span>
+        <span style="cursor:pointer" style-hover="color:#EB7100">Blog</span>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(245,245,245,.4);margin-bottom:16px">Company</div>
+      <div style="display:flex;flex-direction:column;gap:11px;font-size:15px;color:rgba(245,245,245,.7)">
+        <span style="cursor:pointer" style-hover="color:#EB7100">About</span>
+        <span style="cursor:pointer" style-hover="color:#EB7100">Support</span>
+        <span style="cursor:pointer" style-hover="color:#EB7100">PCI Docs</span>
+        <span style="cursor:pointer" style-hover="color:#EB7100">Contact</span>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(245,245,245,.4);margin-bottom:16px">Stay in the loop</div>
+      <form onSubmit="{{ noSubmit }}" style="display:flex;gap:8px;margin-bottom:16px">
+        <input type="email" placeholder="Email" style="flex:1;min-width:0;padding:11px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);color:#F5F5F5;font-size:14px;outline:none">
+        <button type="submit" style="border:none;cursor:pointer;padding:11px 16px;border-radius:10px;background:#EB7100;color:#00121D;font-weight:600;font-size:14px">Join</button>
+      </form>
+      <div style="font-size:14px;color:rgba(245,245,245,.55);line-height:1.7">support@papex.app<br>415-261-8675<br>San Francisco, CA</div>
+    </div>
+  </div>
+  <div style="max-width:1150px;margin:44px auto 0;padding-top:24px;border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;font-size:13px;color:rgba(245,245,245,.4)">
+    <span>© 2026 PapeX. All rights reserved.</span>
+    <div style="display:flex;gap:22px"><span style="cursor:pointer" style-hover="color:#EB7100">Terms</span><span style="cursor:pointer" style-hover="color:#EB7100">Privacy</span></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:&quot;340px&quot;}}">
+class Component extends DCLogic {
+  renderVals() { return { noSubmit: (e) => e.preventDefault() }; }
+}
+</script>
+</body>
+</html>
