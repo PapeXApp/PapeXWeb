@@ -29,6 +29,22 @@ export type { PaymentNetwork };
 export const RDH_API_BASE =
   process.env.NEXT_PUBLIC_RDH_API_BASE?.replace(/\/$/, "") || "https://api.papex.app";
 
+/**
+ * Client fetches go through our own origin, not straight at RDH_API_BASE —
+ * app/api/rdh/merchant/[...path] forwards them server-side. Requests are
+ * therefore same-origin and never hit a CORS preflight, which is what
+ * plan.md specified ("server-side fetch (no CORS issue)").
+ *
+ * Fetching api.papex.app directly worked only on merchant.papex.app, the one
+ * origin in the API Gateway allow_origins list; anywhere else — local dev on
+ * merchant.localhost, a preview deployment — every call failed its preflight.
+ *
+ * RDH_API_BASE is still the upstream the proxy targets (it reads the same
+ * env var server-side), so pointing a local build at a different backend
+ * keeps working.
+ */
+export const MERCHANT_API_BASE = "/api/rdh";
+
 export const MERCHANT_MOCK = process.env.NEXT_PUBLIC_MERCHANT_MOCK === "1";
 
 // ---------------------------------------------------------------------------
@@ -163,7 +179,7 @@ class MerchantApiError extends Error {
 }
 
 async function authedFetch(path: string, idToken: string, init?: RequestInit): Promise<Response> {
-  const res = await fetch(`${RDH_API_BASE}${path}`, {
+  const res = await fetch(`${MERCHANT_API_BASE}${path}`, {
     ...init,
     headers: {
       // Default to JSON, but let a caller-supplied Accept (e.g.
