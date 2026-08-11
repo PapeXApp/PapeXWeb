@@ -52,9 +52,15 @@ export function BarChart({
         {data.map((d, i) => {
           const pct = max > 0 ? Math.max((d.value / max) * 100, d.value > 0 ? 4 : 0) : 0;
           return (
+            // h-full + flex-col/justify-end is load-bearing, not cosmetic: the
+            // bar's height is a PERCENTAGE, so it needs an ancestor with a
+            // resolved height. The h-40 row uses items-end, which sizes flex
+            // items to their content rather than stretching them — leaving this
+            // wrapper auto-height, making the child's % circular, and collapsing
+            // every bar to its 3px minHeight regardless of value.
             <div
               key={i}
-              className="group relative flex-1"
+              className="group relative flex h-full flex-1 flex-col justify-end"
               onMouseEnter={() => setHovered(i)}
               onMouseLeave={() => setHovered((h) => (h === i ? null : h))}
             >
