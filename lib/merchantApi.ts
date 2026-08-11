@@ -167,6 +167,91 @@ export interface MerchantDevice {
   status: DeviceStatus;
 }
 
+/**
+ * "Receipt forensics" findings — Papex_RDH's `GET /merchant/forensics`
+ * (docs/COMPETITOR_INSIGHTS_USE_CASES.md Family H / §4 "Section 1 — Needs
+ * your attention"). Own-transactions-only analyses (no panel, no
+ * cross-merchant data, no shopper identity); the Lambda's `lib/forensics.js`
+ * is the source of truth for these shapes and the thresholds behind them.
+ *
+ * Every finding is discriminated by `type` and carries a merchant-facing
+ * `headline`/`detail` plus enough structured evidence (sids / timestamps /
+ * deviceIds) for the merchant to verify it themselves in
+ * /merchant/transactions — never a bare accusation.
+ */
+export type ForensicsSeverity = "high" | "medium" | "low";
+
+export interface TaxRateInconsistencyFinding {
+  type: "tax_rate_inconsistency";
+  severity: ForensicsSeverity;
+  headline: string;
+  detail: string;
+  minorityRatePercent: number;
+  majorityRatePercent: number;
+  receiptCount: number;
+  totalQualifyingTransactions: number;
+  percentOfReceipts: number;
+  firstSeenAt: string | null;
+  deviceIds: string[];
+  estimatedImpactAmount: number;
+  /** "under" = the minority-rate receipts collected less tax than the majority rate would have; "over" = more; "none" = no dollar delta (should not occur in practice). */
+  estimatedImpactDirection: "under" | "over" | "none";
+  sids: string[];
+}
+
+export interface DuplicateTransactionFinding {
+  type: "duplicate_transaction";
+  severity: ForensicsSeverity;
+  headline: string;
+  detail: string;
+  deviceId: string;
+  cardLast4: string;
+  amount: number;
+  gapSeconds: number;
+  transactions: { sid: string | null; uploadedAt: string }[];
+}
+
+export interface PosHygieneFinding {
+  type: "pos_hygiene";
+  severity: ForensicsSeverity;
+  headline: string;
+  detail: string;
+  openRingLineItemCount: number;
+  totalLineItemCount: number;
+  percentOpenRing: number;
+  receiptsWithOpenRing: number;
+  receiptsWithoutOpenRing: number;
+  /** avgTicket(receipts with an open-ring item) - avgTicket(receipts without). null when either group is below the minimum sample size to compare. */
+  avgTicketDifference: number | null;
+  sids: string[];
+}
+
+export interface DeviceSilenceFinding {
+  type: "device_silence";
+  severity: ForensicsSeverity;
+  headline: string;
+  detail: string;
+  deviceId: string;
+  gapStart: string;
+  /** null when the device is still silent as of the end of the query window (an ongoing gap, not a resolved one). */
+  gapEnd: string | null;
+  gapHours: number;
+  estimatedTransactionsMissed: number;
+  lastSidBeforeGap: string | null;
+  firstSidAfterGap: string | null;
+}
+
+export type ForensicsFinding =
+  | TaxRateInconsistencyFinding
+  | DuplicateTransactionFinding
+  | PosHygieneFinding
+  | DeviceSilenceFinding;
+
+export interface MerchantForensics {
+  window: InsightsWindow;
+  findings: ForensicsFinding[];
+}
+
 // ---------------------------------------------------------------------------
 // Auth + fetch plumbing
 // ---------------------------------------------------------------------------
@@ -286,6 +371,24 @@ export async function getTapRate(idToken: string, window: InsightsWindow): Promi
 export async function listDevices(idToken: string): Promise<MerchantDevice[]> {
   if (MERCHANT_MOCK) return mock.mockListDevices();
   const res = await authedFetch("/merchant/devices", idToken);
+  return res.json();
+}
+
+/**
+ * GET /merchant/forensics?window= — receipt-forensics findings, default
+ * window 30d (a tax-rate split or a device's cadence baseline needs more
+ * than a day or a week of receipts to be trustworthy — see
+ * Papex_RDH/lambdas/merchant-api/lib/forensics.js's THRESHOLDS).
+ *
+ * Deliberately has NO `MERCHANT_MOCK` branch, unlike every other function in
+ * this file: these findings are only meaningful when they're derived from
+ * real receipts (a real tax-rate split, a real duplicate charge, a real
+ * device gap) — a synthetic demo finding would be an unverifiable
+ * accusation with nothing behind it, which is exactly what this feature was
+ * built to never produce. Always hits the live API.
+ */
+export async function getForensics(idToken: string, window: InsightsWindow = "30d"): Promise<MerchantForensics> {
+  const res = await authedFetch(`/merchant/forensics${qs({ window })}`, idToken);
   return res.json();
 }
 
