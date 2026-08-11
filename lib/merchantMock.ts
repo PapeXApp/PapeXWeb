@@ -41,6 +41,13 @@ import type {
   DayOfWeekBucket,
   ParseConfidence,
   ParseStatus,
+  CrossShoppingResponse,
+  CrossShoppingWindow,
+  TrafficIndexResponse,
+  TrafficIndexWindow,
+  PanelBasis,
+  PanelCategory,
+  UnservedDemandRow,
 } from "./merchantApi";
 
 // ---------------------------------------------------------------------------
@@ -487,6 +494,137 @@ export async function mockGetTapRate(window: InsightsWindow): Promise<TapRate> {
   // stays stable across window toggles within a single render.
   const claimed = Math.round(total * 0.58);
   return { window, rate: total > 0 ? Math.round((claimed / total) * 1000) / 10 : null, claimed, total };
+}
+
+// ---------------------------------------------------------------------------
+// Market intelligence panel mocks (plan.md §3/§6). Deliberately include ONE
+// suppressed metric (the traffic index, own-side floor) and ONE hidden row
+// (unservedDemand's "bubble_tea" row) — plan.md §6: "must include one
+// suppressed metric and one hidden row, else the suppressed state ships
+// untested by eye." Self-contained (does not import Papex_RDH's
+// lib/marketPanel.js — different repo/runtime), but the shapes and wording
+// mirror it closely enough to be a faithful preview of the real response.
+// ---------------------------------------------------------------------------
+
+const MARKET_CATEGORY: PanelCategory = { id: "coffee_shop", label: "Coffee shop" };
+const MARKET_DATA_SOURCE = "demo_panel";
+const MARKET_DISCLOSURE =
+  "This section reflects a synthetic demo panel (a modeled category cohort and shopper population), not real competitor data. No competitor is ever named — every figure is a category-level aggregate.";
+const MARKET_COHORT_MERCHANTS = 46;
+const MARKET_PANEL_SHOPPERS = 1600;
+const MARKET_CONTRIBUTING_SHOPPERS = 512;
+
+function isoDaysAgo(days: number): string {
+  return new Date(NOW.getTime() - days * 86_400_000).toISOString();
+}
+
+function marketBasis(days: number, merchants: number, shoppers: number | null, suppressed: boolean): PanelBasis {
+  const label = suppressed
+    ? "Not enough category data yet for a reliable comparison."
+    : `Based on ${merchants} ${merchants === 1 ? "business" : "businesses"} and ${shoppers} ${shoppers === 1 ? "shopper" : "shoppers"} in your category.`;
+  return {
+    merchants,
+    shoppers: suppressed ? null : shoppers,
+    windowStart: isoDaysAgo(days),
+    windowEnd: NOW.toISOString(),
+    label,
+  };
+}
+
+const MOCK_DEMAND_ROWS: { row: Omit<UnservedDemandRow, "basis">; merchants: number; shoppers: number; hidden: boolean }[] = [
+  {
+    row: { categoryId: "breakfast_sandwiches", categoryLabel: "Breakfast sandwiches", carriedByYou: false, spendPerShopperMonth: 12.4, shopperPenetrationPct: 44.2 },
+    merchants: 8,
+    shoppers: 704,
+    hidden: false,
+  },
+  {
+    row: { categoryId: "packaged_coffee", categoryLabel: "Packaged coffee beans", carriedByYou: false, spendPerShopperMonth: 9.1, shopperPenetrationPct: 19.3 },
+    merchants: 6,
+    shoppers: 309,
+    hidden: false,
+  },
+  {
+    row: { categoryId: "smoothies_cold_pressed", categoryLabel: "Smoothies / cold-pressed juice", carriedByYou: false, spendPerShopperMonth: 7.6, shopperPenetrationPct: 15.8 },
+    merchants: 6,
+    shoppers: 253,
+    hidden: false,
+  },
+  {
+    row: { categoryId: "deli_sandwiches_lunch", categoryLabel: "Deli sandwiches & lunch", carriedByYou: false, spendPerShopperMonth: 6.2, shopperPenetrationPct: 8.7 },
+    merchants: 5,
+    shoppers: 139,
+    hidden: false,
+  },
+  {
+    // Deliberately below MIN_MERCHANTS(5) -- the one hidden row plan.md §6 requires.
+    row: { categoryId: "bubble_tea", categoryLabel: "Bubble tea", carriedByYou: false, spendPerShopperMonth: 4.4, shopperPenetrationPct: 5.1 },
+    merchants: 3,
+    shoppers: 81,
+    hidden: true,
+  },
+];
+
+export async function mockGetCrossShopping(window: CrossShoppingWindow): Promise<CrossShoppingResponse> {
+  const days = window === "90d" ? 90 : 30;
+  const currentPct = 41;
+  // 90d dilutes the trend the same way the real seeder's window comparison
+  // does (a wider window mixes in more of the pre-trend period).
+  const priorPct = window === "90d" ? 44 : 47;
+
+  const visibleRows = MOCK_DEMAND_ROWS.filter((r) => !r.hidden);
+  const hiddenRowCount = MOCK_DEMAND_ROWS.length - visibleRows.length;
+
+  return {
+    window,
+    generatedAt: isoDaysAgo(0),
+    dataSource: MARKET_DATA_SOURCE,
+    category: MARKET_CATEGORY,
+    shareOfWallet: {
+      status: "ok",
+      value: { currentPct, priorPct, deltaPct: Math.round((currentPct - priorPct) * 10) / 10 },
+      basis: marketBasis(days, MARKET_COHORT_MERCHANTS, MARKET_CONTRIBUTING_SHOPPERS, false),
+    },
+    competitiveSet: {
+      status: "ok",
+      value: { yourShoppersVenuesPerMonth: 2.41, categoryAvgVenuesPerMonth: 2.63 },
+      basis: marketBasis(days, MARKET_COHORT_MERCHANTS, MARKET_CONTRIBUTING_SHOPPERS, false),
+    },
+    unservedDemand: {
+      status: "ok",
+      value: {
+        rows: visibleRows.map(({ row, merchants, shoppers }) => ({ ...row, basis: marketBasis(days, merchants, shoppers, false) })),
+        hiddenRowCount,
+      },
+      basis: marketBasis(days, MARKET_COHORT_MERCHANTS, MARKET_PANEL_SHOPPERS, false),
+    },
+    disclosure: MARKET_DISCLOSURE,
+  };
+}
+
+export async function mockGetTrafficIndex(window: TrafficIndexWindow): Promise<TrafficIndexResponse> {
+  const days = window === "30d" ? 30 : 7;
+
+  // The ONE suppressed metric plan.md §6 requires: own-side floor (< 30
+  // transactions in the current OR prior period) suppresses the whole
+  // index even though the category side has data — the same "whole index
+  // suppresses" behavior lib/marketPanel.js implements server-side.
+  return {
+    window,
+    generatedAt: isoDaysAgo(0),
+    dataSource: MARKET_DATA_SOURCE,
+    category: MARKET_CATEGORY,
+    index: {
+      status: "suppressed",
+      value: null,
+      basis: marketBasis(days, MARKET_COHORT_MERCHANTS, MARKET_PANEL_SHOPPERS, true),
+      reason: "no_data",
+      message:
+        "We don't have enough of your own recent transaction volume yet to compare against the category trend. This unlocks automatically as more of your receipts are recorded.",
+    },
+    yourBasis: null,
+    disclosure: MARKET_DISCLOSURE,
+  };
 }
 
 export function mockExportCsv(params: { from?: string; to?: string }): string {

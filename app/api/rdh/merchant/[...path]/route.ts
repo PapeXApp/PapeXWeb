@@ -51,6 +51,10 @@ const ALLOWED_FIRST_SEGMENT = new Set([
   "tap-rate",
   "export.csv",
   "receipt",
+  // Covers BOTH /merchant/market/cross-shopping and
+  // /merchant/market/traffic-index (docs/goals/competitor-insights/
+  // plan.md §3) — the allowlist keys on the first path segment only.
+  "market",
 ]);
 
 export async function GET(

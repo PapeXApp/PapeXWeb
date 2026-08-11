@@ -253,6 +253,135 @@ export interface MerchantForensics {
 }
 
 // ---------------------------------------------------------------------------
+// Market intelligence panel (Papex_RDH's `GET /merchant/market/*`,
+// docs/goals/competitor-insights/plan.md §3). Category-level ONLY — no
+// competitor is ever named or identifiable in any of these shapes (plan.md's
+// fixed constraint #1). Reads precomputed `MKT#*` items
+// (Papex_RDH/scripts/seed-market-panel.mjs writes them;
+// Papex_RDH/lambdas/merchant-api/lib/marketPanel.js is the shaping/
+// suppression source of truth these types mirror).
+//
+// `basis` is required on BOTH arms of PanelMetric<T> — plan.md §3: "a metric
+// without a basis is not a constructible value." The Lambda builds every
+// metric through one helper (buildPanelMetric in lib/marketPanel.js) so this
+// is structurally, not just conventionally, true server-side; the type here
+// carries that same guarantee into the client.
+// ---------------------------------------------------------------------------
+
+export interface PanelBasis {
+  merchants: number;
+  /** null EXACTLY when the metric is suppressed — a sub-floor shopper count is never published (plan.md §4). */
+  shoppers: number | null;
+  windowStart: string;
+  windowEnd: string;
+  /** Server-rendered sentence — render VERBATIM, don't reconstruct from the numbers (plan.md §6's BasisLine). */
+  label: string;
+}
+
+export type SuppressionReason = "below_shopper_floor" | "below_merchant_floor" | "no_data";
+
+export type PanelMetric<T> =
+  | { status: "ok"; value: T; basis: PanelBasis }
+  | { status: "suppressed"; value: null; basis: PanelBasis; reason: SuppressionReason; message: string };
+
+/**
+ * The traffic index's OWN-side basis (the merchant's live transaction
+ * volume) is a DELIBERATELY different shape from PanelBasis (`transactions`,
+ * not `merchants`/`shoppers`) so own-data and panel-data bases can never be
+ * swapped or confused at a callsite (plan.md §3).
+ */
+export interface OwnBasis {
+  transactions: number;
+  windowStart: string;
+  windowEnd: string;
+  label: string;
+}
+
+export interface PanelCategory {
+  id: string;
+  label: string;
+}
+
+export type CrossShoppingWindow = "30d" | "90d";
+export type TrafficIndexWindow = "7d" | "30d";
+
+/** Ratios/percentages only — no projected absolute dollar figures (plan.md's fixed constraint #4). */
+export interface ShareOfWallet {
+  currentPct: number;
+  priorPct: number;
+  deltaPct: number;
+}
+
+/** Per-shopper averages, both sides of the same denominator (plan.md's fixed constraint #4 allows per-shopper averages). */
+export interface CompetitiveSetBreadth {
+  yourShoppersVenuesPerMonth: number;
+  categoryAvgVenuesPerMonth: number;
+}
+
+/** One adjacent-category demand row. Carries its OWN basis — rows aggregate over different cohorts, so a section-level basis wouldn't be honest for any one row (plan.md §3). */
+export interface UnservedDemandRow {
+  categoryId: string;
+  categoryLabel: string;
+  carriedByYou: boolean;
+  spendPerShopperMonth: number;
+  shopperPenetrationPct: number;
+  basis: PanelBasis;
+}
+
+/**
+ * `rows` has ALREADY had every sub-floor category removed server-side
+ * (plan.md §4: "removed from the array entirely, never returned with a null
+ * value") — `hiddenRowCount` is the only trace a suppressed row leaves. A
+ * client that ignores `status` on the wrapping PanelMetric still cannot
+ * render a sub-floor figure.
+ */
+export interface UnservedDemand {
+  rows: UnservedDemandRow[];
+  hiddenRowCount: number;
+}
+
+export interface CrossShoppingResponse {
+  window: CrossShoppingWindow;
+  /** null when the merchant has no MKT# panel data at all yet (plan.md §1's "no_data" state — 200, never 404). */
+  generatedAt: string | null;
+  dataSource: string | null;
+  category: PanelCategory | null;
+  shareOfWallet: PanelMetric<ShareOfWallet>;
+  competitiveSet: PanelMetric<CompetitiveSetBreadth>;
+  unservedDemand: PanelMetric<UnservedDemand>;
+  /** Footer disclosure string — render verbatim (plan.md §6, page section 5). */
+  disclosure: string;
+}
+
+export interface TrafficIndexPoint {
+  date: string;
+  index: number;
+}
+
+export interface TrafficIndex {
+  categoryChangePct: number;
+  /** Computed live server-side from the merchant's own transactions — never precomputed/stored (plan.md §1). */
+  yourChangePct: number;
+  series: TrafficIndexPoint[];
+}
+
+export interface TrafficIndexResponse {
+  window: TrafficIndexWindow;
+  generatedAt: string | null;
+  dataSource: string | null;
+  category: PanelCategory | null;
+  index: PanelMetric<TrafficIndex>;
+  /**
+   * null whenever `index` is suppressed for ANY reason — including plan.md
+   * §4's 4th, own-side-only condition (< MIN_OWN_TXNS in the current OR
+   * prior period), which suppresses the whole index even when the
+   * category side is healthy.
+   */
+  yourBasis: OwnBasis | null;
+  disclosure: string;
+}
+
+// ---------------------------------------------------------------------------
 // Auth + fetch plumbing
 // ---------------------------------------------------------------------------
 
@@ -389,6 +518,33 @@ export async function listDevices(idToken: string): Promise<MerchantDevice[]> {
  */
 export async function getForensics(idToken: string, window: InsightsWindow = "30d"): Promise<MerchantForensics> {
   const res = await authedFetch(`/merchant/forensics${qs({ window })}`, idToken);
+  return res.json();
+}
+
+/**
+ * GET /merchant/market/cross-shopping?window= — share-of-wallet /
+ * competitive-set / unserved-demand panel (plan.md §3). Unlike
+ * getForensics(), this DOES have a MERCHANT_MOCK branch: the panel is
+ * explicitly synthetic demo data even against the live API
+ * (`dataSource: "demo_panel"`, plan.md risk #1), so a mock is a legitimate
+ * preview of the real response shape rather than an unverifiable accusation.
+ * Default window 30d, matching the Lambda's default.
+ */
+export async function getCrossShopping(idToken: string, window: CrossShoppingWindow = "30d"): Promise<CrossShoppingResponse> {
+  if (MERCHANT_MOCK) return mock.mockGetCrossShopping(window);
+  const res = await authedFetch(`/merchant/market/cross-shopping${qs({ window })}`, idToken);
+  return res.json();
+}
+
+/**
+ * GET /merchant/market/traffic-index?window= — category traffic index vs.
+ * the merchant's own live-computed transaction volume (plan.md §3). Default
+ * window 7d, matching the Lambda's default (the freshest read on a possible
+ * shock, per lib/marketPanel.js).
+ */
+export async function getTrafficIndex(idToken: string, window: TrafficIndexWindow = "7d"): Promise<TrafficIndexResponse> {
+  if (MERCHANT_MOCK) return mock.mockGetTrafficIndex(window);
+  const res = await authedFetch(`/merchant/market/traffic-index${qs({ window })}`, idToken);
   return res.json();
 }
 
