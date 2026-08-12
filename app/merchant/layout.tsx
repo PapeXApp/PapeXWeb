@@ -17,7 +17,7 @@
 import { useEffect, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { LogOut, Receipt, BarChart3, Radio } from "lucide-react";
+import { LogOut, Receipt, BarChart3, Sparkles, Radio } from "lucide-react";
 import { MerchantAuthProvider, useMerchantAuth } from "./AuthContext";
 import { LoadingBlock } from "./ui/primitives";
 import { T } from "./ui/tokens";
@@ -27,6 +27,7 @@ const LOGIN_PATH = "/merchant/login";
 const NAV_ITEMS = [
   { href: "/merchant", label: "Transactions", icon: Receipt, exact: true },
   { href: "/merchant/insights", label: "Insights", icon: BarChart3, exact: false },
+  { href: "/merchant/intelligence", label: "Intelligence", icon: Sparkles, exact: false },
   { href: "/merchant/devices", label: "Devices", icon: Radio, exact: false },
 ];
 
