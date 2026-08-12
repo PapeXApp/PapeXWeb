@@ -7,7 +7,7 @@
 // tuned for the light navy/orange marketing palette, not this one.
 
 import type { ReactNode } from "react";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2, X } from "lucide-react";
 import { T, glassCardStyle } from "./tokens";
 import type { ParseConfidence, DeviceStatus, PaymentNetwork } from "@/lib/merchantApi";
 import { PAYMENT_METHOD_STYLES } from "@/lib/receiptSummary";
@@ -81,6 +81,19 @@ export function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
   );
 }
 
+// ---- Select --------------------------------------------------------------------
+
+export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  const { className = "", ...rest } = props;
+  return (
+    <select
+      {...rest}
+      className={`rounded-xl border bg-transparent px-3 py-2.5 text-sm text-[#F4F4F4] outline-none transition focus:border-[#FB8500]/60 ${className}`}
+      style={{ borderColor: T.glassBorder, background: "rgba(255,255,255,0.03)", colorScheme: "dark" }}
+    />
+  );
+}
+
 // ---- Confidence + status pills -------------------------------------------------
 
 export function ConfidencePill({ confidence }: { confidence: ParseConfidence }) {
@@ -142,6 +155,32 @@ export function PaymentChip({ method, last4 }: { method: PaymentNetwork | null; 
         {style.label}
       </span>
       {last4 && <span style={{ color: T.textSecondary }}>••{last4}</span>}
+    </span>
+  );
+}
+
+// ---- Filter pill -----------------------------------------------------------------
+//
+// One active server-side filter, with its own clear affordance (real
+// <button>, not a click handler on the pill itself, so it's keyboard/screen
+// reader reachable independent of whatever the pill is nested in).
+
+export function FilterPill({ label, onClear }: { label: string; onClear: () => void }) {
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full py-1 pl-3 pr-1.5 text-xs font-medium"
+      style={{ background: T.orangeDim, color: T.text }}
+    >
+      {label}
+      <button
+        type="button"
+        onClick={onClear}
+        aria-label={`Clear filter: ${label}`}
+        className="flex h-4 w-4 items-center justify-center rounded-full transition hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
+        style={{ color: T.textSecondary, outlineColor: T.orange }}
+      >
+        <X className="h-3 w-3" strokeWidth={2.5} />
+      </button>
     </span>
   );
 }

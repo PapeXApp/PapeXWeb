@@ -111,6 +111,18 @@ export interface MerchantTransactionDetail {
 export interface TransactionsPage {
   transactions: MerchantTransactionSummary[];
   nextCursor: string | null;
+  /** Total matches for the active filter set across the WHOLE partition, not just this page — "142 matching transactions". Stable across pages of the same filter set. */
+  matchedCount: number;
+  /**
+   * true when the Lambda's underlying per-request page-walk cap was hit
+   * before it filled this page (`transactions.length` may be less than the
+   * requested `limit`) or before it could prove the partition was
+   * exhausted. This is NOT the same as "no more results" — `nextCursor` is
+   * still usable to keep paging; the UI should say something like "still
+   * searching — click Load more to keep going" rather than implying the
+   * filter matched nothing further.
+   */
+  pageCapped: boolean;
 }
 
 export interface ListTransactionsParams {
@@ -118,18 +130,27 @@ export interface ListTransactionsParams {
   from?: string; // ISO date
   to?: string; // ISO date
   limit?: number;
+  /** Case-insensitive substring match across merchantName, receiptNumber, cardLast4, and item names. */
+  q?: string;
+  minAmount?: number;
+  maxAmount?: number;
+  /** 0-23, in MERCHANT_DISPLAY_TIMEZONE (see that const's comment) — MUST agree with MerchantInsights.byHour's bucketing (both derive from uploadedAt via the same Intl.DateTimeFormat-based logic server-side; see Papex_RDH/lambdas/merchant-api/handler.js's uploadedAtParts()/MERCHANT_TIMEZONE). */
+  hour?: number;
+  /** 0 (Sun) - 6 (Sat), in MERCHANT_DISPLAY_TIMEZONE — MUST agree with MerchantInsights.byDayOfWeek's bucketing, same caveat as `hour`. */
+  dow?: number;
+  device?: string;
 }
 
 export type InsightsWindow = "today" | "7d" | "30d";
 
 export interface HourBucket {
-  hour: number; // 0-23, local to the merchant's device timezone (backend-resolved)
+  hour: number; // 0-23, in the response's `timezone` (see MerchantInsights.timezone)
   count: number;
   gross: number;
 }
 
 export interface DayOfWeekBucket {
-  day: number; // 0 = Sunday .. 6 = Saturday
+  day: number; // 0 = Sunday .. 6 = Saturday, in the response's `timezone`
   label: string;
   count: number;
   gross: number;
@@ -140,6 +161,16 @@ export interface TopItem {
   count: number;
 }
 
+// MERCHANT_DISPLAY_TIMEZONE lives in ./merchantTimezone, NOT here — this
+// file is imported BY lib/merchantMock.ts's real endpoints (`* as mock`
+// below), and merchantMock.ts also needs this constant. Defining it here
+// created a circular import (merchantApi -> merchantMock -> merchantApi)
+// that crashed at runtime ("Cannot access 'MERCHANT_DISPLAY_TIMEZONE'
+// before initialization") despite `tsc`/`next lint` both passing clean —
+// re-exported below so existing `from "@/lib/merchantApi"` imports elsewhere
+// keep working unchanged.
+export { MERCHANT_DISPLAY_TIMEZONE } from "./merchantTimezone";
+
 export interface MerchantInsights {
   window: InsightsWindow;
   count: number;
@@ -148,6 +179,8 @@ export interface MerchantInsights {
   byHour: HourBucket[];
   byDayOfWeek: DayOfWeekBucket[];
   topItems: TopItem[];
+  /** IANA zone name the buckets above were computed in (currently always MERCHANT_DISPLAY_TIMEZONE) — render VERBATIM in chart labels rather than assuming. */
+  timezone: string;
 }
 
 export interface TapRate {
@@ -548,8 +581,11 @@ export async function getTrafficIndex(idToken: string, window: TrafficIndexWindo
   return res.json();
 }
 
-/** GET /merchant/export.csv — triggers a browser download of the date-ranged transactions CSV. */
-export async function exportCsv(idToken: string, params: { from?: string; to?: string } = {}): Promise<void> {
+/** Everything GET /merchant/export.csv accepts — same filters as listTransactions, minus pagination (an export is always the full filtered set). */
+export type ExportCsvParams = Omit<ListTransactionsParams, "cursor" | "limit">;
+
+/** GET /merchant/export.csv — triggers a browser download of the date-ranged, FILTERED transactions CSV (same filters as the on-screen list — the Lambda's getExportCsv applies the identical parseTransactionFilter/matchesTransactionFilter). */
+export async function exportCsv(idToken: string, params: ExportCsvParams = {}): Promise<void> {
   const filename = `papex-transactions${params.from ? `-${params.from}` : ""}${params.to ? `_${params.to}` : ""}.csv`;
   const csvText = MERCHANT_MOCK
     ? mock.mockExportCsv(params)

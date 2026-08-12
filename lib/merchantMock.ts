@@ -27,8 +27,14 @@ import {
   type ReceiptSummary,
   type PaymentNetwork,
 } from "./receiptSummary";
+// Imports from ./merchantTimezone directly, NOT ./merchantApi -- this file
+// is itself imported by merchantApi.ts (`* as mock`), so importing the
+// constant back FROM merchantApi.ts would recreate the circular-import
+// crash that module exists to avoid. See merchantTimezone.ts's comment.
+import { MERCHANT_DISPLAY_TIMEZONE } from "./merchantTimezone";
 import type {
   ListTransactionsParams,
+  ExportCsvParams,
   MerchantLineItem,
   MerchantTransactionDetail,
   MerchantTransactionSummary,
@@ -331,6 +337,88 @@ function buildDataset(): MockTxRecord[] {
 const DATASET = buildDataset();
 
 // ---------------------------------------------------------------------------
+// Local-hour/day-of-week derivation -- MUST mirror Papex_RDH/lambdas/
+// merchant-api/handler.js's uploadedAtParts() exactly (same
+// MERCHANT_DISPLAY_TIMEZONE, same Intl.DateTimeFormat approach with
+// hourCycle:"h23" for a clean 0-23 range and DST handled by the platform's
+// tz database, not a fixed offset). mockGetInsights's byHour/byDayOfWeek
+// buckets and mockListTransactions'/mockExportCsv's hour/dow filters both
+// call this ONE function so mock mode can never disagree with itself the
+// way UTC-vs-local would.
+// ---------------------------------------------------------------------------
+
+const HOUR_DOW_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  timeZone: MERCHANT_DISPLAY_TIMEZONE,
+  hourCycle: "h23",
+  hour: "numeric",
+  weekday: "short",
+});
+const WEEKDAY_TO_DOW: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+
+function localHourDow(iso: string): { hour: number; dow: number } | null {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  const parts = HOUR_DOW_FORMATTER.formatToParts(d);
+  const hourStr = parts.find((p) => p.type === "hour")?.value;
+  const weekdayStr = parts.find((p) => p.type === "weekday")?.value;
+  if (hourStr === undefined || weekdayStr === undefined) return null;
+  const dow = WEEKDAY_TO_DOW[weekdayStr];
+  if (dow === undefined) return null;
+  return { hour: Number(hourStr), dow };
+}
+
+// ---------------------------------------------------------------------------
+// Server-side-equivalent filtering -- mirrors Papex_RDH/lambdas/merchant-api/
+// handler.js's parseTransactionFilter/matchesTransactionFilter closely
+// enough to be a faithful preview: q/minAmount/maxAmount/hour/dow/device, a
+// null total never satisfies an amount filter, q matches merchantName/
+// receiptNumber/cardLast4/item names case-insensitively. A filter UI that
+// silently no-ops in mock mode would be worse than no mock at all.
+// ---------------------------------------------------------------------------
+
+interface RecordFilter {
+  q?: string;
+  minAmount?: number;
+  maxAmount?: number;
+  hour?: number;
+  dow?: number;
+  device?: string;
+}
+
+type FilterableParams = Pick<ListTransactionsParams, "q" | "minAmount" | "maxAmount" | "hour" | "dow" | "device">;
+
+function buildRecordFilter(params: FilterableParams): RecordFilter {
+  const filter: RecordFilter = {};
+  if (params.q && params.q.trim() !== "") filter.q = params.q.trim().toLowerCase();
+  if (params.minAmount != null) filter.minAmount = params.minAmount;
+  if (params.maxAmount != null) filter.maxAmount = params.maxAmount;
+  if (params.hour != null) filter.hour = params.hour;
+  if (params.dow != null) filter.dow = params.dow;
+  if (params.device && params.device.trim() !== "") filter.device = params.device.trim();
+  return filter;
+}
+
+function matchesRecordFilter(r: MockTxRecord, filter: RecordFilter): boolean {
+  if (filter.minAmount !== undefined || filter.maxAmount !== undefined) {
+    if (r.total == null) return false;
+    if (filter.minAmount !== undefined && r.total < filter.minAmount) return false;
+    if (filter.maxAmount !== undefined && r.total > filter.maxAmount) return false;
+  }
+  if (filter.hour !== undefined || filter.dow !== undefined) {
+    const parts = localHourDow(r.uploadedAt);
+    if (parts === null) return false;
+    if (filter.hour !== undefined && parts.hour !== filter.hour) return false;
+    if (filter.dow !== undefined && parts.dow !== filter.dow) return false;
+  }
+  if (filter.device !== undefined && r.deviceId !== filter.device) return false;
+  if (filter.q !== undefined) {
+    const haystacks = [r.merchantName ?? "", r.receiptNumber ?? "", r.cardLast4 ?? "", ...r.itemNames];
+    if (!haystacks.some((h) => h.toLowerCase().includes(filter.q!))) return false;
+  }
+  return true;
+}
+
+// ---------------------------------------------------------------------------
 // Public mock API — mirrors lib/merchantApi.ts's real endpoints 1:1
 // ---------------------------------------------------------------------------
 
@@ -357,12 +445,18 @@ export async function mockListTransactions(params: ListTransactionsParams): Prom
   if (params.from) rows = rows.filter((r) => r.uploadedAt >= params.from!);
   if (params.to) rows = rows.filter((r) => r.uploadedAt <= params.to! + "T23:59:59.999Z");
 
+  const filter = buildRecordFilter(params);
+  const matched = rows.filter((r) => matchesRecordFilter(r, filter));
+
   const start = params.cursor ? Number(params.cursor) : 0;
   const limit = params.limit ?? PAGE_SIZE;
-  const page = rows.slice(start, start + limit);
-  const nextCursor = start + limit < rows.length ? String(start + limit) : null;
+  const page = matched.slice(start, start + limit);
+  const nextCursor = start + limit < matched.length ? String(start + limit) : null;
 
-  return { transactions: page.map(toSummary), nextCursor };
+  // Mock mode's dataset is small enough that the filtered walk is always
+  // exhaustive within one call (no DynamoDB-style partition-page cap to
+  // simulate), so matchedCount is exact and pageCapped is always false.
+  return { transactions: page.map(toSummary), nextCursor, matchedCount: matched.length, pageCapped: false };
 }
 
 // Mirrors Papex_RDH/lambdas/indexer/lib/summarize.js's
@@ -465,14 +559,18 @@ export async function mockGetInsights(window: InsightsWindow): Promise<MerchantI
   const itemCounts = new Map<string, number>();
 
   for (const r of rows) {
-    const d = new Date(r.uploadedAt);
-    const hourBucket = byHour[d.getUTCHours()];
-    hourBucket.count += 1;
-    hourBucket.gross = Math.round((hourBucket.gross + (r.total ?? 0)) * 100) / 100;
+    // Shared with matchesRecordFilter's hour/dow query filters — see
+    // localHourDow's comment for why these two MUST stay in lockstep.
+    const parts = localHourDow(r.uploadedAt);
+    if (parts !== null) {
+      const hourBucket = byHour[parts.hour];
+      hourBucket.count += 1;
+      hourBucket.gross = Math.round((hourBucket.gross + (r.total ?? 0)) * 100) / 100;
 
-    const dowBucket = byDayOfWeek[d.getUTCDay()];
-    dowBucket.count += 1;
-    dowBucket.gross = Math.round((dowBucket.gross + (r.total ?? 0)) * 100) / 100;
+      const dowBucket = byDayOfWeek[parts.dow];
+      dowBucket.count += 1;
+      dowBucket.gross = Math.round((dowBucket.gross + (r.total ?? 0)) * 100) / 100;
+    }
 
     for (const name of r.itemNames) {
       itemCounts.set(name, (itemCounts.get(name) ?? 0) + 1);
@@ -484,7 +582,7 @@ export async function mockGetInsights(window: InsightsWindow): Promise<MerchantI
     .slice(0, 6)
     .map(([name, itemCount]) => ({ name, count: itemCount }));
 
-  return { window, count, gross, avgTicket, byHour, byDayOfWeek, topItems };
+  return { window, count, gross, avgTicket, byHour, byDayOfWeek, topItems, timezone: MERCHANT_DISPLAY_TIMEZONE };
 }
 
 export async function mockGetTapRate(window: InsightsWindow): Promise<TapRate> {
@@ -627,10 +725,15 @@ export async function mockGetTrafficIndex(window: TrafficIndexWindow): Promise<T
   };
 }
 
-export function mockExportCsv(params: { from?: string; to?: string }): string {
+export function mockExportCsv(params: ExportCsvParams): string {
   let rows = DATASET;
   if (params.from) rows = rows.filter((r) => r.uploadedAt >= params.from!);
   if (params.to) rows = rows.filter((r) => r.uploadedAt <= params.to! + "T23:59:59.999Z");
+
+  // Same filters as mockListTransactions -- exporting a filtered view must
+  // not silently export the whole (unfiltered) dataset.
+  const filter = buildRecordFilter(params);
+  rows = rows.filter((r) => matchesRecordFilter(r, filter));
 
   const header = [
     "sid",
