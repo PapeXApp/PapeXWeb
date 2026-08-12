@@ -10,7 +10,15 @@
 // navigation side effects, so it stays reusable from the login page itself
 // (which must render normally while signed out).
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import {
   onAuthStateChanged,
   getIdToken as fetchIdToken,
@@ -41,12 +49,29 @@ export function MerchantAuthProvider({ children }: { children: ReactNode }) {
     return unsubscribe;
   }, []);
 
-  const value: MerchantAuthState = {
-    user,
-    loading,
-    getIdToken: () => fetchIdToken(),
-    signOut: () => firebaseSignOut(),
-  };
+  // These identities are load-bearing, not a micro-optimisation. Every page
+  // under app/merchant/* fetches inside a `useEffect` that lists `getIdToken`
+  // in its dependency array (transactions, insights, devices, receipt detail,
+  // forensics, and both panel sections — seven at last count). Rebuilding the
+  // context value — and with it a fresh `getIdToken` closure — on every render
+  // made each of those effects re-run on every render: fetch → setState →
+  // render → new closure → fetch again, a runaway request loop against the
+  // live API that only stopped when the page was closed.
+  //
+  // It presented as a UI bug rather than a performance one: toggling the
+  // traffic index to 30d fired one 30d request that the ongoing 7d loop then
+  // overwrote, so the card appeared frozen on 7d.
+  //
+  // Neither function closes over anything, so both are stable for the life of
+  // the provider and the value only changes when `user` or `loading` actually
+  // does.
+  const getIdToken = useCallback(() => fetchIdToken(), []);
+  const signOut = useCallback(() => firebaseSignOut(), []);
+
+  const value: MerchantAuthState = useMemo(
+    () => ({ user, loading, getIdToken, signOut }),
+    [user, loading, getIdToken, signOut]
+  );
 
   return <MerchantAuthContext.Provider value={value}>{children}</MerchantAuthContext.Provider>;
 }
