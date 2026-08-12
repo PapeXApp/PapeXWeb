@@ -14,8 +14,8 @@
 // any card that uses it) is allowed to compose its own basis wording from
 // the underlying numbers (plan.md §3/§4).
 
-import { useState, type ReactNode } from "react";
-import { HelpCircle, Sparkles } from "lucide-react";
+import { useId, useState, type ReactNode } from "react";
+import { HelpCircle, Info, Sparkles } from "lucide-react";
 import { Card } from "../ui/primitives";
 import { T } from "../ui/tokens";
 import type { PanelCategory, SuppressionReason } from "@/lib/merchantApi";
@@ -94,6 +94,86 @@ export function SuppressedCard({
         </p>
       )}
     </Card>
+  );
+}
+
+// ---- InfoPopover ---------------------------------------------------------------
+
+/**
+ * One block inside an InfoPopover. `emphasis` marks the block that actually
+ * applies to what the merchant is currently looking at — the point is that a
+ * card can highlight the branch matching its own numbers rather than making
+ * the reader work out which of three scenarios they're in.
+ */
+export type InfoSection = { heading: string; body: ReactNode; emphasis?: boolean };
+
+/**
+ * The "i" affordance on a metric card: how the number was produced, what it
+ * means, and what to do about it.
+ *
+ * Deliberately a disclosure toggle rather than a hover tooltip — this content
+ * is several sentences long, merchants read this dashboard on phones as often
+ * as laptops, and hover doesn't exist on touch. Same interaction shape as
+ * SuppressedCard's "Why is this hidden?" so the page has one idiom for
+ * "explain this to me", not two.
+ *
+ * The copy passed in must describe METHOD and INTERPRETATION only. It must
+ * never restate the merchant's figures — those come from the metric and its
+ * basis line, and duplicating them here would create a second place for a
+ * number to drift out of sync with the data that produced it.
+ */
+export function InfoPopover({
+  label = "How this number works",
+  sections,
+}: {
+  label?: string;
+  sections: InfoSection[];
+}) {
+  const [open, setOpen] = useState(false);
+  const panelId = useId();
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-controls={panelId}
+        aria-label={label}
+        title={label}
+        className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition"
+        style={{
+          borderColor: open ? T.blue : T.divider,
+          color: open ? T.blue : T.textMuted,
+          background: open ? "rgba(43, 127, 198, 0.12)" : "transparent",
+        }}
+      >
+        <Info className="h-3 w-3" strokeWidth={2.5} />
+      </button>
+
+      {open && (
+        <div
+          id={panelId}
+          className="flex flex-col gap-3 rounded-xl border px-3.5 py-3"
+          style={{ background: "rgba(255,255,255,0.04)", borderColor: T.divider }}
+        >
+          {sections.map((s) => (
+            <div key={s.heading} className="flex flex-col gap-1">
+              <span
+                className="text-[10px] font-semibold uppercase tracking-wide"
+                style={{ color: s.emphasis ? T.blue : T.textMuted }}
+              >
+                {s.heading}
+                {s.emphasis && " — this is you"}
+              </span>
+              <div className="text-xs leading-relaxed" style={{ color: s.emphasis ? T.text : T.textMuted }}>
+                {s.body}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
   );
 }
 
