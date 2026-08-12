@@ -123,9 +123,15 @@ export type InfoSection = { heading: string; body: ReactNode; emphasis?: boolean
  * number to drift out of sync with the data that produced it.
  */
 export function InfoPopover({
+  title,
   label = "How this number works",
   sections,
 }: {
+  /** The card's own heading. InfoPopover renders it, so the expanded panel can
+   *  be a full-width block UNDER the header rather than a flex sibling of the
+   *  button — as a bare fragment it landed inside the header's horizontal row
+   *  and squeezed the heading into a narrow column. */
+  title: string;
   label?: string;
   sections: InfoSection[];
 }) {
@@ -134,22 +140,27 @@ export function InfoPopover({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        aria-controls={panelId}
-        aria-label={label}
-        title={label}
-        className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition"
-        style={{
-          borderColor: open ? T.blue : T.divider,
-          color: open ? T.blue : T.textMuted,
-          background: open ? "rgba(43, 127, 198, 0.12)" : "transparent",
-        }}
-      >
-        <Info className="h-3 w-3" strokeWidth={2.5} />
-      </button>
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-medium uppercase tracking-wide" style={{ color: T.textMuted }}>
+          {title}
+        </span>
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          aria-controls={panelId}
+          aria-label={label}
+          title={label}
+          className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition"
+          style={{
+            borderColor: open ? T.blue : T.divider,
+            color: open ? T.blue : T.textMuted,
+            background: open ? "rgba(43, 127, 198, 0.12)" : "transparent",
+          }}
+        >
+          <Info className="h-3 w-3" strokeWidth={2.5} />
+        </button>
+      </div>
 
       {open && (
         <div

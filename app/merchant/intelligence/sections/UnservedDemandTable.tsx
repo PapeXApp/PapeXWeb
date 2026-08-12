@@ -14,8 +14,26 @@
 
 import { Card } from "../../ui/primitives";
 import { T } from "../../ui/tokens";
-import { BasisLine, SuppressedCard } from "../ui";
+import { BasisLine, InfoPopover, SuppressedCard, type InfoSection } from "../ui";
 import type { PanelMetric, UnservedDemand } from "@/lib/merchantApi";
+
+const INFO: InfoSection[] = [
+  {
+    heading: "How this is calculated",
+    body:
+      "Categories your customers spend in elsewhere, minus the ones your own receipts show you already sell. The dollar figure is a per-customer monthly average across the customers we can see; the percentage is how many of those customers buy in that category at all. Neither is a projection of a market's total size — we don't publish those, because a projection from a sample this shape would be confidently wrong.",
+  },
+  {
+    heading: "What it means",
+    body:
+      "Adjacency, not a forecast. It says the appetite already exists among people who walk through your door — not that you would capture it if you stocked it. Categories are deliberately unnamed at the business level: we never tell you where your customers shop, and we never tell another business where yours do.",
+  },
+  {
+    heading: "How to act on it",
+    body:
+      "Read the percentage before the dollars. A category 45% of your customers buy is a habit you can intercept; one with a high average but low penetration is a handful of heavy spenders and much harder to win. Then filter by what you could actually make or stock without new equipment, new training or a new supplier — the cheapest win is the one that runs off the counter you already have.",
+  },
+];
 
 export function UnservedDemandTable({ metric }: { metric: PanelMetric<UnservedDemand> }) {
   if (metric.status === "suppressed") {
@@ -28,9 +46,11 @@ export function UnservedDemandTable({ metric }: { metric: PanelMetric<UnservedDe
   return (
     <Card className="flex flex-col gap-3">
       <div className="flex flex-col gap-1">
-        <span className="text-xs font-medium uppercase tracking-wide" style={{ color: T.textMuted }}>
-          Demand you don&apos;t currently serve
-        </span>
+        <InfoPopover
+          title="Demand you don't currently serve"
+          label="How demand you don't serve works"
+          sections={INFO}
+        />
         <BasisLine basis={metric.basis} />
       </div>
 

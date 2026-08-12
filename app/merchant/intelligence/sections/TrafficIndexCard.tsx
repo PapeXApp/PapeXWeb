@@ -117,18 +117,13 @@ export function TrafficIndexCard({
 
   return (
     <Card className="flex flex-col gap-3">
-      <div className="flex items-center gap-2">
-        <span className="text-xs font-medium uppercase tracking-wide" style={{ color: T.textMuted }}>
-          Traffic index
-        </span>
-        <InfoPopover label="How the traffic index works" sections={info} />
-      </div>
+      <InfoPopover title="Traffic index" label="How the traffic index works" sections={info} />
 
       {/* The gap leads. The two inputs sit underneath it, smaller. */}
       <div className="flex flex-col gap-1">
         <span
           className="font-barlow text-2xl font-medium leading-tight"
-          style={{ color: Math.abs(gap) < 0.05 ? T.text : outperforming ? T.success : T.error }}
+          style={{ color: tracking ? T.text : outperforming ? T.success : T.error }}
         >
           {headline}
         </span>
