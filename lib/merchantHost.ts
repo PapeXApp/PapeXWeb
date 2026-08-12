@@ -28,7 +28,28 @@ function hostnameOnly(host: string): string {
   return host.split(":")[0]?.toLowerCase() ?? "";
 }
 
+/**
+ * Demo escape hatch for a shareable preview deployment.
+ *
+ * A Vercel preview URL (`papexweb-git-<branch>-<scope>.vercel.app`) does not
+ * start with "merchant.", so without this the entire dashboard 404s on a
+ * preview — the isolation rule below working exactly as designed, against us.
+ *
+ * When set, the WHOLE deployment serves as the merchant dashboard: every host
+ * is treated as the merchant host. That is only ever correct for a throwaway
+ * preview whose sole purpose is demoing the dashboard.
+ *
+ * NEVER set this on the production deployment — it would turn papex.app itself
+ * into the merchant dashboard and take the marketing site down. It is
+ * deliberately not read from any committed env file; it must be passed
+ * explicitly per-deployment, so there is no way to enable it by accident.
+ */
+function demoModeEnabled(): boolean {
+  return process.env.NEXT_PUBLIC_MERCHANT_DEMO_HOST_ANY === "1";
+}
+
 export function isMerchantHost(host: string): boolean {
+  if (demoModeEnabled()) return true;
   return hostnameOnly(host).startsWith("merchant.");
 }
 

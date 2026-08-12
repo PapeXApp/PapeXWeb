@@ -99,5 +99,47 @@ test("links host (a different subdomain, not merchant), /rdh -> untouched", () =
 
 // ---- Summary -----------------------------------------------------------------
 
+
+// ---- demo escape hatch (shareable preview deployment) ----------------------
+
+const DEMO_FLAG = "NEXT_PUBLIC_MERCHANT_DEMO_HOST_ANY";
+
+test("demo mode: a vercel preview host IS treated as the merchant host", () => {
+  process.env[DEMO_FLAG] = "1";
+  assert.equal(isMerchantHost("papexweb-git-merchant-dashboard-x.vercel.app"), true);
+  delete process.env[DEMO_FLAG];
+});
+
+test("demo mode: root path rewrites into /merchant on a non-merchant host", () => {
+  process.env[DEMO_FLAG] = "1";
+  assert.deepEqual(resolveMerchantRewrite("papexweb-git-x.vercel.app", "/"), {
+    action: "rewrite",
+    pathname: "/merchant",
+  });
+  delete process.env[DEMO_FLAG];
+});
+
+test("demo mode: only the literal \"1\" enables it", () => {
+  // A stray "true"/"yes"/"" must NOT turn the marketing site into the dashboard.
+  for (const v of ["true", "yes", "0", ""]) {
+    process.env[DEMO_FLAG] = v;
+    assert.equal(isMerchantHost("papex.app"), false, `flag value ${JSON.stringify(v)}`);
+  }
+  delete process.env[DEMO_FLAG];
+});
+
+test("demo mode OFF by default: papex.app is not the merchant host", () => {
+  delete process.env[DEMO_FLAG];
+  assert.equal(isMerchantHost("papex.app"), false);
+});
+
+test("demo mode OFF by default: papex.app/merchant still 404-rewrites", () => {
+  delete process.env[DEMO_FLAG];
+  assert.deepEqual(resolveMerchantRewrite("papex.app", "/merchant/insights"), {
+    action: "rewrite",
+    pathname: "/__merchant_not_found__",
+  });
+});
+
 console.log(`\n${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);
