@@ -111,8 +111,22 @@ export interface MerchantTransactionDetail {
 export interface TransactionsPage {
   transactions: MerchantTransactionSummary[];
   nextCursor: string | null;
-  /** Total matches for the active filter set across the WHOLE partition, not just this page — "142 matching transactions". Stable across pages of the same filter set. */
-  matchedCount: number;
+  /**
+   * Total matches for the active filter set across the WHOLE partition, not
+   * just this page — "142 matching transactions". Stable across pages of
+   * the same filter set (does not depend on cursor).
+   *
+   * `null` means "not requested — fetch it separately via
+   * listTransactionsCount()", NOT "zero matches". listTransactions() always
+   * returns `null` here: computing this inline was measured at ~4.8s
+   * against a 4,219-row live partition (a full, uncapped partition scan)
+   * even for the unfiltered default view, vs. ~50ms for the page walk
+   * alone — see Papex_RDH/lambdas/merchant-api/handler.js's getTransactions
+   * comment. The UI fetches the count separately/in parallel and fills it
+   * in once it lands (app/merchant/page.tsx), rather than making the list
+   * wait on it.
+   */
+  matchedCount: number | null;
   /**
    * true when the Lambda's underlying per-request page-walk cap was hit
    * before it filled this page (`transactions.length` may be less than the
@@ -461,7 +475,7 @@ function qs(params: object): string {
 // Endpoints
 // ---------------------------------------------------------------------------
 
-/** GET /merchant/transactions */
+/** GET /merchant/transactions — `matchedCount` in the result is always `null`; fetch it separately with listTransactionsCount(). */
 export async function listTransactions(
   idToken: string,
   params: ListTransactionsParams = {}
@@ -469,6 +483,27 @@ export async function listTransactions(
   if (MERCHANT_MOCK) return mock.mockListTransactions(params);
   const res = await authedFetch(`/merchant/transactions${qs(params)}`, idToken);
   return res.json();
+}
+
+/**
+ * GET /merchant/transactions?countOnly=1 — the SAME route as listTransactions
+ * (not a separate endpoint: no new terraform route, no proxy allowlist
+ * change), returning just the total match count for a filter set, doing no
+ * page walk. Deliberately separate from listTransactions() so a caller can
+ * fire both in parallel and render the list the moment rows land, without
+ * waiting on the (comparatively expensive, full-partition-scan) count —
+ * see TransactionsPage.matchedCount's comment. Accepts the same filter
+ * params as listTransactions minus cursor/limit, which don't apply to a
+ * count.
+ */
+export async function listTransactionsCount(
+  idToken: string,
+  params: Omit<ListTransactionsParams, "cursor" | "limit"> = {}
+): Promise<number> {
+  if (MERCHANT_MOCK) return mock.mockCountTransactions(params);
+  const res = await authedFetch(`/merchant/transactions${qs({ ...params, countOnly: 1 })}`, idToken);
+  const body: { matchedCount: number } = await res.json();
+  return body.matchedCount;
 }
 
 /** GET /merchant/transactions/{sid} */

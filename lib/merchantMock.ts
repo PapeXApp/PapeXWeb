@@ -455,8 +455,24 @@ export async function mockListTransactions(params: ListTransactionsParams): Prom
 
   // Mock mode's dataset is small enough that the filtered walk is always
   // exhaustive within one call (no DynamoDB-style partition-page cap to
-  // simulate), so matchedCount is exact and pageCapped is always false.
-  return { transactions: page.map(toSummary), nextCursor, matchedCount: matched.length, pageCapped: false };
+  // simulate), so pageCapped is always false. matchedCount is deliberately
+  // ALWAYS null here too, matching the real endpoint's contract exactly
+  // (see TransactionsPage.matchedCount's comment) — call
+  // mockCountTransactions()/listTransactionsCount() separately, same as a
+  // real caller has to. Mock mode has no perf reason to defer the count
+  // (this dataset is tiny), but the UI's "list renders now, count fills in
+  // later" behavior needs to be exercised in the demo too, not just against
+  // the real backend.
+  return { transactions: page.map(toSummary), nextCursor, matchedCount: null, pageCapped: false };
+}
+
+/** Mirrors GET /merchant/transactions?countOnly=1 — see listTransactionsCount(). */
+export async function mockCountTransactions(params: Pick<ListTransactionsParams, "from" | "to" | "q" | "minAmount" | "maxAmount" | "hour" | "dow" | "device">): Promise<number> {
+  let rows = DATASET;
+  if (params.from) rows = rows.filter((r) => r.uploadedAt >= params.from!);
+  if (params.to) rows = rows.filter((r) => r.uploadedAt <= params.to! + "T23:59:59.999Z");
+  const filter = buildRecordFilter(params);
+  return rows.filter((r) => matchesRecordFilter(r, filter)).length;
 }
 
 // Mirrors Papex_RDH/lambdas/indexer/lib/summarize.js's

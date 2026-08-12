@@ -28,12 +28,13 @@
 // clear. Building a redundant "hour of day" selector here would just
 // duplicate what the Insights charts already are.
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Search, Download, ChevronRight, RefreshCw } from "lucide-react";
 import { useMerchantAuth } from "./AuthContext";
 import {
   listTransactions,
+  listTransactionsCount,
   listDevices,
   exportCsv,
   type MerchantTransactionSummary,
@@ -80,12 +81,24 @@ function TransactionsPageInner() {
   const [transactions, setTransactions] = useState<MerchantTransactionSummary[]>([]);
   const [devices, setDevices] = useState<MerchantDevice[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
+  // matchedCount is fetched SEPARATELY from the list (listTransactionsCount,
+  // ?countOnly=1) and arrives later — see the `loadCount` effect below.
+  // `null` here means "not known yet" (still loading, or the last attempt
+  // failed), never "zero matches"; `countLoading` distinguishes the two so
+  // the UI can show a placeholder instead of a wrong/missing number.
   const [matchedCount, setMatchedCount] = useState<number | null>(null);
+  const [countLoading, setCountLoading] = useState(false);
   const [pageCapped, setPageCapped] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Guards against an in-flight count request for an OLDER filter set
+  // resolving after a newer one and clobbering it — "never render a stale
+  // count against a new filter set." Only the response whose id still
+  // matches the latest-fired request gets applied.
+  const countRequestId = useRef(0);
 
   const from = searchParams.get("from") ?? "";
   const to = searchParams.get("to") ?? "";
@@ -159,7 +172,6 @@ function TransactionsPageInner() {
         });
         setTransactions((prev) => (reset ? page.transactions : [...prev, ...page.transactions]));
         setCursor(page.nextCursor);
-        setMatchedCount(page.matchedCount);
         setPageCapped(page.pageCapped);
       } catch {
         setError("Couldn't load transactions. Check your connection and try again.");
@@ -175,8 +187,34 @@ function TransactionsPageInner() {
     [from, to, JSON.stringify(filters), getIdToken]
   );
 
+  // Independent of `load` above: fires its own request (?countOnly=1) so
+  // the list never waits on it. Clears the OLD count immediately (before
+  // the new request even starts) so a slow count from a previous filter
+  // set can never linger on screen looking like it describes the current
+  // one; the request-id guard then makes sure only the still-current
+  // request's answer gets applied when it lands.
+  const loadCount = useCallback(async () => {
+    const token = await getIdToken();
+    if (!token) return;
+    const id = ++countRequestId.current;
+    setMatchedCount(null);
+    setCountLoading(true);
+    try {
+      const count = await listTransactionsCount(token, { from: from || undefined, to: to || undefined, ...filters });
+      if (countRequestId.current === id) setMatchedCount(count);
+    } catch {
+      // Non-critical — the list itself already loaded fine. Leave
+      // matchedCount null; the UI just omits the count rather than
+      // showing a wrong one or an endless placeholder.
+    } finally {
+      if (countRequestId.current === id) setCountLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [from, to, JSON.stringify(filters), getIdToken]);
+
   useEffect(() => {
     load(true);
+    loadCount();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [from, to, JSON.stringify(filters)]);
 
@@ -288,7 +326,7 @@ function TransactionsPageInner() {
         </div>
       </Card>
 
-      {(pills.length > 0 || matchedCount != null) && (
+      {(pills.length > 0 || countLoading || matchedCount != null) && (
         <div className="flex flex-wrap items-center gap-2">
           {pills.map((p) => (
             <FilterPill key={p.key} label={p.label} onClear={p.onClear} />
@@ -298,11 +336,23 @@ function TransactionsPageInner() {
               Clear all
             </button>
           )}
-          {matchedCount != null && (
-            <span className="ml-auto text-xs" style={{ color: T.textMuted }}>
-              {matchedCount.toLocaleString()} matching transaction{matchedCount === 1 ? "" : "s"}
-            </span>
-          )}
+          {/* Fetched separately from the list (see loadCount) so the list
+              never waits on it — this slot fills in a beat after the rows
+              land. A subtle pulsing placeholder while in flight, never a
+              spinner and never a stale number left over from a previous
+              filter set (loadCount clears matchedCount the instant it
+              starts a new request, before this render). */}
+          <span className="ml-auto text-xs" style={{ color: T.textMuted }}>
+            {matchedCount != null ? (
+              `${matchedCount.toLocaleString()} matching transaction${matchedCount === 1 ? "" : "s"}`
+            ) : countLoading ? (
+              <span
+                className="inline-block h-3 w-32 animate-pulse rounded-full align-middle"
+                style={{ background: "rgba(255,255,255,0.08)" }}
+                aria-hidden="true"
+              />
+            ) : null}
+          </span>
         </div>
       )}
 
