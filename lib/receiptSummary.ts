@@ -332,8 +332,26 @@ export type PaymentNetwork =
   | "venmo"
   | "cash_app"
   | "cash"
+  | "debit"
   | "ebt"
   | "check";
+
+// "CASH APP" / "CashApp" as a whole token. Must stay a word-boundary match:
+// the old plain-substring test (`includes("cash app")`) also fired on
+// "CASH APPROVED", so every cash customer at a merchant whose printer emits
+// an approval status was classified as Cash App.
+const CASH_APP_RE = /\bcash\s*app\b/i;
+
+// A cash tender. \bcash\b so "CASHIER"/"CASHBACK" don't qualify, and
+// (?!\s*back) so "CASH BACK" — a debit-card feature, not a cash tender —
+// doesn't either.
+const CASH_TENDER_RE = /\bcash\b(?!\s*back)/i;
+
+// PIN debit with no network brand on the line — "DEBIT ****2012 APPROVED".
+// Common in cannabis retail, where "cashless ATM" terminals run PIN debit.
+// Checked AFTER every card-brand rule so a branded debit card ("VISA DEBIT
+// ****1234") still reports its network rather than collapsing to "debit".
+const DEBIT_RE = /\bdebit\b/i;
 
 export function detectPaymentMethod(paymentMethod: string | null | undefined): PaymentNetwork | null {
   if (!paymentMethod) return null;
@@ -342,10 +360,13 @@ export function detectPaymentMethod(paymentMethod: string | null | undefined): P
   if (lower.includes("google pay") || lower.includes("gpay")) return "google_pay";
   if (lower.includes("paypal")) return "paypal";
   if (lower.includes("venmo")) return "venmo";
-  if (lower.includes("cash app") || lower.includes("cashapp")) return "cash_app";
+  if (CASH_APP_RE.test(lower)) return "cash_app";
   if (lower.includes("ebt") || lower.includes("food stamp")) return "ebt";
   if (lower.includes("check") || lower.includes("cheque")) return "check";
-  if (lower === "cash" || lower.includes(" cash ")) return "cash";
+  // Was `lower === "cash" || lower.includes(" cash ")`, which only matched a
+  // line that was exactly "CASH" or had cash surrounded by spaces — so
+  // "CASH APPROVED" and "CASH TENDER" both fell through to null.
+  if (CASH_TENDER_RE.test(lower)) return "cash";
   if (lower.includes("visa")) return "visa";
   if (lower.includes("mastercard") || lower.includes("master card")) return "mastercard";
   if (lower.includes("amex") || lower.includes("american express")) return "amex";
@@ -354,6 +375,7 @@ export function detectPaymentMethod(paymentMethod: string | null | undefined): P
   if (lower.includes("jcb")) return "jcb";
   if (lower.includes("unionpay") || lower.includes("china unionpay")) return "unionpay";
   if (lower.includes("maestro")) return "maestro";
+  if (DEBIT_RE.test(lower)) return "debit";
   return null;
 }
 
@@ -372,6 +394,11 @@ export const PAYMENT_METHOD_STYLES: Record<PaymentNetwork, { bg: string; label: 
   venmo: { bg: "#008CFF", label: "VENMO", textColor: "#FFFFFF" },
   cash_app: { bg: "#00D632", label: "CASH APP", textColor: "#FFFFFF" },
   cash: { bg: "#22C55E", label: "CASH", textColor: "#FFFFFF" },
+  // Neutral slate, deliberately not a card-network colour: an unbranded PIN
+  // debit / "cashless ATM" tender belongs with `check` (the other
+  // no-network-brand tender) rather than borrowing Visa's navy or Maestro's
+  // blue, which would assert a network the receipt never printed.
+  debit: { bg: "#475569", label: "DEBIT", textColor: "#FFFFFF" },
   ebt: { bg: "#4CAF50", label: "EBT", textColor: "#FFFFFF" },
   check: { bg: "#6B7280", label: "CHECK", textColor: "#FFFFFF" },
 };

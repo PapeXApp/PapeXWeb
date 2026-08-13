@@ -145,7 +145,17 @@ export function PaymentChip({ method, last4 }: { method: PaymentNetwork | null; 
   if (!method) {
     return <span style={{ color: T.textMuted }}>—</span>;
   }
-  const style = PAYMENT_METHOD_STYLES[method];
+  // `method` is typed as PaymentNetwork, but it arrives as free JSON from the
+  // merchant API — whose own detectPaymentNetwork() is a hand-kept copy of
+  // detectPaymentMethod(). If that copy learns a network before this build
+  // does (it did for "debit"), the lookup misses and `style.bg` would throw,
+  // taking the whole transactions table down over one unknown chip. Degrade
+  // to a neutral chip showing the raw value instead.
+  const style = PAYMENT_METHOD_STYLES[method] ?? {
+    bg: "#334155",
+    label: String(method).replace(/_/g, " "),
+    textColor: "#FFFFFF",
+  };
   return (
     <span className="inline-flex items-center gap-1.5">
       <span
