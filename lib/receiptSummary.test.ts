@@ -120,6 +120,12 @@ test("detectPaymentMethod covers every network the app chip table supports", () 
 //      literal substring of "cash approved" and cash_app is checked first;
 //   3. "DEBIT ****2012 APPROVED" matched no rule, so PaymentChip rendered "—".
 //
+// A fourth followed once the RDH dispensary demo went in: ACH / bank-pay apps
+// (Aeropay, Dutchie Pay, Stronghold) are a real dispensary tender and hit the
+// same em dash, so `bank_pay` was added — word-boundary matched, because "ach"
+// is a substring of "each"/"spinach"/"attach" and "Dutchie" alone is the POS
+// platform printed in receipt footers, not a tender.
+//
 // This table is the lockstep guard for this copy of the rules. The equivalent
 // tables live in Papex_RDH/lambdas/indexer/tests/payment-detection.test.js,
 // Papex_RDH/lambdas/merchant-api/tests/handler.test.js and
@@ -146,6 +152,22 @@ const PAYMENT_CLASSIFICATION: Array<[string, PaymentNetwork | null]> = [
   // a branded debit card keeps its network, not "debit"
   ["VISA DEBIT ****1234 APPROVED", "visa"],
   ["MASTERCARD DEBIT ****5555", "mastercard"],
+  // ACH / bank-pay apps
+  ["AEROPAY ****1234 APPROVED", "bank_pay"],
+  ["AEROPAY", "bank_pay"],
+  ["Aeropay", "bank_pay"],
+  ["AEROPAY            42.47", "bank_pay"],
+  ["DUTCHIE PAY ****5678 APPROVED", "bank_pay"],
+  ["DUTCHIEPAY", "bank_pay"],
+  ["Dutchie Pay", "bank_pay"],
+  ["STRONGHOLD ****9012 APPROVED", "bank_pay"],
+  ["CANPAY ****3344", "bank_pay"],
+  ["HYPUR", "bank_pay"],
+  ["ACH", "bank_pay"],
+  ["ACH TRANSFER       42.47", "bank_pay"],
+  // a named bank-pay brand outranks the generic debit fallback
+  ["CANPAY DEBIT ****1234", "bank_pay"],
+  ["ACH DEBIT ****7788", "bank_pay"],
   // existing card brands, unaffected
   ["VISA ****1234 APPROVED", "visa"],
   ["MASTERCARD ENDING IN 4444", "mastercard"],
@@ -173,6 +195,14 @@ const PAYMENT_CLASSIFICATION: Array<[string, PaymentNetwork | null]> = [
   ["Store credit", null],
   ["some random line", null],
   ["", null],
+  // the substring traps the bank-pay rule must not fall into: "ach" is a
+  // substring of ordinary receipt text, and "Dutchie" alone is the POS /
+  // e-commerce platform printed in dispensary footers, not a tender
+  ["Powered by Dutchie", null],
+  ["SPINACH WRAP         8.00", null],
+  ["EACH ADDITIONAL ITEM 2.00", null],
+  ["Please attach your receipt", null],
+  ["MACHINE #4", null],
 ];
 
 for (const [paymentLine, expected] of PAYMENT_CLASSIFICATION) {
@@ -200,6 +230,27 @@ test("debit renders its own chip, distinct from the card networks", () => {
     label: "DEBIT",
     textColor: "#FFFFFF",
   });
+});
+
+test("bank_pay renders its own chip, distinct from the card networks and cash", () => {
+  assert.deepEqual(PAYMENT_METHOD_STYLES.bank_pay, {
+    bg: "#0F766E",
+    label: "BANK PAY",
+    textColor: "#FFFFFF",
+  });
+});
+
+test("no two payment networks share a chip colour", () => {
+  // The chip is the only thing distinguishing tenders in the transactions
+  // table, so two networks rendering the same swatch is a silent readability
+  // bug — and bank_pay is the fourth no-card-network tender competing for the
+  // neutral end of the palette alongside cash, debit and check.
+  const seen = new Map<string, string>();
+  for (const [network, style] of Object.entries(PAYMENT_METHOD_STYLES)) {
+    const clash = seen.get(style.bg);
+    assert.ok(!clash, `${network} and ${clash} both render ${style.bg}`);
+    seen.set(style.bg, network);
+  }
 });
 
 test("extractLastFour handles 'ending in', asterisks, and bare trailing digits", () => {

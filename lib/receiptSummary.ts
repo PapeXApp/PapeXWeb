@@ -108,6 +108,13 @@ const PAYMENT_BRAND_HINTS = [
 
 function looksLikePayment(t: string): boolean {
   const l = t.toLowerCase();
+  // Not a PAYMENT_BRAND_HINTS entry: that list is matched as plain substrings
+  // and "ach" is a substring of "each" and "attach", so the bank-pay brands
+  // need BANK_PAY_RE's word boundaries. Unlike cash — which looksLikeTotal
+  // already absorbs via its "cash" hint — nothing else here catches a bare
+  // "AEROPAY   42.47", so without this gate that tender line has a trailing
+  // amount and letters and would be extracted as a purchased line item.
+  if (BANK_PAY_RE.test(l)) return true;
   return PAYMENT_BRAND_HINTS.some((brand) => l.includes(brand));
 }
 
@@ -333,6 +340,7 @@ export type PaymentNetwork =
   | "cash_app"
   | "cash"
   | "debit"
+  | "bank_pay"
   | "ebt"
   | "check";
 
@@ -353,6 +361,26 @@ const CASH_TENDER_RE = /\bcash\b(?!\s*back)/i;
 // ****1234") still reports its network rather than collapsing to "debit".
 const DEBIT_RE = /\bdebit\b/i;
 
+// ACH / bank-pay apps — Aeropay, Dutchie Pay, Stronghold, CanPay, Hypur, or a
+// bare "ACH" line. This is a real and growing cannabis-retail tender rail,
+// because the card networks won't clear the category. Before this rule an
+// "AEROPAY ****1234 APPROVED" line classified as nothing and the dashboard
+// rendered that transaction's payment column as a muted em dash.
+//
+// Word-boundary matched, not substring, for exactly the reason the cash rule
+// was: a brand name that is a substring of ordinary receipt text silently
+// claims every receipt that prints it. The two live traps here:
+//   dutchie\s*pay — "Dutchie" alone is the POS/e-commerce platform whose name
+//                   prints in dispensary receipt footers ("Powered by
+//                   Dutchie"); only the two-word form is a tender.
+//   \bach\b       — the boundaries hold it to the standalone token, off
+//                   "spinach"/"attach".
+//
+// Checked BEFORE the generic ebt/check/cash/debit fallbacks so a named brand
+// always outranks them: "CANPAY DEBIT ****1234" is a bank-pay tender, not the
+// unbranded PIN debit that DEBIT_RE is for.
+const BANK_PAY_RE = /\b(?:aeropay|dutchie\s*pay|stronghold|canpay|hypur|ach)\b/i;
+
 export function detectPaymentMethod(paymentMethod: string | null | undefined): PaymentNetwork | null {
   if (!paymentMethod) return null;
   const lower = paymentMethod.toLowerCase();
@@ -361,6 +389,7 @@ export function detectPaymentMethod(paymentMethod: string | null | undefined): P
   if (lower.includes("paypal")) return "paypal";
   if (lower.includes("venmo")) return "venmo";
   if (CASH_APP_RE.test(lower)) return "cash_app";
+  if (BANK_PAY_RE.test(lower)) return "bank_pay";
   if (lower.includes("ebt") || lower.includes("food stamp")) return "ebt";
   if (lower.includes("check") || lower.includes("cheque")) return "check";
   // Was `lower === "cash" || lower.includes(" cash ")`, which only matched a
@@ -399,6 +428,12 @@ export const PAYMENT_METHOD_STYLES: Record<PaymentNetwork, { bg: string; label: 
   // no-network-brand tender) rather than borrowing Visa's navy or Maestro's
   // blue, which would assert a network the receipt never printed.
   debit: { bg: "#475569", label: "DEBIT", textColor: "#FFFFFF" },
+  // Teal, for the same reason `debit` is slate: an ACH / bank-pay tender has
+  // no card network behind it, so it must not borrow one of the network
+  // blues (Visa navy, Maestro, Amex, G Pay) sitting in this table. Distinct
+  // from the greens too — cash is #22C55E and Cash App #00D632, and a
+  // bank-pay row is neither. 5.5:1 on white, so the bold chip label clears AA.
+  bank_pay: { bg: "#0F766E", label: "BANK PAY", textColor: "#FFFFFF" },
   ebt: { bg: "#4CAF50", label: "EBT", textColor: "#FFFFFF" },
   check: { bg: "#6B7280", label: "CHECK", textColor: "#FFFFFF" },
 };
