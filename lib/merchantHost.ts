@@ -39,13 +39,40 @@ function hostnameOnly(host: string): string {
  * is treated as the merchant host. That is only ever correct for a throwaway
  * preview whose sole purpose is demoing the dashboard.
  *
- * NEVER set this on the production deployment — it would turn papex.app itself
- * into the merchant dashboard and take the marketing site down. It is
- * deliberately not read from any committed env file; it must be passed
- * explicitly per-deployment, so there is no way to enable it by accident.
+ * ─────────────────────────────────────────────────────────────────────────
+ * !! READ THIS BEFORE MERGING THE MERCHANT DEMO BRANCH TO main !!
+ *
+ * The flag IS committed, in vercel.json's `build.env`, on the
+ * claude/merchant-dashboard-tunnel-setup-* branch — so that the preview
+ * Vercel auto-builds from a branch push serves the dashboard without anyone
+ * having to set a dashboard env var. That was a deliberate exception to this
+ * file's original "never read it from a committed env file" rule, and it is
+ * only survivable because of the production guard below.
+ *
+ * If `vercel.json` reaches main with `NEXT_PUBLIC_MERCHANT_DEMO_HOST_ANY`
+ * still in `build.env`, the ONLY thing standing between papex.app and being
+ * replaced by the merchant dashboard is that guard. Do not "simplify" it
+ * away. Either strip the flag from vercel.json when merging, or keep the
+ * guard — never neither. lib/merchantHost.test.ts asserts the guard holds;
+ * if those tests start failing, that is this scenario, not a flaky test.
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ * The guard fails CLOSED: on Vercel, demo mode requires positive proof that
+ * this is not the production deployment. An unrecognised or missing
+ * VERCEL_ENV disables it rather than allowing it, so a misconfigured project
+ * (system env vars turned off, say) degrades to "marketing site keeps
+ * working" instead of "marketing site is gone". Local dev sets no VERCEL_*
+ * at all and is unaffected.
  */
 function demoModeEnabled(): boolean {
-  return process.env.NEXT_PUBLIC_MERCHANT_DEMO_HOST_ANY === "1";
+  if (process.env.NEXT_PUBLIC_MERCHANT_DEMO_HOST_ANY !== "1") return false;
+
+  // Not on Vercel (local dev, `next start` on a box, CI): nothing to guard.
+  const onVercel = process.env.VERCEL === "1" || Boolean(process.env.VERCEL_ENV);
+  if (!onVercel) return true;
+
+  const vercelEnv = process.env.VERCEL_ENV;
+  return vercelEnv === "preview" || vercelEnv === "development";
 }
 
 export function isMerchantHost(host: string): boolean {

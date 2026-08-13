@@ -9,5 +9,13 @@
       "src": "package.json",
       "use": "@vercel/next"
     }
-  ]
-} 
+  ],
+  "build": {
+    "env": {
+      "ZZ_WARNING_1_DO_NOT_MERGE_THIS_BUILD_ENV_BLOCK_TO_MAIN": "NEXT_PUBLIC_MERCHANT_DEMO_HOST_ANY makes EVERY host serve the merchant dashboard, marketing site included.",
+      "ZZ_WARNING_2_WHY_IT_IS_SURVIVABLE": "lib/merchantHost.ts refuses demo mode when VERCEL_ENV=production, so previews get the dashboard and papex.app does not. Strip this block when merging, or keep that guard. Never neither.",
+      "ZZ_WARNING_3_TESTS": "npm run test:merchantHost has PROD GUARD cases covering this. If they fail, papex.app is at risk.",
+      "NEXT_PUBLIC_MERCHANT_DEMO_HOST_ANY": "1"
+    }
+  }
+}

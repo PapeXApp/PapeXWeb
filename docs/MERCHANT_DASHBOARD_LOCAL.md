@@ -1,5 +1,23 @@
 # Running the merchant dashboard locally (and over a Cloudflare tunnel)
 
+> ## ⚠️ Before merging this branch to `main`
+>
+> `vercel.json` on this branch commits
+> `NEXT_PUBLIC_MERCHANT_DEMO_HOST_ANY=1` into `build.env`, which makes **every
+> host serve the merchant dashboard** — the marketing site included. It is
+> there so the preview Vercel auto-builds from a branch push actually shows the
+> dashboard instead of 404ing.
+>
+> That is only safe because `lib/merchantHost.ts` refuses demo mode when
+> `VERCEL_ENV === "production"`. Previews get the dashboard; papex.app does not.
+>
+> **When merging: either strip the `build.env` block from `vercel.json`, or keep
+> the production guard. Never neither.** `npm run test:merchantHost` has `PROD
+> GUARD` cases that fail loudly if the guard is weakened — those failures mean
+> papex.app is one deploy away from being replaced by the merchant dashboard,
+> not that a test is flaky.
+
+
 The merchant dashboard is `app/merchant/*` in this repo. It is not a separate
 project — it is served from the same Vercel deployment, selected by **Host
 header**, and that one fact is the source of every surprise below.
@@ -43,12 +61,14 @@ so no other deployment, and above all not production, can inherit it.
 
 Two things to know:
 
-**The auto-preview from a branch push will NOT work.** `vercel.json` has
-`github.enabled: true`, so Vercel already builds every pushed branch — but that
-build has no demo flag, so its URL serves the marketing site at `/` and 404s
-`/merchant/*`. Only a deployment carrying the flag serves the dashboard. (Its
-`github.silent: true` also means Vercel posts no comment or status back to
-GitHub, so that URL is only visible in the Vercel dashboard.)
+**The auto-preview from a branch push works on this branch only.**
+`vercel.json` has `github.enabled: true`, so Vercel builds every pushed branch —
+and on this branch its `build.env` carries the demo flag, so that preview serves
+the dashboard with no further setup. Find its URL in the Vercel dashboard under
+the project's Deployments, filtered to this branch: `github.silent: true` means
+Vercel posts no comment or commit status, so the URL appears nowhere in GitHub.
+On any branch without that `build.env` block, the auto-preview shows the
+marketing site at `/` and 404s `/merchant/*`.
 
 **Preview URLs may be login-walled.** Vercel's Deployment Protection defaults to
 requiring a Vercel account on preview deployments for Pro teams. If the point is

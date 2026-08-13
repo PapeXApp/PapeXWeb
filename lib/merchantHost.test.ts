@@ -141,5 +141,71 @@ test("demo mode OFF by default: papex.app/merchant still 404-rewrites", () => {
   });
 });
 
+// ---- production guard -------------------------------------------------------
+//
+// These are the tests that keep papex.app alive. The demo flag is committed in
+// vercel.json's build.env on the merchant demo branch, so if that file is ever
+// merged to main the guard below is the only thing preventing the production
+// deployment from serving the merchant dashboard in place of the marketing
+// site. A failure here is not flakiness — it means that scenario is live.
+//
+// See the block comment on demoModeEnabled() in lib/merchantHost.ts.
+
+function withEnv(vars: Record<string, string | undefined>, fn: () => void) {
+  const saved = new Map<string, string | undefined>();
+  for (const [k, v] of Object.entries(vars)) {
+    saved.set(k, process.env[k]);
+    if (v === undefined) delete process.env[k];
+    else process.env[k] = v;
+  }
+  try {
+    fn();
+  } finally {
+    for (const [k, v] of saved) {
+      if (v === undefined) delete process.env[k];
+      else process.env[k] = v;
+    }
+  }
+}
+
+test("PROD GUARD: flag set + VERCEL_ENV=production -> demo mode REFUSED", () => {
+  withEnv({ [DEMO_FLAG]: "1", VERCEL: "1", VERCEL_ENV: "production" }, () => {
+    assert.equal(isMerchantHost("papex.app"), false);
+    assert.deepEqual(resolveMerchantRewrite("papex.app", "/"), { action: "none" });
+  });
+});
+
+test("PROD GUARD: flag set + VERCEL_ENV=preview -> demo mode allowed", () => {
+  withEnv({ [DEMO_FLAG]: "1", VERCEL: "1", VERCEL_ENV: "preview" }, () => {
+    assert.equal(isMerchantHost("papexweb-git-merchant-x.vercel.app"), true);
+  });
+});
+
+test("PROD GUARD: fails closed when VERCEL_ENV is missing on Vercel", () => {
+  // System env vars disabled, or a future Vercel change: refuse rather than
+  // gamble the marketing site on an absent signal.
+  withEnv({ [DEMO_FLAG]: "1", VERCEL: "1", VERCEL_ENV: undefined }, () => {
+    assert.equal(isMerchantHost("papex.app"), false);
+  });
+});
+
+test("PROD GUARD: fails closed on an unrecognised VERCEL_ENV", () => {
+  withEnv({ [DEMO_FLAG]: "1", VERCEL: "1", VERCEL_ENV: "staging" }, () => {
+    assert.equal(isMerchantHost("papex.app"), false);
+  });
+});
+
+test("PROD GUARD: local dev (no VERCEL_*) is unaffected by the guard", () => {
+  withEnv({ [DEMO_FLAG]: "1", VERCEL: undefined, VERCEL_ENV: undefined }, () => {
+    assert.equal(isMerchantHost("localhost:3000"), true);
+  });
+});
+
+test("PROD GUARD: guard cannot resurrect demo mode without the flag", () => {
+  withEnv({ [DEMO_FLAG]: undefined, VERCEL: "1", VERCEL_ENV: "preview" }, () => {
+    assert.equal(isMerchantHost("papexweb-git-merchant-x.vercel.app"), false);
+  });
+});
+
 console.log(`\n${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);

@@ -1,0 +1,65 @@
+name: Merchant demo flag guard
+
+# Why this exists
+#
+# The merchant dashboard (app/merchant/*) is selected by Host header, not by
+# path. NEXT_PUBLIC_MERCHANT_DEMO_HOST_ANY=1 overrides that and makes EVERY
+# host serve the dashboard — which is correct for a throwaway preview and
+# catastrophic for production, where it would replace papex.app with the
+# merchant dashboard.
+#
+# The merchant demo branch commits that flag into vercel.json's build.env so
+# Vercel's auto-preview serves the dashboard. That is safe there and only
+# there. It must never reach main, because .github/workflows/vercel-deploy-hook.yml
+# fires a PRODUCTION deploy on every push to main — there is no manual gate
+# between a merge and papex.app changing.
+#
+# Two independent defences, because either alone can be edited away:
+#   1. this job, which refuses to let the flag into main
+#   2. the VERCEL_ENV === "production" guard in lib/merchantHost.ts, exercised
+#      by the PROD GUARD cases in lib/merchantHost.test.ts
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  no-demo-flag-on-main:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Reject the demo host override in vercel.json
+        run: |
+          if grep -q 'NEXT_PUBLIC_MERCHANT_DEMO_HOST_ANY' vercel.json; then
+            echo "::error file=vercel.json::NEXT_PUBLIC_MERCHANT_DEMO_HOST_ANY must not reach main."
+            echo ""
+            echo "vercel.json still carries the merchant demo host override."
+            echo "Pushing this to main triggers a production deploy (see"
+            echo ".github/workflows/vercel-deploy-hook.yml) that would make"
+            echo "papex.app serve the merchant dashboard instead of the"
+            echo "marketing site."
+            echo ""
+            echo "Fix: delete the \"build\": { \"env\": { ... } } block from"
+            echo "vercel.json. It is only meant to exist on the merchant demo"
+            echo "branch, where it makes Vercel's auto-preview serve the"
+            echo "dashboard."
+            exit 1
+          fi
+          echo "OK - no demo host override in vercel.json"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      # The production guard in lib/merchantHost.ts is the second line of
+      # defence. If someone strips this workflow but keeps the guard, or vice
+      # versa, one of the two still holds. Both failing together is the only
+      # way papex.app is exposed.
+      - name: Host-routing tests (includes PROD GUARD cases)
+        run: npm run test:merchantHost
