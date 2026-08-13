@@ -2,20 +2,26 @@
 
 > ## ⚠️ Before merging this branch to `main`
 >
-> `vercel.json` on this branch commits
-> `NEXT_PUBLIC_MERCHANT_DEMO_HOST_ANY=1` into `build.env`, which makes **every
-> host serve the merchant dashboard** — the marketing site included. It is
-> there so the preview Vercel auto-builds from a branch push actually shows the
-> dashboard instead of 404ing.
+> `vercel.json` on this branch commits two overrides into `build.env`, so that
+> the preview Vercel auto-builds from a branch push is a working demo rather
+> than a 404:
 >
-> That is only safe because `lib/merchantHost.ts` refuses demo mode when
-> `VERCEL_ENV === "production"`. Previews get the dashboard; papex.app does not.
+> | Flag | Effect |
+> |---|---|
+> | `NEXT_PUBLIC_MERCHANT_DEMO_HOST_ANY=1` | **every** host serves the merchant dashboard, marketing site included |
+> | `NEXT_PUBLIC_MERCHANT_MOCK=1` | the dashboard serves invented transactions instead of real ones |
 >
-> **When merging: either strip the `build.env` block from `vercel.json`, or keep
-> the production guard. Never neither.** `npm run test:merchantHost` has `PROD
-> GUARD` cases that fail loudly if the guard is weakened — those failures mean
-> papex.app is one deploy away from being replaced by the merchant dashboard,
-> not that a test is flaky.
+> On production the first replaces papex.app with the dashboard; the second
+> shows a real merchant fabricated numbers they might reconcile against or act
+> on. Both are routed through `demoOverridesAllowed()` in `lib/deployEnv.ts`,
+> which refuses them on a production Vercel deployment and fails closed when the
+> environment can't be determined.
+>
+> **When merging: either strip the `build` block from `vercel.json`, or keep
+> that gate. Never neither.** `.github/workflows/merchant-demo-flag-guard.yml`
+> enforces the first on PRs to `main`; `npm test` enforces the second. A failure
+> in either means papex.app or a merchant's numbers are one deploy away from
+> being wrong — not that a test is flaky.
 
 
 The merchant dashboard is `app/merchant/*` in this repo. It is not a separate
@@ -63,12 +69,15 @@ Two things to know:
 
 **The auto-preview from a branch push works on this branch only.**
 `vercel.json` has `github.enabled: true`, so Vercel builds every pushed branch —
-and on this branch its `build.env` carries the demo flag, so that preview serves
-the dashboard with no further setup. Find its URL in the Vercel dashboard under
-the project's Deployments, filtered to this branch: `github.silent: true` means
-Vercel posts no comment or commit status, so the URL appears nowhere in GitHub.
-On any branch without that `build.env` block, the auto-preview shows the
-marketing site at `/` and 404s `/merchant/*`.
+and on this branch its `build.env` carries both demo flags, so that preview
+serves the dashboard on mock data with no backend and no further setup. Find its
+URL in the Vercel dashboard under the project's Deployments, filtered to this
+branch: `github.silent: true` means Vercel posts no comment or commit status, so
+the URL appears nowhere in GitHub. On any branch without that `build.env` block,
+the auto-preview shows the marketing site at `/` and 404s `/merchant/*`.
+
+You still need a Firebase account in `papexweb-aed97` to get past
+`/merchant/login` — the auth gate applies in mock mode too.
 
 **Preview URLs may be login-walled.** Vercel's Deployment Protection defaults to
 requiring a Vercel account on preview deployments for Pro teams. If the point is

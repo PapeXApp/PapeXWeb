@@ -23,6 +23,7 @@
 
 import type { PaymentNetwork } from "./receiptSummary";
 import * as mock from "./merchantMock";
+import { demoOverridesAllowed } from "./deployEnv";
 
 export type { PaymentNetwork };
 
@@ -45,7 +46,19 @@ export const RDH_API_BASE =
  */
 export const MERCHANT_API_BASE = "/api/rdh";
 
-export const MERCHANT_MOCK = process.env.NEXT_PUBLIC_MERCHANT_MOCK === "1";
+/**
+ * Serve lib/merchantMock.ts's synthetic dataset instead of the real API.
+ *
+ * Gated by demoOverridesAllowed() for the same reason the host override is
+ * (lib/deployEnv.ts): the flag is committed in vercel.json's `build.env` on
+ * the merchant demo branch so the auto-preview demos with no backend, and if
+ * that file ever reaches main, an actual merchant signing in to
+ * merchant.papex.app would be shown invented transactions and totals — numbers
+ * they might reconcile against, dispute, or make a decision on. Silently wrong
+ * data is worse than an obvious outage, so this fails closed on production.
+ */
+export const MERCHANT_MOCK =
+  process.env.NEXT_PUBLIC_MERCHANT_MOCK === "1" && demoOverridesAllowed();
 
 // ---------------------------------------------------------------------------
 // Shared domain types

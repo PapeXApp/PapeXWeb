@@ -19,6 +19,8 @@
 //     all), this function is a second, defensive no-op for anything that
 //     isn't the merchant host rewriting a non-/merchant path.
 
+import { demoOverridesAllowed } from "./deployEnv";
+
 export type MerchantRouteDecision =
   | { action: "rewrite"; pathname: string }
   | { action: "none" };
@@ -66,13 +68,7 @@ function hostnameOnly(host: string): string {
  */
 function demoModeEnabled(): boolean {
   if (process.env.NEXT_PUBLIC_MERCHANT_DEMO_HOST_ANY !== "1") return false;
-
-  // Not on Vercel (local dev, `next start` on a box, CI): nothing to guard.
-  const onVercel = process.env.VERCEL === "1" || Boolean(process.env.VERCEL_ENV);
-  if (!onVercel) return true;
-
-  const vercelEnv = process.env.VERCEL_ENV;
-  return vercelEnv === "preview" || vercelEnv === "development";
+  return demoOverridesAllowed();
 }
 
 export function isMerchantHost(host: string): boolean {

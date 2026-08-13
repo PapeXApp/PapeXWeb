@@ -31,24 +31,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Reject the demo host override in vercel.json
+      # Rejects the whole build.env block rather than specific keys: the demo
+      # branch has grown a second flag already (MOCK alongside DEMO_HOST_ANY),
+      # and a key-by-key check silently stops covering whatever is added next.
+      - name: Reject demo build.env overrides in vercel.json
         run: |
-          if grep -q 'NEXT_PUBLIC_MERCHANT_DEMO_HOST_ANY' vercel.json; then
-            echo "::error file=vercel.json::NEXT_PUBLIC_MERCHANT_DEMO_HOST_ANY must not reach main."
-            echo ""
-            echo "vercel.json still carries the merchant demo host override."
-            echo "Pushing this to main triggers a production deploy (see"
-            echo ".github/workflows/vercel-deploy-hook.yml) that would make"
-            echo "papex.app serve the merchant dashboard instead of the"
-            echo "marketing site."
-            echo ""
-            echo "Fix: delete the \"build\": { \"env\": { ... } } block from"
-            echo "vercel.json. It is only meant to exist on the merchant demo"
-            echo "branch, where it makes Vercel's auto-preview serve the"
-            echo "dashboard."
-            exit 1
-          fi
-          echo "OK - no demo host override in vercel.json"
+          node -e '
+            const cfg = JSON.parse(require("fs").readFileSync("vercel.json", "utf8"));
+            const env = cfg.build && cfg.build.env;
+            const keys = env ? Object.keys(env) : [];
+            if (!keys.length) { console.log("OK - vercel.json carries no build.env overrides"); process.exit(0); }
+            console.log("::error file=vercel.json::vercel.json must not carry build.env overrides on main. Found: " + keys.join(", "));
+            console.log("");
+            console.log("These flags exist only on the merchant demo branch, where they");
+            console.log("make Vercel auto-preview a working demo:");
+            console.log("  NEXT_PUBLIC_MERCHANT_DEMO_HOST_ANY - every host serves the dashboard");
+            console.log("  NEXT_PUBLIC_MERCHANT_MOCK          - dashboard serves invented data");
+            console.log("");
+            console.log("Pushing them to main triggers a production deploy (see");
+            console.log(".github/workflows/vercel-deploy-hook.yml) with no manual gate.");
+            console.log("");
+            console.log("Fix: delete the \"build\" block from vercel.json.");
+            process.exit(1);
+          '
 
       - uses: actions/setup-node@v4
         with:
@@ -61,5 +66,5 @@ jobs:
       # defence. If someone strips this workflow but keeps the guard, or vice
       # versa, one of the two still holds. Both failing together is the only
       # way papex.app is exposed.
-      - name: Host-routing tests (includes PROD GUARD cases)
-        run: npm run test:merchantHost
+      - name: Guard + host-routing tests (includes PROD GUARD cases)
+        run: npm run test:deployEnv && npm run test:merchantHost
