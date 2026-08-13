@@ -27,6 +27,34 @@ server and the tunnel together.
 `cloudflared` for the tunnel: `brew install cloudflared` on macOS, or
 <https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/>.
 
+## Shareable URL without a tunnel: a Vercel preview
+
+A quick tunnel dies with the process and only lives as long as your laptop is
+awake. For a link that survives, deploy a preview:
+
+```bash
+npm run preview:merchant     # vercel deploy --build-env NEXT_PUBLIC_MERCHANT_DEMO_HOST_ANY=1
+```
+
+That prints a `https://…vercel.app` URL. The `--build-env` flag is the whole
+point: it passes the demo flag to that one deployment without writing it into
+`vercel.json`, `.env.example`, or the project's Preview environment settings —
+so no other deployment, and above all not production, can inherit it.
+
+Two things to know:
+
+**The auto-preview from a branch push will NOT work.** `vercel.json` has
+`github.enabled: true`, so Vercel already builds every pushed branch — but that
+build has no demo flag, so its URL serves the marketing site at `/` and 404s
+`/merchant/*`. Only a deployment carrying the flag serves the dashboard. (Its
+`github.silent: true` also means Vercel posts no comment or status back to
+GitHub, so that URL is only visible in the Vercel dashboard.)
+
+**Preview URLs may be login-walled.** Vercel's Deployment Protection defaults to
+requiring a Vercel account on preview deployments for Pro teams. If the point is
+to send the link to a merchant, either disable protection for the deployment or
+issue a Protection Bypass token — otherwise they hit Vercel's login, not ours.
+
 ## Host routing — the part that trips people up
 
 `middleware.ts` (logic in `lib/merchantHost.ts`) rewrites by Host:

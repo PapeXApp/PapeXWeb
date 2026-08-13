@@ -7,6 +7,7 @@
     "dev:clean": "rm -rf .next && next dev --turbopack",
     "dev:merchant": "NEXT_PUBLIC_MERCHANT_DEMO_HOST_ANY=1 next dev --turbopack",
     "tunnel:merchant": "./scripts/merchant-tunnel.sh",
+    "preview:merchant": "vercel deploy --yes --build-env NEXT_PUBLIC_MERCHANT_DEMO_HOST_ANY=1",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
