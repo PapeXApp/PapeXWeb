@@ -9,5 +9,14 @@
       "src": "package.json",
       "use": "@vercel/next"
     }
-  ]
-} 
+  ],
+  "build": {
+    "env": {
+      "ZZ_WARNING_1_DO_NOT_MERGE_THIS_BUILD_ENV_BLOCK_TO_MAIN": "These two flags exist so Vercel's auto-preview of the merchant demo branch is a working demo. DEMO_HOST_ANY makes EVERY host serve the merchant dashboard, marketing site included. MOCK makes the dashboard serve invented transactions instead of real ones.",
+      "ZZ_WARNING_2_WHY_IT_IS_SURVIVABLE": "lib/deployEnv.ts refuses both overrides on a production Vercel deployment, so previews are demos and papex.app is not. Strip this block when merging, or keep that gate. Never neither.",
+      "ZZ_WARNING_3_TESTS": "npm test covers this (PROD GUARD + deployEnv cases). If they fail, papex.app or a real merchant's numbers are at risk.",
+      "NEXT_PUBLIC_MERCHANT_DEMO_HOST_ANY": "1",
+      "NEXT_PUBLIC_MERCHANT_MOCK": "1"
+    }
+  }
+}
