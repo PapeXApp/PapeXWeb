@@ -25,7 +25,7 @@ import { useMerchantAuth } from "../AuthContext";
 import { getInsights, getTapRate, type InsightsWindow, type MerchantInsights, type TapRate } from "@/lib/merchantApi";
 import { Card, StatTile, LoadingBlock, ErrorBanner } from "../ui/primitives";
 import { T } from "../ui/tokens";
-import { hourLabel, friendlyZoneLabel } from "../ui/format";
+import { hourLabel, friendlyZoneLabel, formatMoney, formatCount } from "../ui/format";
 import { BarChart, type BarDatum } from "./BarChart";
 
 const WINDOWS: { value: InsightsWindow; label: string }[] = [
@@ -89,7 +89,7 @@ function TapRateTile({ tapRate, loading }: { tapRate: TapRate | null; loading: b
             {tapRate.rate.toFixed(1)}%
           </span>
           <span className="text-xs" style={{ color: T.textSecondary }}>
-            {tapRate.claimed} of {tapRate.total} receipts viewed on PapeX
+            {formatCount(tapRate.claimed)} of {formatCount(tapRate.total)} receipts viewed on PapeX
           </span>
         </>
       )}
@@ -139,9 +139,9 @@ export default function InsightsPage() {
   }, [window_, getIdToken]);
 
   const hourData: BarDatum[] =
-    insights?.byHour.map((b) => ({ label: hourLabel(b.hour), value: b.count, sub: `$${b.gross.toFixed(2)}` })) ?? [];
+    insights?.byHour.map((b) => ({ label: hourLabel(b.hour), value: b.count, sub: formatMoney(b.gross) })) ?? [];
   const dowData: BarDatum[] =
-    insights?.byDayOfWeek.map((b) => ({ label: b.label, value: b.count, sub: `$${b.gross.toFixed(2)}` })) ?? [];
+    insights?.byDayOfWeek.map((b) => ({ label: b.label, value: b.count, sub: formatMoney(b.gross) })) ?? [];
 
   // Recomputed only when the selected window changes, not on every render
   // (the exact instant matters far less than "same window the charts used").
@@ -195,9 +195,9 @@ export default function InsightsPage() {
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <StatTile label="Transactions" value={insights.count} />
-            <StatTile label="Gross" value={`$${insights.gross.toFixed(2)}`} />
-            <StatTile label="Avg ticket" value={`$${insights.avgTicket.toFixed(2)}`} />
+            <StatTile label="Transactions" value={formatCount(insights.count)} />
+            <StatTile label="Gross" value={formatMoney(insights.gross)} />
+            <StatTile label="Avg ticket" value={formatMoney(insights.avgTicket)} />
             <TapRateTile tapRate={tapRate} loading={tapLoading} />
           </div>
 
@@ -215,7 +215,7 @@ export default function InsightsPage() {
                 <BarChart
                   data={hourData}
                   sparseLabels
-                  formatValue={(v) => `${v} txn${v === 1 ? "" : "s"}`}
+                  formatValue={(v) => `${formatCount(v)} txn${v === 1 ? "" : "s"}`}
                   chartLabel={zoneLabel ? `Transactions by hour of day, ${zoneLabel}` : "Transactions by hour of day"}
                   onBarClick={(i) => goToTransactions({ hour: String(insights.byHour[i].hour) })}
                 />
@@ -232,7 +232,7 @@ export default function InsightsPage() {
               ) : (
                 <BarChart
                   data={dowData}
-                  formatValue={(v) => `${v} txn${v === 1 ? "" : "s"}`}
+                  formatValue={(v) => `${formatCount(v)} txn${v === 1 ? "" : "s"}`}
                   chartLabel="Transactions by day of week"
                   onBarClick={(i) => goToTransactions({ dow: String(insights.byDayOfWeek[i].day) })}
                 />
@@ -272,7 +272,7 @@ export default function InsightsPage() {
                         <div className="h-full rounded-full" style={{ width: `${pct}%`, background: T.orange }} />
                       </div>
                       <span className="w-8 shrink-0 text-right text-xs" style={{ color: T.textSecondary }}>
-                        {item.count}
+                        {formatCount(item.count)}
                       </span>
                     </button>
                   );

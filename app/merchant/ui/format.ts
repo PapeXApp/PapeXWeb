@@ -62,3 +62,40 @@ const FRIENDLY_ZONE_LABELS: Record<string, string> = {
 export function friendlyZoneLabel(timezone: string): string {
   return FRIENDLY_ZONE_LABELS[timezone] ?? timezone;
 }
+
+/**
+ * Fixed `"en-US"` Intl formatters for money/counts — deliberately NOT
+ * `toLocaleString()` with no locale argument, which resolves to the
+ * runtime's default and can differ between the Next.js server process and a
+ * visitor's browser. Same number, two different strings, and React throws a
+ * hydration mismatch over what should've been a cosmetic detail. One
+ * instance of each, reused across every call — same rationale as
+ * DATE_FORMATTER/TIME_FORMATTER above.
+ */
+const MONEY_FORMATTER = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+});
+const COUNT_FORMATTER = new Intl.NumberFormat("en-US");
+
+/**
+ * "$130,130.81" — always 2 decimals, thousands separators, negatives as
+ * "-$12.34". `null`/`undefined` render as "—", matching the dashboard's
+ * existing missing-value convention (see formatMerchantDateTime's callers).
+ * For dollar figures only — gross, totals, subtotals, tax, line-item
+ * prices, per-shopper/per-card averages. Never for percentages or ratios.
+ */
+export function formatMoney(n: number | null | undefined): string {
+  return n == null ? "—" : MONEY_FORMATTER.format(n);
+}
+
+/**
+ * "1,428" — thousands separators, no decimals, "—" for null/undefined.
+ * For whole-number counts that can plausibly run past 999 — transactions,
+ * receipts, shoppers, merchants, devices. Never percentages, hours, or
+ * dates, and never a value used for computation/sorting (format only at
+ * the point of display).
+ */
+export function formatCount(n: number | null | undefined): string {
+  return n == null ? "—" : COUNT_FORMATTER.format(Math.round(n));
+}

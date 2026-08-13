@@ -42,11 +42,7 @@ import {
 } from "@/lib/merchantApi";
 import { Card, Button, Input, Select, FilterPill, PaymentChip, ConfidencePill, ParseFailedPill, LoadingBlock, EmptyState, ErrorBanner } from "./ui/primitives";
 import { T } from "./ui/tokens";
-import { DOW_LABELS, hourLabelLong, formatMerchantDateTime } from "./ui/format";
-
-function formatMoney(n: number | null): string {
-  return n == null ? "—" : `$${n.toFixed(2)}`;
-}
+import { DOW_LABELS, hourLabelLong, formatMerchantDateTime, formatMoney, formatCount } from "./ui/format";
 
 // ---- URL <-> filter-object plumbing --------------------------------------------
 
@@ -249,8 +245,8 @@ function TransactionsPageInner() {
 
   const pills: { key: string; label: string; onClear: () => void }[] = [];
   if (filters.q) pills.push({ key: "q", label: `Search: "${filters.q}"`, onClear: () => updateSearchParams({ q: undefined }) });
-  if (filters.minAmount != null) pills.push({ key: "minAmount", label: `Min $${filters.minAmount}`, onClear: () => updateSearchParams({ minAmount: undefined }) });
-  if (filters.maxAmount != null) pills.push({ key: "maxAmount", label: `Max $${filters.maxAmount}`, onClear: () => updateSearchParams({ maxAmount: undefined }) });
+  if (filters.minAmount != null) pills.push({ key: "minAmount", label: `Min ${formatMoney(filters.minAmount)}`, onClear: () => updateSearchParams({ minAmount: undefined }) });
+  if (filters.maxAmount != null) pills.push({ key: "maxAmount", label: `Max ${formatMoney(filters.maxAmount)}`, onClear: () => updateSearchParams({ maxAmount: undefined }) });
   if (filters.hour != null) pills.push({ key: "hour", label: `Hour: ${hourLabelLong(filters.hour)}`, onClear: () => updateSearchParams({ hour: undefined }) });
   if (filters.dow != null) pills.push({ key: "dow", label: `Day: ${DOW_LABELS[filters.dow]}`, onClear: () => updateSearchParams({ dow: undefined }) });
   if (filters.device) pills.push({ key: "device", label: `Device: ${deviceLabel(filters.device)}`, onClear: () => updateSearchParams({ device: undefined }) });
@@ -344,7 +340,7 @@ function TransactionsPageInner() {
               starts a new request, before this render). */}
           <span className="ml-auto text-xs" style={{ color: T.textMuted }}>
             {matchedCount != null ? (
-              `${matchedCount.toLocaleString()} matching transaction${matchedCount === 1 ? "" : "s"}`
+              `${formatCount(matchedCount)} matching transaction${matchedCount === 1 ? "" : "s"}`
             ) : countLoading ? (
               <span
                 className="inline-block h-3 w-32 animate-pulse rounded-full align-middle"

@@ -14,6 +14,7 @@
 
 import { Card } from "../../ui/primitives";
 import { T } from "../../ui/tokens";
+import { formatMoney } from "../../ui/format";
 import { BasisLine, InfoPopover, SuppressedCard, type InfoSection } from "../ui";
 import type { PanelMetric, UnservedDemand } from "@/lib/merchantApi";
 
@@ -67,7 +68,7 @@ export function UnservedDemandTable({ metric }: { metric: PanelMetric<UnservedDe
                   {row.categoryLabel}
                 </span>
                 <span className="text-sm whitespace-nowrap" style={{ color: T.textSecondary }}>
-                  <span style={{ color: T.text }}>${row.spendPerShopperMonth.toFixed(2)}</span>/mo ·{" "}
+                  <span style={{ color: T.text }}>{formatMoney(row.spendPerShopperMonth)}</span>/mo ·{" "}
                   <span style={{ color: T.text }}>{row.shopperPenetrationPct.toFixed(0)}%</span> of your customers buy
                 </span>
               </div>

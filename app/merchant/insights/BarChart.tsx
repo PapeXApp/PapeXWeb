@@ -18,6 +18,7 @@
 
 import { useState } from "react";
 import { T } from "../ui/tokens";
+import { formatCount } from "../ui/format";
 
 export interface BarDatum {
   label: string;
@@ -27,7 +28,11 @@ export interface BarDatum {
 
 export function BarChart({
   data,
-  formatValue = (v: number) => String(v),
+  // Every current caller passes its own formatValue (a bare count still
+  // needs the thousands-separator treatment); this default only covers a
+  // future caller that doesn't bother, so it shouldn't regress to a raw,
+  // un-comma'd `String(v)`.
+  formatValue = (v: number) => formatCount(v),
   sparseLabels = false,
   onBarClick,
   chartLabel = "Bar chart of transaction volume",
