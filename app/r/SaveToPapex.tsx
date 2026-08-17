@@ -30,9 +30,16 @@ import {
 } from "firebase/auth";
 import { getPapexV2Auth } from "@/lib/firebaseClientApp";
 
-const ORANGE = "#FB8500";
-const TEXT_MUTED = "#9AA1A8";
-const TEXT_SECONDARY = "#C4C7CC";
+// Tokens (docs/PAPEX_DESIGN_KIT_FOR_WEB.md §1) — this file keeps its own
+// literal copy rather than importing ui.tsx's `T` (this is a standalone
+// "use client" island; ui.tsx is mostly server components and importing
+// from it here would pull its whole module graph into the client bundle).
+// Values must stay in sync by hand: this was previously
+// #FB8500/#9AA1A8/#C4C7CC, the same stale pre-2026-08 snapshot ui.tsx's
+// header comment describes.
+const ORANGE = "#EB7100";
+const TEXT_MUTED = "rgba(255, 255, 255, 0.45)";
+const TEXT_SECONDARY = "rgba(255, 255, 255, 0.64)";
 const APP_STORE_FALLBACK = "https://apps.apple.com/us/app/papex/id6754945242";
 
 type ClaimOutcome =
@@ -89,8 +96,8 @@ function PrimaryButton({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className="w-full rounded-full px-6 py-3 text-sm font-medium text-white transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-      style={{ background: ORANGE }}
+      className="w-full rounded-full px-6 py-3 text-sm font-medium text-white transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+      style={{ background: ORANGE, boxShadow: disabled ? undefined : "0 8px 24px rgba(235,113,0,0.45)" }}
     >
       {children}
     </button>
@@ -142,10 +149,10 @@ function SignInSheet({
   return (
     <div
       className="w-full rounded-[24px] border p-5"
-      style={{ background: "rgba(20, 26, 36, 0.85)", borderColor: "rgba(255, 255, 255, 0.12)" }}
+      style={{ background: "rgba(0, 18, 29, 0.90)", borderColor: "rgba(255, 255, 255, 0.18)" }}
     >
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-base font-medium text-[#F4F4F4]">
+        <h2 className="text-base font-medium" style={{ color: "rgba(255,255,255,0.90)" }}>
           {mode === "signin" ? "Sign in to PapeX" : "Create a PapeX account"}
         </h2>
         <button
@@ -166,8 +173,8 @@ function SignInSheet({
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="rounded-xl border bg-transparent px-3 py-2.5 text-sm text-[#F4F4F4] outline-none placeholder:text-[#9AA1A8]"
-          style={{ borderColor: "rgba(255, 255, 255, 0.12)" }}
+          className="rounded-xl border bg-transparent px-3 py-2.5 text-sm outline-none placeholder:text-white/45"
+          style={{ borderColor: "rgba(255, 255, 255, 0.18)", color: "rgba(255,255,255,0.90)" }}
         />
         <input
           type="password"
@@ -176,10 +183,10 @@ function SignInSheet({
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="rounded-xl border bg-transparent px-3 py-2.5 text-sm text-[#F4F4F4] outline-none placeholder:text-[#9AA1A8]"
-          style={{ borderColor: "rgba(255, 255, 255, 0.12)" }}
+          className="rounded-xl border bg-transparent px-3 py-2.5 text-sm outline-none placeholder:text-white/45"
+          style={{ borderColor: "rgba(255, 255, 255, 0.18)", color: "rgba(255,255,255,0.90)" }}
         />
-        {error && <p className="text-xs" style={{ color: "#EF4444" }}>{error}</p>}
+        {error && <p className="text-xs" style={{ color: "#FF3B30" }}>{error}</p>}
         <PrimaryButton type="submit" disabled={busy}>
           {busy ? "Please wait…" : mode === "signin" ? "Sign in" : "Sign up"}
         </PrimaryButton>
@@ -276,9 +283,9 @@ export default function SaveToPapex({
       <div
         className="w-full rounded-2xl border px-4 py-3 text-center text-sm"
         style={{
-          borderColor: outcome.kind === "success" ? "rgba(16,185,129,0.35)" : "rgba(239,68,68,0.35)",
-          background: outcome.kind === "success" ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.12)",
-          color: outcome.kind === "success" ? "#6EE7B7" : "#FCA5A5",
+          borderColor: outcome.kind === "success" ? "rgba(52,199,89,0.35)" : "rgba(255,59,48,0.35)",
+          background: outcome.kind === "success" ? "rgba(52,199,89,0.12)" : "rgba(255,59,48,0.12)",
+          color: outcome.kind === "success" ? "#34C759" : "#FF3B30",
         }}
       >
         {outcome.message}

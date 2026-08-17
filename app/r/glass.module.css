@@ -1,0 +1,147 @@
+/* app/r/glass.module.css
+ *
+ * The app's signature "glass card" treatment, ported to CSS for the RDH
+ * receipt web viewer. Source: docs/PAPEX_DESIGN_KIT_FOR_WEB.md §2, itself
+ * sourced from PapeXV2/theme/tokens.ts (glassEdges @ EDGE_INTENSITY=0.6)
+ * and PapeXV2/components/GlassCard.tsx + GlassEdgeRing.tsx.
+ *
+ * Three layers, kept as three separate CSS concerns:
+ *   1. .card's `background` — the mirrored 128deg frost gradient, over a
+ *      solid navy base color so the card reads as dark glass even when the
+ *      page shell itself is in light mode (§8: "the receipt card itself
+ *      should very likely stay a dark surface").
+ *   2. .ring-* — the corner-lit 1px masked ring, one variant per tier.
+ *      Built the literal way (radial-gradient + mask-composite) that the
+ *      spec explicitly flags as CSS-only, unavailable to the RN app.
+ *      `emphasis="none"` cards get no ring class at all (no ::before) —
+ *      not a fourth, dimmer variant.
+ *   3. .card's inset box-shadow — the "mirrored frost" specular kiss.
+ *
+ * Deliberately NO backdrop-filter/backdrop-blur anywhere in this file —
+ * the shipped app renders zero backdrop blur by design (services/
+ * visualEffects.ts: isGlassBlurEnabled() is false in dev and release).
+ * Adding one here would make the web page *more* glassy than the real app,
+ * which is the wrong direction. See spec §2 Layer 4.
+ */
+
+.wrap {
+  border-radius: 24px;
+}
+
+/* Tier glows — shipped `shadowsDark.glass` + tier accent glow (§2 table).
+   Applied to the wrapper, not the card itself, per the spec's explicit
+   layering note: "sibling to the card". A translucent glass card never
+   casts its own drop shadow — only this tier glow. */
+.glowNeutral {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.14);
+}
+.glowImportant {
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.14),
+    0 0 22px rgba(232, 128, 54, 0.042);
+}
+.glowStandard {
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.14),
+    0 0 22px rgba(127, 196, 236, 0.036);
+}
+
+.card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  /* Layer 1 (frost) over a solid navy base (see file header) */
+  background:
+    linear-gradient(
+      128deg,
+      rgba(255, 255, 255, 0.0093) 0%,
+      rgba(255, 255, 255, 0.0039) 50%,
+      rgba(255, 255, 255, 0.0093) 100%
+    ),
+    #00121d;
+  /* Layer 3 (inset depth shadow / "mirrored frost" specular) */
+  box-shadow:
+    inset 2px 2px 4px -2px rgba(255, 255, 255, 0.28),
+    inset 0 -12px 24px rgba(0, 0, 0, 0.07);
+}
+
+/* Layer 2 — corner-lit ring. One ::before per tier, each with its own
+   --lit/--faint pair from glassEdges @ EDGE_INTENSITY=0.6 (spec §2 table).
+   `important`'s orange (232,128,54) and `standard`'s blue (127,196,236)
+   are rim-only hues, never used as a fill or brand color elsewhere. */
+.ringNeutral::before,
+.ringImportant::before,
+.ringStandard::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.ringNeutral::before {
+  background:
+    radial-gradient(ellipse 62% 135% at 0% 0%, rgba(255, 255, 255, 0.51) 0%, rgba(255, 255, 255, 0.153) 38%, transparent 100%),
+    radial-gradient(ellipse 62% 135% at 100% 100%, rgba(255, 255, 255, 0.51) 0%, rgba(255, 255, 255, 0.153) 38%, transparent 100%),
+    rgba(255, 255, 255, 0.153);
+}
+
+.ringImportant::before {
+  background:
+    radial-gradient(ellipse 62% 135% at 0% 0%, rgba(232, 128, 54, 0.51) 0%, rgba(232, 128, 54, 0.153) 38%, transparent 100%),
+    radial-gradient(ellipse 62% 135% at 100% 100%, rgba(232, 128, 54, 0.51) 0%, rgba(232, 128, 54, 0.153) 38%, transparent 100%),
+    rgba(232, 128, 54, 0.153);
+}
+
+.ringStandard::before {
+  background:
+    radial-gradient(ellipse 62% 135% at 0% 0%, rgba(127, 196, 236, 0.492) 0%, rgba(127, 196, 236, 0.148) 38%, transparent 100%),
+    radial-gradient(ellipse 62% 135% at 100% 100%, rgba(127, 196, 236, 0.492) 0%, rgba(127, 196, 236, 0.148) 38%, transparent 100%),
+    rgba(127, 196, 236, 0.148);
+}
+
+/* ---- Page shell tokens ----------------------------------------------------
+ * The app itself is hard-pinned to dark (no live light-mode screen exists —
+ * spec §1/§8), so this is the one place this page invents a light-mode
+ * mapping: colorsLight token values (spec §1) for the page's own background
+ * and *outer* chrome text (header kicker, empty-state copy) that sits
+ * directly on the page background rather than inside a glass card. Card
+ * interiors are unaffected — they stay on the fixed dark tokens above,
+ * per §8's explicit instruction that the card stays dark regardless of
+ * shell theme.
+ */
+.shell {
+  --page-bg: #00121d;
+  --page-text: rgba(255, 255, 255, 0.9);
+  --page-text-secondary: rgba(255, 255, 255, 0.64);
+  --page-text-muted: rgba(255, 255, 255, 0.45);
+  /* App Clip PapeXBackground glow recipe (spec §7 background row): top-left
+     strong @ 0.16, bottom-right faint @ 0.13, both accent orange. No
+     light-mode equivalent exists anywhere in the source material, so this
+     page keeps the same two values in light mode rather than inventing new
+     ones (spec §8: flag rather than invent silently). */
+  --glow-tl: rgba(235, 113, 0, 0.16);
+  --glow-br: rgba(235, 113, 0, 0.13);
+}
+
+@media (prefers-color-scheme: light) {
+  .shell {
+    --page-bg: #f8fafc;
+    --page-text: #1a1a1a;
+    --page-text-secondary: #4b5563;
+    --page-text-muted: #a0aec0;
+  }
+}
+
+.shellBg {
+  background-color: var(--page-bg);
+  background-image:
+    radial-gradient(ellipse 60% 40% at 12% 7%, var(--glow-tl) 0%, transparent 60%),
+    radial-gradient(ellipse 65% 45% at 90% 96%, var(--glow-br) 0%, transparent 60%);
+  background-repeat: no-repeat;
+  background-attachment: fixed, fixed;
+}

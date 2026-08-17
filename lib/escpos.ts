@@ -130,14 +130,18 @@ export interface Receipt {
   nvLogoReferenced: boolean;
 }
 
-// Mirrors app/r/ui.tsx's `T.text` token (#F4F4F4) — the receipt viewer is
-// permanently dark-themed (see app/r/ui.tsx's Shell), so a near-white
-// foreground reads as a deliberate light logo mark on the dark glass card
-// rather than an inverted/broken image. Kept as a local literal rather than
-// importing from app/r/ui.tsx: this file must stay usable outside the
-// Next.js app (see the portability note above), and there is no shared
-// lib/theme module today.
-const LOGO_FOREGROUND = "#F4F4F4";
+// Mirrors app/r/ui.tsx's `T.text` token — docs/PAPEX_DESIGN_KIT_FOR_WEB.md
+// §1's dark-theme `white-90` (rgba(255,255,255,0.90)), flattened against the
+// card's fixed navy background (#00121D) into an opaque hex, since the PNG
+// encoder's palette entry has no alpha channel to spare (index 1 is already
+// forced fully opaque — see lib/png.ts's PLTE/tRNS). The receipt viewer's
+// glass cards are always a dark navy surface regardless of page theme (see
+// app/r/glass.module.css's `.card`), so a near-white foreground reads as a
+// deliberate light logo mark rather than an inverted/broken image. Kept as
+// a local literal rather than importing from app/r/ui.tsx: this file must
+// stay usable outside the Next.js app (see the portability note above), and
+// there is no shared lib/theme module today.
+const LOGO_FOREGROUND = "#E6E7E8";
 
 type Codepage = "cp437" | "cp858" | "fallback";
 
