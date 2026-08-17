@@ -112,6 +112,17 @@ export interface DecodedLogo {
   widthPx: number;
   heightPx: number;
   dataUri: string;
+  /**
+   * Same decoded bitmap, trimmed to its tight ink bounding box (blank
+   * margin stripped) and re-encoded in `AVATAR_FOREGROUND` instead of
+   * `LOGO_FOREGROUND` — for the small circular merchant avatar (app/r/
+   * ui.tsx's MerchantHeaderCard), which sits on a *white* badge unlike the
+   * dark badge `dataUri`/LogoBlock renders on. Derived from the same
+   * already-decoded `bits` this.logo is built from — no second raster
+   * decode, no re-walk of the ESC/POS stream. See the "Avatar rendering"
+   * section below for why this is a trim+recolor rather than a square crop.
+   */
+  avatarDataUri: string;
   source: "GS v 0" | "ESC *" | "GS ( L";
 }
 
@@ -138,6 +149,15 @@ export interface Receipt {
 // Next.js app (see the portability note above), and there is no shared
 // lib/theme module today.
 const LOGO_FOREGROUND = "#F4F4F4";
+
+// Avatar counterpart to LOGO_FOREGROUND — mirrors MerchantHeaderCard's
+// monogram glyph colour (app/r/ui.tsx, `#181A20`) rather than LOGO_FOREGROUND,
+// because the circular avatar badge keeps its existing **white** fill
+// (design requirement: replace the avatar's contents, not its chrome), the
+// opposite of LogoBlock's dark badge. A near-white mark on white would be
+// invisible. Kept in sync manually with app/r/ui.tsx same as LOGO_FOREGROUND
+// above — see that constant's comment for why this isn't a shared import.
+const AVATAR_FOREGROUND = "#181A20";
 
 type Codepage = "cp437" | "cp858" | "fallback";
 
@@ -499,9 +519,9 @@ class ParserContext {
           try {
             const heightPx = bytesPerColumn === 3 ? 24 : 8;
             const rowPacked = columnsToRowPackedBits(this.bytes, dataStart, width, heightPx, bytesPerColumn);
-            const dataUri = encodeMonoPngDataUri({ width, height: heightPx, bits: rowPacked }, LOGO_FOREGROUND);
-            if (dataUri) {
-              this.logo = { widthPx: width, heightPx, dataUri, source: "ESC *" };
+            const built = buildDecodedLogo(width, heightPx, rowPacked, "ESC *");
+            if (built) {
+              this.logo = built;
             }
           } catch {
             // Contract: never throw. A decode failure just means no logo.
@@ -616,12 +636,9 @@ class ParserContext {
         if (!this.logo && widthBytes > 0 && heightRows > 0 && this.bytes.length - dataStart >= dataLen) {
           try {
             const bits = this.bytes.subarray(dataStart, dataStart + dataLen);
-            const dataUri = encodeMonoPngDataUri(
-              { width: widthBytes * 8, height: heightRows, bits },
-              LOGO_FOREGROUND,
-            );
-            if (dataUri) {
-              this.logo = { widthPx: widthBytes * 8, heightPx: heightRows, dataUri, source: "GS v 0" };
+            const built = buildDecodedLogo(widthBytes * 8, heightRows, bits, "GS v 0");
+            if (built) {
+              this.logo = built;
             }
           } catch {
             // Contract: never throw. A decode failure just means no logo.
@@ -805,9 +822,9 @@ class ParserContext {
     if (this.bytes.length - bmpStart < bmpLen) return; // truncated — no logo, no throw
     try {
       const bits = this.bytes.subarray(bmpStart, bmpStart + bmpLen);
-      const dataUri = encodeMonoPngDataUri({ width: widthPx, height: heightPx, bits }, LOGO_FOREGROUND);
-      if (dataUri) {
-        this.logo = { widthPx, heightPx, dataUri, source: "GS ( L" };
+      const built = buildDecodedLogo(widthPx, heightPx, bits, "GS ( L");
+      if (built) {
+        this.logo = built;
       }
     } catch {
       // Contract: never throw. A decode failure just means no logo.
@@ -922,6 +939,124 @@ function columnsToRowPackedBits(
     }
   }
   return out;
+}
+
+// ---------------------------------------------------------------------------
+// Avatar rendering — building the circular-avatar variant of a decoded logo.
+//
+// The three real captures this was validated against (see lib/escpos.test.ts
+// and the task's bench sids) are all much wider than tall — 576x110,
+// 576x120, 384x40 — because thermal-printer logos are wordmarks or
+// icon+wordmark lockups, not square marks. Squeezed into a small circle,
+// that mismatch has no crop-free answer, and this file went through two
+// crop strategies before landing on trim+contain:
+//
+//   - A square window centered on the densest region of ink: on the
+//     576x110 spark+wordmark capture, the densest 110x110 window lands
+//     mid-word ("MAR" out of "WALMART") because packed letterforms are
+//     denser than the sparse spark icon next to them — a meaningless text
+//     fragment, and actively worse than the monogram it would replace.
+//   - A plain centered square crop (CSS `object-fit: cover` equivalent):
+//     same failure class, different fragment ("ALM").
+//   - On the 384x40 solid-diamond mark, BOTH of the above land on the
+//     shape's fat horizontal midpoint, rendering as an unrecognizable solid
+//     black blob — worse than either fragment.
+//
+// A leftmost-connected-component heuristic (favoring "the icon, which
+// conventionally comes first in an icon+wordmark lockup") fixes the
+// spark+wordmark case but not the solid-diamond one — it's still one
+// wide shape with no natural square sub-region — and adds real fragility
+// (gap-tolerance tuning, noise-cluster filtering, and a connecting print
+// rule/border line that merges an entire 576px-wide capture into one
+// "cluster") for a benefit that doesn't generalize.
+//
+// So: trim the bitmap to its tight ink bounding box (cheap, always safe,
+// never discards content) and let the avatar show the *whole* mark via
+// `object-fit: contain` in app/r/ui.tsx — thin on very wide marks, but
+// never a mangled fragment or a blob. This matches the task brief's own
+// third option ("letterboxed-contain with the receipt surface colour
+// behind"), and is what shipped after comparing screenshots of all three
+// approaches on the real bench captures.
+// ---------------------------------------------------------------------------
+
+function getBit(bits: Uint8Array, rowBytes: number, x: number, y: number): number {
+  return (bits[y * rowBytes + (x >> 3)] >> (7 - (x & 7))) & 1;
+}
+
+function setBit(out: Uint8Array, rowBytes: number, x: number, y: number): void {
+  out[y * rowBytes + (x >> 3)] |= 1 << (7 - (x & 7));
+}
+
+/**
+ * Tight bounding box of all set (ink) bits in a row-major MSB-first packed
+ * bitmap. Falls back to the full bitmap (no trim) if it's entirely blank —
+ * a degenerate case that shouldn't occur for anything that made it into
+ * `this.logo` (the decode paths already require `width/height > 0`), but
+ * a bitmap with zero ink bits is not itself invalid, so this stays a safe
+ * no-op rather than producing a zero-size crop.
+ */
+function trimToInkBounds(
+  bits: Uint8Array,
+  width: number,
+  height: number,
+): { x0: number; y0: number; w: number; h: number } {
+  const rowBytes = Math.ceil(width / 8);
+  let minX = width;
+  let maxX = -1;
+  let minY = height;
+  let maxY = -1;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (getBit(bits, rowBytes, x, y)) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  if (maxX < 0) return { x0: 0, y0: 0, w: width, h: height };
+  return { x0: minX, y0: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
+}
+
+/** Extract a `w`x`h` rectangle starting at `(x0, y0)` into a new row-major MSB-first packed bitmap. */
+function cropBits(bits: Uint8Array, width: number, x0: number, y0: number, w: number, h: number): Uint8Array {
+  const rowBytes = Math.ceil(width / 8);
+  const outRowBytes = Math.ceil(w / 8);
+  const out = new Uint8Array(outRowBytes * h);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (getBit(bits, rowBytes, x0 + x, y0 + y)) setBit(out, outRowBytes, x, y);
+    }
+  }
+  return out;
+}
+
+/**
+ * Build a `DecodedLogo` (primary `dataUri` + avatar `avatarDataUri`) from an
+ * already-decoded row-major MSB-first packed bitmap. Shared by all three
+ * decode paths (GS v 0, ESC *, GS ( L) so the avatar-trimming logic above
+ * exists in exactly one place. Returns `undefined` if even the primary
+ * encode fails — same "no logo" contract as before this avatar feature
+ * existed. A failure of the *avatar*-specific re-encode alone (trim/recolor)
+ * is not fatal: it falls back to the untrimmed `dataUri` so the avatar still
+ * shows the real mark instead of silently reverting to the monogram.
+ */
+function buildDecodedLogo(
+  width: number,
+  height: number,
+  bits: Uint8Array,
+  source: DecodedLogo["source"],
+): DecodedLogo | undefined {
+  const dataUri = encodeMonoPngDataUri({ width, height, bits }, LOGO_FOREGROUND);
+  if (!dataUri) return undefined;
+
+  const bounds = trimToInkBounds(bits, width, height);
+  const trimmed = cropBits(bits, width, bounds.x0, bounds.y0, bounds.w, bounds.h);
+  const avatarDataUri =
+    encodeMonoPngDataUri({ width: bounds.w, height: bounds.h, bits: trimmed }, AVATAR_FOREGROUND) ?? dataUri;
+
+  return { widthPx: width, heightPx: height, dataUri, avatarDataUri, source };
 }
 
 /**
