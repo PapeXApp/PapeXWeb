@@ -341,6 +341,48 @@ test("truncated GS v 0 raster (fewer data bytes than declared) does not throw an
   assert.equal(receipt.logo, undefined);
 });
 
+test("GS v 0 with zero width or zero height renders no logo and does not corrupt trailing text", () => {
+  // Hostile-input guard: a declared width or height of 0 must not divide-
+  // by-zero, allocate, or otherwise misbehave in the decode path — it
+  // should just skip straight past the (empty) declared payload and keep
+  // parsing normally. dataLen = width*height = 0 in both cases, so the
+  // header alone is consumed and "HELLO" should parse untouched.
+  const zeroWidth: number[] = [0x1b, 0x40];
+  zeroWidth.push(0x1d, 0x76, 0x30, 0x00, 0x00, 0x00, 0x28, 0x00); // xL=xH=0 (0 bytes wide), height=40 rows
+  zeroWidth.push(..."HELLO".split("").map((c) => c.charCodeAt(0)));
+  const r1 = parseEscPos(new Uint8Array(zeroWidth));
+  assert.equal(r1.logo, undefined);
+  assert.deepEqual(
+    r1.lines.map((l) => l.text),
+    ["HELLO"]
+  );
+
+  const zeroHeight: number[] = [0x1b, 0x40];
+  zeroHeight.push(0x1d, 0x76, 0x30, 0x00, 0x30, 0x00, 0x00, 0x00); // width=48 bytes, yL=yH=0 (0 rows)
+  zeroHeight.push(..."HELLO".split("").map((c) => c.charCodeAt(0)));
+  const r2 = parseEscPos(new Uint8Array(zeroHeight));
+  assert.equal(r2.logo, undefined);
+  assert.deepEqual(
+    r2.lines.map((l) => l.text),
+    ["HELLO"]
+  );
+});
+
+test("GS v 0 with absurd declared dimensions (0xFFFF x 0xFFFF) does not throw, hang, or allocate wildly", () => {
+  // Declared width/height of 0xFFFF each implies a ~4.3 billion byte
+  // bitmap — nowhere near present in a tapped-NFC-tag-sized buffer. The
+  // clamp to available bytes must kick in (no logo decode, no throw, no
+  // attempt to allocate/read past the buffer) and the rest of the tiny
+  // buffer is correctly consumed as the (incomplete) raster payload.
+  const b: number[] = [0x1b, 0x40];
+  b.push(0x1d, 0x76, 0x30, 0x00, 0xff, 0xff, 0xff, 0xff);
+  b.push(1, 2, 3); // a few bytes of "payload" — nowhere close to the declared length
+  assert.doesNotThrow(() => parseEscPos(new Uint8Array(b)));
+  const receipt = parseEscPos(new Uint8Array(b));
+  assert.equal(receipt.logo, undefined);
+  assert.deepEqual(receipt.lines, []);
+});
+
 test("stream ending mid-GS-v-0-header consumes to EOF (no garbage text)", () => {
   // Fewer than 8 header bytes remain after GS v 0. The old handler skipped
   // only 2 bytes and re-parsed the partial header bytes as text; the Swift
