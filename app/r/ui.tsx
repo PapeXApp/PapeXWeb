@@ -17,7 +17,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { AlertTriangle, Clock, FlaskConical, SearchX } from "lucide-react";
-import type { ReceiptLine } from "@/lib/escpos";
+import type { DecodedLogo, ReceiptLine } from "@/lib/escpos";
 import {
   type ReceiptSummary,
   detectPaymentMethod,
@@ -248,6 +248,39 @@ export function StateCard({
         {message}
       </p>
       {children}
+    </div>
+  );
+}
+
+// ---- Logo (decoded ESC/POS raster, see lib/escpos.ts) --------------------------
+//
+// Rendered above everything else, centered, scaled to the card width. The
+// decoded bitmap is a 2-color PNG (transparent background, near-white
+// foreground — see lib/escpos.ts's LOGO_FOREGROUND, which mirrors T.text
+// here) so it reads as a deliberate light logo mark on the dark glass card
+// rather than an inverted/broken image. `image-rendering: pixelated` keeps
+// the 1-bit source crisp instead of letting the browser smear it with
+// bilinear scaling. A plain `<img>` (not next/image) — this is a `data:`
+// URI, so there's no network fetch to optimize away either way, and
+// next/image's remote-loader machinery doesn't apply to embedded data.
+
+function LogoBlock({ logo }: { logo: DecodedLogo }) {
+  return (
+    <div className="flex justify-center">
+      <div
+        className="flex max-w-[240px] items-center justify-center rounded-[20px] border px-6 py-5"
+        style={glassCardStyle}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={logo.dataUri}
+          alt="Merchant logo"
+          width={logo.widthPx}
+          height={logo.heightPx}
+          className="h-auto w-full max-h-[120px]"
+          style={{ imageRendering: "pixelated" }}
+        />
+      </div>
     </div>
   );
 }
@@ -550,13 +583,17 @@ export function ReceiptView({
   summary,
   hasStructure,
   isSample = false,
+  logo,
 }: {
   summary: ReceiptSummary;
   hasStructure: boolean;
   isSample?: boolean;
+  /** Decoded merchant logo, if any — see lib/escpos.ts. Never set on the sample/demo path. */
+  logo?: DecodedLogo;
 }) {
   return (
     <div className="flex flex-col gap-4">
+      {logo && <LogoBlock logo={logo} />}
       {hasStructure && <MerchantHeaderCard summary={summary} isSample={isSample} />}
       {hasStructure && <ItemsCard summary={summary} />}
       {hasStructure && <TotalsCard summary={summary} isSample={isSample} />}

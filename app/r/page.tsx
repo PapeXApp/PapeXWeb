@@ -91,8 +91,8 @@ export default async function ReceiptPage({
   // explicitly requested; every other case is decided locally by
   // resolveReceiptState.
   const result = sidIsValid && !demoRequested ? await fetchReceiptBytes(rawSid) : undefined;
-  const parsed =
-    result?.status === "ok" ? summarizeReceipt(parseEscPos(result.bytes).lines) : undefined;
+  const receipt = result?.status === "ok" ? parseEscPos(result.bytes) : undefined;
+  const parsed = receipt ? summarizeReceipt(receipt.lines) : undefined;
 
   const state = resolveReceiptState({
     rawSid,
@@ -133,11 +133,20 @@ export default async function ReceiptPage({
     );
   }
 
-  // --- REAL. Unchanged rendering path.
+  // --- REAL. `logo` (see lib/escpos.ts) is threaded through separately from
+  // `parsed`/`ReceiptSummary` on purpose: it must never factor into whether
+  // a receipt counts as "visible" (see resolveReceiptState above and
+  // lib/receiptState.ts) — an image-only receipt with no text still routes
+  // to NOT_AVAILABLE above, before this branch is ever reached, and a logo
+  // alone can never make that happen.
   if (state.kind === "real" && parsed) {
     return (
       <Shell>
-        <ReceiptView summary={parsed} hasStructure={computeHasStructure(parsed)} />
+        <ReceiptView
+          summary={parsed}
+          hasStructure={computeHasStructure(parsed)}
+          logo={receipt?.logo}
+        />
         <CtaRow sid={rawSid} isSample={false} isIOS={isIOS} isAndroid={isAndroid} />
       </Shell>
     );
