@@ -447,9 +447,22 @@ function monogram(name?: string): string {
 export function MerchantHeaderCard({
   summary,
   isSample = false,
+  logo,
 }: {
   summary: ReceiptSummary;
   isSample?: boolean;
+  /**
+   * Decoded merchant logo, if any — see lib/escpos.ts. When present, its
+   * `avatarDataUri` (trimmed to the mark's own ink bounds, recolored dark
+   * for this circle's white fill) replaces the letter monogram. Falls back
+   * to the monogram whenever there's no inline logo: no raster in the
+   * stream, an NV/stored-logo reference (bitmap bytes not in this capture),
+   * or a decode failure — all three collapse to `logo` being undefined
+   * upstream (app/r/page.tsx), so this component only needs one check.
+   * Never set on the sample/demo path (page.tsx never threads a logo
+   * through there), so the sample keeps today's monogram unconditionally.
+   */
+  logo?: DecodedLogo;
 }) {
   const { merchantName, addressLines, dateline } = summary;
   return (
@@ -457,12 +470,22 @@ export function MerchantHeaderCard({
     <GlassCard tier="standard">
       <div className="flex items-center gap-4">
         <div
-          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white"
+          className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white"
           style={{ border: `2px solid ${T.orange}` }}
         >
-          <span className="text-xl font-medium" style={{ color: "#181A20" }}>
-            {monogram(merchantName)}
-          </span>
+          {logo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={logo.avatarDataUri}
+              alt=""
+              className="h-full w-full object-contain p-1.5"
+              style={{ imageRendering: "pixelated" }}
+            />
+          ) : (
+            <span className="text-xl font-medium" style={{ color: "#181A20" }}>
+              {monogram(merchantName)}
+            </span>
+          )}
         </div>
         <div className="min-w-0 flex-1">
           {/* storeName: Barlow-Medium 24px - §3.4 */}
@@ -765,7 +788,7 @@ export function ReceiptView({
   return (
     <div className="flex flex-col gap-4">
       {logo && <LogoBlock logo={logo} />}
-      {hasStructure && <MerchantHeaderCard summary={summary} isSample={isSample} />}
+      {hasStructure && <MerchantHeaderCard summary={summary} isSample={isSample} logo={logo} />}
       {hasStructure && <ItemsCard summary={summary} />}
       {hasStructure && <TotalsCard summary={summary} isSample={isSample} />}
       <OriginalReceiptCollapsible lines={summary.bodyLines} defaultOpen={!hasStructure} />
