@@ -74,6 +74,22 @@
 // by this feature and still resolves such a stream to NOT_AVAILABLE. See
 // app/r/page.tsx / lib/receiptState.ts for the full rationale — a logo
 // with no readable text isn't something this app treats as "a receipt".
+//
+// Logo alignment (`ESC a n` before the raster) is parsed (it updates
+// `ParserContext.currentAlign`, same as it does for text lines) but is
+// deliberately NOT threaded onto `DecodedLogo` — there is no `align` field.
+// Three real bench captures were checked and all three send `ESC a 1`
+// (center) immediately before their raster, so honoring it would be a
+// no-op for every known real-world case. More importantly, the web page
+// always renders the logo as its own centered element (LogoBlock: `flex
+// justify-center`; the avatar: centered inside a circle) regardless of
+// where the *text* lines around it sit — a receipt's own left/right text
+// margins don't apply to a logo shown in its own dedicated card. Combined
+// with the header-crop fix below (trim to ink bounds so the mark is
+// optically centered within its own image), an `ESC a 0`/`ESC a 2` before
+// the raster would still correctly render centered — trimming, not
+// alignment-tracking, is what makes the logo look right, so this stays
+// unimplemented rather than adding an unused field.
 
 import { encodeMonoPngDataUri } from "./png";
 
@@ -109,20 +125,62 @@ export interface ReceiptLine {
 
 /** A decoded inline raster/bit-image logo, rendered to a PNG `data:` URI. */
 export interface DecodedLogo {
+  /**
+   * Full, untrimmed canvas geometry exactly as declared in the wire format
+   * (e.g. GS v 0's xL/xH/yL/yH) — kept for parity/geometry assertions, not
+   * rendered anywhere directly. See `headerWidthPx`/`headerHeightPx` for
+   * what LogoBlock actually displays.
+   */
   widthPx: number;
   heightPx: number;
+  /**
+   * The full, untrimmed decode, re-encoded as a PNG. Not referenced by any
+   * component today (see `headerDataUri`) — kept for parity with the raw
+   * decode and available to any future caller that wants the literal
+   * capture rather than an optically-centered crop.
+   */
   dataUri: string;
   /**
    * Same decoded bitmap, trimmed to its tight ink bounding box (blank
    * margin stripped) and re-encoded in `AVATAR_FOREGROUND` instead of
    * `LOGO_FOREGROUND` — for the small circular merchant avatar (app/r/
    * ui.tsx's MerchantHeaderCard), which sits on a *white* badge unlike the
-   * dark badge `dataUri`/LogoBlock renders on. Derived from the same
-   * already-decoded `bits` this.logo is built from — no second raster
+   * themed badge `headerDataUri`/LogoBlock renders on. Derived from the
+   * same already-decoded `bits` this.logo is built from — no second raster
    * decode, no re-walk of the ESC/POS stream. See the "Avatar rendering"
    * section below for why this is a trim+recolor rather than a square crop.
    */
   avatarDataUri: string;
+  /**
+   * Header counterpart to `avatarDataUri`: the SAME ink-bounding-box crop
+   * (both axes — the trim/crop call is shared, not duplicated), but
+   * re-encoded in `LOGO_FOREGROUND` (near-white) instead of
+   * `AVATAR_FOREGROUND`, because LogoBlock (app/r/ui.tsx) sits on the
+   * themed --r-badge-bg chrome, not the avatar's fixed white circle — the
+   * two need opposite foreground colors, so the crop can't literally be one
+   * shared PNG, but it IS one shared bounding-box computation re-encoded
+   * twice, which is as close to "decode once, reuse everywhere" as the two
+   * different chrome colors allow.
+   *
+   * Exists because the untrimmed `dataUri` rendered LogoBlock's raster
+   * exactly as captured, blank margin included. Real captures showed that
+   * margin is often asymmetric (a bench PapeX-logo capture: ink occupies
+   * x[9..134] of a 440-wide canvas and y[99..179] of a 200-tall one — ~34%
+   * off-center horizontally, ~20% vertically), which reads as "the logo is
+   * off-center" even though the *box* around it is perfectly centered on
+   * the card. Trimming both axes (not just horizontal) is deliberate: that
+   * same capture's vertical margin was just as lopsided as its horizontal
+   * one, and LogoBlock's own badge padding (px-6 py-5) already supplies
+   * breathing room, so trimming the source bitmap doesn't crowd the mark —
+   * it just stops fighting the badge's own padding with unpredictable
+   * extra blank canvas baked into the PNG.
+   */
+  headerDataUri: string;
+  /** Pixel size of `headerDataUri` (the trimmed crop) — the trimmed and
+   * untrimmed images generally have different aspect ratios, so LogoBlock
+   * must size its `<img>` from these, not from `widthPx`/`heightPx`. */
+  headerWidthPx: number;
+  headerHeightPx: number;
   source: "GS v 0" | "ESC *" | "GS ( L";
 }
 
@@ -1051,12 +1109,35 @@ function buildDecodedLogo(
   const dataUri = encodeMonoPngDataUri({ width, height, bits }, LOGO_FOREGROUND);
   if (!dataUri) return undefined;
 
+  // One trim/crop, reused for both the avatar and header renders — only the
+  // final color re-encode differs between the two (see DecodedLogo's
+  // avatarDataUri/headerDataUri doc comments for why they can't share one
+  // literal PNG despite sharing this computation).
   const bounds = trimToInkBounds(bits, width, height);
   const trimmed = cropBits(bits, width, bounds.x0, bounds.y0, bounds.w, bounds.h);
+
   const avatarDataUri =
     encodeMonoPngDataUri({ width: bounds.w, height: bounds.h, bits: trimmed }, AVATAR_FOREGROUND) ?? dataUri;
 
-  return { widthPx: width, heightPx: height, dataUri, avatarDataUri, source };
+  const headerEncoded = encodeMonoPngDataUri({ width: bounds.w, height: bounds.h, bits: trimmed }, LOGO_FOREGROUND);
+  // If the trimmed re-encode fails for some reason, fall back to the full
+  // untrimmed render (still centered by LogoBlock's flex container, just
+  // not optically trimmed) rather than losing the logo entirely — same
+  // "degrade, don't disappear" contract as avatarDataUri's fallback above.
+  const headerDataUri = headerEncoded ?? dataUri;
+  const headerWidthPx = headerEncoded ? bounds.w : width;
+  const headerHeightPx = headerEncoded ? bounds.h : height;
+
+  return {
+    widthPx: width,
+    heightPx: height,
+    dataUri,
+    avatarDataUri,
+    headerDataUri,
+    headerWidthPx,
+    headerHeightPx,
+    source,
+  };
 }
 
 /**

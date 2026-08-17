@@ -417,6 +417,14 @@ export function StateCard({
 // bitmap on the receipt itself - unrelated to the PapeX brand wordmark in
 // <Shell>'s header below. Untouched by this restyle pass beyond the card
 // chrome it sits in (badgeStyle -> neutral rim), per the task brief.
+//
+// Renders `headerDataUri` (ink-bounds-trimmed), not `dataUri` (the raw
+// untrimmed capture) - a real bench capture had ~34% of its 440px canvas
+// as blank margin to one side, which made the mark look off-center even
+// though this box is itself perfectly centered on the card (see
+// lib/escpos.ts's DecodedLogo.headerDataUri doc comment for the numbers
+// and the fix). `width`/`height` come from `headerWidthPx`/`headerHeightPx`
+// - the trimmed crop's own aspect ratio, not the untrimmed canvas's.
 
 function LogoBlock({ logo }: { logo: DecodedLogo }) {
   return (
@@ -424,10 +432,10 @@ function LogoBlock({ logo }: { logo: DecodedLogo }) {
       <div className="flex max-w-[240px] items-center justify-center rounded-[20px] border px-6 py-5" style={badgeStyle}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={logo.dataUri}
+          src={logo.headerDataUri}
           alt="Merchant logo"
-          width={logo.widthPx}
-          height={logo.heightPx}
+          width={logo.headerWidthPx}
+          height={logo.headerHeightPx}
           className="h-auto w-full max-h-[120px]"
           style={{ imageRendering: "pixelated" }}
         />

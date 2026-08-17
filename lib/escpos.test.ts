@@ -25,7 +25,7 @@ import { parseEscPos, guessMerchantName, defaultStyle, type Style } from "./escp
 // re-derives width/height/rowBytes from the PNG's own IHDR chunk, not from
 // what the test expects to send in) so a bug shared by both wouldn't just
 // cancel out.
-function decodePngDataUri(dataUri: string): { width: number; height: number; bits: Uint8Array } {
+function decodePngDataUri(dataUri: string): { width: number; height: number; bits: Uint8Array; foregroundRgb: [number, number, number] } {
   const prefix = "data:image/png;base64,";
   assert.ok(dataUri.startsWith(prefix), "data URI has the expected PNG prefix");
   const buf = Buffer.from(dataUri.slice(prefix.length), "base64");
@@ -55,7 +55,9 @@ function decodePngDataUri(dataUri: string): { width: number; height: number; bit
     assert.equal(inflated[rowStart], 0, `row ${y} filter byte is None`);
     bits.set(inflated.subarray(rowStart + 1, rowStart + 1 + rowBytes), y * rowBytes);
   }
-  return { width, height, bits };
+  const plte = chunks.PLTE;
+  const foregroundRgb: [number, number, number] = [plte[3], plte[4], plte[5]];
+  return { width, height, bits, foregroundRgb };
 }
 
 let passed = 0;
@@ -519,6 +521,17 @@ test("avatarDataUri trims to the tight ink bounding box, not the full canvas", (
   assert.equal(avatar.width, 8);
   assert.equal(avatar.height, 4);
   assert.deepEqual([...avatar.bits], [0xff, 0xff, 0xff, 0xff]);
+
+  // Header crop shares the avatar's exact bounding box (same trim/crop
+  // call, per lib/escpos.ts's buildDecodedLogo comment) — same geometry
+  // and pixels, only the re-encoded PNG's foreground color differs (not
+  // observable from the decoded bits here).
+  assert.equal(receipt.logo?.headerWidthPx, 8);
+  assert.equal(receipt.logo?.headerHeightPx, 4);
+  const header = decodePngDataUri(receipt.logo!.headerDataUri);
+  assert.equal(header.width, 8);
+  assert.equal(header.height, 4);
+  assert.deepEqual([...header.bits], [0xff, 0xff, 0xff, 0xff]);
 });
 
 test("avatarDataUri on an all-blank bitmap falls back to the untrimmed geometry (no zero-size crop)", () => {
@@ -538,6 +551,45 @@ test("avatarDataUri on an all-blank bitmap falls back to the untrimmed geometry 
     [...avatar.bits].every((byte) => byte === 0),
     "no ink means no ink in the avatar crop either"
   );
+
+  // headerDataUri falls back the same way (untrimmed geometry, no zero-size crop).
+  assert.equal(receipt.logo?.headerWidthPx, widthBytes * 8);
+  assert.equal(receipt.logo?.headerHeightPx, heightRows);
+  const header = decodePngDataUri(receipt.logo!.headerDataUri);
+  assert.equal(header.width, widthBytes * 8);
+  assert.equal(header.height, heightRows);
+});
+
+test("headerDataUri and avatarDataUri share the same ink-bounds crop but use opposite foreground colors", () => {
+  // Same 32x16 canvas / 8x4 off-center ink block as the earlier trim test,
+  // asymmetric on both axes so a naive "just re-center via CSS" fix
+  // wouldn't be caught by a symmetric fixture.
+  const widthBytes = 4;
+  const heightRows = 16;
+  const raster: number[] = [];
+  for (let row = 0; row < heightRows; row++) {
+    const inkRow = row >= 2 && row <= 5;
+    raster.push(0x00, 0x00, inkRow ? 0xff : 0x00, 0x00);
+  }
+  const b: number[] = [0x1b, 0x40];
+  b.push(0x1d, 0x76, 0x30, 0x00, widthBytes & 0xff, (widthBytes >> 8) & 0xff, heightRows & 0xff, (heightRows >> 8) & 0xff);
+  b.push(...raster);
+
+  const receipt = parseEscPos(new Uint8Array(b));
+  assert.ok(receipt.logo, "logo decoded");
+  const avatar = decodePngDataUri(receipt.logo!.avatarDataUri);
+  const header = decodePngDataUri(receipt.logo!.headerDataUri);
+
+  // Identical crop geometry and pixels — the trim/crop call is shared.
+  assert.equal(header.width, avatar.width);
+  assert.equal(header.height, avatar.height);
+  assert.deepEqual([...header.bits], [...avatar.bits]);
+
+  // Opposite foreground colors — header (near-white, on the themed dark-ish
+  // badge) vs avatar (dark, on the fixed white circle).
+  assert.deepEqual(header.foregroundRgb, [0xf4, 0xf4, 0xf4], "header uses LOGO_FOREGROUND");
+  assert.deepEqual(avatar.foregroundRgb, [0x18, 0x1a, 0x20], "avatar uses AVATAR_FOREGROUND");
+  assert.notDeepEqual(header.foregroundRgb, avatar.foregroundRgb);
 });
 
 test("ESC * (8-dot column format) decodes a single band pixel-exact and transposes columns to rows", () => {
