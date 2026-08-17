@@ -5,7 +5,7 @@ import type { Metadata } from 'next'
 // mb-*, container...) work inside the framer shell (e.g. blog post pages).
 import '@/styles/framer-site.css'
 import './globals.css'
-import { barlow, kameron } from './fonts'
+import { barlow, kameron, ibmPlexMono } from './fonts'
 import { Analytics } from '@vercel/analytics/react'
 import Script from 'next/script'
 
@@ -93,7 +93,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${barlow.variable} ${kameron.variable}`}>
+    <html lang="en" className={`${barlow.variable} ${kameron.variable} ${ibmPlexMono.variable}`}>
       <head>
         <link rel="icon" href="/favlogo.png" sizes="any" />
         <link rel="icon" href="/favlogo.png" type="image/png" />

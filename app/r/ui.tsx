@@ -1,20 +1,30 @@
 // app/r/ui.tsx
 //
 // Presentational pieces for the RDH receipt web viewer, restyled to match
-// the PapeX iOS app's receipt-detail screen (dark "liquid glass") per
-// docs/goals/rdh-receipt-ux-clip-web/design-spec.md. Tokens are inlined as
-// Tailwind arbitrary values / style props rather than added to
-// tailwind.config.ts, deliberately — this repo's `orange`/`navy` Tailwind
-// classes are CSS-var-backed and belong to the marketing site's palette
-// (see tailwind.config.ts), which is a different (lighter, more saturated)
-// orange than the app's #FB8500. Reusing those classes here would silently
-// pull in the wrong color if the marketing palette ever changes. Source of
-// truth for these values: PapeXV2/theme/tokens.ts.
+// the PapeX iOS app's receipt-detail screen per
+// docs/PAPEX_DESIGN_KIT_FOR_WEB.md (extracted 2026-08-17 from
+// PapeXV2/theme/tokens.ts + components/ui/GlassCard.tsx + GlassEdgeRing.tsx
+// on release/testflight-2026-08-17 - the build submitted to Apple that day).
 //
-// All server components except where noted — SaveToPapex.tsx and
+// Canonical source: PapeXV2/theme/tokens.ts. This file previously claimed
+// that but had drifted (#FB8500 orange, a retired #2B7FC6 blue) - fixed
+// here. Colour VALUES that are themable (text, dividers, the glass face/rim/
+// glow) are read through the CSS custom properties defined in ./theme.css,
+// not hardcoded here, so light/dark can differ without a client-side theme
+// switch. If a colour looks wrong, check theme.css against the design doc
+// before editing a hex in this file.
+//
+// The shipping app deliberately walked back the heavy glass treatment
+// (3150a5c "outline, not frost", 3b35bd8 "glass face without a backdrop
+// blur") - the card face below is a near-invisible gradient with ZERO
+// backdrop-filter/blur, and all the visual weight is on the 1px corner-lit
+// rim (CornerLitRing). Do not add backdrop-blur back in; that would make
+// the web page glassier than the app it's supposed to match.
+//
+// All server components except where noted - SaveToPapex.tsx and
 // RetryButton.tsx are their own "use client" islands, imported here.
 
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
 import { AlertTriangle, Clock, FlaskConical, SearchX } from "lucide-react";
 import type { DecodedLogo, ReceiptLine } from "@/lib/escpos";
@@ -25,78 +35,223 @@ import {
   PAYMENT_METHOD_STYLES,
 } from "@/lib/receiptSummary";
 import SaveToPapex from "./SaveToPapex";
+import "./theme.css";
 
 const APP_STORE_URL = "https://apps.apple.com/us/app/papex/id6754945242";
 
 // ---- Tokens (PapeXV2/theme/tokens.ts) --------------------------------------
+//
+// `orange` is the one brand hex the app never themes by light/dark
+// (colors.accent/primary/tint is #EB7100 in both `colors` and `colorsLight`
+// - spec §1.2/§1.3), so it's a literal here rather than a CSS var. Every
+// other token below is themable and reads through theme.css.
 
 const T = {
-  orange: "#FB8500",
-  blue: "#2B7FC6",
-  text: "#F4F4F4",
-  textSecondary: "#C4C7CC",
-  textMuted: "#9AA1A8",
-  success: "#10B981",
-  error: "#EF4444",
-  glassBg: "rgba(20, 26, 36, 0.6)",
-  glassBorder: "rgba(255, 255, 255, 0.12)",
-  divider: "rgba(255, 255, 255, 0.12)",
+  orange: "#EB7100",
+  text: "var(--r-text)",
+  textSecondary: "var(--r-text-secondary)",
+  textMuted: "var(--r-text-muted)",
+  success: "#34C759",
+  error: "#FF3B30",
+  divider: "var(--r-divider)",
 };
 
-const glassCardStyle = {
-  background: T.glassBg,
-  borderColor: T.glassBorder,
+// Orange opacity ramp - §1.1. Used for the sample/demo marker, which
+// previously used an ad hoc rgba(251,133,0,...) family built on the stale
+// #FB8500 hue.
+const ORANGE_RAMP = {
+  o08: "var(--r-orange-08)",
+  o12: "var(--r-orange-12)",
+  o20: "var(--r-orange-20)",
 };
 
-// ---- Shell ------------------------------------------------------------------
+// ---- Glass card primitive: face fill + inset shadow + corner-lit rim -------
+//
+// §2 of the design doc, reconstructed as CSS. Layer order (bottom -> top):
+// face fill -> inset depth shadow -> content -> the rim (drawn last, on
+// top, as real border pieces) -> outer glow (on the wrapping element).
+// This order is load-bearing: it's why the face can stay translucent
+// without the rim's colour bleeding into it (two other approaches - a
+// gradient background behind the face, and a masked ring - were tried in
+// the source and reverted; see §2.1).
 
-export function Shell({ children }: { children: ReactNode }) {
+type RimTier = "neutral" | "important" | "standard";
+
+const RIM_VARS: Record<RimTier, { lit: string; faint: string; glow: string }> = {
+  neutral: {
+    lit: "var(--r-rim-neutral-lit)",
+    faint: "var(--r-rim-neutral-faint)",
+    glow: "var(--r-glow-neutral)",
+  },
+  important: {
+    lit: "var(--r-rim-important-lit)",
+    faint: "var(--r-rim-important-faint)",
+    glow: "var(--r-glow-important)",
+  },
+  standard: {
+    lit: "var(--r-rim-standard-lit)",
+    faint: "var(--r-rim-standard-faint)",
+    glow: "var(--r-glow-standard)",
+  },
+};
+
+// The 8-piece corner-lit ring - §2.4. Not a gradient border (no CSS
+// primitive expresses "fade over 60% of each edge's own length"
+// independently per edge when edges are different lengths) - 4 quarter-
+// circle corners (flat colour, two coloured border-sides each) + 4
+// absolutely-positioned 1px gradient strips, ported directly from
+// GlassEdgeRing.tsx's RN structure rather than a cleverer CSS trick.
+// `far === lit` today (§1.6), so `lit` is reused for the bottom-right
+// corner and the far ends of the bottom/right edges.
+function CornerLitRing({ tier, radius }: { tier: RimTier; radius: number }) {
+  const { lit, faint } = RIM_VARS[tier];
+  const corner = (pos: CSSProperties): CSSProperties => ({
+    position: "absolute",
+    width: radius,
+    height: radius,
+    ...pos,
+  });
+  const edge = (pos: CSSProperties): CSSProperties => ({
+    position: "absolute",
+    ...pos,
+  });
   return (
-    <main
-      className="min-h-screen w-full text-[#F4F4F4]"
-      style={{
-        // Layered: the photographic gradient asset first, then a tint so
-        // text stays legible over any part of the image, matching the app's
-        // dark navy/charcoal background with a faint orange glow.
-        backgroundColor: "#181A20",
-        backgroundImage: [
-          "radial-gradient(ellipse 120% 60% at 50% -10%, rgba(251,133,0,0.16) 0%, rgba(251,133,0,0) 60%)",
-          "linear-gradient(180deg, rgba(24,26,32,0.55) 0%, rgba(11,43,59,0.75) 100%)",
-          "url('/rdh-background.jpg')",
-        ].join(", "),
-        backgroundSize: "cover, cover, cover",
-        backgroundPosition: "center, center, center",
-        backgroundAttachment: "fixed, fixed, fixed",
-      }}
-    >
-      <div className="mx-auto flex min-h-screen w-full max-w-[430px] flex-col px-4 pb-10 pt-6">
-        <header className="mb-5 flex items-center gap-2 px-1">
-          <span className="font-barlow text-lg font-medium tracking-tight text-[#F4F4F4]">
-            papex
-          </span>
-          <span className="h-[7px] w-[7px] rounded-sm bg-[#FB8500]" aria-hidden />
-          <span className="ml-auto text-xs font-medium uppercase tracking-wide text-[#9AA1A8]">
-            Receipt
-          </span>
-        </header>
-        <div className="flex flex-1 flex-col gap-4">{children}</div>
-      </div>
-    </main>
-  );
-}
-
-// ---- Glass card primitive -----------------------------------------------------
-
-export function GlassCard({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return (
-    <div
-      className={`rounded-[24px] border p-6 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl ${className}`}
-      style={glassCardStyle}
-    >
-      {children}
+    <div className="pointer-events-none absolute inset-0" aria-hidden>
+      {/* top-left corner - always full "lit" brightness, where the light originates */}
+      <div
+        style={corner({
+          top: 0,
+          left: 0,
+          borderTopWidth: 1,
+          borderLeftWidth: 1,
+          borderTopColor: lit,
+          borderLeftColor: lit,
+          borderTopLeftRadius: radius,
+        })}
+      />
+      {/* top-right corner - faint */}
+      <div
+        style={corner({
+          top: 0,
+          right: 0,
+          borderTopWidth: 1,
+          borderRightWidth: 1,
+          borderTopColor: faint,
+          borderRightColor: faint,
+          borderTopRightRadius: radius,
+        })}
+      />
+      {/* bottom-left corner - faint */}
+      <div
+        style={corner({
+          bottom: 0,
+          left: 0,
+          borderBottomWidth: 1,
+          borderLeftWidth: 1,
+          borderBottomColor: faint,
+          borderLeftColor: faint,
+          borderBottomLeftRadius: radius,
+        })}
+      />
+      {/* bottom-right corner - "far", equal brightness to top-left (ratified 2026-07-31) */}
+      <div
+        style={corner({
+          bottom: 0,
+          right: 0,
+          borderBottomWidth: 1,
+          borderRightWidth: 1,
+          borderBottomColor: lit,
+          borderRightColor: lit,
+          borderBottomRightRadius: radius,
+        })}
+      />
+      {/* top edge - lit fade, stops [0, 0.6, 1] (EDGE_FADE_REACH = 0.6) */}
+      <div
+        style={edge({
+          top: 0,
+          left: radius,
+          right: radius,
+          height: 1,
+          backgroundImage: `linear-gradient(to right, ${lit} 0%, ${faint} 60%, ${faint} 100%)`,
+        })}
+      />
+      {/* left edge - lit fade, same stops */}
+      <div
+        style={edge({
+          left: 0,
+          top: radius,
+          bottom: radius,
+          width: 1,
+          backgroundImage: `linear-gradient(to bottom, ${lit} 0%, ${faint} 60%, ${faint} 100%)`,
+        })}
+      />
+      {/* bottom edge - far fade, MIRRORED stops [0, 0.4, 1] - getting this
+          backwards is a documented past bug ("flares at the corner") */}
+      <div
+        style={edge({
+          bottom: 0,
+          left: radius,
+          right: radius,
+          height: 1,
+          backgroundImage: `linear-gradient(to right, ${faint} 0%, ${faint} 40%, ${lit} 100%)`,
+        })}
+      />
+      {/* right edge - far fade, mirrored */}
+      <div
+        style={edge({
+          right: 0,
+          top: radius,
+          bottom: radius,
+          width: 1,
+          backgroundImage: `linear-gradient(to bottom, ${faint} 0%, ${faint} 40%, ${lit} 100%)`,
+        })}
+      />
     </div>
   );
 }
+
+const RADII = { lg: 18, xl: 24 } as const;
+
+export function GlassCard({
+  children,
+  className = "",
+  tier = "neutral",
+  radius = RADII.xl,
+}: {
+  children: ReactNode;
+  className?: string;
+  /** Rim colour tier - §1.5. `important` = money (orange), `standard` =
+   * what/who (blue), `neutral` = everything else. Never tint a label to
+   * match; colour lives only in the rim. */
+  tier?: RimTier;
+  radius?: number;
+}) {
+  const { glow } = RIM_VARS[tier];
+  return (
+    <div className={className} style={{ borderRadius: radius, boxShadow: glow }}>
+      <div
+        className="relative p-6"
+        style={{
+          borderRadius: radius,
+          background: "var(--r-face-fill)",
+          boxShadow: "inset 2px 2px 4px -2px var(--r-inset-corner), inset 0 -12px 24px var(--r-inset-bottom)",
+        }}
+      >
+        <div className="relative z-10">{children}</div>
+        <CornerLitRing tier={tier} radius={radius} />
+      </div>
+    </div>
+  );
+}
+
+// Plain faint-bordered circular badge - the corner-lit ring has no defined
+// circular form in the source (GlassEdgeRing.tsx only draws rectangular
+// corners), so round chrome (state icons, the decoded-logo frame) gets a
+// simple uniform border instead. A judgment call, not a spec value.
+const badgeStyle: CSSProperties = {
+  background: "var(--r-badge-bg)",
+  borderColor: "var(--r-badge-border)",
+};
 
 // ---- Demo (sample) banner -----------------------------------------------------
 //
@@ -113,10 +268,10 @@ export function DemoBanner() {
   return (
     <div className="sticky top-0 z-30 -mx-1 pb-1 pt-1">
       <div
-        className="flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm shadow-[0_8px_24px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+        className="flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm shadow-[0_8px_24px_rgba(0,0,0,0.45)]"
         style={{
           background: "rgba(120, 60, 0, 0.85)",
-          borderColor: "rgba(251, 133, 0, 0.55)",
+          borderColor: ORANGE_RAMP.o20,
           color: "#FFD9A8",
         }}
       >
@@ -134,7 +289,7 @@ export function DemoBanner() {
 
 // ---- Sample frame: watermark + dashed border + persistent chip ---------------
 //
-// The banner alone isn't enough — the receipt *body* has to carry the mark,
+// The banner alone isn't enough - the receipt *body* has to carry the mark,
 // so that a crop or screenshot of any part of it is still self-evidently
 // fake. Three redundant signals: a repeating diagonal SAMPLE watermark laid
 // over the cards, a dashed orange border around the whole block, and a chip
@@ -146,7 +301,7 @@ export function DemoBanner() {
 // keeps the CSS `url("…")` wrapper valid.
 
 const SAMPLE_WATERMARK_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='240' height='150' viewBox='0 0 240 150'>
-  <g font-family='Barlow, Helvetica, Arial, sans-serif' font-size='26' font-weight='700' letter-spacing='7' fill='rgba(251,133,0,0.16)'>
+  <g font-family='Barlow, Helvetica, Arial, sans-serif' font-size='26' font-weight='700' letter-spacing='7' fill='rgba(235,113,0,0.16)'>
     <text x='4' y='58' transform='rotate(-24 4 58)'>SAMPLE</text>
     <text x='124' y='133' transform='rotate(-24 124 133)'>SAMPLE</text>
   </g>
@@ -159,16 +314,16 @@ export function SampleFrame({ children }: { children: ReactNode }) {
     <div
       className="relative rounded-[28px] border-2 border-dashed p-3 pt-6"
       style={{
-        borderColor: "rgba(251, 133, 0, 0.55)",
-        background: "rgba(251, 133, 0, 0.04)",
+        borderColor: ORANGE_RAMP.o20,
+        background: ORANGE_RAMP.o08,
       }}
     >
       <span
         className="absolute -top-[11px] left-1/2 -translate-x-1/2 rounded-full border px-3 py-[3px] text-[10px] font-bold uppercase tracking-[1.5px]"
         style={{
-          background: "#1B1408",
-          borderColor: "rgba(251, 133, 0, 0.6)",
-          color: "#FFB74D",
+          background: "#1b1408",
+          borderColor: ORANGE_RAMP.o20,
+          color: "#ffb74d",
         }}
       >
         Sample
@@ -191,16 +346,13 @@ export function SampleFrame({ children }: { children: ReactNode }) {
 //
 // The heart of the fix. Reached when a sid *was* supplied but there is no
 // receipt behind it (backend 404, empty/unparseable payload, malformed sid).
-// This screen must never contain sample content of any kind — the person
+// This screen must never contain sample content of any kind - the person
 // looking at it tapped a real device and is trying to find a real purchase.
 
 export function ReceiptNotAvailable({ children }: { children?: ReactNode }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center py-14 text-center">
-      <div
-        className="mb-4 flex h-14 w-14 items-center justify-center rounded-full border"
-        style={glassCardStyle}
-      >
+      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full border" style={badgeStyle}>
         <SearchX className="h-6 w-6" style={{ color: T.textMuted }} strokeWidth={1.75} />
       </div>
       <h1 className="font-barlow text-xl font-semibold" style={{ color: T.text }}>
@@ -235,10 +387,7 @@ export function StateCard({
   const Icon = icon === "clock" ? Clock : AlertTriangle;
   return (
     <div className="flex flex-1 flex-col items-center justify-center py-16 text-center">
-      <div
-        className="mb-4 flex h-14 w-14 items-center justify-center rounded-full border"
-        style={glassCardStyle}
-      >
+      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full border" style={badgeStyle}>
         <Icon className="h-6 w-6" style={{ color: T.textMuted }} strokeWidth={1.75} />
       </div>
       <h1 className="font-barlow text-xl font-semibold" style={{ color: T.text }}>
@@ -256,21 +405,23 @@ export function StateCard({
 //
 // Rendered above everything else, centered, scaled to the card width. The
 // decoded bitmap is a 2-color PNG (transparent background, near-white
-// foreground — see lib/escpos.ts's LOGO_FOREGROUND, which mirrors T.text
+// foreground - see lib/escpos.ts's LOGO_FOREGROUND, which mirrors T.text
 // here) so it reads as a deliberate light logo mark on the dark glass card
 // rather than an inverted/broken image. `image-rendering: pixelated` keeps
 // the 1-bit source crisp instead of letting the browser smear it with
-// bilinear scaling. A plain `<img>` (not next/image) — this is a `data:`
+// bilinear scaling. A plain `<img>` (not next/image) - this is a `data:`
 // URI, so there's no network fetch to optimize away either way, and
 // next/image's remote-loader machinery doesn't apply to embedded data.
+//
+// This is the *merchant's* raster logo, decoded from the thermal-printer
+// bitmap on the receipt itself - unrelated to the PapeX brand wordmark in
+// <Shell>'s header below. Untouched by this restyle pass beyond the card
+// chrome it sits in (badgeStyle -> neutral rim), per the task brief.
 
 function LogoBlock({ logo }: { logo: DecodedLogo }) {
   return (
     <div className="flex justify-center">
-      <div
-        className="flex max-w-[240px] items-center justify-center rounded-[20px] border px-6 py-5"
-        style={glassCardStyle}
-      >
+      <div className="flex max-w-[240px] items-center justify-center rounded-[20px] border px-6 py-5" style={badgeStyle}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={logo.dataUri}
@@ -302,7 +453,8 @@ export function MerchantHeaderCard({
 }) {
   const { merchantName, addressLines, dateline } = summary;
   return (
-    <GlassCard>
+    // "standard" (blue rim) - the substance of a purchase: what/who. §1.5.
+    <GlassCard tier="standard">
       <div className="flex items-center gap-4">
         <div
           className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white"
@@ -313,6 +465,7 @@ export function MerchantHeaderCard({
           </span>
         </div>
         <div className="min-w-0 flex-1">
+          {/* storeName: Barlow-Medium 24px - §3.4 */}
           <h1 className="font-barlow truncate text-2xl font-medium" style={{ color: T.text }}>
             {merchantName ?? "Your receipt"}
           </h1>
@@ -326,7 +479,7 @@ export function MerchantHeaderCard({
               {dateline}
             </p>
           )}
-          <p className="mt-1 text-xs" style={{ color: isSample ? "#FFB74D" : T.textMuted }}>
+          <p className="mt-1 text-xs" style={{ color: isSample ? "#ffb74d" : T.textMuted }}>
             {isSample ? "Sample data — not a real purchase" : "📟 RDH Receipt"}
           </p>
         </div>
@@ -341,10 +494,13 @@ export function ItemsCard({ summary }: { summary: ReceiptSummary }) {
   if (summary.items.length === 0) return null;
   return (
     <div>
+      {/* sectionTitle: Barlow-Medium 20px - §3.4 (rendered smaller/uppercase here as
+          an eyebrow-style section label, consistent with the existing layout) */}
       <p className="mb-2 px-1 text-sm font-medium uppercase tracking-wide" style={{ color: T.textSecondary }}>
         Items Purchased
       </p>
-      <GlassCard>
+      {/* "standard" (blue rim) - same tier as the store card, both "middle" per §1.5 */}
+      <GlassCard tier="standard">
         <div className="flex flex-col">
           {summary.items.map((item, i) => (
             <div
@@ -356,7 +512,8 @@ export function ItemsCard({ summary }: { summary: ReceiptSummary }) {
                   : { borderBottom: `1px solid ${T.divider}` }
               }
             >
-              <span className="min-w-0 flex-1 truncate text-[15px]" style={{ color: T.text }}>
+              {/* itemName: Barlow-Medium 16px - §3.4 */}
+              <span className="min-w-0 flex-1 truncate text-base font-medium" style={{ color: T.text }}>
                 {item.name}
               </span>
               <div className="flex shrink-0 flex-col items-end">
@@ -365,7 +522,8 @@ export function ItemsCard({ summary }: { summary: ReceiptSummary }) {
                     ×{item.qty}
                   </span>
                 )}
-                <span className="text-[15px] font-medium" style={{ color: T.text }}>
+                {/* itemPrice: Barlow-Medium 16px - §3.4 */}
+                <span className="text-base font-medium" style={{ color: T.text }}>
                   ${item.amount.toFixed(2)}
                 </span>
               </div>
@@ -384,7 +542,7 @@ function PaymentRow({ paymentLine }: { paymentLine: string }) {
   const lastFour = extractLastFour(paymentLine);
   if (!network) {
     return (
-      <span className="text-[15px] font-medium" style={{ color: T.text }}>
+      <span className="text-base font-medium" style={{ color: T.text }}>
         {paymentLine}
       </span>
     );
@@ -399,7 +557,7 @@ function PaymentRow({ paymentLine }: { paymentLine: string }) {
         {style.label}
       </span>
       {lastFour && (
-        <span className="text-[15px] font-medium" style={{ color: T.text }}>
+        <span className="text-base font-medium" style={{ color: T.text }}>
           •••• {lastFour}
         </span>
       )}
@@ -422,10 +580,12 @@ function TotalRow({
 }) {
   return (
     <div className="flex items-center justify-between py-1.5">
-      <span className="text-sm" style={{ color: labelColor }}>
+      {/* totalLabel: Barlow-Regular 16px - §3.4 */}
+      <span className="text-base" style={{ color: labelColor }}>
         {label}
       </span>
-      <span className="text-[15px] font-medium" style={{ color: valueColor }}>
+      {/* totalValue: Barlow-Medium 16px - §3.4 */}
+      <span className="text-base font-medium" style={{ color: valueColor }}>
         {value}
       </span>
     </div>
@@ -462,10 +622,15 @@ export function TotalsCard({
       <p className="mb-2 px-1 text-sm font-medium uppercase tracking-wide" style={{ color: T.textSecondary }}>
         Totals
       </p>
-      <GlassCard>
+      {/* "important" (orange rim, #e88036 - NOT the brand #EB7100, §1.5) - money,
+          the amount actually paid. */}
+      <GlassCard tier="important">
         <div className="flex flex-col">
           {computedSubtotal != null && (
-            <TotalRow label="Subtotal" value={`$${computedSubtotal.toFixed(2)}`} valueColor={T.blue} />
+            // No special colour in the app's actual totalValue style (§3.4) -
+            // the previous `T.blue` override here was one of the two stale
+            // hexes named in the spec (§7.1); subtotal is plain `text`.
+            <TotalRow label="Subtotal" value={`$${computedSubtotal.toFixed(2)}`} />
           )}
           {summary.tax != null && summary.tax > 0 && (
             <TotalRow label={taxRate ? `Tax (${taxRate}%)` : "Tax"} value={`$${summary.tax.toFixed(2)}`} />
@@ -477,13 +642,15 @@ export function TotalsCard({
             <TotalRow label="Discount" value={`-$${summary.discount.toFixed(2)}`} valueColor={T.success} />
           )}
           {summary.total != null && (
-            <div
-              className="mt-2 flex items-center justify-between pt-2"
-              style={{ borderTop: `2px solid ${T.orange}` }}
-            >
-              <span className="text-base font-bold" style={{ color: T.orange }}>
+            <div className="mt-2 flex items-center justify-between pt-2" style={{ borderTop: `2px solid ${T.orange}` }}>
+              {/* totalLabelFinal: Barlow-Medium 20px - §3.4. Colour stays `text`,
+                  not orange: "never tint a glyph or label to match a rim colour
+                  ... colour lives only in the border" (§1.5) - the previous
+                  bold-orange label was exactly that mistake. */}
+              <span className="text-xl font-medium" style={{ color: T.text }}>
                 Total
               </span>
+              {/* totalValueFinal: Barlow-Medium 24px - §3.4 */}
               <span className="text-2xl font-medium" style={{ color: T.text }}>
                 ${summary.total.toFixed(2)}
               </span>
@@ -502,8 +669,8 @@ export function TotalsCard({
                 <span
                   className="rounded-full border px-3 py-[3px] text-[11px] font-semibold uppercase tracking-[0.5px]"
                   style={{
-                    borderColor: "rgba(251, 133, 0, 0.5)",
-                    color: "#FFB74D",
+                    borderColor: ORANGE_RAMP.o20,
+                    color: "#ffb74d",
                   }}
                 >
                   Demo card
@@ -554,18 +721,22 @@ export function OriginalReceiptCollapsible({
     <details open={defaultOpen} className="group">
       <summary
         className="flex cursor-pointer list-none items-center justify-between rounded-2xl border px-4 py-3 text-sm font-medium"
-        style={{ ...glassCardStyle, color: T.textSecondary }}
+        style={{ ...badgeStyle, color: T.textSecondary }}
       >
         <span>Original receipt</span>
         <span className="text-xs transition-transform group-open:rotate-180" style={{ color: T.textMuted }}>
           ▾
         </span>
       </summary>
-      <div
-        className="mt-2 overflow-x-auto rounded-2xl border p-4"
-        style={glassCardStyle}
-      >
-        <div className="font-mono leading-relaxed" style={{ color: T.textSecondary }}>
+      <div className="mt-2 overflow-x-auto rounded-2xl border p-4" style={badgeStyle}>
+        {/* Verbatim ESC/POS text dump - IBM Plex Mono, matching the app's
+            monospace/stat-figure convention (§3.1/§3.3) elsewhere in PapeX,
+            even though receiptDetail.tsx itself has no raw-dump equivalent
+            to port from (§7's "Original receipt raw dump" row). */}
+        <div
+          className="leading-relaxed"
+          style={{ color: T.textSecondary, fontFamily: "var(--font-ibm-plex-mono)" }}
+        >
           {lines.map((line, i) => (
             <div key={i} className={`whitespace-pre ${alignClass(line.align)} ${styleClasses(line.style)}`}>
               {line.text.length === 0 ? " " : line.text}
@@ -599,6 +770,55 @@ export function ReceiptView({
       {hasStructure && <TotalsCard summary={summary} isSample={isSample} />}
       <OriginalReceiptCollapsible lines={summary.bodyLines} defaultOpen={!hasStructure} />
     </div>
+  );
+}
+
+// ---- Shell ------------------------------------------------------------------
+//
+// `.papex-receipt` (theme.css) scopes every CSS custom property this route
+// uses - light/dark values live there, not here. Header carries the real
+// PapeX wordmark (main_logo.png / Main_blue_transparent_outline.png, spec
+// §4) instead of the previous plain-text "papex" lockup - the concrete gap
+// the design doc named. The "Receipt" label uses the app's IBM Plex Mono
+// "eyebrow" convention (§3.3: Medium, 11px, +0.08em, uppercase).
+
+export function Shell({ children }: { children: ReactNode }) {
+  return (
+    <main
+      className="papex-receipt min-h-screen w-full"
+      style={{
+        color: "var(--r-text)",
+        backgroundColor: "var(--r-bg-solid)",
+        backgroundImage: [
+          "radial-gradient(ellipse 120% 60% at 50% -10%, var(--r-bg-glow) 0%, rgba(235,113,0,0) 60%)",
+          "linear-gradient(180deg, var(--r-bg-tint-top) 0%, var(--r-bg-tint-bottom) 100%)",
+          "url('/rdh-background.jpg')",
+        ].join(", "),
+        backgroundSize: "cover, cover, cover",
+        backgroundPosition: "center, center, center",
+        backgroundAttachment: "fixed, fixed, fixed",
+      }}
+    >
+      <div className="mx-auto flex min-h-screen w-full max-w-[430px] flex-col px-4 pb-10 pt-6">
+        <header className="mb-5 flex items-center gap-3 px-1">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logos/main_logo.png" alt="PapeX" className="r-logo-dark h-7 w-auto" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logos/Main_blue_transparent_outline.png"
+            alt="PapeX"
+            className="r-logo-light h-7 w-auto"
+          />
+          <span
+            className="ml-auto text-[11px] font-medium uppercase"
+            style={{ color: "var(--r-text-muted)", fontFamily: "var(--font-ibm-plex-mono)", letterSpacing: "0.08em" }}
+          >
+            Receipt
+          </span>
+        </header>
+        <div className="flex flex-1 flex-col gap-4">{children}</div>
+      </div>
+    </main>
   );
 }
 

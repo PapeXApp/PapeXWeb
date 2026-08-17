@@ -30,9 +30,15 @@ import {
 } from "firebase/auth";
 import { getPapexV2Auth } from "@/lib/firebaseClientApp";
 
-const ORANGE = "#FB8500";
-const TEXT_MUTED = "#9AA1A8";
-const TEXT_SECONDARY = "#C4C7CC";
+// Canonical source: PapeXV2/theme/tokens.ts `colors.accent` — see
+// app/r/ui.tsx's header comment and docs/PAPEX_DESIGN_KIT_FOR_WEB.md.
+// TEXT_MUTED/TEXT_SECONDARY read the same themable CSS vars ui.tsx uses
+// (defined in ./theme.css, scoped to the `.papex-receipt` ancestor this
+// component always renders inside) so this sign-in sheet follows light/dark
+// too, instead of owning its own fixed-dark hexes.
+const ORANGE = "#EB7100";
+const TEXT_MUTED = "var(--r-text-muted)";
+const TEXT_SECONDARY = "var(--r-text-secondary)";
 const APP_STORE_FALLBACK = "https://apps.apple.com/us/app/papex/id6754945242";
 
 type ClaimOutcome =
@@ -84,12 +90,15 @@ function PrimaryButton({
   disabled?: boolean;
   type?: "button" | "submit";
 }) {
+  // PapeXV2 Button.tsx "primary" variant (spec §7 CTA buttons): solid
+  // #EB7100 fill, white text, pill radius, Barlow-SemiBold 17 at -0.04em
+  // tracking, 52px tall (the "md" size).
   return (
     <button
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className="w-full rounded-full px-6 py-3 text-sm font-medium text-white transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+      className="font-barlow flex h-[52px] w-full items-center justify-center rounded-full px-6 text-[17px] font-semibold tracking-[-0.04em] text-white transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
       style={{ background: ORANGE }}
     >
       {children}
@@ -142,10 +151,10 @@ function SignInSheet({
   return (
     <div
       className="w-full rounded-[24px] border p-5"
-      style={{ background: "rgba(20, 26, 36, 0.85)", borderColor: "rgba(255, 255, 255, 0.12)" }}
+      style={{ background: "var(--r-badge-bg)", borderColor: "var(--r-badge-border)" }}
     >
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-base font-medium text-[#F4F4F4]">
+        <h2 className="text-base font-medium" style={{ color: "var(--r-text)" }}>
           {mode === "signin" ? "Sign in to PapeX" : "Create a PapeX account"}
         </h2>
         <button
@@ -166,8 +175,8 @@ function SignInSheet({
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="rounded-xl border bg-transparent px-3 py-2.5 text-sm text-[#F4F4F4] outline-none placeholder:text-[#9AA1A8]"
-          style={{ borderColor: "rgba(255, 255, 255, 0.12)" }}
+          className="rounded-xl border bg-transparent px-3 py-2.5 text-sm outline-none placeholder:text-[var(--r-text-muted)]"
+          style={{ borderColor: "var(--r-badge-border)", color: "var(--r-text)" }}
         />
         <input
           type="password"
@@ -176,8 +185,8 @@ function SignInSheet({
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="rounded-xl border bg-transparent px-3 py-2.5 text-sm text-[#F4F4F4] outline-none placeholder:text-[#9AA1A8]"
-          style={{ borderColor: "rgba(255, 255, 255, 0.12)" }}
+          className="rounded-xl border bg-transparent px-3 py-2.5 text-sm outline-none placeholder:text-[var(--r-text-muted)]"
+          style={{ borderColor: "var(--r-badge-border)", color: "var(--r-text)" }}
         />
         {error && <p className="text-xs" style={{ color: "#EF4444" }}>{error}</p>}
         <PrimaryButton type="submit" disabled={busy}>
@@ -245,7 +254,7 @@ export default function SaveToPapex({
     return (
       <a
         href={href}
-        className="w-full rounded-full px-6 py-3 text-center text-sm font-medium text-white transition active:scale-[0.98]"
+        className="font-barlow flex h-[52px] w-full items-center justify-center rounded-full px-6 text-center text-[17px] font-semibold tracking-[-0.04em] text-white transition active:scale-[0.98]"
         style={{ background: ORANGE }}
       >
         Save to PapeX

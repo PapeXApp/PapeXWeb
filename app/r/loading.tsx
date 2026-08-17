@@ -3,16 +3,19 @@
 // presence in the route segment). Covers the "slow fetch" requirement
 // without any client-side polling/spinner logic.
 //
-// Restyled to the dark liquid-glass look (see app/r/ui.tsx's header
-// comment for why tokens are inlined rather than added to
-// tailwind.config.ts) with skeleton placeholders shaped like the cards
-// that are about to render, so the loading state doesn't jump/flash white.
+// Mirrors <Shell>'s chrome (app/r/ui.tsx) - same `.papex-receipt` theme
+// scope, same logo header - so the loading state doesn't flash a
+// differently-themed/branded frame before the real page swaps in. Kept as
+// a separate file (Next.js requires loading.tsx to be its own module) with
+// skeleton placeholders shaped like the cards about to render.
+
+import "./theme.css";
 
 function SkeletonCard({ className = "" }: { className?: string }) {
   return (
     <div
       className={`animate-pulse rounded-[24px] border p-6 ${className}`}
-      style={{ background: "rgba(20, 26, 36, 0.6)", borderColor: "rgba(255, 255, 255, 0.12)" }}
+      style={{ background: "var(--r-badge-bg)", borderColor: "var(--r-badge-border)" }}
     >
       <div className="h-4 w-2/3 rounded-full bg-white/10" />
       <div className="mt-3 h-3 w-1/2 rounded-full bg-white/5" />
@@ -23,12 +26,13 @@ function SkeletonCard({ className = "" }: { className?: string }) {
 export default function ReceiptLoading() {
   return (
     <main
-      className="min-h-screen w-full text-[#F4F4F4]"
+      className="papex-receipt min-h-screen w-full"
       style={{
-        backgroundColor: "#181A20",
+        color: "var(--r-text)",
+        backgroundColor: "var(--r-bg-solid)",
         backgroundImage: [
-          "radial-gradient(ellipse 120% 60% at 50% -10%, rgba(251,133,0,0.16) 0%, rgba(251,133,0,0) 60%)",
-          "linear-gradient(180deg, rgba(24,26,32,0.55) 0%, rgba(11,43,59,0.75) 100%)",
+          "radial-gradient(ellipse 120% 60% at 50% -10%, var(--r-bg-glow) 0%, rgba(235,113,0,0) 60%)",
+          "linear-gradient(180deg, var(--r-bg-tint-top) 0%, var(--r-bg-tint-bottom) 100%)",
           "url('/rdh-background.jpg')",
         ].join(", "),
         backgroundSize: "cover, cover, cover",
@@ -37,12 +41,19 @@ export default function ReceiptLoading() {
       }}
     >
       <div className="mx-auto flex min-h-screen w-full max-w-[430px] flex-col px-4 pb-10 pt-6">
-        <header className="mb-5 flex items-center gap-2 px-1">
-          <span className="font-barlow text-lg font-medium tracking-tight text-[#F4F4F4]">
-            papex
-          </span>
-          <span className="h-[7px] w-[7px] rounded-sm bg-[#FB8500]" aria-hidden />
-          <span className="ml-auto text-xs font-medium uppercase tracking-wide text-[#9AA1A8]">
+        <header className="mb-5 flex items-center gap-3 px-1">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logos/main_logo.png" alt="PapeX" className="r-logo-dark h-7 w-auto" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logos/Main_blue_transparent_outline.png"
+            alt="PapeX"
+            className="r-logo-light h-7 w-auto"
+          />
+          <span
+            className="ml-auto text-[11px] font-medium uppercase"
+            style={{ color: "var(--r-text-muted)", fontFamily: "var(--font-ibm-plex-mono)", letterSpacing: "0.08em" }}
+          >
             Receipt
           </span>
         </header>

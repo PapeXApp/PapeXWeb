@@ -1,0 +1,143 @@
+/* app/r/theme.css
+ *
+ * Design tokens for the /r (and /rdh) receipt pages, as CSS custom
+ * properties scoped to the `.papex-receipt` class on <Shell>'s root <main>
+ * (and mirrored in loading.tsx's skeleton) so they can never leak into the
+ * rest of the site - nothing outside these two routes references them.
+ *
+ * Canonical source: PapeXV2/theme/tokens.ts on release/testflight-2026-08-17.
+ * See docs/PAPEX_DESIGN_KIT_FOR_WEB.md for the full extraction + rationale
+ * (colour math, the corner-lit-ring construction, the "outline not frost"
+ * history). If a colour here looks wrong, fix it against that doc/that repo
+ * - do not hand-tune a hex "to look nicer"; that is exactly the drift
+ * (#FB8500 orange, #2B7FC6 blue) this pass corrects in app/r/ui.tsx's `T`
+ * object, which reads these same variables rather than owning its own hexes.
+ *
+ * Dark palette below is exactly what ships in the App Store build (§1.2).
+ * Light palette (the `prefers-color-scheme: light` block) has no on-device
+ * screenshot to check against - PapeXV2's own light theme is unfinished and
+ * unused (theme/ThemeContext.tsx hard-pins 'dark', see spec §1.4) - so the
+ * light rim/glow numbers here are this page's own reasoned extrapolation
+ * from the dark tier system (§1.5/§1.6), not a verbatim port. Flagged in the
+ * migration report.
+ */
+
+.papex-receipt {
+  color-scheme: dark;
+
+  /* Page background (§7 "Page background" row - kept as the existing
+     photographic/gradient treatment, a deliberate divergence from the app's
+     flat #00121D the spec explicitly allows for a standalone web page). */
+  --r-bg-solid: #00121d;
+  --r-bg-glow: rgba(235, 113, 0, 0.16);
+  --r-bg-tint-top: rgba(24, 26, 32, 0.55);
+  --r-bg-tint-bottom: rgba(11, 43, 59, 0.75);
+
+  --r-text: rgba(255, 255, 255, 0.9);
+  --r-text-secondary: rgba(255, 255, 255, 0.64);
+  --r-text-muted: rgba(255, 255, 255, 0.45);
+
+  /* Orange ramp - §1.1. The only sanctioned way orange varies is opacity,
+     never a hue shift. */
+  --r-orange-08: rgba(235, 113, 0, 0.08);
+  --r-orange-12: rgba(235, 113, 0, 0.12);
+  --r-orange-20: rgba(235, 113, 0, 0.2);
+
+  --r-divider: rgba(255, 255, 255, 0.1);
+
+  /* Glass face fill + inset "corner kiss" shadow - §2.2/§2.3. Near-invisible
+     on purpose: outline, not frost (3150a5c "drop the fill, blur and inset
+     corner-kiss" / 3b35bd8 "glass face without a backdrop blur"). Do not
+     raise this opacity to look nicer on web - the source documents a
+     rejected ladder (0.07+blur24 -> 0.006+sheen -> nothing) ending exactly
+     here. */
+  --r-face-fill: linear-gradient(
+    128deg,
+    rgba(255, 255, 255, 0.0093) 0%,
+    rgba(255, 255, 255, 0.0039) 50%,
+    rgba(255, 255, 255, 0.0093) 100%
+  );
+  --r-inset-corner: rgba(255, 255, 255, 0.28);
+  --r-inset-bottom: rgba(0, 0, 0, 0.07);
+
+  /* Corner-lit ring, three tiers - §1.5/§1.6/§2.4. `far === lit` today per
+     the source, so there is no separate --r-rim-*-far variable. */
+  --r-rim-neutral-lit: rgba(255, 255, 255, 0.51);
+  --r-rim-neutral-faint: rgba(255, 255, 255, 0.153);
+  --r-rim-important-lit: rgba(232, 128, 54, 0.51);
+  --r-rim-important-faint: rgba(232, 128, 54, 0.153);
+  --r-rim-standard-lit: rgba(127, 196, 236, 0.492);
+  --r-rim-standard-faint: rgba(127, 196, 236, 0.148);
+
+  --r-glow-neutral: 0 12px 40px rgba(0, 0, 0, 0.14);
+  --r-glow-important: 0 12px 40px rgba(0, 0, 0, 0.14), 0 0 22px rgba(232, 128, 54, 0.042);
+  --r-glow-standard: 0 12px 40px rgba(0, 0, 0, 0.14), 0 0 22px rgba(127, 196, 236, 0.036);
+
+  /* Round badge chrome (state icons, decoded-logo frame) - the corner-lit
+     ring has no defined circular form in the source, so these get a plain
+     faint border instead (see migration report). */
+  --r-badge-bg: rgba(20, 26, 36, 0.6);
+  --r-badge-border: rgba(255, 255, 255, 0.12);
+}
+
+@media (prefers-color-scheme: light) {
+  .papex-receipt {
+    color-scheme: light;
+
+    --r-bg-solid: #f8fafc;
+    --r-bg-glow: rgba(235, 113, 0, 0.1);
+    --r-bg-tint-top: rgba(248, 250, 252, 0.72);
+    --r-bg-tint-bottom: rgba(226, 232, 240, 0.88);
+
+    --r-text: #1a1a1a;
+    --r-text-secondary: #4b5563;
+    --r-text-muted: #7c8798;
+
+    --r-orange-08: rgba(235, 113, 0, 0.1);
+    --r-orange-12: rgba(235, 113, 0, 0.14);
+    --r-orange-20: rgba(235, 113, 0, 0.22);
+
+    --r-divider: rgba(0, 0, 0, 0.1);
+
+    --r-face-fill: linear-gradient(128deg, rgba(0, 0, 0, 0.02) 0%, rgba(0, 0, 0, 0.008) 50%, rgba(0, 0, 0, 0.02) 100%);
+    --r-inset-corner: rgba(255, 255, 255, 0.6);
+    --r-inset-bottom: rgba(0, 0, 0, 0.05);
+
+    /* No dark-white rim reads on a light surface, so neutral swaps to a
+       dark ink line; important/standard keep their hue but gain alpha since
+       the same rgba reads fainter against a light background. */
+    --r-rim-neutral-lit: rgba(0, 0, 0, 0.22);
+    --r-rim-neutral-faint: rgba(0, 0, 0, 0.07);
+    --r-rim-important-lit: rgba(197, 103, 38, 0.62);
+    --r-rim-important-faint: rgba(197, 103, 38, 0.22);
+    --r-rim-standard-lit: rgba(47, 120, 168, 0.6);
+    --r-rim-standard-faint: rgba(47, 120, 168, 0.2);
+
+    --r-glow-neutral: 0 8px 24px rgba(0, 0, 0, 0.08);
+    --r-glow-important: 0 8px 24px rgba(0, 0, 0, 0.08), 0 0 18px rgba(197, 103, 38, 0.1);
+    --r-glow-standard: 0 8px 24px rgba(0, 0, 0, 0.08), 0 0 18px rgba(47, 120, 168, 0.1);
+
+    --r-badge-bg: rgba(255, 255, 255, 0.75);
+    --r-badge-border: rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Header wordmark swap - main_logo.png is white-on-transparent (correct on
+   the app's permanently-dark background); on a light system theme it would
+   be invisible, so it's replaced with the navy counterpart
+   (Main_blue_transparent_outline.png, spec §4). No JS theme detection: pure
+   prefers-color-scheme so the swap works on a server-rendered page. */
+.papex-receipt .r-logo-dark {
+  display: block;
+}
+.papex-receipt .r-logo-light {
+  display: none;
+}
+@media (prefers-color-scheme: light) {
+  .papex-receipt .r-logo-dark {
+    display: none;
+  }
+  .papex-receipt .r-logo-light {
+    display: block;
+  }
+}
