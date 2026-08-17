@@ -22,15 +22,25 @@
 //                 screen with ZERO sample content.
 //   ERROR         transport/backend failure that is plausibly transient
 //                 -> retry screen (unchanged behaviour).
-//   DEMO          no sid at all (bare `/r`). Nobody tapped anything, so
-//                 there is no real receipt being impersonated and a sample
-//                 is honest — provided it is unmistakably marked.
+//   DEMO          no sid at all (bare `/r`), OR the visitor explicitly
+//                 opted in with `?demo=1`. Nobody tapped a real device in
+//                 either case, so there is no real receipt being
+//                 impersonated and a sample is honest — provided it is
+//                 unmistakably marked.
 //
 // Note on malformed sids: the brief defines DEMO as "no sid supplied at
-// all". A malformed sid (truncated NFC read, mangled share, hand-edited
-// URL) means the visitor *does* believe they have a receipt, so it resolves
-// to NOT_AVAILABLE rather than DEMO. Erring toward "we couldn't find it" is
-// always safe; erring toward a sample is the bug being fixed.
+// all" (or an explicit `?demo=1` opt-in). A malformed sid (truncated NFC
+// read, mangled share, hand-edited URL) means the visitor *does* believe
+// they have a receipt, so it resolves to NOT_AVAILABLE rather than DEMO.
+// Erring toward "we couldn't find it" is always safe; erring toward a
+// sample is the bug being fixed.
+//
+// `demoRequested` (`?demo=1`) is checked first and wins outright, even over
+// a well-formed sid — but this is never a fallback from a failed lookup:
+// page.tsx skips the backend fetch entirely when `demoRequested` is true, so
+// there is no "real lookup" to have failed. It exists so Nico can reach the
+// unmistakably-marked sample on demand for a demo, without depending on the
+// coincidence of an empty URL.
 
 import type { ReceiptSummary } from "./receiptSummary";
 import { hasStructure } from "./receiptSummary";
@@ -58,6 +68,12 @@ export function hasVisibleContent(summary: ReceiptSummary): boolean {
 export interface ResolveInput {
   /** The raw `sid` query param, already narrowed to a single value. */
   rawSid?: string;
+  /**
+   * True for an explicit `?demo=1` opt-in. Wins over everything else,
+   * including a well-formed sid — see the module doc for why that's still
+   * never a "fallback from a failed lookup". Defaults to false.
+   */
+  demoRequested?: boolean;
   /** Whether `rawSid` matched the backend's 16-lowercase-hex contract. */
   sidIsValid: boolean;
   /** Outcome of the upstream fetch. Omitted when no fetch was attempted. */
@@ -67,7 +83,15 @@ export interface ResolveInput {
 }
 
 export function resolveReceiptState(input: ResolveInput): ReceiptPageState {
-  const { rawSid, sidIsValid, fetchStatus, parsedHasVisibleContent } = input;
+  const { rawSid, demoRequested = false, sidIsValid, fetchStatus, parsedHasVisibleContent } = input;
+
+  // Explicit opt-in (`?demo=1`). Checked first and wins outright — deliberate,
+  // not a fallback: the caller never attempts a backend fetch when this is
+  // set (see page.tsx), so there is no failed real lookup for this to be a
+  // fallback from.
+  if (demoRequested) {
+    return { kind: "demo" };
+  }
 
   // Bare `/r` — nobody tapped anything. Treat whitespace-only as absent.
   if (rawSid == null || rawSid.trim().length === 0) {

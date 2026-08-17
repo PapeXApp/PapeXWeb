@@ -135,6 +135,34 @@ test("DEMO is the only state that may show the sample", () => {
   assert.equal(everyState.filter((s) => s.kind === "demo").length, 1);
 });
 
+test("DEMO: explicit ?demo=1 opt-in with no sid", () => {
+  assert.deepEqual(
+    resolveReceiptState({ rawSid: undefined, demoRequested: true, sidIsValid: false }),
+    { kind: "demo" },
+  );
+});
+
+test("DEMO: explicit ?demo=1 wins even alongside a well-formed sid (no fetch attempted)", () => {
+  assert.deepEqual(
+    resolveReceiptState({ rawSid: VALID_SID, demoRequested: true, sidIsValid: true }),
+    { kind: "demo" },
+  );
+});
+
+test("DEMO: explicit ?demo=1 wins even alongside a malformed sid", () => {
+  assert.deepEqual(
+    resolveReceiptState({ rawSid: "zzzz", demoRequested: true, sidIsValid: false }),
+    { kind: "demo" },
+  );
+});
+
+test("demoRequested defaults to false and does not change sid-present outcomes", () => {
+  assert.deepEqual(
+    resolveReceiptState({ rawSid: VALID_SID, sidIsValid: true, fetchStatus: "not_found" }),
+    { kind: "not_available", reason: "not_found" },
+  );
+});
+
 // ---- hasVisibleContent ------------------------------------------------------
 
 test("hasVisibleContent: true for the sample receipt (structured)", () => {

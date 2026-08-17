@@ -207,11 +207,12 @@ export function ReceiptNotAvailable({ children }: { children?: ReactNode }) {
         Receipt not available
       </h1>
       <p className="mt-2 max-w-[19rem] text-sm" style={{ color: T.textSecondary }}>
-        We couldn&apos;t find a receipt for this link. Receipts stay available for 30 days
-        after you tap, then they&apos;re removed.
+        We couldn&apos;t find a receipt for this link. The link may have been
+        mistyped or cut short when it was shared, or this receipt isn&apos;t in
+        our system.
       </p>
       <p className="mt-3 max-w-[19rem] text-sm" style={{ color: T.textMuted }}>
-        If you just tapped, give it a moment and try again.
+        If you just tapped the device, give it a moment and try again.
       </p>
       {children}
     </div>

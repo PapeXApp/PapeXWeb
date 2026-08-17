@@ -26,6 +26,11 @@
 //
 //   no `sid` at all                      -> DEMO: sample, pinned banner,
 //                                           watermarked body
+//   `?demo=1` (with or without a sid)    -> DEMO, same as above — an
+//                                           explicit opt-in, never a
+//                                           fallback from a failed lookup
+//                                           (the backend fetch is skipped
+//                                           entirely in this case)
 //   `sid` present but malformed          -> NOT_AVAILABLE (no sample)
 //   `sid` valid, backend 404s            -> NOT_AVAILABLE (no sample)
 //   `sid` valid, bytes parse to nothing  -> NOT_AVAILABLE (no sample)
@@ -67,24 +72,31 @@ export const dynamic = "force-dynamic";
 export default async function ReceiptPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sid?: string | string[] }>;
+  searchParams: Promise<{ sid?: string | string[]; demo?: string | string[] }>;
 }) {
   const params = await searchParams;
   const rawSid = Array.isArray(params.sid) ? params.sid[0] : params.sid;
+  const rawDemo = Array.isArray(params.demo) ? params.demo[0] : params.demo;
   const uaHeader = (await headers()).get("user-agent") ?? "";
   const isAndroid = /android/i.test(uaHeader);
   const isIOS = /iphone|ipad|ipod/i.test(uaHeader);
 
+  // Explicit demo opt-in (`?demo=1`) — Nico's ask so the sample stays
+  // reachable on demand. Deliberately checked before any backend fetch: this
+  // must never look like (or behave like) a fallback from a failed lookup.
+  const demoRequested = rawDemo === "1";
   const sidIsValid = isValidSid(rawSid);
 
-  // Only hit the backend for a well-formed sid; every other case is decided
-  // locally by resolveReceiptState.
-  const result = sidIsValid ? await fetchReceiptBytes(rawSid) : undefined;
+  // Only hit the backend for a well-formed sid, and never when the demo was
+  // explicitly requested; every other case is decided locally by
+  // resolveReceiptState.
+  const result = sidIsValid && !demoRequested ? await fetchReceiptBytes(rawSid) : undefined;
   const parsed =
     result?.status === "ok" ? summarizeReceipt(parseEscPos(result.bytes).lines) : undefined;
 
   const state = resolveReceiptState({
     rawSid,
+    demoRequested,
     sidIsValid,
     fetchStatus: result?.status,
     parsedHasVisibleContent: parsed ? hasVisibleContent(parsed) : undefined,
