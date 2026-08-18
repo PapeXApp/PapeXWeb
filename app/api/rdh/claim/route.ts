@@ -49,7 +49,11 @@ function adapterBase(): string {
   return base.replace(/\/+$/, "");
 }
 
-const PASSTHROUGH_STATUSES = new Set([200, 400, 401, 404, 409]);
+// 422 is the adapter's "could not read this receipt, wrote nothing, the sid is
+// NOT consumed" answer. It MUST pass through: collapsed into the generic 502
+// below it becomes an unrecoverable-looking error for a case that is explicitly
+// retryable, and the client can no longer tell the two apart.
+const PASSTHROUGH_STATUSES = new Set([200, 400, 401, 404, 409, 422]);
 
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get("authorization");

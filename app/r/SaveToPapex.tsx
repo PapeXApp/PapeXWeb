@@ -74,6 +74,16 @@ async function claimReceipt(sid: string, idToken: string): Promise<ClaimOutcome>
     if (res.status === 409) {
       return { kind: "error", message: "This receipt was already saved by another account." };
     }
+    // 422: the backend could not read this receipt and wrote NOTHING, so the
+    // sid is still claimable. Every other branch here is terminal; this one is
+    // not, and the copy has to say so. Falling through to "Something went
+    // wrong" would tell the customer their receipt is lost when it isn't.
+    if (res.status === 422) {
+      return {
+        kind: "error",
+        message: "We couldn't read this receipt yet. Please try again in a moment.",
+      };
+    }
     return { kind: "error", message: "Something went wrong. Please try again." };
   } catch {
     return { kind: "error", message: "Couldn't reach PapeX. Check your connection and try again." };
