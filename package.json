@@ -10,9 +10,12 @@
     "lint": "next lint",
     "migrate:images": "tsx scripts/migrateBlogImages.ts",
     "migrate:images:dry": "tsx scripts/migrateBlogImages.ts --dry-run",
+    "migrate:static-blogs": "tsx scripts/migrateStaticBlogs.ts",
+    "migrate:static-blogs:dry": "tsx scripts/migrateStaticBlogs.ts --dry-run",
     "test:escpos": "tsx lib/escpos.test.ts",
     "test:summary": "tsx lib/receiptSummary.test.ts",
-    "test": "npm run test:escpos && npm run test:summary"
+    "test:merchantHost": "tsx lib/merchantHost.test.ts",
+    "test": "npm run test:escpos && npm run test:summary && npm run test:merchantHost"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

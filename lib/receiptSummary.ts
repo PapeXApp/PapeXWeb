@@ -115,6 +115,13 @@ const PAYMENT_BRAND_HINTS = [
 
 function looksLikePayment(t: string): boolean {
   const l = t.toLowerCase();
+  // Not a PAYMENT_BRAND_HINTS entry: that list is matched as plain substrings
+  // and "ach" is a substring of "each" and "attach", so the bank-pay brands
+  // need BANK_PAY_RE's word boundaries. Unlike cash — which looksLikeTotal
+  // already absorbs via its "cash" hint — nothing else here catches a bare
+  // "AEROPAY   42.47", so without this gate that tender line has a trailing
+  // amount and letters and would be extracted as a purchased line item.
+  if (BANK_PAY_RE.test(l)) return true;
   return PAYMENT_BRAND_HINTS.some((brand) => l.includes(brand));
 }
 
@@ -273,13 +280,30 @@ function extractTotals(lines: ReceiptLine[]): {
 // Items
 // ---------------------------------------------------------------------------
 
-/** "1  Cortado" -> { qty: 1, name: "Cortado" }. No leading integer -> qty 1, name = label. */
+/**
+ * Leading quantity token at the start of an item label. Covers all four forms
+ * real ESC/POS printers emit: "2  Bagel", "2x Latte", "2X Latte", "2 x Latte".
+ * The optional [xX] sits between two whitespace runs (the leading one optional,
+ * the trailing one required) so the multiplier is stripped whether or not it is
+ * space-separated from the digits. A required trailing \s+ keeps words that
+ * merely start with x from being eaten — "3 Xylophone" backtracks to consuming
+ * just "3 ", leaving "Xylophone" intact.
+ *
+ * Kept in sync with papex-adapter-backend/src/rdh/summarize.js and
+ * Papex_AppClip/Sources/AppClip/ReceiptSummary.swift (Patterns.leadingQuantity)
+ * — see docs/rdh_orchestrator.md on summarizer parity. The {1,3} bound matches
+ * those two: a 4+ digit leading run is a PLU/SKU code, not a quantity.
+ */
+const LEADING_QUANTITY_RE = /^(\d{1,3})\s*[xX]?\s+/;
+
+/** "1  Cortado" / "2 x Cortado" -> { qty: n, name: "Cortado" }. No leading qty token -> qty 1, name = label. */
 function splitQtyAndName(label: string): { qty: number; name: string } {
-  const match = label.match(/^(\d+)\s+(.+)$/);
+  const match = label.match(LEADING_QUANTITY_RE);
   if (match) {
     const qty = Number(match[1]);
-    if (Number.isFinite(qty) && qty > 0) {
-      return { qty, name: match[2].trim() };
+    const name = label.slice(match[0].length).trim();
+    if (Number.isFinite(qty) && qty > 0 && name.length > 0) {
+      return { qty, name };
     }
   }
   return { qty: 1, name: label };
@@ -367,8 +391,47 @@ export type PaymentNetwork =
   | "venmo"
   | "cash_app"
   | "cash"
+  | "debit"
+  | "bank_pay"
   | "ebt"
   | "check";
+
+// "CASH APP" / "CashApp" as a whole token. Must stay a word-boundary match:
+// the old plain-substring test (`includes("cash app")`) also fired on
+// "CASH APPROVED", so every cash customer at a merchant whose printer emits
+// an approval status was classified as Cash App.
+const CASH_APP_RE = /\bcash\s*app\b/i;
+
+// A cash tender. \bcash\b so "CASHIER"/"CASHBACK" don't qualify, and
+// (?!\s*back) so "CASH BACK" — a debit-card feature, not a cash tender —
+// doesn't either.
+const CASH_TENDER_RE = /\bcash\b(?!\s*back)/i;
+
+// PIN debit with no network brand on the line — "DEBIT ****2012 APPROVED".
+// Common in cannabis retail, where "cashless ATM" terminals run PIN debit.
+// Checked AFTER every card-brand rule so a branded debit card ("VISA DEBIT
+// ****1234") still reports its network rather than collapsing to "debit".
+const DEBIT_RE = /\bdebit\b/i;
+
+// ACH / bank-pay apps — Aeropay, Dutchie Pay, Stronghold, CanPay, Hypur, or a
+// bare "ACH" line. This is a real and growing cannabis-retail tender rail,
+// because the card networks won't clear the category. Before this rule an
+// "AEROPAY ****1234 APPROVED" line classified as nothing and the dashboard
+// rendered that transaction's payment column as a muted em dash.
+//
+// Word-boundary matched, not substring, for exactly the reason the cash rule
+// was: a brand name that is a substring of ordinary receipt text silently
+// claims every receipt that prints it. The two live traps here:
+//   dutchie\s*pay — "Dutchie" alone is the POS/e-commerce platform whose name
+//                   prints in dispensary receipt footers ("Powered by
+//                   Dutchie"); only the two-word form is a tender.
+//   \bach\b       — the boundaries hold it to the standalone token, off
+//                   "spinach"/"attach".
+//
+// Checked BEFORE the generic ebt/check/cash/debit fallbacks so a named brand
+// always outranks them: "CANPAY DEBIT ****1234" is a bank-pay tender, not the
+// unbranded PIN debit that DEBIT_RE is for.
+const BANK_PAY_RE = /\b(?:aeropay|dutchie\s*pay|stronghold|canpay|hypur|ach)\b/i;
 
 export function detectPaymentMethod(paymentMethod: string | null | undefined): PaymentNetwork | null {
   if (!paymentMethod) return null;
@@ -377,10 +440,14 @@ export function detectPaymentMethod(paymentMethod: string | null | undefined): P
   if (lower.includes("google pay") || lower.includes("gpay")) return "google_pay";
   if (lower.includes("paypal")) return "paypal";
   if (lower.includes("venmo")) return "venmo";
-  if (lower.includes("cash app") || lower.includes("cashapp")) return "cash_app";
+  if (CASH_APP_RE.test(lower)) return "cash_app";
+  if (BANK_PAY_RE.test(lower)) return "bank_pay";
   if (lower.includes("ebt") || lower.includes("food stamp")) return "ebt";
   if (lower.includes("check") || lower.includes("cheque")) return "check";
-  if (lower === "cash" || lower.includes(" cash ")) return "cash";
+  // Was `lower === "cash" || lower.includes(" cash ")`, which only matched a
+  // line that was exactly "CASH" or had cash surrounded by spaces — so
+  // "CASH APPROVED" and "CASH TENDER" both fell through to null.
+  if (CASH_TENDER_RE.test(lower)) return "cash";
   if (lower.includes("visa")) return "visa";
   if (lower.includes("mastercard") || lower.includes("master card")) return "mastercard";
   if (lower.includes("amex") || lower.includes("american express")) return "amex";
@@ -389,6 +456,7 @@ export function detectPaymentMethod(paymentMethod: string | null | undefined): P
   if (lower.includes("jcb")) return "jcb";
   if (lower.includes("unionpay") || lower.includes("china unionpay")) return "unionpay";
   if (lower.includes("maestro")) return "maestro";
+  if (DEBIT_RE.test(lower)) return "debit";
   return null;
 }
 
@@ -407,6 +475,17 @@ export const PAYMENT_METHOD_STYLES: Record<PaymentNetwork, { bg: string; label: 
   venmo: { bg: "#008CFF", label: "VENMO", textColor: "#FFFFFF" },
   cash_app: { bg: "#00D632", label: "CASH APP", textColor: "#FFFFFF" },
   cash: { bg: "#22C55E", label: "CASH", textColor: "#FFFFFF" },
+  // Neutral slate, deliberately not a card-network colour: an unbranded PIN
+  // debit / "cashless ATM" tender belongs with `check` (the other
+  // no-network-brand tender) rather than borrowing Visa's navy or Maestro's
+  // blue, which would assert a network the receipt never printed.
+  debit: { bg: "#475569", label: "DEBIT", textColor: "#FFFFFF" },
+  // Teal, for the same reason `debit` is slate: an ACH / bank-pay tender has
+  // no card network behind it, so it must not borrow one of the network
+  // blues (Visa navy, Maestro, Amex, G Pay) sitting in this table. Distinct
+  // from the greens too — cash is #22C55E and Cash App #00D632, and a
+  // bank-pay row is neither. 5.5:1 on white, so the bold chip label clears AA.
+  bank_pay: { bg: "#0F766E", label: "BANK PAY", textColor: "#FFFFFF" },
   ebt: { bg: "#4CAF50", label: "EBT", textColor: "#FFFFFF" },
   check: { bg: "#6B7280", label: "CHECK", textColor: "#FFFFFF" },
 };
