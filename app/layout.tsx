@@ -7,6 +7,9 @@ import '@/styles/framer-site.css'
 import './globals.css'
 import { barlow, kameron } from './fonts'
 import { Analytics } from '@vercel/analytics/react'
+import Script from 'next/script'
+
+const GA_MEASUREMENT_ID = 'G-QX3WCTWR03'
 
 export const metadata: Metadata = {
   title: 'PapeX | Digital Receipts Revolutionized - Paperless Receipt Solutions',
@@ -33,9 +36,6 @@ export const metadata: Metadata = {
       'max-image-preview': 'large',
       'max-snippet': -1,
     },
-  },
-  verification: {
-    google: 'your-google-verification-code-here',
   },
   openGraph: {
     type: 'website',
@@ -99,6 +99,19 @@ export default function RootLayout({
         <link rel="icon" href="/favlogo.png" type="image/png" />
         <link rel="apple-touch-icon" href="/favlogo.png" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        {/* Google tag (gtag.js) */}
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${GA_MEASUREMENT_ID}');
+          `}
+        </Script>
       </head>
       <body className="font-barlow">
         {children}

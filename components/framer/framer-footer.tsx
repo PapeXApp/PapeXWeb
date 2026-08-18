@@ -26,6 +26,7 @@ export function FramerFooter() {
             <p className="footer-col-label">Resources</p>
             <nav className="footer-links" aria-label="Resources">
               <Link href="/contact">Contact</Link>
+              <Link href="/support">Support</Link>
               <Link href="/blog">Blog</Link>
               <Link href="/terms">Terms</Link>
             </nav>

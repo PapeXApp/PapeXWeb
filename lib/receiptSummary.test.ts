@@ -48,7 +48,9 @@ test("sample receipt: merchant, address, date all extracted", () => {
   const summary = summarizeReceipt(sampleReceiptLines);
   assert.equal(summary.merchantName, "BLUEBIRD COFFEE");
   assert.deepEqual(summary.addressLines, ["412 Walnut St", "Syracuse, NY 13202", "(315) 555-0142"]);
-  assert.equal(summary.dateline, "Order #1042   Jun 8, 2026  10:24 AM");
+  // Only the date/time substring, reformatted — not the entire raw line
+  // (Swift parity: the order number belongs elsewhere, not in the dateline).
+  assert.equal(summary.dateline, "Jun 8, 2026 • 10:24 AM");
   assert.equal(hasStructure(summary), true);
 });
 
@@ -368,6 +370,32 @@ test("a date line mixed among real address lines is excluded, siblings kept", ()
   const summary = summarizeReceipt(lines);
   assert.equal(summary.dateline, "Jun 8, 2026");
   assert.deepEqual(summary.addressLines, ["123 Main St"]);
+});
+
+test("dateline with leading text yields only the reformatted date/time substring", () => {
+  const lines = [
+    line("Corner Deli", "center"),
+    line(""),
+    line("Order #1042 Jun 8, 2026 10:24 AM"),
+    line("Sandwich              6.00"),
+    line("TOTAL                 6.00"),
+  ];
+  const summary = summarizeReceipt(lines);
+  assert.equal(summary.dateline, "Jun 8, 2026 • 10:24 AM");
+});
+
+test("a date line with surrounding text in the header block is still index-deduped", () => {
+  // String-equality dedupe broke once the dateline became a reformatted
+  // substring; the Swift-parity index-based dedupe must still exclude the
+  // consumed line from addressLines.
+  const lines = [
+    line("Corner Deli", "center"),
+    line("Printed Jun 8, 2026 10:24 AM", "center"),
+    line("1  Sandwich   6.00"),
+  ];
+  const summary = summarizeReceipt(lines);
+  assert.equal(summary.dateline, "Jun 8, 2026 • 10:24 AM");
+  assert.deepEqual(summary.addressLines, []);
 });
 
 test("item label without a qty prefix keeps the whole label as the name", () => {

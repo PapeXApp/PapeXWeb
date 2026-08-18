@@ -464,8 +464,16 @@ class ParserContext {
       // GS v 0 m xL xH yL yH d1...dk — raster bit image. 8 header bytes:
       // 0x1D 0x76 0x30, then m, xL, xH, yL, yH (index+3..index+7).
       case 0x76: {
-        if (this.index + 7 >= this.bytes.length || this.bytes[this.index + 2] !== 0x30) {
+        if (this.index + 2 >= this.bytes.length || this.bytes[this.index + 2] !== 0x30) {
+          // Not the recognized GS v 0 form — skip prefix only.
           this.index += 2;
+          return;
+        }
+        if (this.index + 7 >= this.bytes.length) {
+          // Truncated mid-header (fewer than 8 bytes available) — no reliable
+          // byte to resync on, so consume to EOF rather than risk re-parsing
+          // whatever partial header bytes remain as text (matches Swift).
+          this.index = this.bytes.length;
           return;
         }
         const xL = this.bytes[this.index + 4];

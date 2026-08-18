@@ -59,9 +59,16 @@ export function hasStructure(summary: ReceiptSummary): boolean {
 /** Amount at end of line, optional $ and thousands separators, exactly 2 decimals. */
 const TRAILING_MONEY_RE = /\$?\d{1,3}(?:,\d{3})*(?:\.\d{2})\s*$/;
 
-/** A date somewhere in the line: "Jun 8, 2026", "06/08/2026", or "2026-06-08". */
+/**
+ * A date somewhere in the line: "Jun 8, 2026", "06/08/2026", or "2026-06-08".
+ * Ported verbatim from ReceiptSummary.swift Patterns.date (incl. the optional
+ * ",? year" tail on the month-name form).
+ */
 const DATE_RE =
-  /(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d{1,2}|\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{4}-\d{2}-\d{2}/i;
+  /(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(?:,?\s*\d{4})?|\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{4}-\d{2}-\d{2}/i;
+
+/** A clock time on the line: "10:24 AM", "22:14" (Swift Patterns.time). */
+const TIME_RE = /\d{1,2}:\d{2}(?:\s*[AaPp][Mm])?/;
 
 function isDivider(t: string): boolean {
   const stripped = t.replace(/\s+/g, "");
@@ -170,16 +177,26 @@ function extractMerchant(lines: ReceiptLine[]): { name?: string; index?: number 
   return {};
 }
 
-function extractAddress(lines: ReceiptLine[], merchantIndex?: number): string[] {
+function extractAddress(
+  lines: ReceiptLine[],
+  merchantIndex?: number,
+  dateIndex?: number,
+): string[] {
   if (merchantIndex == null) return [];
   const out: string[] = [];
   let i = merchantIndex + 1;
   while (i < lines.length && out.length < 3) {
+    const lineIndex = i;
     const line = lines[i];
     const t = line.text.trim();
     i += 1;
     if (!t) break; // blank line ends the header block
     if (isDivider(t)) break;
+    // Already promoted to the formatted orange dateline row — don't also
+    // print it verbatim in the address block (index-based, matching Swift;
+    // string equality no longer works now the dateline is a reformatted
+    // substring of the line).
+    if (lineIndex === dateIndex) continue;
     // Address/contact lines are centered, short, and not money rows.
     const centeredish = line.align === "center" || t.length <= 34;
     if (centeredish && !endsWithAmount(t) && !looksLikeTotal(t) && !looksLikeOrderLine(t)) {
@@ -191,13 +208,31 @@ function extractAddress(lines: ReceiptLine[], merchantIndex?: number): string[] 
   return out;
 }
 
-function extractDateline(lines: ReceiptLine[]): string | undefined {
-  for (const line of lines) {
-    const t = line.text.trim();
+/**
+ * Extracts just the "date • time" portion of a line (not the whole line — a
+ * line like "Order #1042   Jun 8, 2026  10:24 AM" should only contribute
+ * "Jun 8, 2026 • 10:24 AM" to the merchant header's orange dateline; the
+ * order number is not part of the date). Port of Swift's extractDateline.
+ *
+ * Also returns the index of the consumed line so `extractAddress` can
+ * exclude it — otherwise a bare date line sitting in the header block (no
+ * blank line separating it from the address) gets printed twice: once
+ * verbatim in `addressLines`, once reformatted as the dateline.
+ */
+function extractDateline(lines: ReceiptLine[]): { text?: string; index?: number } {
+  for (let i = 0; i < lines.length; i++) {
+    const t = lines[i].text.trim();
     if (!t) continue;
-    if (DATE_RE.test(t)) return t;
+    const dateMatch = DATE_RE.exec(t);
+    if (!dateMatch) continue;
+    const datePart = dateMatch[0].trim();
+    const timeMatch = TIME_RE.exec(t);
+    if (timeMatch) {
+      return { text: `${datePart} • ${timeMatch[0].trim()}`, index: i };
+    }
+    return { text: datePart, index: i };
   }
-  return undefined;
+  return {};
 }
 
 // ---------------------------------------------------------------------------
@@ -309,12 +344,12 @@ function extractPaymentLine(lines: ReceiptLine[]): string | undefined {
 
 export function summarizeReceipt(lines: ReceiptLine[]): ReceiptSummary {
   const merchant = extractMerchant(lines);
-  const dateline = extractDateline(lines);
+  const date = extractDateline(lines);
   // A bare date line (e.g. right under the merchant, no blank-line separator)
   // can also satisfy extractAddress's "short/centered, not money/total" test.
-  // Once it's been consumed as the formatted dateline, drop it from
-  // addressLines so it isn't rendered twice.
-  const addressLines = extractAddress(lines, merchant.index).filter((t) => t !== dateline);
+  // Once it's been consumed as the formatted dateline, extractAddress skips
+  // it by index so it isn't rendered twice.
+  const addressLines = extractAddress(lines, merchant.index, date.index);
   const totals = extractTotals(lines);
   const items = extractItems(lines);
   const paymentLine = extractPaymentLine(lines);
@@ -322,7 +357,7 @@ export function summarizeReceipt(lines: ReceiptLine[]): ReceiptSummary {
   return {
     merchantName: merchant.name,
     addressLines,
-    dateline,
+    dateline: date.text,
     items,
     subtotal: totals.subtotal,
     tax: totals.tax,
