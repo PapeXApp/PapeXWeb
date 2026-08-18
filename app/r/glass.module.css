@@ -172,3 +172,47 @@
   background-repeat: no-repeat;
   background-attachment: fixed, fixed;
 }
+
+/* ---- OCR upgrade: the "reading your receipt" hint + the swap ---------------
+ *
+ * Blaze receipts arrive as a bitmap and are OCR'd asynchronously — ~46 s,
+ * measured — so this page routinely renders the picture first and replaces it
+ * with the designed cards partway through the customer's visit
+ * (app/r/ReceiptUpgrade.tsx). Both animations below exist to make that swap
+ * read as "the rest of it arrived" rather than "the page broke and reloaded".
+ */
+
+/* The dot beside "Reading your receipt…". A slow breath, not a spinner: the
+ * image under it is already a complete receipt, so this must not imply the
+ * page is unusable until it finishes. */
+.extractingDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  animation: papexExtractingPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes papexExtractingPulse {
+  0%, 100% { opacity: 0.25; }
+  50%      { opacity: 0.9; }
+}
+
+/* The upgraded card stack fades and lifts a few px into place. Deliberately
+ * short and small — a long or large motion at an unpredictable moment reads
+ * as an interruption. */
+.upgradeIn {
+  animation: papexUpgradeIn 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes papexUpgradeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Somebody who has asked their OS for less motion gets the same swap with no
+ * movement at all — the content change is the information, the animation was
+ * only ever the manners. */
+@media (prefers-reduced-motion: reduce) {
+  .extractingDot { animation: none; opacity: 0.6; }
+  .upgradeIn { animation: none; }
+}

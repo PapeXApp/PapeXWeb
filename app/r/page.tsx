@@ -36,14 +36,35 @@
 //   `sid` valid, bytes parse to nothing  -> NOT_AVAILABLE (no sample)
 //   any other backend/network error      -> retry screen, no sample
 //   `sid` valid, real content            -> the real receipt
-//   `sid` valid, whole-page raster image -> the real receipt, rendered as
-//                                           the decoded bitmap (Blaze POS
-//                                           prints receipts as pictures —
-//                                           see lib/starRaster.ts)
+//   `sid` valid, whole-page raster image -> the real receipt. See below —
+//                                           the bitmap leads only until OCR
+//                                           lands, then the structured cards
+//                                           do.
+//
+// BITMAP RECEIPTS AND THE ~46 SECOND WAIT.
+//   Blaze POS prints the whole receipt as a picture (lib/starRaster.ts), so
+//   the bytes this page fetches carry no text. The structured fields are
+//   produced by an OCR pass in the RDH indexer and read back from
+//   `GET /receipt/{sid}/parsed` (lib/rdhParsed.ts).
+//
+//   That pass takes ~46 s, measured against prod twice. The customer taps the
+//   device ~15 s after the sale. The structured receipt therefore CANNOT exist
+//   at first paint — so this page fetches whatever is ready, renders the image
+//   immediately, and hands off to a client island (ReceiptUpgrade.tsx) that
+//   polls and swaps in the designed cards the moment they exist. Waiting
+//   server-side would mean a spinner for half a minute; not polling would mean
+//   the extracted receipt is only visible to someone who reloads.
+//
+//   The parsed fetch is strictly an ENRICHMENT: if it fails, errors, or is
+//   simply not ready, this page renders exactly what it rendered before OCR
+//   existed. Nothing about the "Receipt not available" honesty rules above
+//   depends on it — the raw byte fetch remains the sole authority on whether
+//   a receipt exists at all.
 
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { fetchReceiptBytes, isValidSid } from "@/lib/rdh";
+import { fetchParsedReceipt } from "@/lib/rdhParsed";
 import { parseEscPos } from "@/lib/escpos";
 import { summarizeReceipt, hasStructure as computeHasStructure } from "@/lib/receiptSummary";
 import { hasVisibleContent, resolveReceiptState } from "@/lib/receiptState";
@@ -59,6 +80,7 @@ import {
   AppCta,
 } from "./ui";
 import RetryButton from "./RetryButton";
+import ReceiptUpgrade from "./ReceiptUpgrade";
 
 export const metadata: Metadata = {
   title: "Your PapeX Receipt",
@@ -94,9 +116,21 @@ export default async function ReceiptPage({
   // Only hit the backend for a well-formed sid, and never when the demo was
   // explicitly requested; every other case is decided locally by
   // resolveReceiptState.
-  const result = sidIsValid && !demoRequested ? await fetchReceiptBytes(rawSid) : undefined;
+  //
+  // Both reads run CONCURRENTLY. They answer different questions (does this
+  // receipt exist / has it been read yet) and serialising them would add the
+  // parsed call's latency to a page whose whole design goal is showing
+  // *something* fast.
+  const [result, parsedResult] = sidIsValid && !demoRequested
+    ? await Promise.all([fetchReceiptBytes(rawSid), fetchParsedReceipt(rawSid)])
+    : [undefined, undefined];
+
   const receipt = result?.status === "ok" ? parseEscPos(result.bytes) : undefined;
   const parsed = receipt ? summarizeReceipt(receipt.lines) : undefined;
+
+  // Enrichment only — never lets a receipt exist that the byte fetch says
+  // doesn't, and never blocks one that it says does.
+  const parsedPayload = parsedResult?.status === "ok" ? parsedResult.payload : null;
 
   // Blaze prints the entire receipt as a Star Line Mode raster bitmap
   // instead of sending text (see lib/starRaster.ts). When that's what
@@ -158,12 +192,29 @@ export default async function ReceiptPage({
   if (state.kind === "real" && parsed) {
     return (
       <Shell>
-        <ReceiptView
-          summary={parsed}
-          hasStructure={computeHasStructure(parsed)}
-          logo={receipt?.logo}
-          rasterPage={rasterPage}
-        />
+        {/* `rawSid` is re-checked purely so TypeScript can narrow it — a
+            raster page can only exist after a successful fetch for a valid
+            sid, so this is never false in practice. */}
+        {rasterPage && rawSid ? (
+          // A bitmap receipt. Its structured form either already exists (the
+          // customer arrived late, or reloaded) or is ~30 s away, so this
+          // branch hands off to the island that can render both and move
+          // between them. A text receipt never comes through here — it has
+          // nothing to wait for, so it stays fully server-rendered and ships
+          // no polling code at all.
+          <ReceiptUpgrade
+            sid={rawSid}
+            fallbackSummary={parsed}
+            rasterPage={rasterPage}
+            initialPayload={parsedPayload}
+          />
+        ) : (
+          <ReceiptView
+            summary={parsed}
+            hasStructure={computeHasStructure(parsed)}
+            logo={receipt?.logo}
+          />
+        )}
         <CtaRow sid={rawSid} isSample={false} isIOS={isIOS} isAndroid={isAndroid} />
       </Shell>
     );
