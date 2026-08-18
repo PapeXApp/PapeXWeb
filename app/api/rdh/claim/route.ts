@@ -20,14 +20,19 @@
 //   know about every possible upstream failure mode.
 //
 // `ADAPTER_API_BASE` is the adapter backend's *host* base (no `/api/v1`
-// suffix) — e.g. `http://3.90.44.195:3000`, not
-// `http://3.90.44.195:3000/api/v1`. The default here is the adapter EC2 (tag papex-adapter-backend, i-0e331185d1c29871e per
+// suffix) — e.g. `https://adapter.api.papex.app`, not
+// `https://adapter.api.papex.app/api/v1`. It resolves to the adapter EC2 (tag
+// papex-adapter-backend, i-0e331185d1c29871e per
 // OCR_PIPELINE_DEPLOY_2026-04-15.md) — NOT 3.226.96.195, which is the old
-// unrelated prod backend. Originally mis-derived from
-// PapeXV2/config/api.ts's `OCR_BASE_URL` fallback
-// (`http://3.90.44.195:3000/api/v1`) with the `/api/v1` suffix stripped,
-// the same way that file's `buildEmailUsersBaseUrl()` derives a sibling
-// path. See .env.example for the documented override.
+// unrelated prod backend. See .env.example for the documented override.
+//
+// **Must stay HTTPS.** This request carries the user's Firebase ID token, and
+// the default used to be `http://3.90.44.195:3000` — plaintext across the
+// public internet, with no browser warning because the browser->Vercel hop is
+// itself HTTPS. Fixed 2026-08-17: `adapter.api.papex.app` is an A record in the
+// existing api.papex.app Route 53 zone, and nginx on the box terminates TLS
+// (Let's Encrypt, auto-renew) in front of localhost:3000. Never point this at
+// a bare IP or an http:// origin again.
 //
 // Never logs the sid or the bearer token — this route only ever sees them
 // in memory for the duration of the request, per the task's capability-
@@ -36,7 +41,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isValidSid } from "@/lib/rdh";
 
-const DEFAULT_ADAPTER_HOST = "http://3.90.44.195:3000";
+const DEFAULT_ADAPTER_HOST = "https://adapter.api.papex.app";
 
 function adapterBase(): string {
   const fromEnv = process.env.ADAPTER_API_BASE?.trim();
