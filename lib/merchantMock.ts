@@ -55,6 +55,7 @@ import type {
   PanelCategory,
   UnservedDemandRow,
 } from "./merchantApi";
+import { buildMockStarRasterJob } from "./mockStarRaster";
 
 // ---------------------------------------------------------------------------
 // Seeded PRNG
@@ -557,6 +558,12 @@ export async function mockGetTransaction(sid: string): Promise<MerchantTransacti
 export async function mockGetReceiptBytes(sid: string): Promise<Uint8Array> {
   const r = DATASET.find((row) => row.sid === sid);
   if (!r) throw new Error(`mock receipt not found: ${sid}`);
+  // The raster row has no text lines at all, so encodeEscPos would hand back
+  // an empty payload and the detail page would render its "couldn't load the
+  // image" fallback forever. Serve a real Star Line Mode job instead, so the
+  // mock exercises the same detect -> decode -> PNG path as a live Blaze
+  // receipt (lib/mockStarRaster.ts).
+  if (r.parseStatus === "ok_raster") return buildMockStarRasterJob();
   return encodeEscPos(r.summary.bodyLines);
 }
 

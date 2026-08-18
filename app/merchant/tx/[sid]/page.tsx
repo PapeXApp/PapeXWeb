@@ -33,7 +33,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { useMerchantAuth } from "../../AuthContext";
 import { getTransaction, getReceiptBytes, type MerchantTransactionDetail } from "@/lib/merchantApi";
-import { parseEscPos } from "@/lib/escpos";
+import { parseEscPos, type DecodedRasterPage } from "@/lib/escpos";
 import { summarizeReceipt, hasStructure as computeHasStructure, type ReceiptSummary } from "@/lib/receiptSummary";
 import { GlassCard, ReceiptView } from "@/app/r/ui";
 import { LoadingBlock, EmptyState, ErrorBanner, ApproximateCaveat, PaymentChip, ConfidencePill, ParseFailedPill, ImageOnlyPill } from "../../ui/primitives";
@@ -42,6 +42,13 @@ import { T } from "../../ui/tokens";
 interface ParsedReceipt {
   summary: ReceiptSummary;
   hasStructure: boolean;
+  /**
+   * Set when the payload decoded to a FULL-PAGE Star Line Mode bitmap — the
+   * POS printed the whole receipt as a picture instead of sending text (see
+   * lib/starRaster.ts). A logo-sized band is deliberately excluded: that is
+   * decoration on a textual receipt, not a receipt.
+   */
+  rasterPage?: DecodedRasterPage;
 }
 
 function formatFullDateTime(iso: string): string {
@@ -91,17 +98,32 @@ export default function TransactionDetailPage() {
       }
       const d = detailResult.value;
       setDetail(d);
-      // "failed" has no parse to attempt. "ok_raster" is a 1bpp bitmap, and
-      // feeding Star raster bytes to the ESC/POS text state machine desyncs
-      // it immediately — it would either yield nothing or invent mojibake
-      // lines. Either way the page renders from `detail` alone below.
-      if (!d || d.parseStatus === "failed" || d.parseStatus === "ok_raster") return;
+      if (!d) return;
 
+      // The decode is attempted for EVERY status, and what comes back decides
+      // how the page renders — deliberately not `parseStatus`, which is only
+      // the indexer's opinion at upload time and can be wrong about raster in
+      // two directions:
+      //
+      //   - "failed" — the indexer demotes a raster job to "failed" if the
+      //     decode OR the PNG upload throws, and the PNG upload needs an
+      //     s3:PutObject grant on receipts/* that has not been applied yet.
+      //     Those rows are perfectly decodable bitmaps sitting behind a
+      //     failure label.
+      //   - "ok" — rows indexed BEFORE raster support ran the bitmap through
+      //     the text parser and stored the resulting mojibake as a success.
+      //
+      // Both render correctly here as long as the bytes are trusted over the
+      // label. parseEscPos detects Star raster over the whole blob up front,
+      // so it never desyncs its text state machine on these payloads.
       if (bytesResult.status === "fulfilled") {
         try {
           const parsed = parseEscPos(bytesResult.value);
           const summary = summarizeReceipt(parsed.lines);
-          if (!cancelled) setReceipt({ summary, hasStructure: computeHasStructure(summary) });
+          // Only a full-page bitmap counts as the receipt — same line
+          // lib/receiptState.ts draws for /r.
+          const rasterPage = parsed.rasterPage?.fullPage ? parsed.rasterPage : undefined;
+          if (!cancelled) setReceipt({ summary, hasStructure: computeHasStructure(summary), rasterPage });
         } catch {
           // Parsing the bytes threw — fall back to rawText, same as a fetch failure.
         }
@@ -142,10 +164,10 @@ export default function TransactionDetailPage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              {detail.parseStatus === "failed" ? (
-                <ParseFailedPill />
-              ) : detail.parseStatus === "ok_raster" ? (
+              {receipt?.rasterPage || detail.parseStatus === "ok_raster" ? (
                 <ImageOnlyPill />
+              ) : detail.parseStatus === "failed" ? (
+                <ParseFailedPill />
               ) : (
                 <ConfidencePill confidence={detail.confidence} />
               )}
@@ -153,7 +175,20 @@ export default function TransactionDetailPage() {
             </div>
           </div>
 
-          {detail.parseStatus === "failed" ? (
+          {receipt?.rasterPage ? (
+            // The bitmap decoded, so it IS the receipt — merchant name, items
+            // and total are all in those pixels. Rendered through the same
+            // ReceiptView /r uses, which puts the image in its own card and
+            // skips the text cards (there are no text lines by construction).
+            // This branch sits ahead of the parseStatus ones on purpose: see
+            // the effect above for why a decodable bitmap can be sitting
+            // behind a "failed" or a stale "ok" label.
+            <ReceiptView
+              summary={receipt.summary}
+              hasStructure={receipt.hasStructure}
+              rasterPage={receipt.rasterPage}
+            />
+          ) : detail.parseStatus === "failed" ? (
             <>
               <ErrorBanner message="This receipt couldn't be parsed. Showing the raw captured text below." />
               <GlassCard>
@@ -163,25 +198,20 @@ export default function TransactionDetailPage() {
               </GlassCard>
             </>
           ) : detail.parseStatus === "ok_raster" ? (
-            // The receipt is a bitmap and no text was extracted, so there is
-            // nothing to feed ReceiptView and rawText is empty — without this
-            // branch the page fell through to the generic fallback card and
-            // rendered blank. Say plainly what happened instead: the capture
-            // worked, the reading hasn't happened yet.
-            //
-            // The image itself is NOT displayed here. `detail.imageKey` is an
-            // S3 key with no route serving it, and decoding the raw bytes
-            // client-side needs lib/starRaster.ts, which is landing separately
-            // on the /r consumer branch. When either seam exists, this is
-            // where the bitmap goes.
+            // Reached only when the row IS raster but we could not produce the
+            // picture: the bytes fetch failed, or the blob aged out of S3.
+            // rawText is empty on these rows, so without this branch the page
+            // fell through to the generic fallback and rendered blank. Say
+            // what happened instead — and don't imply the capture was lost,
+            // because it wasn't.
             <GlassCard>
               <p className="text-sm font-medium" style={{ color: T.text }}>
                 Captured as an image
               </p>
               <p className="mt-1.5 text-sm" style={{ color: T.textSecondary }}>
                 This point-of-sale prints receipts as an image rather than as
-                text, so there are no line items to show yet. The receipt was
-                captured and stored successfully.
+                text. The receipt was captured and stored, but the image
+                couldn&apos;t be loaded just now — try again in a moment.
               </p>
             </GlassCard>
           ) : receipt ? (
