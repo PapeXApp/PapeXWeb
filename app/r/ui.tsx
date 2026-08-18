@@ -26,7 +26,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { AlertTriangle, Clock, FlaskConical, SearchX } from "lucide-react";
-import type { DecodedLogo, ReceiptLine } from "@/lib/escpos";
+import type { DecodedLogo, DecodedRasterPage, ReceiptLine } from "@/lib/escpos";
 import {
   type ReceiptSummary,
   detectPaymentMethod,
@@ -345,6 +345,54 @@ function LogoBlock({ logo }: { logo: DecodedLogo }) {
   );
 }
 
+// ---- Full-page raster receipt (Star Line Mode, see lib/starRaster.ts) ----------
+//
+// Not a logo — the whole receipt, as a picture. Blaze POS renders the tape
+// to a 1bpp bitmap and sends it as Star raster, so the merchant name, the
+// items and the total only exist as pixels. This card is therefore the
+// primary content of the page, which is why it takes the `standard` tier
+// ("the substance of the purchase", §2/§7) rather than LogoBlock's quiet
+// unemphasized frame.
+//
+// Colour: the source bitmap is black ink on white paper, but lib/png.ts
+// emits a transparent background and paints only the set bits, in
+// lib/escpos.ts's LOGO_FOREGROUND (#E6E7E8 — T.text flattened to an opaque
+// hex). So this renders as light ink directly on the card's navy glass,
+// exactly like the text receipt beside it, in both light and dark theme.
+// The alternative — a real black-on-white scan — would be a hard white slab
+// floating on a dark page in every theme, which is the failure mode §8's
+// "the card itself stays a dark surface" rule exists to prevent.
+//
+// Sharpness: `.rasterInk` (glass.module.css) picks the scaler by device
+// pixel ratio. A 552px bitmap in a 430px-max column is a downscale on a 1x
+// display, where nearest-neighbour would eat entire 1px strokes out of the
+// receipt's type — so 1x gets the browser's smooth scaler. On a 2x/3x phone
+// (the entire real audience) the same layout is an UPSCALE in device pixels,
+// where smooth scaling is what looks blurry, so those get `pixelated` and
+// the 1-bit edges stay hard.
+//
+// Padding is deliberately tighter than the other cards (px-3) — every px of
+// column width is a px of receipt legibility on a phone. A plain `<img>`,
+// not next/image, for the same reason as LogoBlock: it's a `data:` URI.
+
+function RasterReceiptCard({ page }: { page: DecodedRasterPage }) {
+  return (
+    <GlassCard emphasis="standard" className="px-3 py-4" radius={20}>
+      <div className="flex justify-center">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={page.dataUri}
+          alt="Your receipt, as printed"
+          width={page.widthPx}
+          height={page.heightPx}
+          className={`h-auto w-full ${styles.rasterInk}`}
+          style={{ maxWidth: page.widthPx }}
+        />
+      </div>
+    </GlassCard>
+  );
+}
+
 // ---- Merchant header card ------------------------------------------------------
 
 function monogram(name?: string): string {
@@ -652,20 +700,35 @@ export function ReceiptView({
   hasStructure,
   isSample = false,
   logo,
+  rasterPage,
 }: {
   summary: ReceiptSummary;
   hasStructure: boolean;
   isSample?: boolean;
   /** Decoded merchant logo, if any — see lib/escpos.ts. Never set on the sample/demo path. */
   logo?: DecodedLogo;
+  /**
+   * Full-page receipt bitmap, when the POS printed the receipt as an image
+   * rather than as text (see lib/starRaster.ts). Mutually exclusive with
+   * text content by construction — a raster payload yields no lines — so
+   * this replaces the card stack rather than sitting alongside it. Never set
+   * on the sample/demo path.
+   */
+  rasterPage?: DecodedRasterPage;
 }) {
   return (
     <div className="flex flex-col gap-4">
+      {rasterPage && <RasterReceiptCard page={rasterPage} />}
       {logo && <LogoBlock logo={logo} />}
       {hasStructure && <MerchantHeaderCard summary={summary} isSample={isSample} />}
       {hasStructure && <ItemsCard summary={summary} />}
       {hasStructure && <TotalsCard summary={summary} isSample={isSample} />}
-      <OriginalReceiptCollapsible lines={summary.bodyLines} defaultOpen={!hasStructure} />
+      {/* Skipped when there is no text at all (the raster path) — an empty,
+          permanently-open "Original receipt" box reads as a broken page,
+          which is the same defect lib/receiptState.ts documents. */}
+      {summary.bodyLines.length > 0 && (
+        <OriginalReceiptCollapsible lines={summary.bodyLines} defaultOpen={!hasStructure} />
+      )}
     </div>
   );
 }

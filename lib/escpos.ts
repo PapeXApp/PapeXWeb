@@ -74,8 +74,31 @@
 // by this feature and still resolves such a stream to NOT_AVAILABLE. See
 // app/r/page.tsx / lib/receiptState.ts for the full rationale — a logo
 // with no readable text isn't something this app treats as "a receipt".
+//
+// --- Star Line Mode raster receipts ----------------------------------------
+//
+// Everything above is the Epson-style command set. Some POS software doesn't
+// send text at all: Blaze renders the entire receipt to a 1bpp bitmap on the
+// POS side and ships it as Star Line Mode raster (`ESC * r ...` — a
+// different protocol from the Epson `ESC * m nL nH` column bit-image handled
+// below). Confirmed at the Doobie Nights pilot with two printer models
+// selected, so it is Blaze behaviour, not a config mistake.
+//
+// Those payloads carry zero text, so the state machine below yields zero
+// lines and the page renders "Receipt not available" — a real receipt that
+// looked like a missing one. `parseEscPos` therefore runs a whole-blob
+// detector (lib/starRaster.ts) BEFORE any byte-by-byte parsing and, on a
+// hit, returns the decoded full-page bitmap as `Receipt.rasterPage` with no
+// text lines at all. Detection has to happen up front: by the time the
+// state machine reaches these bytes it has already desynced on them.
+//
+// `rasterPage` is deliberately a separate field from `logo`. `logo` is one
+// decorative band inside an otherwise-textual receipt and never counts as
+// receipt content; `rasterPage` (when `fullPage` is true) IS the receipt —
+// see `FULL_PAGE_MIN_*` below and lib/receiptState.ts.
 
 import { encodeMonoPngDataUri } from "./png";
+import { decodeStarRaster, looksLikeStarRaster } from "./starRaster";
 
 export type Alignment = "left" | "center" | "right";
 
@@ -115,12 +138,38 @@ export interface DecodedLogo {
   source: "GS v 0" | "ESC *" | "GS ( L";
 }
 
+/**
+ * A whole receipt that arrived as one Star Line Mode raster bitmap rather
+ * than as text — see the module doc comment and lib/starRaster.ts.
+ */
+export interface DecodedRasterPage {
+  widthPx: number;
+  heightPx: number;
+  dataUri: string;
+  source: "Star Line Mode raster";
+  /**
+   * True when the bitmap is large enough to be a whole receipt rather than a
+   * logo-sized band (see `FULL_PAGE_MIN_HEIGHT_DOTS` /
+   * `FULL_PAGE_MIN_WIDTH_DOTS`). Only a `fullPage` bitmap counts as receipt
+   * content for lib/receiptState.ts; a small one is treated exactly like a
+   * logo, i.e. as nothing to show.
+   */
+  fullPage: boolean;
+}
+
 export interface Receipt {
   header: ReceiptLine[];
   lines: ReceiptLine[];
   footer: ReceiptLine[];
   /** First successfully decoded inline logo found, in stream order, if any. */
   logo?: DecodedLogo;
+  /**
+   * Set when the whole payload was a Star Line Mode raster bitmap. Mutually
+   * exclusive with `lines`/`logo` by construction: on this path the text
+   * state machine is never run, because there is no text to find and running
+   * it would only produce mojibake.
+   */
+  rasterPage?: DecodedRasterPage;
   /**
    * True when the stream referenced a printer-stored (NV) logo — `FS p` or
    * `GS ( L` <Function 69> — whose bitmap bytes are not in this capture and
@@ -141,7 +190,22 @@ export interface Receipt {
 // a local literal rather than importing from app/r/ui.tsx: this file must
 // stay usable outside the Next.js app (see the portability note above), and
 // there is no shared lib/theme module today.
+// Also used as the ink color for full-page Star raster receipts: the paper
+// bitmap is black-on-white, but the PNG encoder emits a transparent
+// background, so painting the set bits near-white over the (always dark
+// navy) glass card turns "black ink on white paper" into "light ink on dark
+// glass" — consistent with every other surface on the page, in both light
+// and dark theme, instead of a floating white slab.
 const LOGO_FOREGROUND = "#E6E7E8";
+
+// A Star raster bitmap has to clear both of these to count as a whole
+// receipt rather than a logo band. 200 dot rows is ~25mm of 203dpi tape —
+// taller than any merchant logo (the bench corpus logos are 40 and 120
+// rows) and far shorter than any real receipt (the pilot fixtures are 815).
+// The width floor just rejects degenerate slivers. Below either threshold
+// the bitmap is treated exactly like `logo`: not content, nothing to show.
+const FULL_PAGE_MIN_HEIGHT_DOTS = 200;
+const FULL_PAGE_MIN_WIDTH_DOTS = 128;
 
 type Codepage = "cp437" | "cp858" | "fallback";
 
@@ -458,6 +522,24 @@ class ParserContext {
       // ESC R n — international charset select. Skip param to stay synced.
       case 0x52:
         this.skipParams(2, 1);
+        break;
+      // ESC RS a n — Star's "automatic status back" command (n = 0 disables
+      // it). Not an Epson command, but Blaze emits it around print jobs and
+      // the RDH can capture one as a whole standalone payload: real capture
+      // 665477603ed0ec3c.bin is exactly `1b 1e 61 00 00`, five bytes, no
+      // receipt in it at all. Without this case the default 2-byte skip
+      // resyncs onto the 0x61 parameter and renders the letter "a" as a
+      // one-line receipt — a printer command masquerading as somebody's
+      // purchase, the same class of defect lib/receiptState.ts exists to
+      // prevent. Consuming the parameter leaves zero lines, so the page
+      // correctly resolves to NOT_AVAILABLE. Guarded on the 'a' subcommand
+      // so other ESC RS forms keep the old best-effort 2-byte skip.
+      case 0x1e:
+        if (this.index + 2 < this.bytes.length && this.bytes[this.index + 2] === 0x61) {
+          this.skipParams(3, 1);
+        } else {
+          this.index += 2;
+        }
         break;
       // ESC 2 — set default line spacing (no params)
       case 0x32:
@@ -929,6 +1011,37 @@ function columnsToRowPackedBits(
 }
 
 /**
+ * Decode a whole-payload Star Line Mode raster job, or `undefined` if this
+ * isn't one (or can't be decoded). Runs over the entire blob before any
+ * byte-by-byte parsing — see the module doc comment for why that ordering is
+ * load-bearing. Never throws: a failure here just means "not a raster page",
+ * and the caller falls through to the ordinary text parse.
+ */
+function tryDecodeStarRasterPage(bytes: Uint8Array): DecodedRasterPage | undefined {
+  try {
+    if (!looksLikeStarRaster(bytes)) return undefined;
+    const bmp = decodeStarRaster(bytes);
+    if (!bmp) return undefined;
+    const dataUri = encodeMonoPngDataUri(
+      { width: bmp.widthPx, height: bmp.heightPx, bits: bmp.bits },
+      LOGO_FOREGROUND,
+    );
+    if (!dataUri) return undefined;
+    return {
+      widthPx: bmp.widthPx,
+      heightPx: bmp.heightPx,
+      dataUri,
+      source: "Star Line Mode raster",
+      fullPage:
+        bmp.heightPx >= FULL_PAGE_MIN_HEIGHT_DOTS && bmp.widthPx >= FULL_PAGE_MIN_WIDTH_DOTS,
+    };
+  } catch {
+    // Contract: never throw. Fall back to the text parser.
+    return undefined;
+  }
+}
+
+/**
  * Parse an ESC/POS byte stream into a Receipt. Never throws on malformed
  * input — unknown commands are skipped with best-effort length consumption,
  * and decode failures emit the Unicode replacement character. The contract
@@ -936,6 +1049,14 @@ function columnsToRowPackedBits(
  * contract — see the module doc comment.
  */
 export function parseEscPos(bytes: Uint8Array): Receipt {
+  // Star Line Mode raster: the whole payload is one bitmap and there is no
+  // text to extract. Checked first, on the whole blob — the text state
+  // machine below desyncs on these bytes and would emit mojibake.
+  const rasterPage = tryDecodeStarRasterPage(bytes);
+  if (rasterPage) {
+    return { header: [], lines: [], footer: [], rasterPage, nvLogoReferenced: false };
+  }
+
   const ctx = new ParserContext(bytes);
   ctx.run();
   return {

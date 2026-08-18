@@ -36,6 +36,10 @@
 //   `sid` valid, bytes parse to nothing  -> NOT_AVAILABLE (no sample)
 //   any other backend/network error      -> retry screen, no sample
 //   `sid` valid, real content            -> the real receipt
+//   `sid` valid, whole-page raster image -> the real receipt, rendered as
+//                                           the decoded bitmap (Blaze POS
+//                                           prints receipts as pictures —
+//                                           see lib/starRaster.ts)
 
 import type { Metadata } from "next";
 import { headers } from "next/headers";
@@ -94,12 +98,22 @@ export default async function ReceiptPage({
   const receipt = result?.status === "ok" ? parseEscPos(result.bytes) : undefined;
   const parsed = receipt ? summarizeReceipt(receipt.lines) : undefined;
 
+  // Blaze prints the entire receipt as a Star Line Mode raster bitmap
+  // instead of sending text (see lib/starRaster.ts). When that's what
+  // arrived, `parsed` is empty by construction and the bitmap IS the
+  // receipt — so it has to count as visible content, or a real purchase
+  // renders as "Receipt not available". A logo-sized band still doesn't
+  // count; see lib/receiptState.ts's hasVisibleContent for the line.
+  const rasterPage = receipt?.rasterPage?.fullPage ? receipt.rasterPage : undefined;
+
   const state = resolveReceiptState({
     rawSid,
     demoRequested,
     sidIsValid,
     fetchStatus: result?.status,
-    parsedHasVisibleContent: parsed ? hasVisibleContent(parsed) : undefined,
+    parsedHasVisibleContent: parsed
+      ? hasVisibleContent(parsed, { hasFullPageImage: rasterPage != null })
+      : undefined,
   });
 
   // --- DEMO: bare /r. Nobody tapped anything, so no real receipt is being
@@ -136,9 +150,11 @@ export default async function ReceiptPage({
   // --- REAL. `logo` (see lib/escpos.ts) is threaded through separately from
   // `parsed`/`ReceiptSummary` on purpose: it must never factor into whether
   // a receipt counts as "visible" (see resolveReceiptState above and
-  // lib/receiptState.ts) — an image-only receipt with no text still routes
-  // to NOT_AVAILABLE above, before this branch is ever reached, and a logo
-  // alone can never make that happen.
+  // lib/receiptState.ts) — a logo-only stream with no text still routes to
+  // NOT_AVAILABLE above, before this branch is ever reached, and a logo
+  // alone can never make that happen. `rasterPage` is the deliberate
+  // exception and the reason it is a different field: a full-page Blaze
+  // bitmap is the receipt itself, not decoration on one.
   if (state.kind === "real" && parsed) {
     return (
       <Shell>
@@ -146,6 +162,7 @@ export default async function ReceiptPage({
           summary={parsed}
           hasStructure={computeHasStructure(parsed)}
           logo={receipt?.logo}
+          rasterPage={rasterPage}
         />
         <CtaRow sid={rawSid} isSample={false} isIOS={isIOS} isAndroid={isAndroid} />
       </Shell>

@@ -188,6 +188,52 @@ test("hasVisibleContent: true on body text alone, with no structure extracted", 
   assert.equal(hasVisibleContent(summary), true);
 });
 
+// ---- hasVisibleContent: full-page raster receipts ---------------------------
+//
+// Blaze prints the whole receipt as a bitmap (see lib/starRaster.ts), so the
+// parse yields zero text lines and the ONLY thing standing between a real
+// purchase and a "Receipt not available" screen is this flag. The negative
+// half matters just as much: the flag must not leak in from a logo.
+
+test("hasVisibleContent: true when a full-page receipt bitmap was decoded, with no text", () => {
+  assert.equal(hasVisibleContent(summarizeReceipt([]), { hasFullPageImage: true }), true);
+});
+
+test("hasVisibleContent: options default keeps the old text-only semantics", () => {
+  assert.equal(hasVisibleContent(summarizeReceipt([])), false);
+  assert.equal(hasVisibleContent(summarizeReceipt([]), {}), false);
+  assert.equal(hasVisibleContent(summarizeReceipt([]), { hasFullPageImage: false }), false);
+});
+
+test("REAL: a text-less receipt resolves to real when it carries a full-page bitmap", () => {
+  const summary = summarizeReceipt([]);
+  assert.deepEqual(
+    resolveReceiptState({
+      rawSid: VALID_SID,
+      sidIsValid: true,
+      fetchStatus: "ok",
+      parsedHasVisibleContent: hasVisibleContent(summary, { hasFullPageImage: true }),
+    }),
+    { kind: "real" },
+  );
+});
+
+test("NOT_AVAILABLE: a text-less receipt with only a logo-sized image is still nothing to show", () => {
+  // app/r/page.tsx passes hasFullPageImage only for bitmaps that clear
+  // lib/escpos.ts's FULL_PAGE_MIN_* floors; a logo band never does, so the
+  // original "a logo alone is not a receipt" rule is unchanged.
+  const summary = summarizeReceipt([]);
+  assert.deepEqual(
+    resolveReceiptState({
+      rawSid: VALID_SID,
+      sidIsValid: true,
+      fetchStatus: "ok",
+      parsedHasVisibleContent: hasVisibleContent(summary, { hasFullPageImage: false }),
+    }),
+    { kind: "not_available", reason: "empty" },
+  );
+});
+
 // ---- Summary ----------------------------------------------------------------
 
 console.log(`\n${passed} passed, ${failed} failed`);
