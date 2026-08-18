@@ -56,8 +56,17 @@ export function hasStructure(summary: ReceiptSummary): boolean {
 // Regex patterns — ported verbatim from ReceiptSummary.swift's `Patterns` enum.
 // ---------------------------------------------------------------------------
 
-/** Amount at end of line, optional $ and thousands separators, exactly 2 decimals. */
-const TRAILING_MONEY_RE = /\$?\d{1,3}(?:,\d{3})*(?:\.\d{2})\s*$/;
+/**
+ * Amount at end of line, optional $ and OPTIONAL-per-group thousands
+ * separators, exactly 2 decimals. The separator is `,?` (optional), not `,`
+ * (mandatory): a printer that omits comma grouping altogether still needs
+ * its full integer part captured, not just the last 1-3 digits before the
+ * decimal. The mandatory-comma form silently truncated ungrouped totals
+ * >= $1000 — e.g. "TOTAL 1234.56" only matched "234.56" — verified
+ * end-to-end on real hardware (device -> upload -> indexer -> DynamoDB).
+ * Decimal-comma locales (5.000,00) stay out of scope (US-only pilot).
+ */
+const TRAILING_MONEY_RE = /\$?\d{1,3}(?:,?\d{3})*(?:\.\d{2})\s*$/;
 
 /**
  * A date somewhere in the line: "Jun 8, 2026", "06/08/2026", or "2026-06-08".
