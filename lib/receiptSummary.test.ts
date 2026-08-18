@@ -271,6 +271,46 @@ test("trailingAmount parses $, thousands separators, and plain decimals", () => 
   assert.equal(trailingAmount("almost 4.5"), undefined); // needs 2 decimal places
 });
 
+// Regression tests for the silent-truncation bug: TRAILING_MONEY_RE used to
+// require a comma every 3 digits (`,\d{3}` mandatory), so an ESC/POS total
+// printed WITHOUT thousands separators only matched its last 1-3 integer
+// digits before the decimal point. Verified end-to-end on real hardware
+// (device -> upload -> indexer -> DynamoDB): "TOTAL 1234.56" indexed as
+// 234.56 ($1000 silently lost); an 80-item receipt's 5886.47 indexed as
+// 886.47; a 700-item receipt's 53604.32 indexed as 604.32. parse_status
+// stayed "ok" and confidence "medium" throughout — no signal anything was
+// wrong.
+test("trailingAmount captures amounts without thousands separators (the reported bug)", () => {
+  assert.equal(trailingAmount("TOTAL             1234.56"), 1234.56);
+  assert.equal(trailingAmount("TOTAL             1,234.56"), 1234.56); // no regression
+  assert.equal(trailingAmount("TOTAL             999.99"), 999.99); // no regression (3-digit boundary)
+  assert.equal(trailingAmount("TOTAL             53604.32"), 53604.32); // real observed value, 80-item receipt
+  assert.equal(trailingAmount("TOTAL             12,345,678.90"), 12345678.9);
+  assert.equal(trailingAmount("TOTAL             0.99"), 0.99);
+});
+
+test("trailingAmount does not swallow a non-money digit run with no 2-decimal tail (negative case)", () => {
+  // No decimal point at all — must not match despite the widened integer part.
+  assert.equal(trailingAmount("TOTAL ITEMS SOLD 42"), undefined);
+  // A phone number / long digit run adjacent to real money must not bridge
+  // into the actual amount — anchoring at $ with a required \.\d{2} tail
+  // (unchanged by this fix) is what prevents that.
+  assert.equal(trailingAmount("(415) 555-0142"), undefined);
+});
+
+test("summarizeReceipt captures a >$999 total and line item with no thousands separator", () => {
+  const lines = [
+    line("Bluebird Coffee"),
+    line("Espresso Machine  1499.00"),
+    line("TOTAL             1499.00"),
+  ];
+  const summary = summarizeReceipt(lines);
+  assert.equal(summary.total, 1499.0);
+  assert.equal(summary.items.length, 1);
+  assert.equal(summary.items[0].name, "Espresso Machine");
+  assert.equal(summary.items[0].amount, 1499.0);
+});
+
 test("leadingLabel strips the trailing amount and trims", () => {
   assert.equal(leadingLabel("Latte             4.50"), "Latte");
   assert.equal(leadingLabel("   4.50"), undefined); // nothing left after stripping
