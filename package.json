@@ -16,7 +16,8 @@
     "test:png": "tsx lib/png.test.ts",
     "test:summary": "tsx lib/receiptSummary.test.ts",
     "test:merchantHost": "tsx lib/merchantHost.test.ts",
-    "test": "npm run test:png && npm run test:escpos && npm run test:summary && npm run test:state && npm run test:merchantHost",
+    "test:raster": "tsx lib/starRaster.test.ts",
+    "test": "npm run test:png && npm run test:escpos && npm run test:raster && npm run test:summary && npm run test:state && npm run test:merchantHost",
     "test:state": "tsx lib/receiptState.test.ts"
   },
   "dependencies": {

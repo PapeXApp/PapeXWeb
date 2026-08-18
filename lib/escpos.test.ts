@@ -555,6 +555,42 @@ test("image-only stream (no text at all) still produces zero lines — logo live
   assert.deepEqual(receipt.lines, []);
 });
 
+// ---- ESC RS a n (Star automatic status back) --------------------------------
+
+test("ESC RS a n consumes its parameter instead of rendering it as the letter 'a'", () => {
+  // Real capture 665477603ed0ec3c.bin, byte for byte: a standalone
+  // ASB-disable command the RDH stored as if it were a print job. It must
+  // produce nothing, so /r shows "Receipt not available" rather than a
+  // one-line receipt reading "a".
+  const receipt = parseEscPos(new Uint8Array([0x1b, 0x1e, 0x61, 0x00, 0x00]));
+  assert.deepEqual(receipt.lines, []);
+  assert.equal(receipt.rasterPage, undefined);
+});
+
+test("ESC RS a n mid-stream does not eat the text that follows", () => {
+  const receipt = parseEscPos(
+    new Uint8Array([
+      0x1b, 0x40,
+      0x1b, 0x1e, 0x61, 0x00,
+      ..."AFTER ASB".split("").map((c) => c.charCodeAt(0)),
+      0x0a,
+    ]),
+  );
+  assert.deepEqual(receipt.lines.map((l) => l.text), ["AFTER ASB"]);
+});
+
+test("other ESC RS forms keep the old best-effort 2-byte skip", () => {
+  const receipt = parseEscPos(
+    new Uint8Array([
+      0x1b, 0x40,
+      0x1b, 0x1e, // ESC RS with a non-'a' subcommand
+      ..."KEPT".split("").map((c) => c.charCodeAt(0)),
+      0x0a,
+    ]),
+  );
+  assert.deepEqual(receipt.lines.map((l) => l.text), ["KEPT"]);
+});
+
 // ---- guessMerchantName heuristic --------------------------------------------
 
 test("guessMerchantName picks the first short centered line, skipping rules", () => {

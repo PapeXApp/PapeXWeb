@@ -15,7 +15,11 @@
 // has no test runner — see the `tsx`-driven scripts in package.json).
 //
 //   REAL          sid supplied, backend returned bytes, the parse produced
-//                 something a human can actually read -> render it.
+//                 something a human can actually read -> render it. "Read"
+//                 includes a full-page receipt bitmap: some POS software
+//                 (Blaze) prints the whole receipt as an image rather than
+//                 text — see hasVisibleContent below for where that line is
+//                 drawn against the older "a logo alone is not a receipt".
 //   NOT_AVAILABLE a sid was supplied but there is no receipt behind it
 //                 (backend 404, unparseable/empty payload, or a sid that
 //                 isn't even well-formed) -> a dedicated "not available"
@@ -51,16 +55,58 @@ export type ReceiptPageState =
   | { kind: "error" }
   | { kind: "demo" };
 
+export interface VisibleContentOptions {
+  /**
+   * True when the payload decoded to a FULL-PAGE receipt bitmap — a Star
+   * Line Mode raster job where the POS rendered the entire receipt to an
+   * image instead of sending text (see lib/starRaster.ts). This is the whole
+   * receipt, so it is genuine content even though there are no text lines.
+   *
+   * Deliberately NOT true for `Receipt.logo`, nor for a small raster band:
+   * see the note on `hasVisibleContent` below for where the line sits and
+   * why. Defaults to false, so every existing caller keeps text-only
+   * semantics unchanged.
+   */
+  hasFullPageImage?: boolean;
+}
+
 /**
  * True when a parsed receipt has anything a human would actually see:
- * either structured fields (merchant/total/items) or at least one body
- * line with non-whitespace text.
+ * a full-page receipt bitmap, structured fields (merchant/total/items), or
+ * at least one body line with non-whitespace text.
  *
  * A receipt that parses to nothing is functionally a missing receipt — the
  * old code rendered it as an empty, permanently-expanded "Original
  * receipt" box, which reads as a broken page. It is now NOT_AVAILABLE.
+ *
+ * Where the image line sits, and why
+ * ----------------------------------
+ * The original rule was "a receipt containing only a logo and no text is
+ * still nothing to show", and that rule is intact. What changed is that
+ * "image" is no longer a single category:
+ *
+ *   - A LOGO BAND (`Receipt.logo`) is decoration attached to a textual
+ *     receipt. On its own it carries no merchant, no total, no items —
+ *     showing it alone would be showing someone a picture instead of their
+ *     purchase. Still not content. Never passed in here.
+ *   - A FULL-PAGE RASTER (`Receipt.rasterPage.fullPage`) is the receipt: the
+ *     merchant name, the line items and the total are all in those pixels,
+ *     because the POS chose to print them as a picture. Refusing to show it
+ *     tells a customer holding a real purchase that we lost it — the same
+ *     class of user-trust defect this module was written to fix, pointed the
+ *     other way.
+ *
+ * The two are told apart structurally (a whole-payload Star raster job with
+ * no text anywhere vs. one band inside a text stream) AND by size — the
+ * bitmap must clear lib/escpos.ts's `FULL_PAGE_MIN_*` floors, ~25mm of tape,
+ * comfortably above any logo and far below any receipt. A merchant who
+ * somehow sends only a logo as a Star raster still lands on NOT_AVAILABLE.
  */
-export function hasVisibleContent(summary: ReceiptSummary): boolean {
+export function hasVisibleContent(
+  summary: ReceiptSummary,
+  options: VisibleContentOptions = {},
+): boolean {
+  if (options.hasFullPageImage) return true;
   if (hasStructure(summary)) return true;
   return summary.bodyLines.some((line) => line.text.trim().length > 0);
 }

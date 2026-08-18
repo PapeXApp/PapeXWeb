@@ -104,6 +104,33 @@
     rgba(127, 196, 236, 0.148);
 }
 
+/* ---- Full-page raster receipt image ---------------------------------------
+ * A 1-bit receipt bitmap (552 dots wide from the Blaze pilot fixtures) has
+ * nothing but hard edges, so the scaler choice decides whether it is legible.
+ * The right choice depends on which way it is being scaled, and that depends
+ * on the device pixel ratio — not on the CSS width alone.
+ *
+ *   1x displays: 552px of bitmap into a <=430px column is a real downscale.
+ *     Nearest-neighbour there deletes whole 1px strokes out of receipt type,
+ *     so hand it to the browser's smooth scaler (the `image-rendering`
+ *     initial value) and accept slight softness over dropped glyph strokes.
+ *   2x/3x displays (every phone, i.e. this page's entire audience): the same
+ *     layout is an UPSCALE in device pixels (~1.3-2.0x). Smooth scaling is
+ *     exactly what makes it look blurry there, so use `pixelated` and keep
+ *     the 1-bit edges hard.
+ */
+.rasterInk {
+  image-rendering: auto;
+}
+
+@media (min-resolution: 2dppx) {
+  .rasterInk {
+    image-rendering: -webkit-optimize-contrast; /* older WebKit/Safari alias */
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+  }
+}
+
 /* ---- Page shell tokens ----------------------------------------------------
  * The app itself is hard-pinned to dark (no live light-mode screen exists —
  * spec §1/§8), so this is the one place this page invents a light-mode
