@@ -632,10 +632,26 @@ function isoDaysAgo(days: number): string {
   return new Date(NOW.getTime() - days * 86_400_000).toISOString();
 }
 
+/**
+ * Thousands separators for the counts spelled into a basis sentence
+ * (MARKET_PANEL_SHOPPERS is already 1600, so an unformatted interpolation
+ * reads "1600 shoppers"). Fixed "en-US" rather than `toLocaleString()`'s
+ * runtime default for the same reason as app/merchant/ui/format.ts's
+ * formatCount: this string is composed server-side and rendered verbatim by
+ * BasisLine, so server and browser must produce byte-identical text or React
+ * throws a hydration mismatch. Same null -> "—" convention as formatCount,
+ * though a non-suppressed basis always carries a real shopper count.
+ */
+const PANEL_COUNT_FORMATTER = new Intl.NumberFormat("en-US");
+
+function panelCount(n: number | null): string {
+  return n == null ? "—" : PANEL_COUNT_FORMATTER.format(Math.round(n));
+}
+
 function marketBasis(days: number, merchants: number, shoppers: number | null, suppressed: boolean): PanelBasis {
   const label = suppressed
     ? "Not enough category data yet for a reliable comparison."
-    : `Based on ${merchants} ${merchants === 1 ? "business" : "businesses"} and ${shoppers} ${shoppers === 1 ? "shopper" : "shoppers"} in your category.`;
+    : `Based on ${panelCount(merchants)} ${merchants === 1 ? "business" : "businesses"} and ${panelCount(shoppers)} ${shoppers === 1 ? "shopper" : "shoppers"} in your category.`;
   return {
     merchants,
     shoppers: suppressed ? null : shoppers,
