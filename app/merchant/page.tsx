@@ -40,7 +40,7 @@ import {
   type MerchantTransactionSummary,
   type MerchantDevice,
 } from "@/lib/merchantApi";
-import { Card, Button, Input, Select, FilterPill, PaymentChip, ConfidencePill, ParseFailedPill, LoadingBlock, EmptyState, ErrorBanner } from "./ui/primitives";
+import { Card, Button, Input, Select, FilterPill, PaymentChip, ConfidencePill, ParseFailedPill, ImageOnlyPill, LoadingBlock, EmptyState, ErrorBanner } from "./ui/primitives";
 import { T } from "./ui/tokens";
 import { DOW_LABELS, hourLabelLong, formatMerchantDateTime, formatMoney, formatCount } from "./ui/format";
 
@@ -418,7 +418,18 @@ function TransactionsPageInner() {
                       )}
                       <td className="px-5 py-3.5 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-2">
-                          {t.parseStatus === "failed" ? <ParseFailedPill /> : <ConfidencePill confidence={t.confidence} />}
+                          {/* Three-way, not "failed vs everything else": an
+                              ok_raster row has confidence "low" only because
+                              nothing was extracted from it yet, so falling
+                              through to ConfidencePill would label a perfectly
+                              good capture "Low confidence". */}
+                          {t.parseStatus === "failed" ? (
+                            <ParseFailedPill />
+                          ) : t.parseStatus === "ok_raster" ? (
+                            <ImageOnlyPill />
+                          ) : (
+                            <ConfidencePill confidence={t.confidence} />
+                          )}
                           <ChevronRight className="h-4 w-4" style={{ color: T.textMuted }} />
                         </div>
                       </td>

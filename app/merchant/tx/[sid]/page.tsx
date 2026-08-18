@@ -36,7 +36,7 @@ import { getTransaction, getReceiptBytes, type MerchantTransactionDetail } from 
 import { parseEscPos } from "@/lib/escpos";
 import { summarizeReceipt, hasStructure as computeHasStructure, type ReceiptSummary } from "@/lib/receiptSummary";
 import { GlassCard, ReceiptView } from "@/app/r/ui";
-import { LoadingBlock, EmptyState, ErrorBanner, ApproximateCaveat, PaymentChip, ConfidencePill, ParseFailedPill } from "../../ui/primitives";
+import { LoadingBlock, EmptyState, ErrorBanner, ApproximateCaveat, PaymentChip, ConfidencePill, ParseFailedPill, ImageOnlyPill } from "../../ui/primitives";
 import { T } from "../../ui/tokens";
 
 interface ParsedReceipt {
@@ -91,7 +91,11 @@ export default function TransactionDetailPage() {
       }
       const d = detailResult.value;
       setDetail(d);
-      if (!d || d.parseStatus === "failed") return;
+      // "failed" has no parse to attempt. "ok_raster" is a 1bpp bitmap, and
+      // feeding Star raster bytes to the ESC/POS text state machine desyncs
+      // it immediately — it would either yield nothing or invent mojibake
+      // lines. Either way the page renders from `detail` alone below.
+      if (!d || d.parseStatus === "failed" || d.parseStatus === "ok_raster") return;
 
       if (bytesResult.status === "fulfilled") {
         try {
@@ -140,6 +144,8 @@ export default function TransactionDetailPage() {
             <div className="flex items-center gap-2">
               {detail.parseStatus === "failed" ? (
                 <ParseFailedPill />
+              ) : detail.parseStatus === "ok_raster" ? (
+                <ImageOnlyPill />
               ) : (
                 <ConfidencePill confidence={detail.confidence} />
               )}
@@ -156,6 +162,28 @@ export default function TransactionDetailPage() {
                 </pre>
               </GlassCard>
             </>
+          ) : detail.parseStatus === "ok_raster" ? (
+            // The receipt is a bitmap and no text was extracted, so there is
+            // nothing to feed ReceiptView and rawText is empty — without this
+            // branch the page fell through to the generic fallback card and
+            // rendered blank. Say plainly what happened instead: the capture
+            // worked, the reading hasn't happened yet.
+            //
+            // The image itself is NOT displayed here. `detail.imageKey` is an
+            // S3 key with no route serving it, and decoding the raw bytes
+            // client-side needs lib/starRaster.ts, which is landing separately
+            // on the /r consumer branch. When either seam exists, this is
+            // where the bitmap goes.
+            <GlassCard>
+              <p className="text-sm font-medium" style={{ color: T.text }}>
+                Captured as an image
+              </p>
+              <p className="mt-1.5 text-sm" style={{ color: T.textSecondary }}>
+                This point-of-sale prints receipts as an image rather than as
+                text, so there are no line items to show yet. The receipt was
+                captured and stored successfully.
+              </p>
+            </GlassCard>
           ) : receipt ? (
             <>
               {detail.confidence === "low" && <ApproximateCaveat />}

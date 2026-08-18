@@ -207,6 +207,8 @@ interface MockTxRecord {
   total: number | null;
   confidence: ParseConfidence;
   parseStatus: ParseStatus;
+  /** Set only on the "ok_raster" row — see the raster record built below. */
+  imageKey?: string | null;
   summary: ReceiptSummary;
   rawText: string;
 }
@@ -330,6 +332,33 @@ function buildDataset(): MockTxRecord[] {
     rawText: receiptLinesToText(failed.lines) || "(no readable text — receipt could not be parsed)",
   });
 
+  // Force exactly one parse_status: "ok_raster" row. Blaze POS renders its
+  // receipts to a 1bpp bitmap instead of sending text ESC/POS, so the indexer
+  // stores a PNG and no summary at all — every field null, no rawText, until
+  // the OCR phase lands. This is a SUCCESSFUL capture, and the dashboard has
+  // to say so rather than showing it as a parse failure or as a "low
+  // confidence" text receipt with no text in it.
+  //
+  // It exists in the mock because the whole Doobie Nights pilot produces
+  // nothing but rows of this shape, and without one here nobody developing
+  // against NEXT_PUBLIC_MERCHANT_MOCK=1 would ever see that state.
+  records.push({
+    sid: "mock-raster",
+    deviceId: DEVICES[0].deviceId,
+    uploadedAt: businessHourTimestamp(3).toISOString(),
+    receiptNumber: "—",
+    paymentMethod: null,
+    cardLast4: null,
+    merchantName: null,
+    itemNames: [],
+    total: null,
+    confidence: "low",
+    parseStatus: "ok_raster",
+    imageKey: "receipts/mock-merchant/mock-raster.png",
+    summary: summarizeReceipt([]),
+    rawText: "",
+  });
+
   records.sort((a, b) => (a.uploadedAt < b.uploadedAt ? 1 : -1)); // reverse-chron
   return records;
 }
@@ -435,6 +464,7 @@ function toSummary(r: MockTxRecord): MerchantTransactionSummary {
     itemsPreview: r.itemNames.join(", "),
     confidence: r.confidence,
     parseStatus: r.parseStatus,
+    imageKey: r.imageKey ?? null,
   };
 }
 
@@ -502,6 +532,7 @@ export async function mockGetTransaction(sid: string): Promise<MerchantTransacti
     deviceId: r.deviceId,
     parseStatus: r.parseStatus,
     confidence: r.confidence,
+    imageKey: r.imageKey ?? null,
     total: r.total,
     subtotal: r.summary.subtotal ?? null,
     tax: r.summary.tax ?? null,
@@ -559,11 +590,27 @@ const DOW_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export async function mockGetInsights(window: InsightsWindow): Promise<MerchantInsights> {
   const since = windowStart(window).toISOString();
-  const rows = DATASET.filter((r) => r.uploadedAt >= since && r.parseStatus === "ok" && r.total != null);
+  // Two different populations, deliberately — and this mirrors the real
+  // backend (Papex_RDH lambdas/merchant-api/handler.js getInsights) exactly,
+  // because a mock that aggregates differently from production is a mock that
+  // hides production bugs.
+  //
+  // `rows` is every receipt captured in the window, whatever its parse status.
+  // That is what the "Transactions" tile counts and what the by-hour/by-day
+  // charts bucket: the device really did capture them, and excluding some
+  // would make the tile disagree with the transactions list beside it.
+  //
+  // `revenueRows` is the subset that can actually contribute money. Gross and
+  // avg ticket come from those alone. Dividing gross by `rows.length` would
+  // deflate the average by every row with no total — which used to be the odd
+  // parse failure, but is now EVERY row at a Blaze merchant, where receipts
+  // arrive as bitmaps ("ok_raster") with no total until OCR lands.
+  const rows = DATASET.filter((r) => r.uploadedAt >= since);
+  const revenueRows = rows.filter((r) => r.total != null);
 
   const count = rows.length;
-  const gross = Math.round(rows.reduce((s, r) => s + (r.total ?? 0), 0) * 100) / 100;
-  const avgTicket = count > 0 ? Math.round((gross / count) * 100) / 100 : 0;
+  const gross = Math.round(revenueRows.reduce((s, r) => s + (r.total ?? 0), 0) * 100) / 100;
+  const avgTicket = revenueRows.length > 0 ? Math.round((gross / revenueRows.length) * 100) / 100 : 0;
 
   const byHour: HourBucket[] = Array.from({ length: 24 }, (_, hour) => ({ hour, count: 0, gross: 0 }));
   const byDayOfWeek: DayOfWeekBucket[] = Array.from({ length: 7 }, (_, day) => ({
