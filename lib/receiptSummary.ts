@@ -245,13 +245,30 @@ function extractTotals(lines: ReceiptLine[]): {
 // Items
 // ---------------------------------------------------------------------------
 
-/** "1  Cortado" -> { qty: 1, name: "Cortado" }. No leading integer -> qty 1, name = label. */
+/**
+ * Leading quantity token at the start of an item label. Covers all four forms
+ * real ESC/POS printers emit: "2  Bagel", "2x Latte", "2X Latte", "2 x Latte".
+ * The optional [xX] sits between two whitespace runs (the leading one optional,
+ * the trailing one required) so the multiplier is stripped whether or not it is
+ * space-separated from the digits. A required trailing \s+ keeps words that
+ * merely start with x from being eaten — "3 Xylophone" backtracks to consuming
+ * just "3 ", leaving "Xylophone" intact.
+ *
+ * Kept in sync with papex-adapter-backend/src/rdh/summarize.js and
+ * Papex_AppClip/Sources/AppClip/ReceiptSummary.swift (Patterns.leadingQuantity)
+ * — see docs/rdh_orchestrator.md on summarizer parity. The {1,3} bound matches
+ * those two: a 4+ digit leading run is a PLU/SKU code, not a quantity.
+ */
+const LEADING_QUANTITY_RE = /^(\d{1,3})\s*[xX]?\s+/;
+
+/** "1  Cortado" / "2 x Cortado" -> { qty: n, name: "Cortado" }. No leading qty token -> qty 1, name = label. */
 function splitQtyAndName(label: string): { qty: number; name: string } {
-  const match = label.match(/^(\d+)\s+(.+)$/);
+  const match = label.match(LEADING_QUANTITY_RE);
   if (match) {
     const qty = Number(match[1]);
-    if (Number.isFinite(qty) && qty > 0) {
-      return { qty, name: match[2].trim() };
+    const name = label.slice(match[0].length).trim();
+    if (Number.isFinite(qty) && qty > 0 && name.length > 0) {
+      return { qty, name };
     }
   }
   return { qty: 1, name: label };

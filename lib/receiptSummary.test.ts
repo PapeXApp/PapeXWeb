@@ -378,6 +378,60 @@ test("item label without a qty prefix keeps the whole label as the name", () => 
   assert.equal(summary.items[0].name, "Gift Card");
 });
 
+// ---- Leading quantity forms --------------------------------------------------
+// Every form real ESC/POS printers emit. splitQtyAndName used to match
+// /^(\d+)\s+(.+)$/, which stranded the multiplier on the label for "2 x Latte"
+// (name became "x Latte") and did not strip a tight "2x Latte" at all. The
+// regex is now shared verbatim with papex-adapter-backend/src/rdh/summarize.js
+// and Papex_AppClip/Sources/AppClip/ReceiptSummary.swift.
+const QTY_FORMS: Array<[string, string, number, string]> = [
+  ["N Label   (space separated)", "2 Latte                9.00", 2, "Latte"],
+  ["N  Label  (column padded)", "2  Bagel               9.00", 2, "Bagel"],
+  ["NxLabel   (tight lowercase)", "2x Latte               9.00", 2, "Latte"],
+  ["NXLabel   (tight uppercase)", "2X Latte               9.00", 2, "Latte"],
+  ["N x Label (spaced lowercase)", "2 x Cappuccino         9.00", 2, "Cappuccino"],
+  ["N X Label (spaced uppercase)", "2 X Cappuccino         9.00", 2, "Cappuccino"],
+  ["multi-word label after N x", "1 x Cold Brew 12oz     6.50", 1, "Cold Brew 12oz"],
+];
+
+for (const [form, itemLine, qty, name] of QTY_FORMS) {
+  test(`leading quantity in the "${form}" form is stripped from the name`, () => {
+    const lines = [line("Shop"), line(""), line(itemLine)];
+    const summary = summarizeReceipt(lines);
+    assert.equal(summary.items.length, 1);
+    assert.equal(summary.items[0].qty, qty);
+    assert.equal(summary.items[0].name, name);
+  });
+}
+
+// Requiring whitespace after the optional [xX] keeps the regex from swallowing
+// the first word of a label that merely begins with an x, or treating a unit
+// token as a multiplier.
+const QTY_NON_GREEDY: Array<[string, string, number, string]> = [
+  ["label beginning with X", "3 Xylophone            9.00", 3, "Xylophone"],
+  ["unit token, not an 'x'", "12 oz Coffee           9.00", 12, "oz Coffee"],
+];
+
+for (const [caseName, itemLine, qty, name] of QTY_NON_GREEDY) {
+  test(`leading quantity does not over-consume the label: ${caseName}`, () => {
+    const lines = [line("Shop"), line(""), line(itemLine)];
+    const summary = summarizeReceipt(lines);
+    assert.equal(summary.items.length, 1);
+    assert.equal(summary.items[0].qty, qty);
+    assert.equal(summary.items[0].name, name);
+  });
+}
+
+test("a 4+ digit leading run is left alone (PLU/SKU code, not a quantity)", () => {
+  // Parity with the adapter/Swift {1,3} bound — this label used to be split
+  // into qty 4066 by the unbounded \d+ here.
+  const lines = [line("Shop"), line(""), line("4066 Sparkling Water    2.75")];
+  const summary = summarizeReceipt(lines);
+  assert.equal(summary.items.length, 1);
+  assert.equal(summary.items[0].qty, 1);
+  assert.equal(summary.items[0].name, "4066 Sparkling Water");
+});
+
 // ---- Summary -----------------------------------------------------------------
 
 console.log(`\n${passed} passed, ${failed} failed`);
