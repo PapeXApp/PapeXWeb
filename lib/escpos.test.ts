@@ -12,7 +12,51 @@
 // scope per docs/rdh_orchestrator.md "Shared cross-stream" table).
 
 import assert from "node:assert/strict";
+import zlib from "node:zlib";
 import { parseEscPos, guessMerchantName, defaultStyle, type Style } from "./escpos";
+
+// ---- Test-only PNG decoder ---------------------------------------------------
+//
+// Uses Node's built-in zlib/Buffer (fine here — this is a test script run
+// under Node via tsx, not lib/png.ts itself, which stays Node-API-free) to
+// walk chunks and inflate IDAT, so tests can assert the encoded logo is
+// pixel-exact against the source bitmap rather than just "some string came
+// back". Deliberately independent of lib/png.ts's own encoding logic (it
+// re-derives width/height/rowBytes from the PNG's own IHDR chunk, not from
+// what the test expects to send in) so a bug shared by both wouldn't just
+// cancel out.
+function decodePngDataUri(dataUri: string): { width: number; height: number; bits: Uint8Array } {
+  const prefix = "data:image/png;base64,";
+  assert.ok(dataUri.startsWith(prefix), "data URI has the expected PNG prefix");
+  const buf = Buffer.from(dataUri.slice(prefix.length), "base64");
+  assert.deepEqual(
+    [...buf.subarray(0, 8)],
+    [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],
+    "PNG signature"
+  );
+  let offset = 8;
+  const chunks: Record<string, Buffer> = {};
+  while (offset < buf.length) {
+    const len = buf.readUInt32BE(offset);
+    const type = buf.subarray(offset + 4, offset + 8).toString("ascii");
+    chunks[type] = buf.subarray(offset + 8, offset + 8 + len);
+    offset += 8 + len + 4;
+  }
+  const ihdr = chunks.IHDR;
+  const width = ihdr.readUInt32BE(0);
+  const height = ihdr.readUInt32BE(4);
+  assert.equal(ihdr[8], 1, "bit depth 1");
+  assert.equal(ihdr[9], 3, "color type 3 (indexed)");
+  const rowBytes = Math.ceil(width / 8);
+  const inflated = zlib.inflateSync(chunks.IDAT);
+  const bits = new Uint8Array(rowBytes * height);
+  for (let y = 0; y < height; y++) {
+    const rowStart = y * (1 + rowBytes);
+    assert.equal(inflated[rowStart], 0, `row ${y} filter byte is None`);
+    bits.set(inflated.subarray(rowStart + 1, rowStart + 1 + rowBytes), y * rowBytes);
+  }
+  return { width, height, bits };
+}
 
 let passed = 0;
 let failed = 0;
@@ -272,9 +316,18 @@ test("raster image (GS v 0) followed by text survives — logo does not swallow 
     receipt.lines.map((l) => l.text),
     ["PAPEX TEST CAFE", "2x Latte 9.00", "TOTAL 13.50"]
   );
+  // The raster is fully present (32 declared === 32 available), so it now
+  // also decodes into a logo — width is in BYTES per the header (xL=2 ->
+  // 16px), height in ROWS (yL=16).
+  assert.ok(receipt.logo);
+  assert.equal(receipt.logo?.widthPx, 16);
+  assert.equal(receipt.logo?.heightPx, 16);
+  assert.equal(receipt.logo?.source, "GS v 0");
+  assert.ok(receipt.logo?.dataUri.startsWith("data:image/png;base64,"));
+  assert.equal(receipt.nvLogoReferenced, false);
 });
 
-test("truncated GS v 0 raster (fewer data bytes than declared) does not throw", () => {
+test("truncated GS v 0 raster (fewer data bytes than declared) does not throw and does not render a logo", () => {
   const b: number[] = [0x1b, 0x40];
   // Declares dataLen = 2*16 = 32 bytes of raster data but only supplies 5.
   b.push(0x1d, 0x76, 0x30, 0x00, 0x02, 0x00, 0x10, 0x00);
@@ -282,8 +335,10 @@ test("truncated GS v 0 raster (fewer data bytes than declared) does not throw", 
   assert.doesNotThrow(() => parseEscPos(new Uint8Array(b)));
   const receipt = parseEscPos(new Uint8Array(b));
   // All bytes consumed as raster payload (clamped to remaining input) —
-  // nothing left to decode as text.
+  // nothing left to decode as text, and a partial/corrupt bitmap must not
+  // be rendered as if it were a complete logo.
   assert.deepEqual(receipt.lines, []);
+  assert.equal(receipt.logo, undefined);
 });
 
 test("stream ending mid-GS-v-0-header consumes to EOF (no garbage text)", () => {
@@ -316,6 +371,188 @@ test("large well-formed stream never throws (fuzz-lite smoke test)", () => {
   }
   b.push(0x1d, 0x56, 0x00);
   assert.doesNotThrow(() => parseEscPos(new Uint8Array(b)));
+});
+
+// ---- Logo / raster image decoding -------------------------------------------
+//
+// Geometry below mirrors the two real bench-captured fixtures at
+// Papex_RDH_Firmware/bench/corpus/ — dispensary_logo.bin (48 bytes/row x 40
+// rows) and dispensary_biglogo.bin (72 bytes/row x 120 rows) — without
+// depending on that sibling repo's binary files from a committed test (this
+// repo's existing convention is self-contained synthetic fixtures; the
+// actual corpus files were used for manual end-to-end verification instead
+// — see the task report). Pixel data here is a deterministic fill, not the
+// real logos, but the header geometry and decode/roundtrip path are the
+// same code the real captures exercise.
+
+function fillPattern(n: number): Uint8Array {
+  const out = new Uint8Array(n);
+  for (let i = 0; i < n; i++) out[i] = (i * 37 + 11) & 0xff;
+  return out;
+}
+
+test("GS v 0 raster matches dispensary_logo.bin geometry (48 bytes/row x 40 rows) and decodes pixel-exact", () => {
+  const widthBytes = 48;
+  const heightRows = 40;
+  const raster = fillPattern(widthBytes * heightRows);
+  const b: number[] = [0x1b, 0x40];
+  b.push(0x1d, 0x76, 0x30, 0x00, widthBytes & 0xff, (widthBytes >> 8) & 0xff, heightRows & 0xff, (heightRows >> 8) & 0xff);
+  b.push(...raster);
+  b.push(..."MERCHANT NAME\n".split("").map((c) => c.charCodeAt(0)));
+
+  const receipt = parseEscPos(new Uint8Array(b));
+  assert.ok(receipt.logo, "logo decoded");
+  assert.equal(receipt.logo?.source, "GS v 0");
+  assert.equal(receipt.logo?.widthPx, widthBytes * 8);
+  assert.equal(receipt.logo?.heightPx, heightRows);
+  assert.deepEqual(receipt.lines.map((l) => l.text), ["MERCHANT NAME"]);
+
+  const decoded = decodePngDataUri(receipt.logo!.dataUri);
+  assert.equal(decoded.width, widthBytes * 8);
+  assert.equal(decoded.height, heightRows);
+  assert.deepEqual([...decoded.bits], [...raster]);
+});
+
+test("GS v 0 raster matches dispensary_biglogo.bin geometry (72 bytes/row x 120 rows) and decodes pixel-exact", () => {
+  const widthBytes = 72;
+  const heightRows = 120;
+  const raster = fillPattern(widthBytes * heightRows);
+  const b: number[] = [0x1b, 0x40];
+  b.push(0x1d, 0x76, 0x30, 0x00, widthBytes & 0xff, (widthBytes >> 8) & 0xff, heightRows & 0xff, (heightRows >> 8) & 0xff);
+  b.push(...raster);
+  b.push(..."MERCHANT NAME\n".split("").map((c) => c.charCodeAt(0)));
+
+  const receipt = parseEscPos(new Uint8Array(b));
+  assert.ok(receipt.logo, "logo decoded");
+  assert.equal(receipt.logo?.widthPx, widthBytes * 8);
+  assert.equal(receipt.logo?.heightPx, heightRows);
+  assert.deepEqual(receipt.lines.map((l) => l.text), ["MERCHANT NAME"]);
+
+  const decoded = decodePngDataUri(receipt.logo!.dataUri);
+  assert.equal(decoded.width, widthBytes * 8);
+  assert.equal(decoded.height, heightRows);
+  assert.deepEqual([...decoded.bits], [...raster]);
+});
+
+test("ESC * (8-dot column format) decodes a single band pixel-exact and transposes columns to rows", () => {
+  // m=0 (8-dot single density), width=1 column, data=0xAA
+  // (0b10101010 -> rows 0,2,4,6 set, MSB-first top-to-bottom).
+  const b: number[] = [0x1b, 0x40];
+  b.push(..."Before".split("").map((c) => c.charCodeAt(0)));
+  b.push(0x0a);
+  b.push(0x1b, 0x2a, 0x00, 0x01, 0x00, 0xaa);
+  b.push(..."After".split("").map((c) => c.charCodeAt(0)));
+  b.push(0x0a);
+
+  const receipt = parseEscPos(new Uint8Array(b));
+  assert.deepEqual(receipt.lines.map((l) => l.text), ["Before", "After"]);
+  assert.ok(receipt.logo);
+  assert.equal(receipt.logo?.source, "ESC *");
+  assert.equal(receipt.logo?.widthPx, 1);
+  assert.equal(receipt.logo?.heightPx, 8);
+
+  const decoded = decodePngDataUri(receipt.logo!.dataUri);
+  assert.equal(decoded.width, 1);
+  assert.equal(decoded.height, 8);
+  // One row-byte per row (width=1 -> rowBytes=1); bit is in the MSB (col 0).
+  assert.deepEqual([...decoded.bits], [0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00]);
+});
+
+test("GS ( L <Function 112> (store raster in print buffer) decodes pixel-exact, including a non-multiple-of-8 width", () => {
+  // width=9px (rowBytes=2 -> padding bits in the 2nd byte of every row),
+  // height=2px. Row 0 = all 9 pixels set, row 1 = none set.
+  const widthPx = 9;
+  const heightPx = 2;
+  const bitmap = [0xff, 0x80, 0x00, 0x00];
+  const subheader = [0x30, 0x01, 0x01, 0x31, widthPx & 0xff, (widthPx >> 8) & 0xff, heightPx & 0xff, (heightPx >> 8) & 0xff];
+  const body = [0x30, 0x70, ...subheader, ...bitmap]; // m='0', fn='p', then payload
+  const pL = body.length & 0xff;
+  const pH = (body.length >> 8) & 0xff;
+
+  const b: number[] = [0x1b, 0x40];
+  b.push(..."Before".split("").map((c) => c.charCodeAt(0)));
+  b.push(0x0a);
+  b.push(0x1d, 0x28, 0x4c, pL, pH, ...body);
+  b.push(..."After".split("").map((c) => c.charCodeAt(0)));
+  b.push(0x0a);
+
+  const receipt = parseEscPos(new Uint8Array(b));
+  assert.deepEqual(receipt.lines.map((l) => l.text), ["Before", "After"]);
+  assert.ok(receipt.logo);
+  assert.equal(receipt.logo?.source, "GS ( L");
+  assert.equal(receipt.logo?.widthPx, widthPx);
+  assert.equal(receipt.logo?.heightPx, heightPx);
+  assert.equal(receipt.nvLogoReferenced, false);
+
+  const decoded = decodePngDataUri(receipt.logo!.dataUri);
+  assert.equal(decoded.width, widthPx);
+  assert.equal(decoded.height, heightPx);
+  assert.deepEqual([...decoded.bits], bitmap);
+});
+
+test("GS ( L <Function 69> (print NV graphics) is detected as an NV reference, not rendered", () => {
+  const body = [0x30, 0x45, 0x01, 0x02]; // m='0', fn='E' (69), 2 arbitrary key-code/param bytes
+  const pL = body.length & 0xff;
+  const pH = (body.length >> 8) & 0xff;
+  const b: number[] = [0x1b, 0x40];
+  b.push(..."Before".split("").map((c) => c.charCodeAt(0)));
+  b.push(0x0a);
+  b.push(0x1d, 0x28, 0x4c, pL, pH, ...body);
+  b.push(..."After".split("").map((c) => c.charCodeAt(0)));
+  b.push(0x0a);
+
+  const receipt = parseEscPos(new Uint8Array(b));
+  assert.deepEqual(receipt.lines.map((l) => l.text), ["Before", "After"]);
+  assert.equal(receipt.logo, undefined);
+  assert.equal(receipt.nvLogoReferenced, true);
+});
+
+test("FS p (print NV bit image) is detected as an NV reference, not rendered", () => {
+  const b: number[] = [0x1b, 0x40];
+  b.push(..."Before".split("").map((c) => c.charCodeAt(0)));
+  b.push(0x0a);
+  b.push(0x1c, 0x70, 0x01, 0x00); // FS p n m
+  b.push(..."After".split("").map((c) => c.charCodeAt(0)));
+  b.push(0x0a);
+
+  const receipt = parseEscPos(new Uint8Array(b));
+  assert.deepEqual(receipt.lines.map((l) => l.text), ["Before", "After"]);
+  assert.equal(receipt.logo, undefined);
+  assert.equal(receipt.nvLogoReferenced, true);
+});
+
+test("GS 8 L (4-byte-length graphics) is safely skipped (resync only, not decoded) without corrupting following text", () => {
+  const payload = [0x30, 0x70, 0x11, 0x22, 0x33]; // arbitrary — not decoded regardless of contents
+  const b: number[] = [0x1b, 0x40];
+  b.push(..."Before".split("").map((c) => c.charCodeAt(0)));
+  b.push(0x0a);
+  b.push(0x1d, 0x38, 0x4c, payload.length & 0xff, 0x00, 0x00, 0x00, ...payload);
+  b.push(..."After".split("").map((c) => c.charCodeAt(0)));
+  b.push(0x0a);
+
+  const receipt = parseEscPos(new Uint8Array(b));
+  assert.deepEqual(receipt.lines.map((l) => l.text), ["Before", "After"]);
+  assert.equal(receipt.logo, undefined);
+  assert.equal(receipt.nvLogoReferenced, false);
+});
+
+test("image-only stream (no text at all) still produces zero lines — logo lives outside .lines", () => {
+  // Guards the honest-failure-state contract (lib/receiptState.ts): a
+  // receipt that is only a logo, with no readable text, must still resolve
+  // to "no visible content" upstream. This parser-level test only asserts
+  // its half of that contract — .lines stays empty even though .logo is
+  // populated — since hasVisibleContent()/resolveReceiptState() only ever
+  // look at .lines/.bodyLines, never at .logo.
+  const widthBytes = 4;
+  const heightRows = 4;
+  const raster = fillPattern(widthBytes * heightRows);
+  const b: number[] = [0x1b, 0x40];
+  b.push(0x1d, 0x76, 0x30, 0x00, widthBytes, 0x00, heightRows, 0x00);
+  b.push(...raster);
+
+  const receipt = parseEscPos(new Uint8Array(b));
+  assert.ok(receipt.logo);
+  assert.deepEqual(receipt.lines, []);
 });
 
 // ---- guessMerchantName heuristic --------------------------------------------

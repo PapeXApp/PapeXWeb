@@ -13,9 +13,11 @@
     "migrate:static-blogs": "tsx scripts/migrateStaticBlogs.ts",
     "migrate:static-blogs:dry": "tsx scripts/migrateStaticBlogs.ts --dry-run",
     "test:escpos": "tsx lib/escpos.test.ts",
+    "test:png": "tsx lib/png.test.ts",
     "test:summary": "tsx lib/receiptSummary.test.ts",
     "test:merchantHost": "tsx lib/merchantHost.test.ts",
-    "test": "npm run test:escpos && npm run test:summary && npm run test:merchantHost"
+    "test": "npm run test:png && npm run test:escpos && npm run test:summary && npm run test:state && npm run test:merchantHost",
+    "test:state": "tsx lib/receiptState.test.ts"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

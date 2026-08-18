@@ -16,11 +16,18 @@
 // dropped on a dead link.
 //
 // Deliberately does not duplicate /r's fetch/render logic — that page
-// already owns the "valid sid -> receipt, invalid/missing -> sample"
-// behavior end to end.
+// already owns the full state taxonomy (see lib/receiptState.ts) end to
+// end: valid sid -> receipt or NOT_AVAILABLE, malformed sid -> NOT_AVAILABLE,
+// no sid at all -> DEMO sample.
+//
+// IMPORTANT: always forward whatever sid arrived here, even a malformed one
+// — only drop to bare `/r` when there truly is no sid. A visitor who tapped
+// the device believes they have a receipt; collapsing a malformed sid to
+// bare `/r` would land them on /r's DEMO state and show them the sample as
+// if it were real, which is the exact defect this taxonomy exists to
+// prevent. Let /r's own `isValidSid` + `resolveReceiptState` decide.
 
 import { redirect } from "next/navigation";
-import { isValidSid } from "@/lib/rdh";
 
 export const dynamic = "force-dynamic";
 
@@ -32,8 +39,8 @@ export default async function RdhUniversalLinkFallback({
   const params = await searchParams;
   const rawSid = Array.isArray(params.sid) ? params.sid[0] : params.sid;
 
-  if (isValidSid(rawSid)) {
-    redirect(`/r?sid=${rawSid}`);
+  if (rawSid != null && rawSid.trim().length > 0) {
+    redirect(`/r?sid=${encodeURIComponent(rawSid)}`);
   }
   redirect("/r");
 }

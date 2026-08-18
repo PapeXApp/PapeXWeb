@@ -1,23 +1,32 @@
 // app/r/ui.tsx
 //
 // Presentational pieces for the RDH receipt web viewer, restyled to match
-// the PapeX iOS app's receipt-detail screen (dark "liquid glass") per
-// docs/goals/rdh-receipt-ux-clip-web/design-spec.md. Tokens are inlined as
-// Tailwind arbitrary values / style props rather than added to
-// tailwind.config.ts, deliberately — this repo's `orange`/`navy` Tailwind
-// classes are CSS-var-backed and belong to the marketing site's palette
-// (see tailwind.config.ts), which is a different (lighter, more saturated)
-// orange than the app's #FB8500. Reusing those classes here would silently
-// pull in the wrong color if the marketing palette ever changes. Source of
-// truth for these values: PapeXV2/theme/tokens.ts.
+// the PapeX iOS app's shipping "liquid glass" receipt-detail screen per
+// docs/PAPEX_DESIGN_KIT_FOR_WEB.md (extracted from the release branch,
+// release/testflight-2026-08-17, tokens verified against
+// PapeXV2/theme/tokens.ts — treat that doc as the implementation spec for
+// every value below; section references in comments point back into it).
+//
+// Tokens are inlined as style props rather than added to tailwind.config.ts,
+// deliberately — this repo's `orange`/`navy` Tailwind classes are CSS-var-
+// backed and belong to the marketing site's palette (see
+// tailwind.config.ts), a different (lighter, more saturated) orange than
+// the app's. Reusing those classes here would silently pull in the wrong
+// color if the marketing palette ever changes. Source of truth: the design
+// kit doc above, itself sourced from PapeXV2/theme/tokens.ts.
+//
+// The corner-lit glass ring (Layer 2 of the glass-card recipe) lives in
+// glass.module.css — a masked radial-gradient ring per tier, and CSS custom
+// properties can't cleanly express a mask-composite recipe as inline
+// style, so that one piece is a real stylesheet rather than inline props.
 //
 // All server components except where noted — SaveToPapex.tsx and
 // RetryButton.tsx are their own "use client" islands, imported here.
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { AlertTriangle, Clock, Sparkles } from "lucide-react";
-import type { ReceiptLine } from "@/lib/escpos";
+import { AlertTriangle, Clock, FlaskConical, SearchX } from "lucide-react";
+import type { DecodedLogo, ReceiptLine } from "@/lib/escpos";
 import {
   type ReceiptSummary,
   detectPaymentMethod,
@@ -25,57 +34,65 @@ import {
   PAYMENT_METHOD_STYLES,
 } from "@/lib/receiptSummary";
 import SaveToPapex from "./SaveToPapex";
+import styles from "./glass.module.css";
 
 const APP_STORE_URL = "https://apps.apple.com/us/app/papex/id6754945242";
 
-// ---- Tokens (PapeXV2/theme/tokens.ts) --------------------------------------
+// ---- Tokens (docs/PAPEX_DESIGN_KIT_FOR_WEB.md §1, §2) -----------------------
+//
+// `T` is what everything *inside* a glass card uses — cards are always a
+// dark surface (§8), so these never change with the page shell's light/dark
+// state. Shell-level chrome that sits directly on the page background
+// (header kicker, empty-state copy) uses the theme-aware CSS custom
+// properties defined in glass.module.css's `.shell` class instead — see the
+// `S` token group below.
 
 const T = {
-  orange: "#FB8500",
-  blue: "#2B7FC6",
-  text: "#F4F4F4",
-  textSecondary: "#C4C7CC",
-  textMuted: "#9AA1A8",
-  success: "#10B981",
-  error: "#EF4444",
-  glassBg: "rgba(20, 26, 36, 0.6)",
-  glassBorder: "rgba(255, 255, 255, 0.12)",
-  divider: "rgba(255, 255, 255, 0.12)",
+  navy: "#00121D",
+  orange: "#EB7100", // THE brand accent. Never the important-tier rim orange (#e88036) — see §2 note.
+  orangeRim: "#e88036", // important-tier ring color only — never a fill, never a CTA.
+  blue: "#0088EA", // semantic info blue (subtotal callout, links) — NOT the rim "standard" blue.
+  text: "rgba(255, 255, 255, 0.90)",
+  textSecondary: "rgba(255, 255, 255, 0.64)",
+  textMuted: "rgba(255, 255, 255, 0.45)",
+  divider: "rgba(255, 255, 255, 0.10)",
+  success: "#34C759",
+  error: "#FF3B30",
+  warning: "#FFB800",
+  orange20: "rgba(235, 113, 0, 0.20)",
+  orange12: "rgba(235, 113, 0, 0.12)",
+  orange08: "rgba(235, 113, 0, 0.08)",
 };
 
-const glassCardStyle = {
-  background: T.glassBg,
-  borderColor: T.glassBorder,
+// Shell-level text tokens — theme-aware via CSS custom properties set on
+// `.shell` (glass.module.css), which swap under `prefers-color-scheme:
+// light` to the spec's `colorsLight` values. Only for text painted directly
+// on the page background, never for card interiors.
+const S = {
+  text: "var(--page-text)",
+  textSecondary: "var(--page-text-secondary)",
+  textMuted: "var(--page-text-muted)",
 };
 
 // ---- Shell ------------------------------------------------------------------
 
 export function Shell({ children }: { children: ReactNode }) {
   return (
-    <main
-      className="min-h-screen w-full text-[#F4F4F4]"
-      style={{
-        // Layered: the photographic gradient asset first, then a tint so
-        // text stays legible over any part of the image, matching the app's
-        // dark navy/charcoal background with a faint orange glow.
-        backgroundColor: "#181A20",
-        backgroundImage: [
-          "radial-gradient(ellipse 120% 60% at 50% -10%, rgba(251,133,0,0.16) 0%, rgba(251,133,0,0) 60%)",
-          "linear-gradient(180deg, rgba(24,26,32,0.55) 0%, rgba(11,43,59,0.75) 100%)",
-          "url('/rdh-background.jpg')",
-        ].join(", "),
-        backgroundSize: "cover, cover, cover",
-        backgroundPosition: "center, center, center",
-        backgroundAttachment: "fixed, fixed, fixed",
-      }}
-    >
+    <main className={`min-h-screen w-full ${styles.shell} ${styles.shellBg}`} style={{ color: T.text }}>
       <div className="mx-auto flex min-h-screen w-full max-w-[430px] flex-col px-4 pb-10 pt-6">
-        <header className="mb-5 flex items-center gap-2 px-1">
-          <span className="font-barlow text-lg font-medium tracking-tight text-[#F4F4F4]">
-            papex
-          </span>
-          <span className="h-[7px] w-[7px] rounded-sm bg-[#FB8500]" aria-hidden />
-          <span className="ml-auto text-xs font-medium uppercase tracking-wide text-[#9AA1A8]">
+        <header className="mb-5 flex items-center gap-3 px-1">
+          {/* PapeX brand logo — docs/PAPEX_DESIGN_KIT_FOR_WEB.md §4. The
+              same artwork (main_logo.png, MD5-identical to
+              PapeXV2/assets/logos/main_logo.png) the App Clip's own
+              receipt view uses for its brand lockup. This is the PapeX
+              brand mark; it is never the merchant's logo — see LogoBlock
+              below for that, and the hierarchy note there. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logos/main_logo.png" alt="PapeX" className="h-6 w-auto shrink-0" style={{ objectFit: "contain" }} />
+          <span
+            className="ml-auto text-xs font-medium uppercase tracking-wide"
+            style={{ color: S.textMuted }}
+          >
             Receipt
           </span>
         </header>
@@ -85,37 +102,178 @@ export function Shell({ children }: { children: ReactNode }) {
   );
 }
 
-// ---- Glass card primitive -----------------------------------------------------
+// ---- Glass card primitive (docs/PAPEX_DESIGN_KIT_FOR_WEB.md §2) -------------
+//
+// `emphasis` picks the tier: "none" (frost + inset shadow, no ring, no
+// glow — used for quiet/supporting surfaces), "neutral" (white ring, no
+// hue), "standard" (the #7FC4EC rim blue — "the substance of the
+// purchase"), "important" (the #e88036 rim orange — "the amount actually
+// paid", the one sanctioned second-orange in the whole system). Ranking
+// orange > blue > white is doubly-validated per §7's closing note.
+//
+// No `backdrop-blur` anywhere here — see glass.module.css's file header for
+// why that's a deliberate, spec-mandated omission rather than an oversight.
 
-export function GlassCard({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return (
+type Emphasis = "none" | "neutral" | "standard" | "important";
+
+const GLOW_CLASS: Record<Exclude<Emphasis, "none">, string> = {
+  neutral: styles.glowNeutral,
+  standard: styles.glowStandard,
+  important: styles.glowImportant,
+};
+
+const RING_CLASS: Record<Exclude<Emphasis, "none">, string> = {
+  neutral: styles.ringNeutral,
+  standard: styles.ringStandard,
+  important: styles.ringImportant,
+};
+
+export function GlassCard({
+  children,
+  className = "",
+  emphasis = "none",
+  radius,
+}: {
+  children: ReactNode;
+  className?: string;
+  emphasis?: Emphasis;
+  /** Corner radius in px. Defaults to 24 (the card recipe's built-in radius) — pass 9999 for a circular badge. */
+  radius?: number;
+}) {
+  const radiusStyle = radius != null ? { borderRadius: radius } : undefined;
+  const card = (
     <div
-      className={`rounded-[24px] border p-6 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl ${className}`}
-      style={glassCardStyle}
+      className={`${styles.card} ${emphasis !== "none" ? RING_CLASS[emphasis] : ""} ${className}`}
+      style={radiusStyle}
     >
       {children}
     </div>
   );
+  if (emphasis === "none") return card;
+  return (
+    <div className={`${styles.wrap} ${GLOW_CLASS[emphasis]}`} style={radiusStyle}>
+      {card}
+    </div>
+  );
 }
 
-// ---- Sample / unavailable banner --------------------------------------------
+// ---- Demo (sample) banner -----------------------------------------------------
+//
+// Pinned, not inline. The previous banner sat at the top of the normal flow
+// and scrolled away after ~one swipe, so a screenshot of the middle of the
+// page showed fabricated line items with nothing marking them as fake. This
+// one sticks to the top of the viewport for the life of the page.
+//
+// `sticky` (not `fixed`) so it still participates in the flex column's
+// spacing; none of its ancestors in <Shell> set overflow/transform/filter,
+// which is what would otherwise break stickiness.
 
-export function SampleBanner({ variant }: { variant: "sample" | "unavailable" }) {
-  const message =
-    variant === "sample"
-      ? "Sample receipt — here's what a real tap looks like."
-      : "This receipt isn't available anymore. Showing a sample instead.";
+export function DemoBanner() {
+  return (
+    <div className="sticky top-0 z-30 -mx-1 pb-1 pt-1">
+      <div
+        className="flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm shadow-[0_8px_24px_rgba(0,0,0,0.45)]"
+        style={{
+          background: "rgba(107, 51, 0, 0.90)",
+          borderColor: T.orange20,
+          color: "#FFD9A8",
+        }}
+      >
+        <FlaskConical className="h-4 w-4 shrink-0" style={{ color: T.orange }} strokeWidth={2} />
+        {/* min-w-0 lets this shrink inside the flex row instead of forcing
+            the row (and the page) wider than the viewport — a flex item's
+            default min-width is its unwrapped content width, not 0. */}
+        <span className="min-w-0">
+          <strong className="font-medium" style={{ color: "#FFF0DC" }}>
+            Sample receipt.
+          </strong>{" "}
+          Made-up data, not a real purchase.
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ---- Sample frame: watermark + dashed border + persistent chip ---------------
+//
+// The banner alone isn't enough — the receipt *body* has to carry the mark,
+// so that a crop or screenshot of any part of it is still self-evidently
+// fake. Three redundant signals: a repeating diagonal SAMPLE watermark laid
+// over the cards, a dashed orange border around the whole block, and a chip
+// riding the top edge.
+//
+// The watermark is an inline SVG data URI rather than a repeated DOM node so
+// it tiles at any content height with one element and zero layout cost.
+// Single quotes inside the SVG survive encodeURIComponent untouched, which
+// keeps the CSS `url("…")` wrapper valid.
+
+const SAMPLE_WATERMARK_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='240' height='150' viewBox='0 0 240 150'>
+  <g font-family='Barlow, Helvetica, Arial, sans-serif' font-size='26' font-weight='500' letter-spacing='7' fill='rgba(235,113,0,0.16)'>
+    <text x='4' y='58' transform='rotate(-24 4 58)'>SAMPLE</text>
+    <text x='124' y='133' transform='rotate(-24 124 133)'>SAMPLE</text>
+  </g>
+</svg>`;
+
+const SAMPLE_WATERMARK_URL = `url("data:image/svg+xml,${encodeURIComponent(SAMPLE_WATERMARK_SVG)}")`;
+
+export function SampleFrame({ children }: { children: ReactNode }) {
   return (
     <div
-      className="flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm"
+      className="relative rounded-[28px] border-2 border-dashed p-3 pt-6"
       style={{
-        background: "rgba(251, 133, 0, 0.12)",
-        borderColor: "rgba(251, 133, 0, 0.35)",
-        color: "#FFD9A8",
+        borderColor: T.orange20,
+        background: T.orange08,
       }}
     >
-      <Sparkles className="h-4 w-4 shrink-0" style={{ color: T.orange }} strokeWidth={2} />
-      <span>{message}</span>
+      <span
+        className="absolute -top-[11px] left-1/2 -translate-x-1/2 rounded-full border px-3 py-[3px] text-[10px] font-semibold uppercase tracking-[1.5px]"
+        style={{
+          background: "#1B1408",
+          borderColor: T.orange20,
+          color: "#FFB74D",
+        }}
+      >
+        Sample
+      </span>
+      {children}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 rounded-[28px]"
+        style={{
+          backgroundImage: SAMPLE_WATERMARK_URL,
+          backgroundRepeat: "repeat",
+          backgroundSize: "240px 150px",
+        }}
+      />
+    </div>
+  );
+}
+
+// ---- Receipt not available ----------------------------------------------------
+//
+// The heart of the fix. Reached when a sid *was* supplied but there is no
+// receipt behind it (backend 404, empty/unparseable payload, malformed sid).
+// This screen must never contain sample content of any kind — the person
+// looking at it tapped a real device and is trying to find a real purchase.
+
+export function ReceiptNotAvailable({ children }: { children?: ReactNode }) {
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center py-14 text-center">
+      <GlassCard emphasis="neutral" radius={9999} className="mb-4 flex h-14 w-14 items-center justify-center">
+        <SearchX className="h-6 w-6" style={{ color: S.textMuted }} strokeWidth={1.75} />
+      </GlassCard>
+      <h1 className="font-barlow text-xl font-medium" style={{ color: S.text }}>
+        Receipt not available
+      </h1>
+      <p className="mt-2 max-w-[19rem] text-sm" style={{ color: S.textSecondary }}>
+        We couldn&apos;t find a receipt for this link. The link may have been
+        mistyped or cut short when it was shared, or this receipt isn&apos;t in
+        our system.
+      </p>
+      <p className="mt-3 max-w-[19rem] text-sm" style={{ color: S.textMuted }}>
+        If you just tapped the device, give it a moment and try again.
+      </p>
+      {children}
     </div>
   );
 }
@@ -136,19 +294,53 @@ export function StateCard({
   const Icon = icon === "clock" ? Clock : AlertTriangle;
   return (
     <div className="flex flex-1 flex-col items-center justify-center py-16 text-center">
-      <div
-        className="mb-4 flex h-14 w-14 items-center justify-center rounded-full border"
-        style={glassCardStyle}
-      >
-        <Icon className="h-6 w-6" style={{ color: T.textMuted }} strokeWidth={1.75} />
-      </div>
-      <h1 className="font-barlow text-xl font-semibold" style={{ color: T.text }}>
+      <GlassCard emphasis="neutral" radius={9999} className="mb-4 flex h-14 w-14 items-center justify-center">
+        <Icon className="h-6 w-6" style={{ color: S.textMuted }} strokeWidth={1.75} />
+      </GlassCard>
+      <h1 className="font-barlow text-xl font-medium" style={{ color: S.text }}>
         {title}
       </h1>
-      <p className="mt-2 max-w-xs text-sm" style={{ color: T.textSecondary }}>
+      <p className="mt-2 max-w-xs text-sm" style={{ color: S.textSecondary }}>
         {message}
       </p>
       {children}
+    </div>
+  );
+}
+
+// ---- Logo (decoded ESC/POS raster, see lib/escpos.ts) --------------------------
+//
+// The MERCHANT's logo — decoded from the receipt bytes themselves, distinct
+// from the PapeX brand logo in the header above. Rendered above the receipt
+// cards, centered, in a quiet unemphasized glass frame (emphasis="none": no
+// colored ring, no glow) so it reads as a display case for someone else's
+// mark rather than a second competing brand moment — the PapeX wordmark in
+// the header carries all of the "whose product is this" weight; this card
+// only has to say "here's what was on the paper."
+//
+// The decoded bitmap is a 2-color PNG (transparent background, near-white
+// foreground — see lib/escpos.ts's LOGO_FOREGROUND, which mirrors T.text
+// here) so it reads as a deliberate light logo mark on the dark glass card
+// rather than an inverted/broken image. `image-rendering: pixelated` keeps
+// the 1-bit source crisp instead of letting the browser smear it with
+// bilinear scaling. A plain `<img>` (not next/image) — this is a `data:`
+// URI, so there's no network fetch to optimize away either way, and
+// next/image's remote-loader machinery doesn't apply to embedded data.
+
+function LogoBlock({ logo }: { logo: DecodedLogo }) {
+  return (
+    <div className="flex justify-center">
+      <GlassCard emphasis="none" className="flex max-w-[240px] items-center justify-center px-6 py-5" radius={20}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={logo.dataUri}
+          alt="Merchant logo"
+          width={logo.widthPx}
+          height={logo.heightPx}
+          className="h-auto w-full max-h-[120px]"
+          style={{ imageRendering: "pixelated" }}
+        />
+      </GlassCard>
     </div>
   );
 }
@@ -161,16 +353,22 @@ function monogram(name?: string): string {
   return trimmed.length > 0 ? trimmed.charAt(0).toUpperCase() : "P";
 }
 
-export function MerchantHeaderCard({ summary }: { summary: ReceiptSummary }) {
+export function MerchantHeaderCard({
+  summary,
+  isSample = false,
+}: {
+  summary: ReceiptSummary;
+  isSample?: boolean;
+}) {
   const { merchantName, addressLines, dateline } = summary;
   return (
-    <GlassCard>
+    <GlassCard emphasis="standard" className="p-6">
       <div className="flex items-center gap-4">
         <div
           className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white"
           style={{ border: `2px solid ${T.orange}` }}
         >
-          <span className="text-xl font-medium" style={{ color: "#181A20" }}>
+          <span className="text-xl font-medium" style={{ color: T.navy }}>
             {monogram(merchantName)}
           </span>
         </div>
@@ -188,8 +386,8 @@ export function MerchantHeaderCard({ summary }: { summary: ReceiptSummary }) {
               {dateline}
             </p>
           )}
-          <p className="mt-1 text-xs" style={{ color: T.textMuted }}>
-            📟 RDH Receipt
+          <p className="mt-1 text-xs" style={{ color: isSample ? "#FFB74D" : T.textMuted }}>
+            {isSample ? "Sample data — not a real purchase" : "RDH Receipt"}
           </p>
         </div>
       </div>
@@ -203,10 +401,14 @@ export function ItemsCard({ summary }: { summary: ReceiptSummary }) {
   if (summary.items.length === 0) return null;
   return (
     <div>
-      <p className="mb-2 px-1 text-sm font-medium uppercase tracking-wide" style={{ color: T.textSecondary }}>
+      {/* Section title sits directly on the page background, not inside a
+          card — use the theme-aware shell token (S), not the card-fixed T,
+          so it stays legible if the page shell is ever viewed in light
+          mode (§8). */}
+      <p className="font-barlow mb-2 px-1 text-xl font-medium" style={{ color: S.text }}>
         Items Purchased
       </p>
-      <GlassCard>
+      <GlassCard emphasis="standard" className="p-6">
         <div className="flex flex-col">
           {summary.items.map((item, i) => (
             <div
@@ -218,7 +420,7 @@ export function ItemsCard({ summary }: { summary: ReceiptSummary }) {
                   : { borderBottom: `1px solid ${T.divider}` }
               }
             >
-              <span className="min-w-0 flex-1 truncate text-[15px]" style={{ color: T.text }}>
+              <span className="font-barlow min-w-0 flex-1 truncate text-base font-medium" style={{ color: T.text }}>
                 {item.name}
               </span>
               <div className="flex shrink-0 flex-col items-end">
@@ -227,7 +429,7 @@ export function ItemsCard({ summary }: { summary: ReceiptSummary }) {
                     ×{item.qty}
                   </span>
                 )}
-                <span className="text-[15px] font-medium" style={{ color: T.text }}>
+                <span className="font-barlow text-base font-medium" style={{ color: T.text }}>
                   ${item.amount.toFixed(2)}
                 </span>
               </div>
@@ -255,7 +457,7 @@ function PaymentRow({ paymentLine }: { paymentLine: string }) {
   return (
     <div className="flex items-center gap-2">
       <span
-        className="rounded px-[7px] py-[3px] text-[11px] font-bold uppercase tracking-[0.5px]"
+        className="rounded px-[7px] py-[3px] text-[11px] font-medium uppercase tracking-[0.5px]"
         style={{ background: style.bg, color: style.textColor }}
       >
         {style.label}
@@ -284,17 +486,23 @@ function TotalRow({
 }) {
   return (
     <div className="flex items-center justify-between py-1.5">
-      <span className="text-sm" style={{ color: labelColor }}>
+      <span className="text-base" style={{ color: labelColor }}>
         {label}
       </span>
-      <span className="text-[15px] font-medium" style={{ color: valueColor }}>
+      <span className="font-barlow text-base font-medium" style={{ color: valueColor }}>
         {value}
       </span>
     </div>
   );
 }
 
-export function TotalsCard({ summary }: { summary: ReceiptSummary }) {
+export function TotalsCard({
+  summary,
+  isSample = false,
+}: {
+  summary: ReceiptSummary;
+  isSample?: boolean;
+}) {
   const computedSubtotal =
     summary.subtotal ?? (summary.items.length > 0 ? summary.items.reduce((s, i) => s + i.amount * i.qty, 0) : undefined);
   const taxRate =
@@ -315,10 +523,16 @@ export function TotalsCard({ summary }: { summary: ReceiptSummary }) {
 
   return (
     <div>
-      <p className="mb-2 px-1 text-sm font-medium uppercase tracking-wide" style={{ color: T.textSecondary }}>
+      {/* Section title sits directly on the page background, not inside a
+          card — use the theme-aware shell token (S), not the card-fixed T,
+          so it stays legible if the page shell is ever viewed in light
+          mode (§8). */}
+      <p className="font-barlow mb-2 px-1 text-xl font-medium" style={{ color: S.text }}>
         Totals
       </p>
-      <GlassCard>
+      {/* important tier — the one sanctioned second-orange (#e88036, rim
+          only), reserved for "the amount actually paid" (§2/§7). */}
+      <GlassCard emphasis="important" className="p-6">
         <div className="flex flex-col">
           {computedSubtotal != null && (
             <TotalRow label="Subtotal" value={`$${computedSubtotal.toFixed(2)}`} valueColor={T.blue} />
@@ -337,10 +551,10 @@ export function TotalsCard({ summary }: { summary: ReceiptSummary }) {
               className="mt-2 flex items-center justify-between pt-2"
               style={{ borderTop: `2px solid ${T.orange}` }}
             >
-              <span className="text-base font-bold" style={{ color: T.orange }}>
+              <span className="font-barlow text-xl font-medium" style={{ color: T.orange }}>
                 Total
               </span>
-              <span className="text-2xl font-medium" style={{ color: T.text }}>
+              <span className="font-barlow text-2xl font-medium" style={{ color: T.text }}>
                 ${summary.total.toFixed(2)}
               </span>
             </div>
@@ -350,7 +564,23 @@ export function TotalsCard({ summary }: { summary: ReceiptSummary }) {
               <span className="text-sm" style={{ color: T.textSecondary }}>
                 Payment
               </span>
-              <PaymentRow paymentLine={summary.paymentLine} />
+              {isSample ? (
+                // Never render a card-network chip + last-four for fabricated
+                // data: "VISA •••• 4729" reads as a genuine transaction record
+                // even in isolation. The sample's own payment line is still
+                // visible verbatim inside the (marked) Original receipt body.
+                <span
+                  className="rounded-full border px-3 py-[3px] text-[11px] font-medium uppercase tracking-[0.5px]"
+                  style={{
+                    borderColor: T.orange20,
+                    color: "#FFB74D",
+                  }}
+                >
+                  Demo card
+                </span>
+              ) : (
+                <PaymentRow paymentLine={summary.paymentLine} />
+              )}
             </div>
           )}
         </div>
@@ -392,26 +622,24 @@ export function OriginalReceiptCollapsible({
 }) {
   return (
     <details open={defaultOpen} className="group">
-      <summary
-        className="flex cursor-pointer list-none items-center justify-between rounded-2xl border px-4 py-3 text-sm font-medium"
-        style={{ ...glassCardStyle, color: T.textSecondary }}
-      >
-        <span>Original receipt</span>
-        <span className="text-xs transition-transform group-open:rotate-180" style={{ color: T.textMuted }}>
-          ▾
-        </span>
+      <summary className="list-none">
+        <GlassCard emphasis="none" className="flex cursor-pointer items-center justify-between px-4 py-3 text-sm font-medium" radius={16}>
+          <span style={{ color: T.textSecondary }}>Original receipt</span>
+          <span className="text-xs transition-transform group-open:rotate-180" style={{ color: T.textMuted }}>
+            ▾
+          </span>
+        </GlassCard>
       </summary>
-      <div
-        className="mt-2 overflow-x-auto rounded-2xl border p-4"
-        style={glassCardStyle}
-      >
-        <div className="font-mono leading-relaxed" style={{ color: T.textSecondary }}>
-          {lines.map((line, i) => (
-            <div key={i} className={`whitespace-pre ${alignClass(line.align)} ${styleClasses(line.style)}`}>
-              {line.text.length === 0 ? " " : line.text}
-            </div>
-          ))}
-        </div>
+      <div className="mt-2">
+        <GlassCard emphasis="none" className="overflow-x-auto p-4" radius={16}>
+          <div className="font-mono leading-relaxed" style={{ color: T.textSecondary }}>
+            {lines.map((line, i) => (
+              <div key={i} className={`whitespace-pre ${alignClass(line.align)} ${styleClasses(line.style)}`}>
+                {line.text.length === 0 ? " " : line.text}
+              </div>
+            ))}
+          </div>
+        </GlassCard>
       </div>
     </details>
   );
@@ -419,12 +647,24 @@ export function OriginalReceiptCollapsible({
 
 // ---- Full receipt view (structured cards + raw fallback) -----------------------
 
-export function ReceiptView({ summary, hasStructure }: { summary: ReceiptSummary; hasStructure: boolean }) {
+export function ReceiptView({
+  summary,
+  hasStructure,
+  isSample = false,
+  logo,
+}: {
+  summary: ReceiptSummary;
+  hasStructure: boolean;
+  isSample?: boolean;
+  /** Decoded merchant logo, if any — see lib/escpos.ts. Never set on the sample/demo path. */
+  logo?: DecodedLogo;
+}) {
   return (
     <div className="flex flex-col gap-4">
-      {hasStructure && <MerchantHeaderCard summary={summary} />}
+      {logo && <LogoBlock logo={logo} />}
+      {hasStructure && <MerchantHeaderCard summary={summary} isSample={isSample} />}
       {hasStructure && <ItemsCard summary={summary} />}
-      {hasStructure && <TotalsCard summary={summary} />}
+      {hasStructure && <TotalsCard summary={summary} isSample={isSample} />}
       <OriginalReceiptCollapsible lines={summary.bodyLines} defaultOpen={!hasStructure} />
     </div>
   );
@@ -435,7 +675,7 @@ export function ReceiptView({ summary, hasStructure }: { summary: ReceiptSummary
 export function AppCta({ isAndroid }: { isAndroid: boolean }) {
   if (isAndroid) {
     return (
-      <p className="text-center text-xs" style={{ color: T.textMuted }}>
+      <p className="text-center text-xs" style={{ color: S.textMuted }}>
         PapeX for Android isn&apos;t available yet.{" "}
         <Link href="/waitlist" className="font-medium underline underline-offset-2" style={{ color: T.orange }}>
           Join the waitlist
@@ -445,7 +685,7 @@ export function AppCta({ isAndroid }: { isAndroid: boolean }) {
     );
   }
   return (
-    <p className="text-center text-xs" style={{ color: T.textMuted }}>
+    <p className="text-center text-xs" style={{ color: S.textMuted }}>
       <Link href={APP_STORE_URL} className="font-medium underline underline-offset-2" style={{ color: T.orange }}>
         Get the PapeX app
       </Link>{" "}
