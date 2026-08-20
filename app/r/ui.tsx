@@ -26,7 +26,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { AlertTriangle, Clock, FlaskConical, SearchX } from "lucide-react";
-import type { DecodedLogo, ReceiptLine } from "@/lib/escpos";
+import type { DecodedLogo, DecodedRasterPage, ReceiptLine } from "@/lib/escpos";
 import {
   type ReceiptSummary,
   detectPaymentMethod,
@@ -345,6 +345,91 @@ function LogoBlock({ logo }: { logo: DecodedLogo }) {
   );
 }
 
+// ---- Full-page raster receipt (Star Line Mode, see lib/starRaster.ts) ----------
+//
+// Not a logo — the whole receipt, as a picture. Blaze POS renders the tape
+// to a 1bpp bitmap and sends it as Star raster, so the merchant name, the
+// items and the total only exist as pixels. This card is therefore the
+// primary content of the page, which is why it takes the `standard` tier
+// ("the substance of the purchase", §2/§7) rather than LogoBlock's quiet
+// unemphasized frame.
+//
+// Colour: the source bitmap is black ink on white paper, but lib/png.ts
+// emits a transparent background and paints only the set bits, in
+// lib/escpos.ts's LOGO_FOREGROUND (#E6E7E8 — T.text flattened to an opaque
+// hex). So this renders as light ink directly on the card's navy glass,
+// exactly like the text receipt beside it, in both light and dark theme.
+// The alternative — a real black-on-white scan — would be a hard white slab
+// floating on a dark page in every theme, which is the failure mode §8's
+// "the card itself stays a dark surface" rule exists to prevent.
+//
+// Sharpness: `.rasterInk` (glass.module.css) picks the scaler by device
+// pixel ratio. A 552px bitmap in a 430px-max column is a downscale on a 1x
+// display, where nearest-neighbour would eat entire 1px strokes out of the
+// receipt's type — so 1x gets the browser's smooth scaler. On a 2x/3x phone
+// (the entire real audience) the same layout is an UPSCALE in device pixels,
+// where smooth scaling is what looks blurry, so those get `pixelated` and
+// the 1-bit edges stay hard.
+//
+// Padding is deliberately tighter than the other cards (px-3) — every px of
+// column width is a px of receipt legibility on a phone. A plain `<img>`,
+// not next/image, for the same reason as LogoBlock: it's a `data:` URI.
+
+function RasterImage({ page }: { page: DecodedRasterPage }) {
+  return (
+    <div className="flex justify-center">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={page.dataUri}
+        alt="Your receipt, as printed"
+        width={page.widthPx}
+        height={page.heightPx}
+        className={`h-auto w-full ${styles.rasterInk}`}
+        style={{ maxWidth: page.widthPx }}
+      />
+    </div>
+  );
+}
+
+function RasterReceiptCard({ page }: { page: DecodedRasterPage }) {
+  return (
+    <GlassCard emphasis="standard" className="px-3 py-4" radius={20}>
+      <RasterImage page={page} />
+    </GlassCard>
+  );
+}
+
+// ---- "Extracting" hint (shown under the image while OCR is still running) ----
+//
+// The honest version of a loading state. OCR takes ~46 s and the customer gets
+// here ~15 s after the sale, so for the first half-minute this page shows a
+// picture of a receipt with no items and no total, and says nothing about why.
+// Without this line, the structured cards appearing later reads as a glitch;
+// with it, it reads as the thing that was announced.
+//
+// Deliberately quiet — one muted line and a slow pulse, no spinner, no
+// progress bar. The image below it is already a complete, usable receipt; this
+// is a "there's more coming", not a "please wait".
+//
+// It never turns into an error. If the poll gives up, this simply disappears
+// and the customer is left with exactly what shipped: their receipt, as a
+// picture. Announcing a failure would be worse than saying nothing.
+
+export function ExtractingHint() {
+  return (
+    <div className="flex items-center justify-center gap-2 px-1 pt-1" aria-live="polite">
+      <span
+        className={styles.extractingDot}
+        aria-hidden
+        style={{ background: T.orange }}
+      />
+      <span className="text-xs" style={{ color: S.textMuted }}>
+        Reading your receipt&hellip;
+      </span>
+    </div>
+  );
+}
+
 // ---- Merchant header card ------------------------------------------------------
 
 function monogram(name?: string): string {
@@ -613,6 +698,30 @@ function alignClass(align: ReceiptLine["align"]): string {
   }
 }
 
+function CollapsibleShell({
+  label,
+  defaultOpen,
+  children,
+}: {
+  label: string;
+  defaultOpen: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <details open={defaultOpen} className="group">
+      <summary className="list-none">
+        <GlassCard emphasis="none" className="flex cursor-pointer items-center justify-between px-4 py-3 text-sm font-medium" radius={16}>
+          <span style={{ color: T.textSecondary }}>{label}</span>
+          <span className="text-xs transition-transform group-open:rotate-180" style={{ color: T.textMuted }}>
+            ▾
+          </span>
+        </GlassCard>
+      </summary>
+      <div className="mt-2">{children}</div>
+    </details>
+  );
+}
+
 export function OriginalReceiptCollapsible({
   lines,
   defaultOpen,
@@ -621,27 +730,41 @@ export function OriginalReceiptCollapsible({
   defaultOpen: boolean;
 }) {
   return (
-    <details open={defaultOpen} className="group">
-      <summary className="list-none">
-        <GlassCard emphasis="none" className="flex cursor-pointer items-center justify-between px-4 py-3 text-sm font-medium" radius={16}>
-          <span style={{ color: T.textSecondary }}>Original receipt</span>
-          <span className="text-xs transition-transform group-open:rotate-180" style={{ color: T.textMuted }}>
-            ▾
-          </span>
-        </GlassCard>
-      </summary>
-      <div className="mt-2">
-        <GlassCard emphasis="none" className="overflow-x-auto p-4" radius={16}>
-          <div className="font-mono leading-relaxed" style={{ color: T.textSecondary }}>
-            {lines.map((line, i) => (
-              <div key={i} className={`whitespace-pre ${alignClass(line.align)} ${styleClasses(line.style)}`}>
-                {line.text.length === 0 ? " " : line.text}
-              </div>
-            ))}
-          </div>
-        </GlassCard>
-      </div>
-    </details>
+    <CollapsibleShell label="Original receipt" defaultOpen={defaultOpen}>
+      <GlassCard emphasis="none" className="overflow-x-auto p-4" radius={16}>
+        <div className="font-mono leading-relaxed" style={{ color: T.textSecondary }}>
+          {lines.map((line, i) => (
+            <div key={i} className={`whitespace-pre ${alignClass(line.align)} ${styleClasses(line.style)}`}>
+              {line.text.length === 0 ? " " : line.text}
+            </div>
+          ))}
+        </div>
+      </GlassCard>
+    </CollapsibleShell>
+  );
+}
+
+// ---- Original receipt, when the "original" is a picture -----------------------
+//
+// Once OCR has read a Blaze bitmap, the structured cards are the receipt and
+// the bitmap is the source document — so it moves into the SAME "Original
+// receipt" collapsible a text receipt's verbatim body gets, one row of the
+// hierarchy down from where it sits before OCR lands.
+//
+// Collapsed by default, unlike the text version's `defaultOpen={!hasStructure}`
+// rule: reaching this component at all means structure exists, and leaving a
+// full-page bitmap expanded under the cards would push the CTA off the bottom
+// of a phone for no one's benefit. It is one tap away, always, which is the
+// promise "view original image" has to keep — an extraction is an
+// interpretation of the paper, and the paper stays available.
+
+export function OriginalImageCollapsible({ page }: { page: DecodedRasterPage }) {
+  return (
+    <CollapsibleShell label="Original receipt" defaultOpen={false}>
+      <GlassCard emphasis="none" className="px-3 py-4" radius={16}>
+        <RasterImage page={page} />
+      </GlassCard>
+    </CollapsibleShell>
   );
 }
 
@@ -652,20 +775,55 @@ export function ReceiptView({
   hasStructure,
   isSample = false,
   logo,
+  rasterPage,
+  extracting = false,
 }: {
   summary: ReceiptSummary;
   hasStructure: boolean;
   isSample?: boolean;
   /** Decoded merchant logo, if any — see lib/escpos.ts. Never set on the sample/demo path. */
   logo?: DecodedLogo;
+  /**
+   * Full-page receipt bitmap, when the POS printed the receipt as an image
+   * rather than as text (see lib/starRaster.ts). Never set on the
+   * sample/demo path.
+   *
+   * Its PLACEMENT depends on `hasStructure`, and that is the whole point of
+   * this component now:
+   *   - no structure (OCR hasn't landed, or failed) -> the bitmap IS the
+   *     receipt and takes the primary "standard" card, as it shipped.
+   *   - structure -> the designed cards are the receipt and the bitmap drops
+   *     into the "Original receipt" collapsible at the bottom.
+   */
+  rasterPage?: DecodedRasterPage;
+  /** Show the quiet "Reading your receipt…" hint under the image while OCR runs. */
+  extracting?: boolean;
 }) {
+  // A bitmap receipt used to be, by construction, a receipt with no structure.
+  // OCR breaks that: the same receipt can now have both, and when it does the
+  // extracted fields lead and the picture becomes the source document.
+  const imageIsPrimary = rasterPage != null && !hasStructure;
+
   return (
     <div className="flex flex-col gap-4">
+      {imageIsPrimary && rasterPage && (
+        <div>
+          <RasterReceiptCard page={rasterPage} />
+          {extracting && <ExtractingHint />}
+        </div>
+      )}
       {logo && <LogoBlock logo={logo} />}
       {hasStructure && <MerchantHeaderCard summary={summary} isSample={isSample} />}
       {hasStructure && <ItemsCard summary={summary} />}
       {hasStructure && <TotalsCard summary={summary} isSample={isSample} />}
-      <OriginalReceiptCollapsible lines={summary.bodyLines} defaultOpen={!hasStructure} />
+      {/* Skipped when there is no text at all — an empty, permanently-open
+          "Original receipt" box reads as a broken page, which is the same
+          defect lib/receiptState.ts documents. */}
+      {summary.bodyLines.length > 0 && (
+        <OriginalReceiptCollapsible lines={summary.bodyLines} defaultOpen={!hasStructure} />
+      )}
+      {/* Demoted, not discarded. */}
+      {!imageIsPrimary && rasterPage && <OriginalImageCollapsible page={rasterPage} />}
     </div>
   );
 }

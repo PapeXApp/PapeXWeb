@@ -7,7 +7,7 @@
 // tuned for the light navy/orange marketing palette, not this one.
 
 import type { ReactNode } from "react";
-import { AlertTriangle, Loader2, X } from "lucide-react";
+import { AlertTriangle, ImageIcon, Loader2, X } from "lucide-react";
 import { T, glassCardStyle } from "./tokens";
 import type { ParseConfidence, DeviceStatus, PaymentNetwork } from "@/lib/merchantApi";
 import { PAYMENT_METHOD_STYLES } from "@/lib/receiptSummary";
@@ -106,6 +106,30 @@ export function ConfidencePill({ confidence }: { confidence: ParseConfidence }) 
     >
       <AlertTriangle className="h-3 w-3" strokeWidth={2.25} />
       Low confidence
+    </span>
+  );
+}
+
+/**
+ * Shown for parseStatus === "ok_raster": the receipt was captured fine, but it
+ * arrived as a bitmap (Blaze POS renders receipts to an image instead of
+ * sending text), so there is no extracted text to show yet.
+ *
+ * Deliberately NOT ParseFailedPill (nothing failed — red would tell a pilot
+ * merchant their brand-new device is broken) and NOT ConfidencePill (there is
+ * no parse to be confident about; "Low confidence" implies we read the
+ * receipt badly rather than not at all). Neutral styling, because this is an
+ * expected steady state until OCR lands, not a problem to act on.
+ */
+export function ImageOnlyPill() {
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide"
+      style={{ background: "rgba(148, 163, 184, 0.16)", color: T.textSecondary }}
+      title="Captured as an image — text extraction is not available for this receipt yet"
+    >
+      <ImageIcon className="h-3 w-3" strokeWidth={2.25} />
+      Image
     </span>
   );
 }

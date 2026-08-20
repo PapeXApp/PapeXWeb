@@ -52,7 +52,27 @@ export const MERCHANT_MOCK = process.env.NEXT_PUBLIC_MERCHANT_MOCK === "1";
 // ---------------------------------------------------------------------------
 
 export type ParseConfidence = "high" | "low";
-export type ParseStatus = "ok" | "failed";
+/**
+ * Backend parse outcome for one captured receipt.
+ *
+ * - `"ok"`        — text ESC/POS, parsed into a structured summary.
+ * - `"ok_raster"` — the receipt arrived as a Star Line Mode 1bpp bitmap. Blaze
+ *                   POS renders receipts to an image instead of sending text,
+ *                   so the indexer stored a rendered PNG (see `imageKey`) and
+ *                   produced NO summary: `merchantName`/`total`/`lineItems`/…
+ *                   are all null and `rawText` is empty until the OCR phase
+ *                   lands. This is a SUCCESS, not a failure — the capture
+ *                   worked, the text just isn't readable yet.
+ * - `"failed"`    — the bytes could not be parsed at all.
+ *
+ * Treat this as an OPEN enum at every comparison site. Prefer testing for the
+ * case you actually mean (`=== "failed"`, `=== "ok_raster"`) over treating
+ * "not ok" or "not failed" as a proxy for it, so the next status the backend
+ * adds doesn't silently land in a bucket that was never meant to hold it —
+ * which is exactly how `"ok_raster"` would otherwise have been rendered as a
+ * low-confidence text receipt with no text in it.
+ */
+export type ParseStatus = "ok" | "ok_raster" | "failed";
 
 /** Row shape for the transactions list (PRD §5.2). */
 export interface MerchantTransactionSummary {
@@ -69,6 +89,19 @@ export interface MerchantTransactionSummary {
   itemsPreview: string;
   confidence: ParseConfidence;
   parseStatus: ParseStatus;
+  /**
+   * S3 key of the PNG the indexer rendered from a Star raster receipt. Set
+   * only when `parseStatus === "ok_raster"`; null on text rows.
+   *
+   * Optional because a backend older than the raster change omits the field
+   * entirely — `undefined` and `null` both mean "no image".
+   *
+   * This is an S3 KEY, not a fetchable URL, and no route serves it today. Use
+   * it as the "this row is an image" signal only; to display an actual
+   * receipt, fetch the bytes with `getReceiptBytes()` the way the detail page
+   * already does.
+   */
+  imageKey?: string | null;
 }
 
 /** A single line item as carried on the transaction-detail metadata (PRD
@@ -95,6 +128,19 @@ export interface MerchantTransactionDetail {
   deviceId: string | null;
   parseStatus: ParseStatus;
   confidence: ParseConfidence;
+  /**
+   * S3 key of the PNG the indexer rendered from a Star raster receipt. Set
+   * only when `parseStatus === "ok_raster"`; null on text rows.
+   *
+   * Optional because a backend older than the raster change omits the field
+   * entirely — `undefined` and `null` both mean "no image".
+   *
+   * This is an S3 KEY, not a fetchable URL, and no route serves it today. Use
+   * it as the "this row is an image" signal only; to display an actual
+   * receipt, fetch the bytes with `getReceiptBytes()` the way the detail page
+   * already does.
+   */
+  imageKey?: string | null;
   total: number | null;
   subtotal: number | null;
   tax: number | null;
