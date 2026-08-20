@@ -1,12 +1,12 @@
 import type { Metadata } from "next"
-import { FramerLandingPage } from "@/components/framer/framer-landing-page"
+import { Homepage } from "@/components/site/homepage"
 
 export const metadata: Metadata = {
-  title: "PapeX | Never Lose a Receipt Again",
+  title: "PapeX | The last receipt you'll ever lose",
   description:
-    "PapeX automatically captures and organizes every transaction after purchase, so nothing gets lost, and every deduction is accounted for.",
+    "PapeX turns paper receipts digital. Tap your phone at checkout and your receipt is saved forever — organized, searchable, and yours. No app required to receive it.",
 }
 
 export default function Home() {
-  return <FramerLandingPage />
+  return <Homepage />
 }
