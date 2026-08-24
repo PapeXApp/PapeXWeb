@@ -36,7 +36,7 @@ import {
 import SaveToPapex from "./SaveToPapex";
 import styles from "./glass.module.css";
 
-const APP_STORE_URL = "https://apps.apple.com/us/app/papex/id6754945242";
+export const APP_STORE_URL = "https://apps.apple.com/us/app/papex/id6754945242";
 
 // ---- Tokens (docs/PAPEX_DESIGN_KIT_FOR_WEB.md §1, §2) -----------------------
 //
