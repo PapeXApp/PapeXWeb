@@ -200,7 +200,7 @@ const CUSTOMER_QA: { q: string; a: React.ReactNode }[] = [
           digital, but I can reprint one from the register if you need it.
         </span>
         <span className="mt-1 block">
-          <span className="font-semibold text-[#0a3d62]">Inline Extension:</span> Yep, you’ll still
+          <span className="font-semibold text-[#0a3d62]">Parallel Install:</span> Yep, you’ll still
           get a paper one too. The tap is just if you want it on your phone.
         </span>
       </>

@@ -92,7 +92,7 @@ export const rdhDevice = {
   placeholderLabel: "[ RDH hardware render ]",
   points: [
     "Plugs into standard POS ports — USB, serial or Ethernet. No terminal modification.",
-    "Two installation modes: printer replacement or inline extension.",
+    "Two installation modes: printer replacement or parallel install.",
   ],
   complianceText: "PCI DSS compliant out of the box —",
   complianceLinkLabel: "see documentation",
