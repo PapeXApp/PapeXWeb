@@ -64,6 +64,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { fetchReceiptBytes, isValidSid } from "@/lib/rdh";
+import { platformFromUserAgent } from "@/lib/storeLinks";
 import { fetchParsedReceipt } from "@/lib/rdhParsed";
 import { parseEscPos } from "@/lib/escpos";
 import { summarizeReceipt, hasStructure as computeHasStructure } from "@/lib/receiptSummary";
@@ -104,8 +105,9 @@ export default async function ReceiptPage({
   const rawSid = Array.isArray(params.sid) ? params.sid[0] : params.sid;
   const rawDemo = Array.isArray(params.demo) ? params.demo[0] : params.demo;
   const uaHeader = (await headers()).get("user-agent") ?? "";
-  const isAndroid = /android/i.test(uaHeader);
-  const isIOS = /iphone|ipad|ipod/i.test(uaHeader);
+  // Only decides which store link leads and whether "Save to PapeX" is a
+  // universal link or the in-page sign-in sheet — never what the page shows.
+  const platform = platformFromUserAgent(uaHeader);
 
   // Explicit demo opt-in (`?demo=1`) — Nico's ask so the sample stays
   // reachable on demand. Deliberately checked before any backend fetch: this
@@ -163,7 +165,7 @@ export default async function ReceiptPage({
         <SampleFrame>
           <ReceiptView summary={summary} hasStructure={computeHasStructure(summary)} isSample />
         </SampleFrame>
-        <CtaRow isSample isIOS={isIOS} isAndroid={isAndroid} />
+        <CtaRow isSample platform={platform} />
       </Shell>
     );
   }
@@ -176,7 +178,7 @@ export default async function ReceiptPage({
         <ReceiptNotAvailable>
           <RetryButton />
         </ReceiptNotAvailable>
-        <AppCta isAndroid={isAndroid} />
+        <AppCta platform={platform} />
       </Shell>
     );
   }
@@ -215,7 +217,7 @@ export default async function ReceiptPage({
             logo={receipt?.logo}
           />
         )}
-        <CtaRow sid={rawSid} isSample={false} isIOS={isIOS} isAndroid={isAndroid} />
+        <CtaRow sid={rawSid} isSample={false} platform={platform} />
       </Shell>
     );
   }
@@ -233,7 +235,7 @@ export default async function ReceiptPage({
       >
         <RetryButton />
       </StateCard>
-      <AppCta isAndroid={isAndroid} />
+      <AppCta platform={platform} />
     </Shell>
   );
 }
