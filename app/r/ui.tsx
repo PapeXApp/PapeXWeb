@@ -24,7 +24,6 @@
 // RetryButton.tsx are their own "use client" islands, imported here.
 
 import type { ReactNode } from "react";
-import Link from "next/link";
 import { AlertTriangle, Clock, FlaskConical, SearchX } from "lucide-react";
 import type { DecodedLogo, DecodedRasterPage, ReceiptLine } from "@/lib/escpos";
 import {
@@ -35,127 +34,12 @@ import {
 } from "@/lib/receiptSummary";
 import SaveToPapex from "./SaveToPapex";
 import styles from "./glass.module.css";
+import { GlassCard, S, Shell, T } from "./chrome";
+import { APP_STORE_URL, PLAY_STORE_URL, type Platform } from "@/lib/storeLinks";
 
-const APP_STORE_URL = "https://apps.apple.com/us/app/papex/id6754945242";
-
-// ---- Tokens (docs/PAPEX_DESIGN_KIT_FOR_WEB.md §1, §2) -----------------------
-//
-// `T` is what everything *inside* a glass card uses — cards are always a
-// dark surface (§8), so these never change with the page shell's light/dark
-// state. Shell-level chrome that sits directly on the page background
-// (header kicker, empty-state copy) uses the theme-aware CSS custom
-// properties defined in glass.module.css's `.shell` class instead — see the
-// `S` token group below.
-
-const T = {
-  navy: "#00121D",
-  orange: "#EB7100", // THE brand accent. Never the important-tier rim orange (#e88036) — see §2 note.
-  orangeRim: "#e88036", // important-tier ring color only — never a fill, never a CTA.
-  blue: "#0088EA", // semantic info blue (subtotal callout, links) — NOT the rim "standard" blue.
-  text: "rgba(255, 255, 255, 0.90)",
-  textSecondary: "rgba(255, 255, 255, 0.64)",
-  textMuted: "rgba(255, 255, 255, 0.45)",
-  divider: "rgba(255, 255, 255, 0.10)",
-  success: "#34C759",
-  error: "#FF3B30",
-  warning: "#FFB800",
-  orange20: "rgba(235, 113, 0, 0.20)",
-  orange12: "rgba(235, 113, 0, 0.12)",
-  orange08: "rgba(235, 113, 0, 0.08)",
-};
-
-// Shell-level text tokens — theme-aware via CSS custom properties set on
-// `.shell` (glass.module.css), which swap under `prefers-color-scheme:
-// light` to the spec's `colorsLight` values. Only for text painted directly
-// on the page background, never for card interiors.
-const S = {
-  text: "var(--page-text)",
-  textSecondary: "var(--page-text-secondary)",
-  textMuted: "var(--page-text-muted)",
-};
-
-// ---- Shell ------------------------------------------------------------------
-
-export function Shell({ children }: { children: ReactNode }) {
-  return (
-    <main className={`min-h-screen w-full ${styles.shell} ${styles.shellBg}`} style={{ color: T.text }}>
-      <div className="mx-auto flex min-h-screen w-full max-w-[430px] flex-col px-4 pb-10 pt-6">
-        <header className="mb-5 flex items-center gap-3 px-1">
-          {/* PapeX brand logo — docs/PAPEX_DESIGN_KIT_FOR_WEB.md §4. The
-              same artwork (main_logo.png, MD5-identical to
-              PapeXV2/assets/logos/main_logo.png) the App Clip's own
-              receipt view uses for its brand lockup. This is the PapeX
-              brand mark; it is never the merchant's logo — see LogoBlock
-              below for that, and the hierarchy note there. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logos/main_logo.png" alt="PapeX" className="h-6 w-auto shrink-0" style={{ objectFit: "contain" }} />
-          <span
-            className="ml-auto text-xs font-medium uppercase tracking-wide"
-            style={{ color: S.textMuted }}
-          >
-            Receipt
-          </span>
-        </header>
-        <div className="flex flex-1 flex-col gap-4">{children}</div>
-      </div>
-    </main>
-  );
-}
-
-// ---- Glass card primitive (docs/PAPEX_DESIGN_KIT_FOR_WEB.md §2) -------------
-//
-// `emphasis` picks the tier: "none" (frost + inset shadow, no ring, no
-// glow — used for quiet/supporting surfaces), "neutral" (white ring, no
-// hue), "standard" (the #7FC4EC rim blue — "the substance of the
-// purchase"), "important" (the #e88036 rim orange — "the amount actually
-// paid", the one sanctioned second-orange in the whole system). Ranking
-// orange > blue > white is doubly-validated per §7's closing note.
-//
-// No `backdrop-blur` anywhere here — see glass.module.css's file header for
-// why that's a deliberate, spec-mandated omission rather than an oversight.
-
-type Emphasis = "none" | "neutral" | "standard" | "important";
-
-const GLOW_CLASS: Record<Exclude<Emphasis, "none">, string> = {
-  neutral: styles.glowNeutral,
-  standard: styles.glowStandard,
-  important: styles.glowImportant,
-};
-
-const RING_CLASS: Record<Exclude<Emphasis, "none">, string> = {
-  neutral: styles.ringNeutral,
-  standard: styles.ringStandard,
-  important: styles.ringImportant,
-};
-
-export function GlassCard({
-  children,
-  className = "",
-  emphasis = "none",
-  radius,
-}: {
-  children: ReactNode;
-  className?: string;
-  emphasis?: Emphasis;
-  /** Corner radius in px. Defaults to 24 (the card recipe's built-in radius) — pass 9999 for a circular badge. */
-  radius?: number;
-}) {
-  const radiusStyle = radius != null ? { borderRadius: radius } : undefined;
-  const card = (
-    <div
-      className={`${styles.card} ${emphasis !== "none" ? RING_CLASS[emphasis] : ""} ${className}`}
-      style={radiusStyle}
-    >
-      {children}
-    </div>
-  );
-  if (emphasis === "none") return card;
-  return (
-    <div className={`${styles.wrap} ${GLOW_CLASS[emphasis]}`} style={radiusStyle}>
-      {card}
-    </div>
-  );
-}
+// Re-exported so `from "./ui"` keeps working for callers that want the
+// receipt UI too; chrome-only routes should import from "./chrome".
+export { GlassCard, Shell };
 
 // ---- Demo (sample) banner -----------------------------------------------------
 //
@@ -830,23 +714,41 @@ export function ReceiptView({
 
 // ---- CTA row: Save to PapeX + install links ------------------------------------
 
-export function AppCta({ isAndroid }: { isAndroid: boolean }) {
-  if (isAndroid) {
-    return (
-      <p className="text-center text-xs" style={{ color: S.textMuted }}>
-        PapeX for Android isn&apos;t available yet.{" "}
-        <Link href="/waitlist" className="font-medium underline underline-offset-2" style={{ color: T.orange }}>
-          Join the waitlist
-        </Link>{" "}
-        to hear when it lands.
-      </p>
-    );
-  }
+export function AppCta({ platform }: { platform: Platform }) {
+  // BOTH stores, always — the UA sniff only decides which one leads. PapeX
+  // is live on Play as of 2026-08-20 (com.app.papex); this used to tell
+  // every Android visitor the app "isn't available yet" and send them to a
+  // waitlist, which was the only install path the page offered them. A UA
+  // is also a guess: a desktop visitor, a requested-desktop-site phone, or
+  // an in-app browser with a rewritten UA all land on "other" and still
+  // need a way to the right store.
+  const stores: { href: string; label: string }[] =
+    platform === "android"
+      ? [{ href: PLAY_STORE_URL, label: "Get PapeX on Google Play" }]
+      : platform === "ios"
+        ? [{ href: APP_STORE_URL, label: "Get PapeX on the App Store" }]
+        : [
+            { href: APP_STORE_URL, label: "App Store" },
+            { href: PLAY_STORE_URL, label: "Google Play" },
+          ];
+
   return (
     <p className="text-center text-xs" style={{ color: S.textMuted }}>
-      <Link href={APP_STORE_URL} className="font-medium underline underline-offset-2" style={{ color: T.orange }}>
-        Get the PapeX app
-      </Link>{" "}
+      {platform === "other" ? "Get PapeX — " : null}
+      {stores.map((store, i) => (
+        <span key={store.href}>
+          {i > 0 ? " · " : null}
+          <a
+            href={store.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium underline underline-offset-2"
+            style={{ color: T.orange }}
+          >
+            {store.label}
+          </a>
+        </span>
+      ))}{" "}
       to save every receipt automatically.
     </p>
   );
@@ -855,18 +757,16 @@ export function AppCta({ isAndroid }: { isAndroid: boolean }) {
 export function CtaRow({
   sid,
   isSample,
-  isIOS,
-  isAndroid,
+  platform,
 }: {
   sid?: string;
   isSample: boolean;
-  isIOS: boolean;
-  isAndroid: boolean;
+  platform: Platform;
 }) {
   return (
     <div className="mt-2 flex flex-col items-center gap-4">
-      <SaveToPapex sid={sid} isSample={isSample} isIOS={isIOS} />
-      <AppCta isAndroid={isAndroid} />
+      <SaveToPapex sid={sid} isSample={isSample} isIOS={platform === "ios"} />
+      <AppCta platform={platform} />
     </div>
   );
 }

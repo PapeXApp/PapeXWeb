@@ -9,9 +9,13 @@
 //   hover-only title tooltip, since this page's audience is "primarily
 //   Android phones" (per the task brief) and phones have no hover state.
 // - iOS Safari (App Clip not installed, or user landed here anyway): the
-//   button is a plain link to the universal link, which hands off to the
-//   full app if installed or the App Store otherwise. No auth needed here
-//   — the app handles claiming once it opens with the sid.
+//   button is a plain link to the app's universal link. No auth needed here
+//   — the app handles claiming once it opens with the sid. When the app is
+//   NOT installed the link is not intercepted and the browser loads
+//   app/rdh/page.tsx, which is the install page; it used to redirect
+//   straight back to this page, which is what made the button look like it
+//   only reloaded. Same-host taps (a visitor already on links.papex.app)
+//   are never intercepted either, for the reason in lib/storeLinks.ts.
 // - Everything else (Android, desktop): clicking opens an in-page sign-in
 //   sheet. Auth is against the *app's* Firebase project ('papexv2'), via a
 //   second Firebase app instance (lib/firebaseClientApp.ts) — deliberately
@@ -29,6 +33,7 @@ import {
   type User,
 } from "firebase/auth";
 import { getPapexV2Auth } from "@/lib/firebaseClientApp";
+import { APP_STORE_URL, rdhUniversalLink } from "@/lib/storeLinks";
 
 // Tokens (docs/PAPEX_DESIGN_KIT_FOR_WEB.md §1) — this file keeps its own
 // literal copy rather than importing ui.tsx's `T` (this is a standalone
@@ -40,7 +45,6 @@ import { getPapexV2Auth } from "@/lib/firebaseClientApp";
 const ORANGE = "#EB7100";
 const TEXT_MUTED = "rgba(255, 255, 255, 0.45)";
 const TEXT_SECONDARY = "rgba(255, 255, 255, 0.64)";
-const APP_STORE_FALLBACK = "https://apps.apple.com/us/app/papex/id6754945242";
 
 type ClaimOutcome =
   | { kind: "success"; message: string }
@@ -258,7 +262,7 @@ export default function SaveToPapex({
   }
 
   if (isIOS) {
-    const href = sid ? `https://links.papex.app/rdh?sid=${sid}` : APP_STORE_FALLBACK;
+    const href = sid ? rdhUniversalLink(sid) : APP_STORE_URL;
     return (
       <a
         href={href}
