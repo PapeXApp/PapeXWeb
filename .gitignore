@@ -33,3 +33,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Design session scratchpad (see .claude/commands/design-start.md)
+.claude/design-session.local.md

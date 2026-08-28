@@ -9,9 +9,13 @@
 //   hover-only title tooltip, since this page's audience is "primarily
 //   Android phones" (per the task brief) and phones have no hover state.
 // - iOS Safari (App Clip not installed, or user landed here anyway): the
-//   button is a plain link to the universal link, which hands off to the
-//   full app if installed or the App Store otherwise. No auth needed here
-//   — the app handles claiming once it opens with the sid.
+//   button is a plain link to the app's universal link. No auth needed here
+//   — the app handles claiming once it opens with the sid. When the app is
+//   NOT installed the link is not intercepted and the browser loads
+//   app/rdh/page.tsx, which is the install page; it used to redirect
+//   straight back to this page, which is what made the button look like it
+//   only reloaded. Same-host taps (a visitor already on links.papex.app)
+//   are never intercepted either, for the reason in lib/storeLinks.ts.
 // - Everything else (Android, desktop): clicking opens an in-page sign-in
 //   sheet. Auth is against the *app's* Firebase project ('papexv2'), via a
 //   second Firebase app instance (lib/firebaseClientApp.ts) — deliberately
@@ -29,11 +33,18 @@ import {
   type User,
 } from "firebase/auth";
 import { getPapexV2Auth } from "@/lib/firebaseClientApp";
+import { APP_STORE_URL, rdhUniversalLink } from "@/lib/storeLinks";
 
-const ORANGE = "#FB8500";
-const TEXT_MUTED = "#9AA1A8";
-const TEXT_SECONDARY = "#C4C7CC";
-const APP_STORE_FALLBACK = "https://apps.apple.com/us/app/papex/id6754945242";
+// Tokens (docs/PAPEX_DESIGN_KIT_FOR_WEB.md §1) — this file keeps its own
+// literal copy rather than importing ui.tsx's `T` (this is a standalone
+// "use client" island; ui.tsx is mostly server components and importing
+// from it here would pull its whole module graph into the client bundle).
+// Values must stay in sync by hand: this was previously
+// #FB8500/#9AA1A8/#C4C7CC, the same stale pre-2026-08 snapshot ui.tsx's
+// header comment describes.
+const ORANGE = "#EB7100";
+const TEXT_MUTED = "rgba(255, 255, 255, 0.45)";
+const TEXT_SECONDARY = "rgba(255, 255, 255, 0.64)";
 
 type ClaimOutcome =
   | { kind: "success"; message: string }
@@ -67,6 +78,16 @@ async function claimReceipt(sid: string, idToken: string): Promise<ClaimOutcome>
     if (res.status === 409) {
       return { kind: "error", message: "This receipt was already saved by another account." };
     }
+    // 422: the backend could not read this receipt and wrote NOTHING, so the
+    // sid is still claimable. Every other branch here is terminal; this one is
+    // not, and the copy has to say so. Falling through to "Something went
+    // wrong" would tell the customer their receipt is lost when it isn't.
+    if (res.status === 422) {
+      return {
+        kind: "error",
+        message: "We couldn't read this receipt yet. Please try again in a moment.",
+      };
+    }
     return { kind: "error", message: "Something went wrong. Please try again." };
   } catch {
     return { kind: "error", message: "Couldn't reach PapeX. Check your connection and try again." };
@@ -89,8 +110,8 @@ function PrimaryButton({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className="w-full rounded-full px-6 py-3 text-sm font-medium text-white transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-      style={{ background: ORANGE }}
+      className="w-full rounded-full px-6 py-3 text-sm font-medium text-white transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+      style={{ background: ORANGE, boxShadow: disabled ? undefined : "0 8px 24px rgba(235,113,0,0.45)" }}
     >
       {children}
     </button>
@@ -142,10 +163,10 @@ function SignInSheet({
   return (
     <div
       className="w-full rounded-[24px] border p-5"
-      style={{ background: "rgba(20, 26, 36, 0.85)", borderColor: "rgba(255, 255, 255, 0.12)" }}
+      style={{ background: "rgba(0, 18, 29, 0.90)", borderColor: "rgba(255, 255, 255, 0.18)" }}
     >
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-base font-medium text-[#F4F4F4]">
+        <h2 className="text-base font-medium" style={{ color: "rgba(255,255,255,0.90)" }}>
           {mode === "signin" ? "Sign in to PapeX" : "Create a PapeX account"}
         </h2>
         <button
@@ -166,8 +187,8 @@ function SignInSheet({
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="rounded-xl border bg-transparent px-3 py-2.5 text-sm text-[#F4F4F4] outline-none placeholder:text-[#9AA1A8]"
-          style={{ borderColor: "rgba(255, 255, 255, 0.12)" }}
+          className="rounded-xl border bg-transparent px-3 py-2.5 text-sm outline-none placeholder:text-white/45"
+          style={{ borderColor: "rgba(255, 255, 255, 0.18)", color: "rgba(255,255,255,0.90)" }}
         />
         <input
           type="password"
@@ -176,10 +197,10 @@ function SignInSheet({
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="rounded-xl border bg-transparent px-3 py-2.5 text-sm text-[#F4F4F4] outline-none placeholder:text-[#9AA1A8]"
-          style={{ borderColor: "rgba(255, 255, 255, 0.12)" }}
+          className="rounded-xl border bg-transparent px-3 py-2.5 text-sm outline-none placeholder:text-white/45"
+          style={{ borderColor: "rgba(255, 255, 255, 0.18)", color: "rgba(255,255,255,0.90)" }}
         />
-        {error && <p className="text-xs" style={{ color: "#EF4444" }}>{error}</p>}
+        {error && <p className="text-xs" style={{ color: "#FF3B30" }}>{error}</p>}
         <PrimaryButton type="submit" disabled={busy}>
           {busy ? "Please wait…" : mode === "signin" ? "Sign in" : "Sign up"}
         </PrimaryButton>
@@ -241,7 +262,7 @@ export default function SaveToPapex({
   }
 
   if (isIOS) {
-    const href = sid ? `https://links.papex.app/rdh?sid=${sid}` : APP_STORE_FALLBACK;
+    const href = sid ? rdhUniversalLink(sid) : APP_STORE_URL;
     return (
       <a
         href={href}
@@ -276,9 +297,9 @@ export default function SaveToPapex({
       <div
         className="w-full rounded-2xl border px-4 py-3 text-center text-sm"
         style={{
-          borderColor: outcome.kind === "success" ? "rgba(16,185,129,0.35)" : "rgba(239,68,68,0.35)",
-          background: outcome.kind === "success" ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.12)",
-          color: outcome.kind === "success" ? "#6EE7B7" : "#FCA5A5",
+          borderColor: outcome.kind === "success" ? "rgba(52,199,89,0.35)" : "rgba(255,59,48,0.35)",
+          background: outcome.kind === "success" ? "rgba(52,199,89,0.12)" : "rgba(255,59,48,0.12)",
+          color: outcome.kind === "success" ? "#34C759" : "#FF3B30",
         }}
       >
         {outcome.message}

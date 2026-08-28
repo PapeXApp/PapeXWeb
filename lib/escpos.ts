@@ -17,6 +17,88 @@
 //
 // Operates on Uint8Array only — no Node-only APIs — so it can run in either
 // a Next.js server component (used here) or a browser bundle unmodified.
+//
+// --- Logo / raster image support -------------------------------------------
+//
+// Real ESC/POS receipts commonly print a merchant logo as the very first
+// thing on the tape, as an inline raster bitmap (see docs/... bench proof:
+// a 576x120-dot `GS v 0` raster, byte-for-byte verified against the
+// backend). This parser used to treat that bitmap purely as bytes to skip
+// past — correctly, in that it never corrupted the text that followed, but
+// the logo itself was thrown away. It's now decoded into a PNG `data:` URI
+// (see lib/png.ts) and returned as `Receipt.logo`.
+//
+// Commands covered, and why:
+//   - `GS v 0`   — the bench-verified, real-world case. Full decode.
+//   - `ESC *`    — column-format bit image, explicitly asked for. Decoded
+//                  per-invocation (one 8- or 24-dot-tall band). NOT
+//                  stitched across multiple ESC * calls into one taller
+//                  composite image — that needs cursor/line-position
+//                  tracking this flat text/line parser doesn't do, and
+//                  nothing in the corpus exercises it. First successfully
+//                  decoded band wins, same as GS v 0.
+//   - `GS ( L` / `GS 8 L` <Function 112> ("store raster in print buffer")
+//                — decoded too: the wire format is well-documented
+//                  (Epson's "Graphics" command set; cross-checked against
+//                  python-escpos's implementation) and self-contained in
+//                  one command, same as GS v 0. No corpus fixture exercises
+//                  it, so this path is verified only by a synthetic test,
+//                  not a real capture.
+//   - `GS ( L` <Function 67/68> ("define NV graphics") — NOT decoded. The
+//                  bitmap bytes ARE present in-stream, but this command's
+//                  job is provisioning the printer's flash for later
+//                  `<Function 69>` prints, not printing the current job —
+//                  more likely to appear in a setup utility than a live
+//                  purchase receipt. No corpus evidence either way, so this
+//                  is left as a safe skip (already resync-safe via the
+//                  generic GS ( length-prefixed skip) rather than guessed
+//                  at under time pressure.
+//   - `GS 8 L` in general — only resync-safety is added (correct 4-byte
+//                  length field so a receipt using this form doesn't
+//                  desync the rest of the parse into garbage text, the
+//                  same failure class as the historical GS v 0 off-by-one
+//                  bug). Not decoded into an image.
+//
+// NV (non-volatile / printer-stored) logo references — `FS p` (print NV
+// bit image) and `GS ( L` <Function 69> (print NV graphics) — reference an
+// image baked into the printer's own flash memory by key code. Those bytes
+// are simply not in this stream and the image is unrecoverable from a
+// capture. These are detected and set `Receipt.nvLogoReferenced = true` so
+// the caller can tell "no logo" apart from "logo exists but isn't ours to
+// render" — nothing is rendered for them (no placeholder, no broken image).
+//
+// Image-only receipts: a receipt whose only content is a logo (no text at
+// all) is deliberately NOT treated as printable content — `Receipt.logo`
+// lives outside `Receipt.lines`, so `lib/receiptState.ts`'s
+// `hasVisibleContent` (which only inspects text) is completely unaffected
+// by this feature and still resolves such a stream to NOT_AVAILABLE. See
+// app/r/page.tsx / lib/receiptState.ts for the full rationale — a logo
+// with no readable text isn't something this app treats as "a receipt".
+//
+// --- Star Line Mode raster receipts ----------------------------------------
+//
+// Everything above is the Epson-style command set. Some POS software doesn't
+// send text at all: Blaze renders the entire receipt to a 1bpp bitmap on the
+// POS side and ships it as Star Line Mode raster (`ESC * r ...` — a
+// different protocol from the Epson `ESC * m nL nH` column bit-image handled
+// below). Confirmed at the Doobie Nights pilot with two printer models
+// selected, so it is Blaze behaviour, not a config mistake.
+//
+// Those payloads carry zero text, so the state machine below yields zero
+// lines and the page renders "Receipt not available" — a real receipt that
+// looked like a missing one. `parseEscPos` therefore runs a whole-blob
+// detector (lib/starRaster.ts) BEFORE any byte-by-byte parsing and, on a
+// hit, returns the decoded full-page bitmap as `Receipt.rasterPage` with no
+// text lines at all. Detection has to happen up front: by the time the
+// state machine reaches these bytes it has already desynced on them.
+//
+// `rasterPage` is deliberately a separate field from `logo`. `logo` is one
+// decorative band inside an otherwise-textual receipt and never counts as
+// receipt content; `rasterPage` (when `fullPage` is true) IS the receipt —
+// see `FULL_PAGE_MIN_*` below and lib/receiptState.ts.
+
+import { encodeMonoPngDataUri } from "./png";
+import { decodeStarRaster, looksLikeStarRaster } from "./starRaster";
 
 export type Alignment = "left" | "center" | "right";
 
@@ -48,11 +130,82 @@ export interface ReceiptLine {
   style: Style;
 }
 
+/** A decoded inline raster/bit-image logo, rendered to a PNG `data:` URI. */
+export interface DecodedLogo {
+  widthPx: number;
+  heightPx: number;
+  dataUri: string;
+  source: "GS v 0" | "ESC *" | "GS ( L";
+}
+
+/**
+ * A whole receipt that arrived as one Star Line Mode raster bitmap rather
+ * than as text — see the module doc comment and lib/starRaster.ts.
+ */
+export interface DecodedRasterPage {
+  widthPx: number;
+  heightPx: number;
+  dataUri: string;
+  source: "Star Line Mode raster";
+  /**
+   * True when the bitmap is large enough to be a whole receipt rather than a
+   * logo-sized band (see `FULL_PAGE_MIN_HEIGHT_DOTS` /
+   * `FULL_PAGE_MIN_WIDTH_DOTS`). Only a `fullPage` bitmap counts as receipt
+   * content for lib/receiptState.ts; a small one is treated exactly like a
+   * logo, i.e. as nothing to show.
+   */
+  fullPage: boolean;
+}
+
 export interface Receipt {
   header: ReceiptLine[];
   lines: ReceiptLine[];
   footer: ReceiptLine[];
+  /** First successfully decoded inline logo found, in stream order, if any. */
+  logo?: DecodedLogo;
+  /**
+   * Set when the whole payload was a Star Line Mode raster bitmap. Mutually
+   * exclusive with `lines`/`logo` by construction: on this path the text
+   * state machine is never run, because there is no text to find and running
+   * it would only produce mojibake.
+   */
+  rasterPage?: DecodedRasterPage;
+  /**
+   * True when the stream referenced a printer-stored (NV) logo — `FS p` or
+   * `GS ( L` <Function 69> — whose bitmap bytes are not in this capture and
+   * therefore cannot be rendered. Independent of `logo`: a stream can set
+   * this, have a decoded `logo`, both, or neither.
+   */
+  nvLogoReferenced: boolean;
 }
+
+// Mirrors app/r/ui.tsx's `T.text` token — docs/PAPEX_DESIGN_KIT_FOR_WEB.md
+// §1's dark-theme `white-90` (rgba(255,255,255,0.90)), flattened against the
+// card's fixed navy background (#00121D) into an opaque hex, since the PNG
+// encoder's palette entry has no alpha channel to spare (index 1 is already
+// forced fully opaque — see lib/png.ts's PLTE/tRNS). The receipt viewer's
+// glass cards are always a dark navy surface regardless of page theme (see
+// app/r/glass.module.css's `.card`), so a near-white foreground reads as a
+// deliberate light logo mark rather than an inverted/broken image. Kept as
+// a local literal rather than importing from app/r/ui.tsx: this file must
+// stay usable outside the Next.js app (see the portability note above), and
+// there is no shared lib/theme module today.
+// Also used as the ink color for full-page Star raster receipts: the paper
+// bitmap is black-on-white, but the PNG encoder emits a transparent
+// background, so painting the set bits near-white over the (always dark
+// navy) glass card turns "black ink on white paper" into "light ink on dark
+// glass" — consistent with every other surface on the page, in both light
+// and dark theme, instead of a floating white slab.
+const LOGO_FOREGROUND = "#E6E7E8";
+
+// A Star raster bitmap has to clear both of these to count as a whole
+// receipt rather than a logo band. 200 dot rows is ~25mm of 203dpi tape —
+// taller than any merchant logo (the bench corpus logos are 40 and 120
+// rows) and far shorter than any real receipt (the pilot fixtures are 815).
+// The width floor just rejects degenerate slivers. Below either threshold
+// the bitmap is treated exactly like `logo`: not content, nothing to show.
+const FULL_PAGE_MIN_HEIGHT_DOTS = 200;
+const FULL_PAGE_MIN_WIDTH_DOTS = 128;
 
 type Codepage = "cp437" | "cp858" | "fallback";
 
@@ -140,6 +293,9 @@ class ParserContext {
   codepage: Codepage = "cp437";
 
   lines: ReceiptLine[] = [];
+
+  logo?: DecodedLogo;
+  nvLogoReferenced = false;
 
   constructor(bytes: Uint8Array) {
     this.bytes = bytes;
@@ -367,6 +523,24 @@ class ParserContext {
       case 0x52:
         this.skipParams(2, 1);
         break;
+      // ESC RS a n — Star's "automatic status back" command (n = 0 disables
+      // it). Not an Epson command, but Blaze emits it around print jobs and
+      // the RDH can capture one as a whole standalone payload: real capture
+      // 665477603ed0ec3c.bin is exactly `1b 1e 61 00 00`, five bytes, no
+      // receipt in it at all. Without this case the default 2-byte skip
+      // resyncs onto the 0x61 parameter and renders the letter "a" as a
+      // one-line receipt — a printer command masquerading as somebody's
+      // purchase, the same class of defect lib/receiptState.ts exists to
+      // prevent. Consuming the parameter leaves zero lines, so the page
+      // correctly resolves to NOT_AVAILABLE. Guarded on the 'a' subcommand
+      // so other ESC RS forms keep the old best-effort 2-byte skip.
+      case 0x1e:
+        if (this.index + 2 < this.bytes.length && this.bytes[this.index + 2] === 0x61) {
+          this.skipParams(3, 1);
+        } else {
+          this.index += 2;
+        }
+        break;
       // ESC 2 — set default line spacing (no params)
       case 0x32:
         this.index += 2;
@@ -383,7 +557,12 @@ class ParserContext {
       case 0x63:
         this.skipParams(3, 1);
         break;
-      // ESC * m nL nH d1..dk — bit-image graphics.
+      // ESC * m nL nH d1..dk — column-format bit-image graphics. m=0/1 is
+      // 8 dots tall (1 byte/column), m=32/33 is 24 dots tall (3 bytes/
+      // column, MSB-first, byte1=rows0-7/byte2=rows8-15/byte3=rows16-23).
+      // Decoded per-invocation only — see the module doc comment for why
+      // this deliberately does not stitch multiple ESC * bands together
+      // into one taller composite logo.
       case 0x2a: {
         if (this.index + 4 >= this.bytes.length) {
           this.index = this.bytes.length;
@@ -395,7 +574,25 @@ class ParserContext {
         const width = nL + nH * 256;
         const bytesPerColumn = m === 32 || m === 33 ? 3 : 1;
         const dataLen = width * bytesPerColumn;
+        const dataStart = this.index + 5;
         const take = Math.min(5 + dataLen, this.bytes.length - this.index);
+        if (
+          !this.logo &&
+          width > 0 &&
+          (m === 0 || m === 1 || m === 32 || m === 33) &&
+          this.bytes.length - dataStart >= dataLen
+        ) {
+          try {
+            const heightPx = bytesPerColumn === 3 ? 24 : 8;
+            const rowPacked = columnsToRowPackedBits(this.bytes, dataStart, width, heightPx, bytesPerColumn);
+            const dataUri = encodeMonoPngDataUri({ width, height: heightPx, bits: rowPacked }, LOGO_FOREGROUND);
+            if (dataUri) {
+              this.logo = { widthPx: width, heightPx, dataUri, source: "ESC *" };
+            }
+          } catch {
+            // Contract: never throw. A decode failure just means no logo.
+          }
+        }
         this.index += take;
         break;
       }
@@ -457,12 +654,24 @@ class ParserContext {
       case 0x6b:
         this.handleBarcode();
         break;
-      // GS ( k pL pH cn fn ... — extended barcode (QR)
+      // GS ( k pL pH cn fn ... — extended barcode (QR), and also the
+      // generic "GS ( <type>" resync-safe skip for other subtypes (e.g.
+      // "L" raster graphics) — see handleGsParen, which also decodes
+      // GS ( L <Function 112> raster-in-print-buffer logos and flags
+      // <Function 69> NV-graphics-print references.
       case 0x28:
         this.handleGsParen();
         break;
+      // GS 8 L — 4-byte-length variant of GS ( L, for graphics payloads
+      // too large for GS ( L's 2-byte length field. Resync-safety only;
+      // see the module doc comment for why this isn't decoded.
+      case 0x38:
+        this.handleGs8L();
+        break;
       // GS v 0 m xL xH yL yH d1...dk — raster bit image. 8 header bytes:
-      // 0x1D 0x76 0x30, then m, xL, xH, yL, yH (index+3..index+7).
+      // 0x1D 0x76 0x30, then m, xL, xH, yL, yH (index+3..index+7). Bench-
+      // verified real-world format (576x120-dot raster, 8,640 bytes,
+      // byte-for-byte checked against the backend) — the primary logo path.
       case 0x76: {
         if (this.index + 2 >= this.bytes.length || this.bytes[this.index + 2] !== 0x30) {
           // Not the recognized GS v 0 form — skip prefix only.
@@ -480,8 +689,30 @@ class ParserContext {
         const xH = this.bytes[this.index + 5];
         const yL = this.bytes[this.index + 6];
         const yH = this.bytes[this.index + 7];
-        const dataLen = (xL + xH * 256) * (yL + yH * 256);
+        const widthBytes = xL + xH * 256;
+        const heightRows = yL + yH * 256;
+        const dataLen = widthBytes * heightRows;
+        const dataStart = this.index + 8;
         const take = Math.min(8 + dataLen, this.bytes.length - this.index);
+        // Only decode when the FULL declared bitmap is actually present —
+        // a truncated raster (declared_len > available bytes) must not
+        // throw or hang, and must not render a corrupted partial image.
+        // The surrounding skip logic already clamps `take` to what's
+        // available regardless, so parsing stays safe either way.
+        if (!this.logo && widthBytes > 0 && heightRows > 0 && this.bytes.length - dataStart >= dataLen) {
+          try {
+            const bits = this.bytes.subarray(dataStart, dataStart + dataLen);
+            const dataUri = encodeMonoPngDataUri(
+              { width: widthBytes * 8, height: heightRows, bits },
+              LOGO_FOREGROUND,
+            );
+            if (dataUri) {
+              this.logo = { widthPx: widthBytes * 8, heightPx: heightRows, dataUri, source: "GS v 0" };
+            }
+          } catch {
+            // Contract: never throw. A decode failure just means no logo.
+          }
+        }
         this.index += take;
         break;
       }
@@ -532,8 +763,11 @@ class ParserContext {
     }
     const cmd = this.bytes[this.index + 1];
     switch (cmd) {
-      // FS p n m — print downloaded NV bit image (2 params)
+      // FS p n m — print downloaded NV bit image (2 params). References a
+      // logo stored in the printer's own flash by index — the bitmap bytes
+      // are not in this stream and cannot be recovered from a capture.
       case 0x70:
+        this.nvLogoReferenced = true;
         this.skipParams(2, 2);
         break;
       // FS ! n — kanji print mode (1 param)
@@ -593,18 +827,103 @@ class ParserContext {
   }
 
   /**
-   * GS ( k pL pH cn fn [params...] — QR code commands etc.
-   * Total length = 5 (header) + (pL + pH*256) of body.
+   * GS ( <type> pL pH m fn [params...] — the generic "extended" GS (
+   * command family: QR codes (type 'k'), raster graphics (type 'L'), and
+   * others. Total length = 5 (header incl. type byte) + (pL + pH*256) of
+   * body (m + fn + params). Safely skipped for every subtype by construction
+   * — decoding below is an optional bonus layered on top for type 'L'.
+   *
+   * Type 'L' (raster graphics, aka "GS ( L") functions relevant here:
+   *   <Function 112> ('p') — store raster graphics data in the print
+   *     buffer. Self-contained inline bitmap: `m` + `fn` + an 8-byte
+   *     sub-header (tone, x-zoom, y-zoom, colors, widthL, widthH, heightL,
+   *     heightH — width/height in PIXELS here, unlike GS v 0's byte-width)
+   *     + row-packed 1bpp bitmap data. Decoded the same way as GS v 0.
+   *     Cross-checked against python-escpos's `_image_send_graphics_data`/
+   *     `image()` implementation; no corpus fixture exercises this path
+   *     (verified only by a synthetic test), unlike GS v 0.
+   *   <Function 69> ('E') — print NV graphics data by key code. No bitmap
+   *     bytes in-stream at all — same "unrecoverable" case as `FS p`.
+   *   <Function 67/68> ('C'/'D') — define/store NV graphics. Bitmap bytes
+   *     ARE present, but this command provisions the printer's flash for a
+   *     later <Function 69> print rather than printing the current job —
+   *     deliberately left un-decoded (see module doc comment).
    */
   handleGsParen(): void {
     if (this.index + 4 >= this.bytes.length) {
       this.index = this.bytes.length;
       return;
     }
+    const type = this.bytes[this.index + 2];
     const pL = this.bytes[this.index + 3];
     const pH = this.bytes[this.index + 4];
     const payload = pL + pH * 256;
     const take = Math.min(5 + payload, this.bytes.length - this.index);
+
+    if (type === 0x4c /* 'L' */ && this.index + 6 < this.bytes.length) {
+      const fn = this.bytes[this.index + 6];
+      if (fn === 0x45 /* 'E' = Function 69: print NV graphics */) {
+        this.nvLogoReferenced = true;
+      } else if (fn === 0x70 /* 'p' = Function 112: store raster in print buffer */ && !this.logo) {
+        this.tryDecodeGsParenLRaster();
+      }
+    }
+
+    this.index += take;
+  }
+
+  /**
+   * Decode a `GS ( L` <Function 112> raster payload starting at
+   * `this.index` (still pointing at 0x1D — this is a read-only lookahead,
+   * called from handleGsParen before it advances `this.index`). Sets
+   * `this.logo` on success; does nothing on any malformed/truncated input.
+   */
+  tryDecodeGsParenLRaster(): void {
+    // Sub-header starts right after "1D 28 4C pL pH m fn" (7 bytes).
+    const subStart = this.index + 7;
+    if (this.bytes.length - subStart < 8) return;
+    const widthPx = this.bytes[subStart + 4] + this.bytes[subStart + 5] * 256;
+    const heightPx = this.bytes[subStart + 6] + this.bytes[subStart + 7] * 256;
+    if (widthPx <= 0 || heightPx <= 0) return;
+    const rowBytes = Math.ceil(widthPx / 8);
+    const bmpStart = subStart + 8;
+    const bmpLen = rowBytes * heightPx;
+    if (this.bytes.length - bmpStart < bmpLen) return; // truncated — no logo, no throw
+    try {
+      const bits = this.bytes.subarray(bmpStart, bmpStart + bmpLen);
+      const dataUri = encodeMonoPngDataUri({ width: widthPx, height: heightPx, bits }, LOGO_FOREGROUND);
+      if (dataUri) {
+        this.logo = { widthPx, heightPx, dataUri, source: "GS ( L" };
+      }
+    } catch {
+      // Contract: never throw. A decode failure just means no logo.
+    }
+  }
+
+  /**
+   * GS 8 L pL pH pH2 pH3 m fn [data...] — the 4-byte-length variant of
+   * GS ( L, for graphics payloads too large for a 2-byte length field.
+   * Deliberately NOT decoded into an image (see module doc comment) — this
+   * only computes the correct skip length so the parser resyncs safely
+   * afterward instead of reinterpreting payload bytes as text, the same
+   * failure class as the historical GS v 0 off-by-one bug.
+   */
+  handleGs8L(): void {
+    if (this.index + 2 >= this.bytes.length || this.bytes[this.index + 2] !== 0x4c /* 'L' */) {
+      // Not the recognized "GS 8 L" form — best-effort skip.
+      this.index += 2;
+      return;
+    }
+    if (this.index + 6 >= this.bytes.length) {
+      this.index = this.bytes.length;
+      return;
+    }
+    const p1 = this.bytes[this.index + 3];
+    const p2 = this.bytes[this.index + 4];
+    const p3 = this.bytes[this.index + 5];
+    const p4 = this.bytes[this.index + 6];
+    const payload = p1 + p2 * 256 + p3 * 65536 + p4 * 16777216;
+    const take = Math.min(7 + payload, this.bytes.length - this.index);
     this.index += take;
   }
 
@@ -664,15 +983,139 @@ class ParserContext {
 }
 
 /**
+ * Transpose ESC * "column format" bit-image data (each byte-group is one
+ * vertical column, MSB-first top-to-bottom) into row-major, MSB-first
+ * packed bits — the layout `encodeMonoPngDataUri` (and GS v 0's native
+ * wire format) expects. `bytesPerColumn` is 1 for 8-dot density (m=0/1) or
+ * 3 for 24-dot density (m=32/33).
+ */
+function columnsToRowPackedBits(
+  bytes: Uint8Array,
+  offset: number,
+  widthCols: number,
+  heightRows: number,
+  bytesPerColumn: number,
+): Uint8Array {
+  const rowBytes = Math.ceil(widthCols / 8);
+  const out = new Uint8Array(rowBytes * heightRows);
+  for (let c = 0; c < widthCols; c++) {
+    for (let r = 0; r < heightRows; r++) {
+      const srcByte = bytes[offset + c * bytesPerColumn + Math.floor(r / 8)];
+      const bit = (srcByte >> (7 - (r % 8))) & 1;
+      if (bit) {
+        out[r * rowBytes + Math.floor(c / 8)] |= 1 << (7 - (c % 8));
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Decode a whole-payload Star Line Mode raster job, or `undefined` if this
+ * isn't one (or can't be decoded). Runs over the entire blob before any
+ * byte-by-byte parsing — see the module doc comment for why that ordering is
+ * load-bearing. Never throws: a failure here just means "not a raster page",
+ * and the caller falls through to the ordinary text parse.
+ */
+function tryDecodeStarRasterPage(bytes: Uint8Array): DecodedRasterPage | undefined {
+  try {
+    if (!looksLikeStarRaster(bytes)) return undefined;
+    const bmp = decodeStarRaster(bytes);
+    if (!bmp) return undefined;
+    const dataUri = encodeMonoPngDataUri(
+      { width: bmp.widthPx, height: bmp.heightPx, bits: bmp.bits },
+      LOGO_FOREGROUND,
+    );
+    if (!dataUri) return undefined;
+    return {
+      widthPx: bmp.widthPx,
+      heightPx: bmp.heightPx,
+      dataUri,
+      source: "Star Line Mode raster",
+      fullPage:
+        bmp.heightPx >= FULL_PAGE_MIN_HEIGHT_DOTS && bmp.widthPx >= FULL_PAGE_MIN_WIDTH_DOTS,
+    };
+  } catch {
+    // Contract: never throw. Fall back to the text parser.
+    return undefined;
+  }
+}
+
+/**
  * Parse an ESC/POS byte stream into a Receipt. Never throws on malformed
  * input — unknown commands are skipped with best-effort length consumption,
  * and decode failures emit the Unicode replacement character. The contract
- * is "render something, never crash."
+ * is "render something, never crash." Logo decoding follows the same
+ * contract — see the module doc comment.
  */
 export function parseEscPos(bytes: Uint8Array): Receipt {
+  // Star Line Mode raster: the whole payload is one bitmap and there is no
+  // text to extract. Checked first, on the whole blob — the text state
+  // machine below desyncs on these bytes and would emit mojibake.
+  const rasterPage = tryDecodeStarRasterPage(bytes);
+  if (rasterPage) {
+    return { header: [], lines: [], footer: [], rasterPage, nvLogoReferenced: false };
+  }
+
   const ctx = new ParserContext(bytes);
   ctx.run();
-  return { header: [], lines: ctx.lines, footer: [] };
+  return {
+    header: [],
+    lines: ctx.lines,
+    footer: [],
+    logo: ctx.logo,
+    nvLogoReferenced: ctx.nvLogoReferenced,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Encoder — the inverse of the parser above, used only to synthesize a
+// plausible raw byte stream for mock-mode receipts (lib/merchantMock.ts).
+// Real receipts always come from the RDH device as actual ESC/POS bytes;
+// this exists purely so `/merchant/tx/[sid]`'s "parse the raw bytes" code
+// path (mirroring app/r) also has something to parse when
+// NEXT_PUBLIC_MERCHANT_MOCK=1 and there's no backend to fetch bytes from.
+// Only emits the handful of commands the parser above actually interprets
+// (ESC @ / ESC a / ESC E / GS !) — enough to round-trip text + alignment +
+// bold + double-height/width through parseEscPos, not a general-purpose
+// ESC/POS encoder. ASCII only, matching the fixture vocabulary in
+// merchantMock.ts.
+// ---------------------------------------------------------------------------
+
+function alignCode(align: Alignment): number {
+  return align === "center" ? 1 : align === "right" ? 2 : 0;
+}
+
+export function encodeEscPos(lines: ReceiptLine[]): Uint8Array {
+  const out: number[] = [0x1b, 0x40]; // ESC @ — initialize
+  let curAlign: Alignment = "left";
+  let curBold = false;
+  let curDoubleWidth = false;
+  let curDoubleHeight = false;
+
+  for (const l of lines) {
+    if (l.align !== curAlign) {
+      out.push(0x1b, 0x61, alignCode(l.align)); // ESC a n
+      curAlign = l.align;
+    }
+    if (l.style.doubleWidth !== curDoubleWidth || l.style.doubleHeight !== curDoubleHeight) {
+      const n = ((l.style.doubleWidth ? 1 : 0) << 4) | (l.style.doubleHeight ? 1 : 0);
+      out.push(0x1d, 0x21, n); // GS ! n
+      curDoubleWidth = l.style.doubleWidth;
+      curDoubleHeight = l.style.doubleHeight;
+    }
+    if (l.style.bold !== curBold) {
+      out.push(0x1b, 0x45, l.style.bold ? 1 : 0); // ESC E n
+      curBold = l.style.bold;
+    }
+    for (const ch of l.text) {
+      const code = ch.codePointAt(0) ?? 0x3f;
+      out.push(code < 0x80 ? code : 0x3f); // non-ASCII -> '?', fixtures are ASCII-only
+    }
+    out.push(0x0a); // LF
+  }
+
+  return new Uint8Array(out);
 }
 
 // ---------------------------------------------------------------------------

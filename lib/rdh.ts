@@ -10,7 +10,25 @@
 // 'no-store'` because every sid is single-use-ish and privacy-sensitive
 // (no auth beyond the sid itself — see handler.js's threat-model comment).
 
-const RDH_API_HOST = "https://api.papex.app";
+const DEFAULT_RDH_API_HOST = "https://api.papex.app";
+
+/**
+ * Base URL of the RDH API, overridable with `RDH_API_BASE`.
+ *
+ * SERVER-SIDE ONLY (no NEXT_PUBLIC_ prefix), so the override can never be set
+ * by, or leak to, a browser. It exists because the two reads this page depends
+ * on — the raw bytes and the parsed receipt — otherwise have no destination
+ * but production, which makes the page impossible to exercise locally against
+ * a known fixture (a bitmap receipt mid-OCR, say, which is the state the whole
+ * polling design exists for). Same shape and same reasoning as
+ * `ADAPTER_API_BASE` in app/api/rdh/claim/route.ts.
+ *
+ * Unset — which is every deployed environment — means production, unchanged.
+ */
+export function rdhApiBase(): string {
+  const fromEnv = process.env.RDH_API_BASE?.trim();
+  return (fromEnv && fromEnv.length > 0 ? fromEnv : DEFAULT_RDH_API_HOST).replace(/\/+$/, "");
+}
 
 /** 16 lowercase hex chars — matches the Lambda's SID_RE exactly. */
 const SID_RE = /^[a-f0-9]{16}$/;
@@ -37,7 +55,7 @@ export async function fetchReceiptBytes(sid: string): Promise<ReceiptFetchResult
   const timeout = setTimeout(() => controller.abort(), 8000);
 
   try {
-    const res = await fetch(`${RDH_API_HOST}/receipt/${sid}`, {
+    const res = await fetch(`${rdhApiBase()}/receipt/${sid}`, {
       cache: "no-store",
       signal: controller.signal,
       headers: { Accept: "application/octet-stream" },

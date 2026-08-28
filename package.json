@@ -10,9 +10,17 @@
     "lint": "next lint",
     "migrate:images": "tsx scripts/migrateBlogImages.ts",
     "migrate:images:dry": "tsx scripts/migrateBlogImages.ts --dry-run",
+    "migrate:static-blogs": "tsx scripts/migrateStaticBlogs.ts",
+    "migrate:static-blogs:dry": "tsx scripts/migrateStaticBlogs.ts --dry-run",
     "test:escpos": "tsx lib/escpos.test.ts",
+    "test:png": "tsx lib/png.test.ts",
     "test:summary": "tsx lib/receiptSummary.test.ts",
-    "test": "npm run test:escpos && npm run test:summary"
+    "test:merchantHost": "tsx lib/merchantHost.test.ts",
+    "test:raster": "tsx lib/starRaster.test.ts",
+    "test:mockRaster": "tsx lib/mockStarRaster.test.ts",
+    "test": "npm run test:png && npm run test:escpos && npm run test:raster && npm run test:mockRaster && npm run test:summary && npm run test:state && npm run test:parsed && npm run test:merchantHost",
+    "test:state": "tsx lib/receiptState.test.ts",
+    "test:parsed": "tsx lib/rdhParsed.test.ts"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
