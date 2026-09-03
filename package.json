@@ -18,9 +18,10 @@
     "test:merchantHost": "tsx lib/merchantHost.test.ts",
     "test:raster": "tsx lib/starRaster.test.ts",
     "test:mockRaster": "tsx lib/mockStarRaster.test.ts",
-    "test": "npm run test:png && npm run test:escpos && npm run test:raster && npm run test:mockRaster && npm run test:summary && npm run test:state && npm run test:parsed && npm run test:merchantHost",
+    "test": "npm run test:png && npm run test:escpos && npm run test:raster && npm run test:mockRaster && npm run test:summary && npm run test:state && npm run test:parsed && npm run test:merchantHost && npm run test:decoded",
     "test:state": "tsx lib/receiptState.test.ts",
-    "test:parsed": "tsx lib/rdhParsed.test.ts"
+    "test:parsed": "tsx lib/rdhParsed.test.ts",
+    "test:decoded": "tsx --tsconfig tsconfig.test.json components/DecodedText.test.tsx"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
