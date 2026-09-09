@@ -5,10 +5,10 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --primary-navy: #0a3d62;
-  --primary-light-blue: #d0e4f4;
-  --primary-orange: #ff9933;
-  --primary-orange-dark: #e67e22;
+  --primary-navy: #00121D;
+  --primary-light-blue: #eceded;
+  --primary-orange: #EB7100;
+  --primary-orange-dark: #cc6300;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -37,27 +37,27 @@ body {
 @layer components {
   /* Modern gradient backgrounds */
   .gradient-primary {
-    background: linear-gradient(135deg, #0a3d62 0%, #1e5b82 50%, #2c7da0 100%);
+    background: linear-gradient(135deg, #00121D 0%, #0a2431 50%, #0c2937 100%);
   }
   
   .gradient-secondary {
-    background: linear-gradient(135deg, #d0e4f4 0%, #a8d0f0 50%, #7fb8d3 100%);
+    background: linear-gradient(135deg, #eceded 0%, #dcdedf 50%, #c9ccce 100%);
   }
   
   .gradient-accent {
-    background: linear-gradient(135deg, #ff9933 0%, #e67e22 50%, #d35400 100%);
+    background: linear-gradient(135deg, #EB7100 0%, #cc6300 50%, #c85f00 100%);
   }
   
   .gradient-hero {
-    background: linear-gradient(135deg, #d0e4f4 0%, #b8daf2 25%, #a0d0f0 50%, #88c6ee 75%, #70bcec 100%);
+    background: linear-gradient(135deg, #eceded 0%, #dcdedf 25%, #d3d5d7 50%, #c9ccce 75%, #bfc3c6 100%);
   }
   
   .gradient-mesh {
     background: 
-      radial-gradient(circle at 20% 20%, rgba(255, 153, 51, 0.1) 0%, transparent 50%),
-      radial-gradient(circle at 80% 80%, rgba(10, 61, 98, 0.1) 0%, transparent 50%),
-      radial-gradient(circle at 40% 60%, rgba(208, 228, 244, 0.3) 0%, transparent 50%),
-      linear-gradient(135deg, #d0e4f4 0%, #b8daf2 100%);
+      radial-gradient(circle at 20% 20%, rgba(235, 113, 0, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(0, 18, 29, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 40% 60%, rgba(236, 237, 237, 0.3) 0%, transparent 50%),
+      linear-gradient(135deg, #eceded 0%, #dcdedf 100%);
   }
   
   /* Modern button styles */
@@ -95,7 +95,7 @@ body {
   
   .card-hover:hover {
     transform: translateY(-8px);
-    box-shadow: 0 25px 50px rgba(10, 61, 98, 0.15);
+    box-shadow: 0 25px 50px rgba(0, 18, 29, 0.15);
   }
   
   /* Glass morphism effects */
@@ -106,9 +106,9 @@ body {
   }
   
   .glass-dark {
-    background: rgba(10, 61, 98, 0.1);
+    background: rgba(0, 18, 29, 0.1);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(10, 61, 98, 0.2);
+    border: 1px solid rgba(0, 18, 29, 0.2);
   }
 }
 

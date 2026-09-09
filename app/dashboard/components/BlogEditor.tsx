@@ -28,7 +28,7 @@ export function BlogEditor({ blog, setView }: { blog: any, setView: (v: any) => 
   }
 
   return (
-    <div className="bg-[#0c4b76] p-8 rounded-lg max-w-xl mx-auto mt-16">
+    <div className="bg-[#0a2431] p-8 rounded-lg max-w-xl mx-auto mt-16">
       <h2 className="text-2xl font-bold text-center text-white mb-6">{blog ? "Edit Post" : "New Post"}</h2>
       <div className="space-y-6">
         <div className="space-y-2 text-left">
@@ -38,7 +38,7 @@ export function BlogEditor({ blog, setView }: { blog: any, setView: (v: any) => 
             placeholder="Title"
             value={title}
             onChange={e => setTitle(e.target.value)}
-            className="bg-white text-[#0a3d62] text-lg"
+            className="bg-white text-[#00121D] text-lg"
           />
         </div>
         <div className="space-y-2 text-left">
@@ -48,14 +48,14 @@ export function BlogEditor({ blog, setView }: { blog: any, setView: (v: any) => 
             placeholder="Content"
             value={content}
             onChange={e => setContent(e.target.value)}
-            className="bg-white text-[#0a3d62] w-full rounded-md border border-input px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-h-[180px] resize-vertical"
+            className="bg-white text-[#00121D] w-full rounded-md border border-input px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-h-[180px] resize-vertical"
           />
         </div>
         <div className="flex flex-col sm:flex-row gap-3 justify-end mt-4">
           <Button type="button" onClick={() => save("draft")}
-            className="bg-[#ff9933] hover:bg-[#e67e22] text-white px-6 py-3 w-full sm:w-auto">Save Draft</Button>
+            className="bg-[#EB7100] hover:bg-[#cc6300] text-white px-6 py-3 w-full sm:w-auto">Save Draft</Button>
           <Button type="button" onClick={() => save("published")}
-            className="bg-[#0a3d62] hover:bg-[#145da0] text-white px-6 py-3 w-full sm:w-auto">Publish</Button>
+            className="bg-[#00121D] hover:bg-[#0a2431] text-white px-6 py-3 w-full sm:w-auto">Publish</Button>
           <Button type="button" onClick={() => setView("all")}
             variant="secondary" className="w-full sm:w-auto">Cancel</Button>
         </div>

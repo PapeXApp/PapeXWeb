@@ -58,12 +58,6 @@ export const metadata: Metadata = {
         alt: 'PapeX - The Smarter Way to Do Receipts',
         type: 'image/png'
       },
-      {
-        url: 'https://papex.app/favlogo.png',
-        width: 800,
-        height: 600,
-        alt: 'PapeX Logo'
-      }
     ]
   },
   twitter: {
@@ -79,17 +73,15 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/favlogo.png', sizes: 'any' },
-      { url: '/favlogo.png', type: 'image/png' }
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icons/favicon-16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/icons/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icons/favicon-48.png', sizes: '48x48', type: 'image/png' },
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
     ],
-    shortcut: [{ url: '/favlogo.png' }],
-    apple: [{ url: '/favlogo.png' }],
-    other: [
-      {
-        rel: 'apple-touch-icon',
-        url: '/favlogo.png',
-      },
-    ],
+    shortcut: [{ url: '/favicon.ico' }],
+    apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
   }
 }
 
@@ -99,11 +91,19 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${barlow.variable} ${kameron.variable} ${gloock.variable}`}>
+    // suppressHydrationWarning: FORK_SKIP_SCRIPT (lib/pathChoice.ts) stamps
+    // <html data-fork-skip> during HTML parse, before React hydrates, so the
+    // server markup legitimately differs from the client DOM on this one
+    // element. Without this, every returning visitor sees a hydration error.
+    <html
+      lang="en"
+      className={`${barlow.variable} ${kameron.variable} ${gloock.variable}`}
+      suppressHydrationWarning
+    >
       <head>
-        <link rel="icon" href="/favlogo.png" sizes="any" />
-        <link rel="icon" href="/favlogo.png" type="image/png" />
-        <link rel="apple-touch-icon" href="/favlogo.png" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/icons/favicon-32.png" type="image/png" sizes="32x32" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" sizes="180x180" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         {/* Google tag (gtag.js) */}
         <Script

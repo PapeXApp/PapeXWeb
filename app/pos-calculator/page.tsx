@@ -6,7 +6,7 @@ function PosCalculatorFallback() {
   return (
     <FramerPageShell>
       <div className="framer-container subpage-inner flex items-center justify-center">
-        <p className="text-[#605f5f] text-lg font-medium">Loading calculator…</p>
+        <p className="text-[rgba(0, 18, 29, 0.62)] text-lg font-medium">Loading calculator…</p>
       </div>
     </FramerPageShell>
   )

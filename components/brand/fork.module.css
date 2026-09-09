@@ -1,0 +1,195 @@
+/* components/brand/fork.module.css
+   ==========================================================================
+   Atmosphere + paper-plane motion for Screen 1 (the fork).
+
+   WHY A MODULE AND NOT styles/papex-brand.css:
+   the fork's *commit* motion (flex-grow 1 -> 40 / 0.0001 over 620ms, the
+   content scale(.96), the seam fade) is a locked spec and still lives in
+   papex-brand.css lines ~446-552. Nothing in this file may touch it. This
+   file owns only what happens AROUND the commit: the resting depth of each
+   half, the pointer-tracked light, and the plane's idle / approach / fly-out.
+
+   Every animated property here is `transform` or `opacity` only. The
+   continuous values (plane drift, parallax, light pool) are written from the
+   single rAF loop in fork.tsx, not from keyframes, so there is exactly one
+   scheduled callback for the whole screen.
+   ========================================================================== */
+
+/* --- Light pool: replaces the inert `.rd-fork-glow`. ----------------------
+   The prototype tracks the pointer with translate3d(dx*s, dy*s, 0) at s=70
+   (customer) / s=60 (business); fork.tsx writes those transforms. There is
+   deliberately NO CSS transition on it — the smoothing is a lerp in the rAF
+   loop, and a transition on top of a per-frame write only adds lag. */
+.glow,
+.haze {
+  position: absolute;
+  inset: -12%;
+  pointer-events: none;
+  will-change: transform;
+  transition: opacity 0.42s ease;
+}
+/* Held just under full so the winning half has somewhere to brighten TO on
+   commit — the light swells as the surface takes the viewport. */
+.glow {
+  opacity: 0.86;
+}
+
+/* The haze is driven in the OPPOSITE direction at a smaller amplitude, so the
+   two gradients separate as the cursor moves — that parallax is what makes a
+   flat field of colour read as a lit volume. */
+
+.vignette,
+.grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Edges only: transparent through the middle 40-45% so it can never take a
+   single point of contrast off the centred headline. */
+.vignette {
+  transition: opacity 0.42s ease;
+}
+
+/* Static film grain. Kept OUT of any wrapper that gets an opacity or a
+   transform, because `mix-blend-mode` only blends inside its own stacking
+   context — nested, it would blend against nothing and look like flat fog. */
+.grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 140px 140px;
+  mix-blend-mode: overlay;
+}
+
+/* --- Per-side atmosphere -------------------------------------------------- */
+/* Navy: deep and lit — a warm brand pool upper-left, a cool counter-light
+   lower-right so the darkness has a direction, and a real vignette. */
+[data-side="customer"] .glow {
+  background: radial-gradient(
+    58% 52% at 32% 26%,
+    rgba(235, 113, 0, 0.22),
+    rgba(235, 113, 0, 0.06) 45%,
+    transparent 72%
+  );
+}
+[data-side="customer"] .haze {
+  background: radial-gradient(
+    72% 62% at 78% 84%,
+    rgba(96, 166, 214, 0.11),
+    transparent 68%
+  );
+}
+[data-side="customer"] .vignette {
+  background: radial-gradient(
+    120% 92% at 50% 50%,
+    transparent 42%,
+    rgba(0, 7, 12, 0.55) 100%
+  );
+}
+[data-side="customer"] .grain {
+  opacity: 0.055;
+}
+
+/* Off-white: airy, not empty — a soft warm pool low-right (under the plane),
+   a bright white lift top-left, and only a whisper of edge shading. */
+[data-side="business"] .glow {
+  background: radial-gradient(
+    56% 50% at 70% 74%,
+    rgba(235, 113, 0, 0.15),
+    rgba(235, 113, 0, 0.04) 45%,
+    transparent 72%
+  );
+}
+[data-side="business"] .haze {
+  background: radial-gradient(
+    76% 66% at 22% 16%,
+    rgba(255, 255, 255, 0.95),
+    rgba(255, 255, 255, 0.3) 45%,
+    transparent 72%
+  );
+}
+[data-side="business"] .vignette {
+  background: radial-gradient(
+    120% 95% at 50% 50%,
+    transparent 45%,
+    rgba(0, 18, 29, 0.07) 100%
+  );
+}
+[data-side="business"] .grain {
+  opacity: 0.03;
+}
+
+/* --- The plane ------------------------------------------------------------
+   The wrapper carries ALL motion (idle drift + pointer parallax + approach
+   bank + fly-out); the <img> inside carries none. Splitting them means the
+   fly-out transition has a single, uncontested transform to interpolate.
+
+   The wrapper's rest transform is the brand's fixed rotate(-8deg) — the same
+   angle as the nav logo's plane — so with JS off, or under reduced motion,
+   the mark still sits exactly where the prototype put it. */
+.planeWrap {
+  position: absolute;
+  width: min(260px, 20vw);
+  pointer-events: none;
+  transform: rotate(-8deg);
+  will-change: transform, opacity;
+}
+.planeWrap img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Resting opacity is deliberately NOT set here — it lives in
+   PLANE_REST_OPACITY in fork.tsx, because the rAF loop modulates it as the
+   plane approaches and needs a single source for the base value. It is applied
+   inline, which also means reduced-motion visitors get the same resting
+   picture with no JS motion on top. */
+
+/* --- The seam -------------------------------------------------------------
+   N14: the designer removed the "Choose your path" label and its rd-seam-glow
+   pulse, and closed the gap the text left. One rule, brightest at the centre,
+   fading to both edges. */
+.seamRule {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(235, 113, 0, 0.5) 50%,
+    transparent
+  );
+}
+
+/* --- Commit ---------------------------------------------------------------
+   Everything below finishes well inside the 620ms window and is applied to
+   layers that are NOT part of the commit interpolation, so it cannot delay or
+   fight the flex-grow transition.
+
+   The winning plane's fly-out is written inline from JS (it needs the live
+   viewport size for the exit vector). Only the ambient layers are done here. */
+[data-state="won"] .glow {
+  opacity: 1;
+}
+[data-state="lost"] .glow,
+[data-state="lost"] .haze,
+[data-state="lost"] .vignette {
+  opacity: 0;
+}
+
+/* --- Reduced motion -------------------------------------------------------
+   fork.tsx never starts the rAF loop, never attaches pointer/touch listeners
+   and never writes an inline transform when this matches, so there is nothing
+   to switch off here except the transitions this file introduced. The commit
+   itself is unaffected (commit() already routes straight through under
+   reduced motion — see fork.tsx). */
+@media (prefers-reduced-motion: reduce) {
+  .glow,
+  .haze,
+  .vignette,
+  .planeWrap {
+    transition: none !important;
+    animation: none !important;
+    will-change: auto;
+  }
+}

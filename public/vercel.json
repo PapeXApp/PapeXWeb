@@ -1,8 +1,4 @@
 {
-  "routes": [
-    { "src": "/favicon.ico", "dest": "/papex-favicon.ico" },
-    { "src": "/favicon.png", "dest": "/papex-favicon.png" }
-  ],
   "headers": [
     {
       "source": "/(.*)",

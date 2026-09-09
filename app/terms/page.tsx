@@ -11,14 +11,14 @@ export default function TermsPage() {
 
         <article className="relative z-10 max-w-4xl mx-auto bg-white/90 backdrop-blur-md border border-white/30 rounded-3xl shadow-xl p-8 md:p-12 space-y-8">
           <header className="space-y-4 text-center md:text-left">
-            <div className="space-y-1 text-sm font-semibold text-[#ff9933] tracking-wide uppercase">
+            <div className="space-y-1 text-sm font-semibold text-[#EB7100] tracking-wide uppercase">
               <p>Effective Date: November 10, 2025</p>
               <p>Last Updated: November 7, 2025</p>
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-[#0a3d62] uppercase">
+            <h1 className="text-3xl md:text-4xl font-bold text-[#00121D] uppercase">
               PapeX, Inc. – Terms of Agreement
             </h1>
-            <p className="text-[#0a3d62]/80 leading-relaxed">
+            <p className="text-[#00121D]/80 leading-relaxed">
               These Terms of Agreement (the &ldquo;Terms&rdquo;) constitute a legally binding contract between you (&ldquo;User,&rdquo;
               &ldquo;you,&rdquo; or &ldquo;your&rdquo;) and PapeX, Inc. (&ldquo;PapeX,&rdquo; &ldquo;Company,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;), a Texas S-Corporation. By
               accessing or using the PapeX mobile application, website, or integrated services (collectively, the &ldquo;Service&rdquo;),
@@ -28,8 +28,8 @@ export default function TermsPage() {
           </header>
 
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#0a3d62]">1. Acceptance of Terms</h2>
-            <p className="text-[#0a3d62]/80 leading-relaxed">
+            <h2 className="text-2xl font-semibold text-[#00121D]">1. Acceptance of Terms</h2>
+            <p className="text-[#00121D]/80 leading-relaxed">
               These Terms constitute a legally binding contract between you and PapeX, Inc. By accessing or using the Service,
               you acknowledge that you have read, understood, and agree to be bound by these Terms and our Privacy Policy. If
               you do not agree, you must discontinue use of the Service immediately.
@@ -37,8 +37,8 @@ export default function TermsPage() {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#0a3d62]">2. Description of the Service</h2>
-            <p className="text-[#0a3d62]/80 leading-relaxed">
+            <h2 className="text-2xl font-semibold text-[#00121D]">2. Description of the Service</h2>
+            <p className="text-[#00121D]/80 leading-relaxed">
               PapeX provides tools for users to digitize, store, and manage receipts, integrate with point-of-sale (&ldquo;POS&rdquo;)
               systems, and export financial data to external accounting or tax software. The Service is offered on a beta basis
               and may include features that are experimental or subject to modification.
@@ -46,8 +46,8 @@ export default function TermsPage() {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#0a3d62]">3. Eligibility and Account Registration</h2>
-            <p className="text-[#0a3d62]/80 leading-relaxed">
+            <h2 className="text-2xl font-semibold text-[#00121D]">3. Eligibility and Account Registration</h2>
+            <p className="text-[#00121D]/80 leading-relaxed">
               To use the Service, you must be at least sixteen (16) years old or the minimum age required by local law. Users
               under the age of eighteen (18) must have permission from a parent or legal guardian. You agree to provide
               accurate, current, and complete registration information and to maintain the confidentiality of your account
@@ -56,8 +56,8 @@ export default function TermsPage() {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#0a3d62]">4. Beta Program and Future Subscriptions</h2>
-            <p className="text-[#0a3d62]/80 leading-relaxed">
+            <h2 className="text-2xl font-semibold text-[#00121D]">4. Beta Program and Future Subscriptions</h2>
+            <p className="text-[#00121D]/80 leading-relaxed">
               The PapeX Beta Program is provided free of charge. Following public release, subscription fees may apply after
               users reach their free receipt export token limit. Users who retain receipts within the app without exporting data
               will continue to have free access. PapeX reserves the right to introduce pricing tiers or additional paid features in
@@ -66,8 +66,8 @@ export default function TermsPage() {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#0a3d62]">5. User Responsibilities and Conduct</h2>
-            <p className="text-[#0a3d62]/80 leading-relaxed">
+            <h2 className="text-2xl font-semibold text-[#00121D]">5. User Responsibilities and Conduct</h2>
+            <p className="text-[#00121D]/80 leading-relaxed">
               You agree not to: (i) use the Service for any unlawful, fraudulent, or unauthorized purpose; (ii) attempt to
               reverse-engineer, copy, or modify the Service or its software; (iii) interfere with or disrupt servers, networks, or
               security features; (iv) engage in automated data scraping or bulk extraction of information; or (v) misrepresent
@@ -77,8 +77,8 @@ export default function TermsPage() {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#0a3d62]">6. Ownership and Intellectual Property</h2>
-            <p className="text-[#0a3d62]/80 leading-relaxed">
+            <h2 className="text-2xl font-semibold text-[#00121D]">6. Ownership and Intellectual Property</h2>
+            <p className="text-[#00121D]/80 leading-relaxed">
               All intellectual property rights in the Service, including but not limited to the software, code, user interfaces, and
               design elements, are owned by PapeX, Inc. and protected under U.S. and international copyright and trademark
               laws. You are granted a limited, non-exclusive, non-transferable, revocable license to use the Service solely in
@@ -87,20 +87,20 @@ export default function TermsPage() {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#0a3d62]">7. License to Use the Service</h2>
-            <p className="text-[#0a3d62]/80 leading-relaxed">
+            <h2 className="text-2xl font-semibold text-[#00121D]">7. License to Use the Service</h2>
+            <p className="text-[#00121D]/80 leading-relaxed">
               Subject to your compliance with these Terms, PapeX grants you a personal, non-commercial, revocable license to
               use the Service. You may not sublicense, sell, lease, or otherwise transfer access to the Service.
             </p>
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#0a3d62]">8. Data and Privacy</h2>
-            <p className="text-[#0a3d62]/80 leading-relaxed">
+            <h2 className="text-2xl font-semibold text-[#00121D]">8. Data and Privacy</h2>
+            <p className="text-[#00121D]/80 leading-relaxed">
               Your use of the Service is governed by the PapeX Privacy Policy, available at{' '}
               <a
                 href="https://www.papex.app/privacy"
-                className="text-[#ff9933] underline decoration-transparent hover:decoration-[#ff9933] transition"
+                className="text-[#EB7100] underline decoration-transparent hover:decoration-[#EB7100] transition"
               >
                 https://www.papex.app/privacy
               </a>. By using the Service, you consent to the collection, processing, and storage of your information as outlined
@@ -109,8 +109,8 @@ export default function TermsPage() {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#0a3d62]">9. Third-Party Services and Integrations</h2>
-            <p className="text-[#0a3d62]/80 leading-relaxed">
+            <h2 className="text-2xl font-semibold text-[#00121D]">9. Third-Party Services and Integrations</h2>
+            <p className="text-[#00121D]/80 leading-relaxed">
               The Service may include integrations with third-party services, including POS systems and financial management
               applications. PapeX is not responsible for the availability, accuracy, or security of third-party services, and your
               use of such integrations is governed by their respective terms and policies.
@@ -118,8 +118,8 @@ export default function TermsPage() {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#0a3d62]">10. Disclaimers and Limitation of Liability</h2>
-            <p className="text-[#0a3d62]/80 leading-relaxed">
+            <h2 className="text-2xl font-semibold text-[#00121D]">10. Disclaimers and Limitation of Liability</h2>
+            <p className="text-[#00121D]/80 leading-relaxed">
               The Service, including all beta features, is provided &ldquo;as is&rdquo; and &ldquo;as available,&rdquo; without warranties of any kind.
               PapeX disclaims all implied warranties of merchantability, fitness for a particular purpose, and non-infringement. To
               the maximum extent permitted by law, PapeX shall not be liable for any indirect, incidental, consequential, or
@@ -130,8 +130,8 @@ export default function TermsPage() {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#0a3d62]">11. Indemnification</h2>
-            <p className="text-[#0a3d62]/80 leading-relaxed">
+            <h2 className="text-2xl font-semibold text-[#00121D]">11. Indemnification</h2>
+            <p className="text-[#00121D]/80 leading-relaxed">
               You agree to indemnify, defend, and hold harmless PapeX, its officers, employees, agents, and affiliates from any
               claims, liabilities, damages, losses, and expenses (including reasonable attorneys&rsquo; fees) arising from your use or
               misuse of the Service, violation of these Terms, or infringement of any third-party rights.
@@ -139,16 +139,16 @@ export default function TermsPage() {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#0a3d62]">12. Termination</h2>
-            <p className="text-[#0a3d62]/80 leading-relaxed">
+            <h2 className="text-2xl font-semibold text-[#00121D]">12. Termination</h2>
+            <p className="text-[#00121D]/80 leading-relaxed">
               PapeX may suspend or terminate your access to the Service at any time, with or without notice, for any reason,
               including violation of these Terms. Upon termination, all licenses granted to you shall immediately cease.
             </p>
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#0a3d62]">13. Electronic Signature and Consent</h2>
-            <p className="text-[#0a3d62]/80 leading-relaxed">
+            <h2 className="text-2xl font-semibold text-[#00121D]">13. Electronic Signature and Consent</h2>
+            <p className="text-[#00121D]/80 leading-relaxed">
               By creating an account, clicking &ldquo;I Agree,&rdquo; or otherwise electronically accepting these Terms, you consent to the
               use of electronic records and signatures in connection with your use of the Service. You acknowledge that your
               electronic agreement constitutes your signature and acceptance of this contract to the same extent as a written
@@ -158,8 +158,8 @@ export default function TermsPage() {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#0a3d62]">14. Governing Law and Dispute Resolution</h2>
-            <p className="text-[#0a3d62]/80 leading-relaxed">
+            <h2 className="text-2xl font-semibold text-[#00121D]">14. Governing Law and Dispute Resolution</h2>
+            <p className="text-[#00121D]/80 leading-relaxed">
               These Terms are governed by the laws of the State of Texas, without regard to conflict of laws principles. Any
               dispute arising under or relating to these Terms shall be resolved through binding arbitration conducted in Travis
               County, Texas, under the rules of the American Arbitration Association. Judgment on the arbitration award may be
@@ -168,16 +168,16 @@ export default function TermsPage() {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#0a3d62]">15. Changes to Terms</h2>
-            <p className="text-[#0a3d62]/80 leading-relaxed">
+            <h2 className="text-2xl font-semibold text-[#00121D]">15. Changes to Terms</h2>
+            <p className="text-[#00121D]/80 leading-relaxed">
               PapeX reserves the right to modify or update these Terms at any time. Updates will be posted within the Service or
               on our website. Continued use of the Service after any changes constitutes acceptance of the revised Terms.
             </p>
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#0a3d62]">16. Contact Information</h2>
-            <div className="text-[#0a3d62]/80 leading-relaxed space-y-2">
+            <h2 className="text-2xl font-semibold text-[#00121D]">16. Contact Information</h2>
+            <div className="text-[#00121D]/80 leading-relaxed space-y-2">
               <p>Questions or concerns regarding these Terms should be directed to:</p>
               <address className="not-italic">
                 <div>PapeX, Inc.</div>
@@ -186,7 +186,7 @@ export default function TermsPage() {
                   Email:{' '}
                   <a
                     href="mailto:legal@papex.app"
-                    className="text-[#ff9933] underline decoration-transparent hover:decoration-[#ff9933] transition"
+                    className="text-[#EB7100] underline decoration-transparent hover:decoration-[#EB7100] transition"
                   >
                     legal@papex.app
                   </a>
@@ -195,7 +195,7 @@ export default function TermsPage() {
                   Website:{' '}
                   <a
                     href="https://www.papex.app"
-                    className="text-[#ff9933] underline decoration-transparent hover:decoration-[#ff9933] transition"
+                    className="text-[#EB7100] underline decoration-transparent hover:decoration-[#EB7100] transition"
                   >
                     https://www.papex.app
                   </a>

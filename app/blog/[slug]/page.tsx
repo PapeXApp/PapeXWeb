@@ -142,8 +142,8 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
       <FramerPageShell>
         <div className="container mx-auto py-8 px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl font-bold text-[#0a3d62] mb-4">Blog Post Not Found</h1>
-            <p className="text-lg text-[#0a3d62] mb-8">The blog post you're looking for doesn't exist.</p>
+            <h1 className="text-4xl font-bold text-[#00121D] mb-4">Blog Post Not Found</h1>
+            <p className="text-lg text-[#00121D] mb-8">The blog post you're looking for doesn't exist.</p>
             <Link href="/blog">
               <Button className="gradient-accent text-white">
                 <ArrowLeft className="h-4 w-4 mr-2" />
@@ -161,7 +161,7 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
 
       <div className="container mx-auto py-8 px-4">
         <div className="max-w-4xl mx-auto">
-          <Link href="/blog" className="inline-flex items-center gap-2 text-[#0a3d62] hover:text-[#ff9933] transition-colors duration-300 mb-8">
+          <Link href="/blog" className="inline-flex items-center gap-2 text-[#00121D] hover:text-[#EB7100] transition-colors duration-300 mb-8">
             <ArrowLeft className="h-4 w-4" />
             Back to Blog
           </Link>
@@ -181,11 +181,11 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
             <div className="p-8">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-1 text-[#0a3d62] bg-[#0a3d62]/10 px-3 py-1 rounded-full">
+                  <div className="flex items-center gap-1 text-[#00121D] bg-[#00121D]/10 px-3 py-1 rounded-full">
                     <Calendar className="h-3 w-3" />
                     <span className="text-sm font-medium">{formatDate(post.createdAt)}</span>
                   </div>
-                  <div className="flex items-center gap-1 text-[#ff9933] bg-[#ff9933]/10 px-3 py-1 rounded-full">
+                  <div className="flex items-center gap-1 text-[#EB7100] bg-[#EB7100]/10 px-3 py-1 rounded-full">
                     <Clock className="h-3 w-3" />
                     <span className="text-sm font-medium">{post.readTime}</span>
                   </div>
@@ -197,7 +197,7 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
                     onClick={() => setEditModalOpen(true)}
                     variant="outline"
                     size="sm"
-                    className="flex items-center gap-2 hover:bg-[#ff9933] hover:text-white transition-colors"
+                    className="flex items-center gap-2 hover:bg-[#EB7100] hover:text-white transition-colors"
                   >
                     <Edit className="h-4 w-4" />
                     Edit Post
@@ -205,26 +205,26 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
                 )}
               </div>
 
-              <h1 className="text-3xl md:text-4xl font-bold text-[#0a3d62] mb-6 leading-tight">
+              <h1 className="text-3xl md:text-4xl font-bold text-[#00121D] mb-6 leading-tight">
                 {post.title}
               </h1>
 
               <div className="prose prose-lg max-w-none">
-                <p className="text-xl text-[#0a3d62] mb-8 font-medium leading-relaxed">
+                <p className="text-xl text-[#00121D] mb-8 font-medium leading-relaxed">
                   {post.excerpt}
                 </p>
 
                 <div
-                  className="text-[#0a3d62] leading-relaxed space-y-6 prose prose-lg max-w-none blog-content"
+                  className="text-[#00121D] leading-relaxed space-y-6 prose prose-lg max-w-none blog-content"
                   style={{
                     lineHeight: '1.8'
                   }}
                   dangerouslySetInnerHTML={{
                     __html: (post.content || "")
-                      .replace(/<h2>/g, '<h2 style="font-size: 1.875rem; font-weight: bold; color: #0a3d62; margin: 1.5rem 0 1rem 0; font-family: var(--font-kameron), Georgia, serif;">')
-                      .replace(/<h3>/g, '<h3 style="font-size: 1.5rem; font-weight: bold; color: #0a3d62; margin: 1.25rem 0 0.75rem 0; font-family: var(--font-kameron), Georgia, serif;">')
-                      .replace(/<a /g, '<a style="color: #ff9933; text-decoration: underline; font-weight: 500;" ')
-                      .replace(/<strong>/g, '<strong style="font-weight: bold; color: #0a3d62;">')
+                      .replace(/<h2>/g, '<h2 style="font-size: 1.875rem; font-weight: bold; color: #00121D; margin: 1.5rem 0 1rem 0; font-family: var(--font-kameron), Georgia, serif;">')
+                      .replace(/<h3>/g, '<h3 style="font-size: 1.5rem; font-weight: bold; color: #00121D; margin: 1.25rem 0 0.75rem 0; font-family: var(--font-kameron), Georgia, serif;">')
+                      .replace(/<a /g, '<a style="color: #EB7100; text-decoration: underline; font-weight: 500;" ')
+                      .replace(/<strong>/g, '<strong style="font-weight: bold; color: #00121D;">')
                   }}
                 />
               </div>
@@ -233,10 +233,10 @@ export default function BlogDetailPage({ params }: BlogDetailPageProps) {
 
           <div className="mt-12 text-center">
             <div className="bg-white/95 backdrop-blur-sm p-8 rounded-2xl border border-white/30 shadow-lg">
-              <h2 className="text-2xl font-bold text-[#0a3d62] mb-4 font-gloock">
-                Ready to go <span className="bg-gradient-to-r from-[#ff9933] to-[#e67e22] bg-clip-text text-transparent">digital</span>?
+              <h2 className="text-2xl font-bold text-[#00121D] mb-4 font-gloock">
+                Ready to go <span className="bg-gradient-to-r from-[#EB7100] to-[#cc6300] bg-clip-text text-transparent">digital</span>?
               </h2>
-              <p className="text-[#0a3d62] mb-6 font-medium">
+              <p className="text-[#00121D] mb-6 font-medium">
                 Join our waitlist to be among the first to experience the future of digital receipts.
               </p>
               <Link href="/waitlist" className="btn-download">

@@ -1,5 +1,5 @@
+import Image from "next/image"
 import { Reveal } from "@/components/motion"
-import { PlaceholderBox } from "./PlaceholderBox"
 import { rdhDevice } from "./content"
 
 export function RdhDevice() {
@@ -12,12 +12,13 @@ export function RdhDevice() {
       {/* The spec's fixed 1fr/1fr grid needs an explicit single-column
           collapse below the 820px breakpoint. */}
       <div className="mx-auto grid max-w-[1150px] grid-cols-1 items-center gap-[clamp(30px,5vw,70px)] max-[820px]:grid-cols-1 min-[821px]:grid-cols-2">
-        <Reveal variant="mask">
-          <PlaceholderBox
-            label={rdhDevice.placeholderLabel}
-            aspectRatio="1/1"
-            theme="light"
-            borderRadius="22px"
+        <Reveal variant="mask" className="flex items-center justify-center p-[clamp(20px,4vw,44px)]">
+          <Image
+            src="/product/rdh-device.svg"
+            alt={rdhDevice.deviceAlt}
+            width={460}
+            height={374}
+            className="h-auto w-full max-w-[460px]"
           />
         </Reveal>
 

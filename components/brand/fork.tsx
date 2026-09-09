@@ -11,31 +11,148 @@
 // Color continuity is the whole point: the halves are flat brand colors and
 // each destination hero opens on the same flat color, so the expansion reads
 // as one surface growing rather than a page swap. Do not put gradients on the
-// half backgrounds.
+// half backgrounds. (The atmosphere layers below are separate absolutely
+// positioned children — the half's own `background` stays flat.)
 //
 // Commit inputs (README "The commit interaction"):
 //   wheel up   |deltaY| >= 6  -> customer      wheel down -> business
 //   swipe      |dy|     >= 40 -> same mapping
 //   click either half, or a nav link while the fork is up (FORK_COMMIT_EVENT)
 // A wheelLock latch means one trackpad flick can only ever commit once.
+//
+// ---------------------------------------------------------------------------
+// MOTION — what is locked and what is not
+//
+// LOCKED (styles/papex-brand.css, do not touch from here): the commit itself.
+// flex-grow 1 -> 40 / 0.0001 over 620ms cubic-bezier(.7,0,.3,1); the losing
+// half's content opacity .5s / transform .6s scale(.96); the seam opacity .3s;
+// the hard commit at COMMIT_MS.
+//
+// THIS FILE OWNS everything around it: the resting depth of each half, the
+// pointer-tracked light, and the paper plane's idle drift -> approach bank ->
+// fly-out. All of it runs on `transform` / `opacity` only, and all of the
+// continuous parts are driven from ONE rAF loop (`useEffect` below) that
+// writes straight to DOM nodes — no state, no re-render, no per-element
+// listener. It is cancelled on unmount and never starts at all under
+// `prefers-reduced-motion: reduce`.
+//
+// The fly-out is a CSS transition kicked off imperatively at commit time
+// (FLY_MS / FADE_MS, both < COMMIT_MS) on the plane wrappers, which are NOT
+// part of the flex-grow interpolation — so it cannot delay or fight it.
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import { useReducedMotion } from 'motion/react'
 import { PATH_HREF, setPathChoice, type PathChoice } from '@/lib/pathChoice'
 import { FORK_COMMIT_EVENT } from './site-nav'
+import styles from './fork.module.css'
 
 const COMMIT_MS = 620
 const WHEEL_MIN = 6
 const SWIPE_MIN = 40
 
+// --- Ambience tuning --------------------------------------------------------
+
+// Resting opacity of the plane watermark. The prototype's .05/.06 is below the
+// threshold where the mark reads as anything — on a navy field it is a smudge,
+// not a brand. These are the values where it reads as depth in the surface and
+// still loses decisively to the headline. The light half sits lower because
+// navy-on-off-white carries far more contrast per unit of alpha than
+// orange-on-navy does.
+const PLANE_REST_OPACITY: Record<PathChoice, number> = {
+  customer: 0.15,
+  business: 0.11,
+}
+
+// The brand plane's fixed angle — same as the nav logo's.
+const PLANE_REST_ROTATION = -8
+
+// Idle drift. Periods of 20-33s: the mark is never perfectly still, but no
+// single motion ever completes inside the time a visitor spends deciding, so
+// it reads as "held aloft" rather than as an animation playing.
+const IDLE_X = 5.5 // px
+const IDLE_Y = 7 // px
+const IDLE_ROT = 1.7 // deg
+
+// Approach: how far the plane banks toward the viewer at full scroll intent.
+const APPROACH_X = 24 // px, along the nose (the artwork noses up-and-right)
+const APPROACH_Y = -18 // px
+const APPROACH_ROT = 4.5 // deg — levelling out of the -8deg rest bank
+const APPROACH_SCALE = 0.12 // toward the viewer
+const RECEDE_SCALE = 0.06 // and away again on the half being scrolled away from
+
+// Pointer parallax depths, in px of travel per half-viewport of cursor motion.
+// Three different numbers on three layers is what turns a flat field of colour
+// into a lit volume: the light pool leads, the plane follows at a third of the
+// distance, the haze counter-moves.
+const GLOW_STRENGTH: Record<PathChoice, number> = { customer: 70, business: 60 }
+const HAZE_FACTOR = -0.42 // of GLOW_STRENGTH, i.e. opposite and shorter
+const PLANE_PARALLAX = 26
+
+// A cursor resting in one half is itself a statement of intent, and on a mouse
+// wheel there is almost no pre-commit window (|deltaY| >= 6 commits on the
+// first event), so hover is where desktop visitors actually see the approach.
+// Deliberately weaker than a real gesture, and capped well below 1.
+const HOVER_BIAS = 0.34
+
+const FLY_MS = 520 // winning plane leaves frame...
+const FADE_MS = 380 // ...while the other recedes. Both inside COMMIT_MS.
+
+const clamp = (value: number, min: number, max: number) =>
+  value < min ? min : value > max ? max : value
+
 export function Fork() {
   const router = useRouter()
+  const prefersReduced = useReducedMotion()
   const [committing, setCommitting] = useState<PathChoice | null>(null)
   // Refs, not state: the latch must be readable synchronously inside the
   // wheel handler on the very next event, before React re-renders.
   const lock = useRef(false)
   const timer = useRef<number | null>(null)
+
+  // Ambience nodes. Written to imperatively by the rAF loop.
+  const custHalf = useRef<HTMLButtonElement>(null)
+  const bizHalf = useRef<HTMLButtonElement>(null)
+  const custPlane = useRef<HTMLSpanElement>(null)
+  const bizPlane = useRef<HTMLSpanElement>(null)
+  const custGlow = useRef<HTMLSpanElement>(null)
+  const bizGlow = useRef<HTMLSpanElement>(null)
+  const custHaze = useRef<HTMLSpanElement>(null)
+  const bizHaze = useRef<HTMLSpanElement>(null)
+
+  const raf = useRef<number | null>(null)
+  // Scroll intent, -1 = all the way toward customers, +1 = toward business.
+  // Same sign convention as deltaY, so wheel deltas feed it directly.
+  const gesture = useRef(0)
+  const touching = useRef(false)
+  const pointer = useRef<{ x: number; y: number } | null>(null)
+
+  // Winner accelerates out of frame along its nose; loser recedes. Imperative
+  // rather than declarative because the exit vector needs the live viewport
+  // size, and because it must land in the same tick as the commit.
+  const flyOut = useCallback((winner: PathChoice) => {
+    if (raf.current !== null) {
+      cancelAnimationFrame(raf.current)
+      raf.current = null
+    }
+    const won = winner === 'customer' ? custPlane.current : bizPlane.current
+    const lost = winner === 'customer' ? bizPlane.current : custPlane.current
+
+    if (won) {
+      const dx = Math.round(window.innerWidth * 0.62)
+      const dy = Math.round(window.innerHeight * 0.58)
+      // ease-IN, so it reads as acceleration rather than a slide.
+      won.style.transition = `transform ${FLY_MS}ms cubic-bezier(.42,0,.92,.36), opacity ${FLY_MS}ms cubic-bezier(.5,0,1,1)`
+      won.style.transform = `translate3d(${dx}px, ${-dy}px, 0) rotate(-2deg) scale(1.5)`
+      won.style.opacity = '0'
+    }
+    if (lost) {
+      lost.style.transition = `transform ${FADE_MS}ms cubic-bezier(.4,0,.2,1), opacity ${FADE_MS}ms ease`
+      lost.style.transform = `translate3d(0,0,0) rotate(${PLANE_REST_ROTATION - 4}deg) scale(.82)`
+      lost.style.opacity = '0'
+    }
+  }, [])
 
   const commit = useCallback(
     (choice: PathChoice) => {
@@ -54,13 +171,14 @@ export function Fork() {
         return
       }
 
+      flyOut(choice)
       setCommitting(choice)
       timer.current = window.setTimeout(() => {
         window.scrollTo(0, 0)
         router.push(href)
       }, COMMIT_MS)
     },
-    [router],
+    [router, flyOut],
   )
 
   // Warm both destinations so the 620ms expansion is not followed by a stall.
@@ -71,20 +189,43 @@ export function Fork() {
 
   useEffect(() => {
     const onWheel = (event: WheelEvent) => {
-      if (lock.current || Math.abs(event.deltaY) < WHEEL_MIN) return
+      if (lock.current) return
+      if (Math.abs(event.deltaY) < WHEEL_MIN) {
+        // Below the commit threshold: this is approach, not a decision.
+        gesture.current = clamp(gesture.current + event.deltaY * 0.09, -1, 1)
+        return
+      }
       commit(event.deltaY < 0 ? 'customer' : 'business')
     }
 
     let startY = 0
     const onTouchStart = (event: TouchEvent) => {
       startY = event.touches[0].clientY
+      touching.current = true
+      gesture.current = 0
+    }
+    const onTouchMove = (event: TouchEvent) => {
+      if (lock.current) return
+      // 0..SWIPE_MIN of finger travel is the whole pre-commit window; map it
+      // onto the full intent range so the bank is fully expressed by the time
+      // the swipe actually commits.
+      gesture.current = clamp(
+        (startY - event.touches[0].clientY) / SWIPE_MIN,
+        -1,
+        1,
+      )
     }
     const onTouchEnd = (event: TouchEvent) => {
+      touching.current = false
       if (lock.current) return
       const dy = startY - event.changedTouches[0].clientY
       if (Math.abs(dy) < SWIPE_MIN) return
       // Swipe up (content moves up, dy > 0) reveals what is above: customers.
       commit(dy < 0 ? 'customer' : 'business')
+    }
+    const onTouchCancel = () => {
+      touching.current = false
+      gesture.current = 0
     }
 
     const onNavCommit = (event: Event) => {
@@ -94,7 +235,9 @@ export function Fork() {
 
     window.addEventListener('wheel', onWheel, { passive: true })
     window.addEventListener('touchstart', onTouchStart, { passive: true })
+    window.addEventListener('touchmove', onTouchMove, { passive: true })
     window.addEventListener('touchend', onTouchEnd, { passive: true })
+    window.addEventListener('touchcancel', onTouchCancel, { passive: true })
     window.addEventListener(FORK_COMMIT_EVENT, onNavCommit)
 
     // The fork owns the viewport; stop the page behind it from scrolling (and
@@ -105,12 +248,160 @@ export function Fork() {
     return () => {
       window.removeEventListener('wheel', onWheel)
       window.removeEventListener('touchstart', onTouchStart)
+      window.removeEventListener('touchmove', onTouchMove)
       window.removeEventListener('touchend', onTouchEnd)
+      window.removeEventListener('touchcancel', onTouchCancel)
       window.removeEventListener(FORK_COMMIT_EVENT, onNavCommit)
       document.body.style.overflow = previousOverflow
       if (timer.current !== null) window.clearTimeout(timer.current)
     }
   }, [commit])
+
+  // --- The single rAF loop --------------------------------------------------
+  // Idle drift + pointer parallax + approach bank for both halves, in one
+  // callback. Never starts under reduced motion (so there is nothing to
+  // "turn off" — the markup simply keeps its CSS rest transform), and is
+  // cancelled on unmount and by flyOut().
+  useEffect(() => {
+    if (prefersReduced) return
+    if (typeof window === 'undefined' || !window.matchMedia) return
+
+    const fine = window.matchMedia('(pointer:fine)').matches
+
+    const sides = [
+      {
+        side: 'customer' as PathChoice,
+        dir: -1, // negative intent points at this half
+        phase: 0,
+        half: custHalf.current,
+        plane: custPlane.current,
+        glow: custGlow.current,
+        haze: custHaze.current,
+        rect: null as DOMRect | null,
+      },
+      {
+        side: 'business' as PathChoice,
+        dir: 1,
+        phase: 2.3, // out of phase with the other plane; they never pulse together
+        half: bizHalf.current,
+        plane: bizPlane.current,
+        glow: bizGlow.current,
+        haze: bizHaze.current,
+        rect: null as DOMRect | null,
+      },
+    ]
+
+    const measure = () => {
+      for (const s of sides) s.rect = s.half?.getBoundingClientRect() ?? null
+    }
+    measure()
+
+    const onPointerMove = (event: PointerEvent) => {
+      pointer.current = { x: event.clientX, y: event.clientY }
+    }
+    if (fine) {
+      window.addEventListener('pointermove', onPointerMove, { passive: true })
+    }
+    window.addEventListener('resize', measure, { passive: true })
+
+    // Start the smoothed cursor at the viewport centre so nothing snaps into
+    // place on the first mousemove.
+    let smoothX = window.innerWidth / 2
+    let smoothY = window.innerHeight / 2
+    let intent = 0
+    let last = performance.now()
+    const started = last
+
+    const frame = (now: number) => {
+      raf.current = requestAnimationFrame(frame)
+
+      // Frame-rate independent smoothing: a 144Hz display and a struggling
+      // 30fps laptop settle at the same speed in wall-clock terms.
+      const dt = Math.min(48, now - last)
+      last = now
+      const steps = dt / 16.667
+      const k = 1 - Math.pow(0.9, steps)
+      const t = (now - started) / 1000
+
+      const target = pointer.current
+      if (target) {
+        smoothX += (target.x - smoothX) * k
+        smoothY += (target.y - smoothY) * k
+      }
+      const vw = window.innerWidth || 1
+      const vh = window.innerHeight || 1
+      const viewX = smoothX / vw - 0.5
+      const viewY = smoothY / vh - 0.5
+
+      // Scroll intent decays back to rest whenever the visitor stops pushing.
+      // A finger on the glass is exempt: it holds its value until it lifts.
+      if (!touching.current) {
+        gesture.current *= Math.pow(0.93, steps)
+        if (Math.abs(gesture.current) < 0.002) gesture.current = 0
+      }
+      const hover = fine && target ? clamp(viewY * 2, -1, 1) * HOVER_BIAS : 0
+      intent += (clamp(gesture.current + hover, -1, 1) - intent) * k
+
+      for (const s of sides) {
+        const rect = s.rect
+        if (rect && rect.width && rect.height) {
+          const hx = clamp(
+            (smoothX - (rect.left + rect.width / 2)) / rect.width,
+            -1,
+            1,
+          )
+          const hy = clamp(
+            (smoothY - (rect.top + rect.height / 2)) / rect.height,
+            -1,
+            1,
+          )
+          const strength = GLOW_STRENGTH[s.side]
+          if (s.glow) {
+            s.glow.style.transform = `translate3d(${(hx * strength).toFixed(2)}px,${(hy * strength).toFixed(2)}px,0)`
+          }
+          if (s.haze) {
+            const hz = strength * HAZE_FACTOR
+            s.haze.style.transform = `translate3d(${(hx * hz).toFixed(2)}px,${(hy * hz).toFixed(2)}px,0)`
+          }
+        }
+
+        const plane = s.plane
+        if (!plane) continue
+        // > 0: this half is the one being scrolled toward.
+        const approach = clamp(s.dir * intent, -1, 1)
+        const tx =
+          IDLE_X * Math.sin(t * 0.31 + s.phase) +
+          viewX * PLANE_PARALLAX +
+          approach * APPROACH_X
+        const ty =
+          IDLE_Y * Math.sin(t * 0.23 + s.phase * 1.7) +
+          viewY * PLANE_PARALLAX * 0.62 +
+          approach * APPROACH_Y
+        const rot =
+          PLANE_REST_ROTATION +
+          IDLE_ROT * Math.sin(t * 0.19 + s.phase * 0.6) +
+          approach * APPROACH_ROT
+        const scale =
+          1 + approach * (approach > 0 ? APPROACH_SCALE : RECEDE_SCALE)
+
+        plane.style.transform = `translate3d(${tx.toFixed(2)}px,${ty.toFixed(2)}px,0) rotate(${rot.toFixed(2)}deg) scale(${scale.toFixed(4)})`
+        plane.style.opacity = clamp(
+          PLANE_REST_OPACITY[s.side] * (1 + approach * 0.28),
+          0,
+          1,
+        ).toFixed(3)
+      }
+    }
+
+    raf.current = requestAnimationFrame(frame)
+
+    return () => {
+      if (raf.current !== null) cancelAnimationFrame(raf.current)
+      raf.current = null
+      window.removeEventListener('pointermove', onPointerMove)
+      window.removeEventListener('resize', measure)
+    }
+  }, [prefersReduced])
 
   const stateFor = (side: PathChoice) =>
     committing === null ? 'idle' : committing === side ? 'won' : 'lost'
@@ -118,6 +409,7 @@ export function Fork() {
   return (
     <div className="rd-fork" data-committing={committing !== null} data-nav-theme="dark">
       <button
+        ref={custHalf}
         type="button"
         className="rd-fork-half rd-hairlines"
         data-side="customer"
@@ -125,22 +417,25 @@ export function Fork() {
         onClick={() => commit('customer')}
         aria-label="Enter the customer site"
       >
+        <span ref={custGlow} className={styles.glow} aria-hidden="true" />
+        <span ref={custHaze} className={styles.haze} aria-hidden="true" />
+        <span className={styles.vignette} aria-hidden="true" />
+        <span className={styles.grain} aria-hidden="true" />
         <span
-          className="rd-fork-glow"
-          style={{
-            background:
-              'radial-gradient(120% 90% at 30% 20%, rgba(235,113,0,.16), transparent 60%)',
-          }}
+          ref={custPlane}
+          className={styles.planeWrap}
+          style={{ top: '22%', left: '5%', opacity: PLANE_REST_OPACITY.customer }}
           aria-hidden="true"
-        />
-        <Image
-          src="/brand/plane-white.png"
-          alt=""
-          width={260}
-          height={260}
-          className="rd-fork-watermark"
-          style={{ top: '22%', left: '5%', opacity: 0.05 }}
-        />
+        >
+          {/* Orange body / white lines — the dark-surface variant. */}
+          <Image
+            src="/brand/plane-orange-white.png"
+            alt=""
+            width={260}
+            height={260}
+            priority
+          />
+        </span>
         <span className="rd-fork-content">
           <span
             className="rd-eyebrow rd-eyebrow-wide"
@@ -171,47 +466,16 @@ export function Fork() {
         </span>
       </button>
 
+      {/* One centre-bright rule, no label. The designer deleted the "Choose
+          your path" span (and its rd-seam-glow pulse) in the latest prototype:
+          the seam is brightest at the middle and fades to both edges on its
+          own, and closing the gap the text left is the point. */}
       <div className="rd-fork-seam" aria-hidden="true">
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 14,
-            padding: '0 22px',
-            width: '100%',
-          }}
-        >
-          <div
-            style={{
-              height: 1,
-              flex: 1,
-              background: 'linear-gradient(90deg,transparent,rgba(235,113,0,.5))',
-            }}
-          />
-          <span
-            className="rd-seam-glow"
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 15,
-              fontWeight: 600,
-              color: 'var(--orange)',
-              whiteSpace: 'nowrap',
-              letterSpacing: '.02em',
-            }}
-          >
-            Choose your path
-          </span>
-          <div
-            style={{
-              height: 1,
-              flex: 1,
-              background: 'linear-gradient(90deg,rgba(235,113,0,.5),transparent)',
-            }}
-          />
-        </div>
+        <div className={styles.seamRule} />
       </div>
 
       <button
+        ref={bizHalf}
         type="button"
         className="rd-fork-half"
         data-side="business"
@@ -219,22 +483,28 @@ export function Fork() {
         onClick={() => commit('business')}
         aria-label="Enter the business site"
       >
+        <span ref={bizGlow} className={styles.glow} aria-hidden="true" />
+        <span ref={bizHaze} className={styles.haze} aria-hidden="true" />
+        <span className={styles.vignette} aria-hidden="true" />
+        <span className={styles.grain} aria-hidden="true" />
         <span
-          className="rd-fork-glow"
-          style={{
-            background:
-              'radial-gradient(120% 90% at 70% 80%, rgba(235,113,0,.1), transparent 60%)',
-          }}
+          ref={bizPlane}
+          className={styles.planeWrap}
+          style={{ bottom: '20%', right: '5%', opacity: PLANE_REST_OPACITY.business }}
           aria-hidden="true"
-        />
-        <Image
-          src="/brand/plane-blue.png"
-          alt=""
-          width={260}
-          height={260}
-          className="rd-fork-watermark"
-          style={{ bottom: '20%', right: '5%', opacity: 0.06 }}
-        />
+        >
+          {/* Navy body / white lines. The off-white half already spends its
+              orange on the eyebrow, the chevron and the light pool; a fourth
+              orange element there competes with the accent instead of
+              supporting it, and navy-on-off-white reads as depth. */}
+          <Image
+            src="/brand/plane-navy-white.png"
+            alt=""
+            width={260}
+            height={260}
+            priority
+          />
+        </span>
         <span className="rd-fork-content">
           <span
             className="rd-eyebrow rd-eyebrow-wide"

@@ -20,7 +20,7 @@ export default async function Image() {
           justifyContent: 'center',
           width: '100%',
           height: '100%',
-          background: 'linear-gradient(135deg, #0a3d62 0%, #114e78 52%, #1e6491 100%)',
+          background: 'linear-gradient(135deg, #00121D 0%, #0a2431 52%, #0c2937 100%)',
           padding: '70px 80px',
           fontFamily: 'sans-serif',
           overflow: 'hidden',
@@ -36,7 +36,7 @@ export default async function Image() {
             height: 560,
             borderRadius: 560,
             background:
-              'radial-gradient(circle, rgba(255,153,51,0.40) 0%, rgba(255,153,51,0) 70%)',
+              'radial-gradient(circle, rgba(235,113,0,0.40) 0%, rgba(235,113,0,0) 70%)',
             display: 'flex',
           }}
         />
@@ -85,7 +85,7 @@ export default async function Image() {
               width: 220,
               height: 8,
               borderRadius: 8,
-              background: '#ff9933',
+              background: '#EB7100',
             }}
           />
         </div>

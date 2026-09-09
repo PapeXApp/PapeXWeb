@@ -1,4 +1,4 @@
-import { Reveal } from "@/components/motion";
+import { Reveal, WordReveal } from "@/components/motion";
 import { featuresContent } from "./content";
 
 /** 2.5 Features — dark. Two mirrored rows revealed with the clip-path mask wipe. */
@@ -12,7 +12,29 @@ export function Features() {
         padding: "clamp(90px,11vw,160px) clamp(20px,5vw,56px)",
       }}
     >
-      <div className="grid" style={{ maxWidth: 1150, margin: "0 auto", gap: "clamp(70px,9vw,130px)" }}>
+      <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+        <Reveal variant="up">
+          <div
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              letterSpacing: ".24em",
+              textTransform: "uppercase",
+              color: "var(--orange)",
+              marginBottom: 18,
+            }}
+          >
+            {featuresContent.eyebrow}
+          </div>
+          <WordReveal
+            as="h2"
+            className="max-w-[20ch] [font-family:var(--font-display)] font-bold text-[clamp(30px,4.4vw,58px)] leading-[1.03] tracking-[-.02em]"
+          >
+            {featuresContent.headline}
+          </WordReveal>
+        </Reveal>
+      </div>
+      <div className="grid" style={{ maxWidth: 1150, margin: "clamp(46px,5vw,72px) auto 0", gap: "clamp(70px,9vw,130px)" }}>
         {featuresContent.rows.map((row, index) => {
           const mirrored = index % 2 === 1;
           return (
@@ -68,7 +90,7 @@ export function Features() {
                   order: mirrored ? 1 : 2,
                   aspectRatio: "4 / 3",
                   borderRadius: 20,
-                  background: "repeating-linear-gradient(45deg,#0a2431 0 12px,#0c2937 12px 24px)",
+                  background: "repeating-linear-gradient(45deg,var(--navy-raised) 0 12px,var(--navy-alt) 12px 24px)",
                   border: "1px solid var(--hairline-dark)",
                   /* TODO: promote to token — Courier New mono placeholder face has no shared var yet. */
                   fontFamily: "'Courier New', monospace",

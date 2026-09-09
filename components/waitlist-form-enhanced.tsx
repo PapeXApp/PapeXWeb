@@ -69,17 +69,17 @@ export default function WaitlistFormEnhanced() {
 
   if (isSubmitted) {
     return (
-      <div className="backdrop-blur-sm p-10 rounded-xl text-center border border-[#0a3d62]/10 bg-gradient-to-b from-white/80 to-[#e8f4fa]/80 shadow-md">
+      <div className="backdrop-blur-sm p-10 rounded-xl text-center border border-[#00121D]/10 bg-gradient-to-b from-white/80 to-[#F5F5F5]/80 shadow-md">
         <div className="flex justify-center mb-6">
-          <div className="w-20 h-20 rounded-full bg-gradient-to-r from-[#0a3d62]/10 to-[#ff9933]/10 flex items-center justify-center shadow-inner">
-            <CheckCircle className="h-10 w-10 text-[#ff9933]" />
+          <div className="w-20 h-20 rounded-full bg-gradient-to-r from-[#00121D]/10 to-[#EB7100]/10 flex items-center justify-center shadow-inner">
+            <CheckCircle className="h-10 w-10 text-[#EB7100]" />
           </div>
         </div>
-        <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-[#0a3d62] via-[#1a6eb0] to-[#ff9933] bg-clip-text text-transparent">Thank You for Joining!</h3>
-        <p className="text-lg text-[#0a3d62] mb-6 max-w-md mx-auto">
+        <h3 className="text-2xl font-bold mb-4 bg-gradient-to-r from-[#00121D] via-[#0c2937] to-[#EB7100] bg-clip-text text-transparent">Thank You for Joining!</h3>
+        <p className="text-lg text-[#00121D] mb-6 max-w-md mx-auto">
           You've been added to our waitlist. We'll keep you updated on our progress and let you know when PapeX launches!
         </p>
-        <div className="flex justify-center items-center space-x-2 text-[#0a3d62]/70">
+        <div className="flex justify-center items-center space-x-2 text-[#00121D]/70">
           <span className="text-sm">Confirmation sent to:</span>
           <span className="font-medium">{formState.email}</span>
         </div>
@@ -100,11 +100,11 @@ export default function WaitlistFormEnhanced() {
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className={`space-y-2 transition-all duration-300 ${focusedField === 'fullName' ? 'scale-[1.02]' : ''}`}>
-          <Label htmlFor="fullName" className="text-[#0a3d62] font-medium flex items-center">
-            Full Name <span className="text-[#ff9933] ml-1">*</span>
+          <Label htmlFor="fullName" className="text-[#00121D] font-medium flex items-center">
+            Full Name <span className="text-[#EB7100] ml-1">*</span>
           </Label>
           <div className="relative">
-            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#0a3d62]/40">
+            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#00121D]/40">
               <User className="h-5 w-5" />
             </div>
             <Input
@@ -116,17 +116,17 @@ export default function WaitlistFormEnhanced() {
               onChange={handleChange}
               onFocus={() => handleFocus('fullName')}
               onBlur={handleBlur}
-              className="border-[#0a3d62]/10 focus:border-[#ff9933] focus:ring-[#ff9933]/20 bg-white/90 text-[#0a3d62] rounded-lg h-12 shadow-sm pl-10 transition-all"
+              className="border-[#00121D]/10 focus:border-[#EB7100] focus:ring-[#EB7100]/20 bg-white/90 text-[#00121D] rounded-lg h-12 shadow-sm pl-10 transition-all"
             />
           </div>
         </div>
 
         <div className={`space-y-2 transition-all duration-300 ${focusedField === 'email' ? 'scale-[1.02]' : ''}`}>
-          <Label htmlFor="email" className="text-[#0a3d62] font-medium flex items-center">
-            Email Address <span className="text-[#ff9933] ml-1">*</span>
+          <Label htmlFor="email" className="text-[#00121D] font-medium flex items-center">
+            Email Address <span className="text-[#EB7100] ml-1">*</span>
           </Label>
           <div className="relative">
-            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#0a3d62]/40">
+            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#00121D]/40">
               <Mail className="h-5 w-5" />
             </div>
             <Input
@@ -139,7 +139,7 @@ export default function WaitlistFormEnhanced() {
               onChange={handleChange}
               onFocus={() => handleFocus('email')}
               onBlur={handleBlur}
-              className="border-[#0a3d62]/10 focus:border-[#ff9933] focus:ring-[#ff9933]/20 bg-white/90 text-[#0a3d62] rounded-lg h-12 shadow-sm pl-10 transition-all"
+              className="border-[#00121D]/10 focus:border-[#EB7100] focus:ring-[#EB7100]/20 bg-white/90 text-[#00121D] rounded-lg h-12 shadow-sm pl-10 transition-all"
             />
           </div>
         </div>
@@ -147,20 +147,20 @@ export default function WaitlistFormEnhanced() {
 
       <div className="relative py-2">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-[#0a3d62]/10"></div>
+          <div className="w-full border-t border-[#00121D]/10"></div>
         </div>
         <div className="relative flex justify-center">
-          <span className="bg-white/90 px-4 text-sm text-[#0a3d62]/60">Optional Information</span>
+          <span className="bg-white/90 px-4 text-sm text-[#00121D]/60">Optional Information</span>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className={`space-y-2 transition-all duration-300 ${focusedField === 'company' ? 'scale-[1.02]' : ''}`}>
-          <Label htmlFor="company" className="text-[#0a3d62] font-medium flex items-center">
-            Company <span className="text-[#0a3d62]/50 text-sm ml-1">(Optional)</span>
+          <Label htmlFor="company" className="text-[#00121D] font-medium flex items-center">
+            Company <span className="text-[#00121D]/50 text-sm ml-1">(Optional)</span>
           </Label>
           <div className="relative">
-            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#0a3d62]/40">
+            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#00121D]/40">
               <Briefcase className="h-5 w-5" />
             </div>
             <Input
@@ -171,17 +171,17 @@ export default function WaitlistFormEnhanced() {
               onChange={handleChange}
               onFocus={() => handleFocus('company')}
               onBlur={handleBlur}
-              className="border-[#0a3d62]/10 focus:border-[#ff9933] focus:ring-[#ff9933]/20 bg-white/90 text-[#0a3d62] rounded-lg h-12 shadow-sm pl-10 transition-all"
+              className="border-[#00121D]/10 focus:border-[#EB7100] focus:ring-[#EB7100]/20 bg-white/90 text-[#00121D] rounded-lg h-12 shadow-sm pl-10 transition-all"
             />
           </div>
         </div>
 
         <div className={`space-y-2 transition-all duration-300 ${focusedField === 'role' ? 'scale-[1.02]' : ''}`}>
-          <Label htmlFor="role" className="text-[#0a3d62] font-medium flex items-center">
-            Role <span className="text-[#0a3d62]/50 text-sm ml-1">(Optional)</span>
+          <Label htmlFor="role" className="text-[#00121D] font-medium flex items-center">
+            Role <span className="text-[#00121D]/50 text-sm ml-1">(Optional)</span>
           </Label>
           <div className="relative">
-            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#0a3d62]/40">
+            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#00121D]/40">
               <UserRound className="h-5 w-5" />
             </div>
             <Input
@@ -192,18 +192,18 @@ export default function WaitlistFormEnhanced() {
               onChange={handleChange}
               onFocus={() => handleFocus('role')}
               onBlur={handleBlur}
-              className="border-[#0a3d62]/10 focus:border-[#ff9933] focus:ring-[#ff9933]/20 bg-white/90 text-[#0a3d62] rounded-lg h-12 shadow-sm pl-10 transition-all"
+              className="border-[#00121D]/10 focus:border-[#EB7100] focus:ring-[#EB7100]/20 bg-white/90 text-[#00121D] rounded-lg h-12 shadow-sm pl-10 transition-all"
             />
           </div>
         </div>
       </div>
 
       <div className={`space-y-2 transition-all duration-300 ${focusedField === 'message' ? 'scale-[1.02]' : ''}`}>
-        <Label htmlFor="message" className="text-[#0a3d62] font-medium flex items-center">
-          Message <span className="text-[#0a3d62]/50 text-sm ml-1">(Optional)</span>
+        <Label htmlFor="message" className="text-[#00121D] font-medium flex items-center">
+          Message <span className="text-[#00121D]/50 text-sm ml-1">(Optional)</span>
         </Label>
         <div className="relative">
-          <div className="absolute left-3 top-4 text-[#0a3d62]/40">
+          <div className="absolute left-3 top-4 text-[#00121D]/40">
             <MessageSquare className="h-5 w-5" />
           </div>
           <Textarea
@@ -214,14 +214,14 @@ export default function WaitlistFormEnhanced() {
             onChange={handleChange}
             onFocus={() => handleFocus('message')}
             onBlur={handleBlur}
-            className="border-[#0a3d62]/10 focus:border-[#ff9933] focus:ring-[#ff9933]/20 bg-white/90 text-[#0a3d62] rounded-lg min-h-[120px] shadow-sm resize-none pl-10 transition-all pt-3"
+            className="border-[#00121D]/10 focus:border-[#EB7100] focus:ring-[#EB7100]/20 bg-white/90 text-[#00121D] rounded-lg min-h-[120px] shadow-sm resize-none pl-10 transition-all pt-3"
           />
         </div>
       </div>
 
       <Button
         type="submit"
-        className="w-full mt-4 bg-gradient-to-r from-[#ff9933] to-[#e67e22] hover:opacity-90 text-white font-medium shadow-lg border-none rounded-full py-6 h-auto transition-all hover:scale-[1.02] hover:shadow-xl"
+        className="w-full mt-4 bg-gradient-to-r from-[#EB7100] to-[#cc6300] hover:opacity-90 text-white font-medium shadow-lg border-none rounded-full py-6 h-auto transition-all hover:scale-[1.02] hover:shadow-xl"
         disabled={isLoading}
       >
         {isLoading ? (
@@ -237,8 +237,8 @@ export default function WaitlistFormEnhanced() {
         )}
       </Button>
 
-      <div className="p-4 rounded-xl bg-gradient-to-r from-[#0a3d62]/5 to-[#ff9933]/5 text-center">
-        <p className="text-xs text-[#0a3d62]/70">
+      <div className="p-4 rounded-xl bg-gradient-to-r from-[#00121D]/5 to-[#EB7100]/5 text-center">
+        <p className="text-xs text-[#00121D]/70">
           By joining our waitlist, you agree to receive updates about PapeX. We respect your privacy and will never share
           your information with third parties.
         </p>

@@ -32,30 +32,73 @@ export const heroContent = {
   eyebrow: "Digital receipts, one tap away",
   headline: "The last receipt you'll ever lose.",
   lead: "Tap your phone at checkout. Your receipt appears instantly — saved, searchable, and yours forever. No paper, no app required to start.",
-  ctaLabel: "Download the App",
+  ctaLabel: "Download the free app",
   ctaSubtext: "Free on the App Store",
   scrollCue: "Scroll",
   tapZoneLabel: "Tap to receive",
 };
 
+/** The hero's live receipt demo — hint copy per state, and the tappable phone's a11y label. */
+export const demoContent = {
+  phoneLabel: "Tap the phone on the PapeX reader to receive a receipt",
+  idleTitle: "Tap to receive",
+  idleSubtitle: "Tap the phone on the reader below — no app needed to get it.",
+  hint: {
+    idle: "Tap the phone to receive the receipt",
+    bowing: "Tapping…",
+    done: "Scroll it, or open the original receipt at the bottom.",
+  },
+  resetLabel: "Reset",
+  saveLabel: "Save to PapeX",
+  barLabel: "Receipt",
+  sectionTitles: {
+    items: "Items",
+    info: "Receipt Information",
+    original: "Original receipt",
+  },
+  sourceLabel: "RDH Receipt",
+  infoSourceLabel: "PapeX RDH · NFC tap",
+  decoderMissing: "Receipt decoder did not load.",
+};
+
+export type ProblemCardId = "print" | "forest" | "proof";
+
+export interface ProblemCard {
+  id: ProblemCardId;
+  question: string;
+  hint: string;
+  value: string;
+  caption: string;
+}
+
 export const problemContent = {
   eyebrow: "The problem",
   headline: "Paper receipts fade. So does the money you could get back.",
+  flipHint: "Tap to flip",
   // ILLUSTRATIVE PLACEHOLDER STATS — pending real sourcing, not factual.
-  stats: [
+  cards: [
     {
+      id: "print",
+      question: "How many receipts do we print?",
+      hint: "Tap to flip",
       value: "256B",
       caption: "receipts printed every year in the US alone — most in the trash by lunch.",
     },
     {
+      id: "forest",
+      question: "What does that cost the forest?",
+      hint: "Tap to flip",
       value: "10M",
       caption: "trees cut down annually to print receipts nobody keeps.",
     },
     {
+      id: "proof",
+      question: "What do you get back without proof?",
+      hint: "Tap to flip",
       value: "$0",
-      caption: "back on the return, warranty, or deduction — because you lost the proof.",
+      caption: "back on the return, warranty, or deduction — because you lost the receipt.",
     },
-  ],
+  ] satisfies ProblemCard[],
 };
 
 export const marqueeContent = {
@@ -72,44 +115,91 @@ export const marqueeContent = {
 
 export type PersonaId = "keeper" | "casual" | "non";
 
-export interface PersonaCard {
+export interface QuizOption {
+  label: string;
+  persona: PersonaId;
+}
+
+export interface QuizQuestion {
+  prompt: string;
+  options: QuizOption[];
+}
+
+export interface PersonaResult {
   id: PersonaId;
+  tag: string;
   eyebrow: string;
   title: string;
   body: string;
-  message: string;
 }
 
+/**
+ * Three-question quiz — four options per question, each tagged with the
+ * persona it scores. `casual` is listed FIRST in the tie-break reduce in
+ * Personas.tsx so it wins ties by design (the middle ground / safest read).
+ */
 export const personasContent = {
   eyebrow: "Which one are you?",
   headline: "Three kinds of receipt people. PapeX works for all of them.",
-  defaultStatus: "Tap a card above.",
-  cards: [
+  intro: "Three questions. We'll tell you which one you are.",
+  restartLabel: "Take it again",
+  questions: [
+    {
+      prompt: "Someone asks you for a receipt from three months ago.",
+      options: [
+        { label: "I pull it up in seconds. It's filed.", persona: "keeper" },
+        { label: "I'd find it — give me a drawer and a minute.", persona: "keeper" },
+        { label: "I'd search my email and hope.", persona: "casual" },
+        { label: "It's gone. It was gone that day.", persona: "non" },
+      ],
+    },
+    {
+      prompt: "At the register, they ask if you want the receipt.",
+      options: [
+        { label: "Always yes — it goes straight in the folder.", persona: "keeper" },
+        { label: "Yes, then it lives in my bag for a month.", persona: "casual" },
+        { label: "Only for the expensive stuff.", persona: "casual" },
+        { label: "No thanks. Every single time.", persona: "non" },
+      ],
+    },
+    {
+      prompt: "Something you bought breaks. The warranty needs proof of purchase.",
+      options: [
+        { label: "Already have it, sorted by date.", persona: "keeper" },
+        { label: "I'd dig for a while and probably win.", persona: "casual" },
+        { label: "I'd try my card statement instead.", persona: "casual" },
+        { label: "I'd just accept the loss and move on.", persona: "non" },
+      ],
+    },
+  ] satisfies QuizQuestion[],
+  results: [
     {
       id: "keeper",
-      eyebrow: "THE KEEPER",
-      title: "You save every receipt. Tax season is still a nightmare.",
-      body: "Auto-organized, searchable by store, date or amount, and exportable in one tap. Your system — upgraded. No more shoeboxes.",
-      message: "The Keeper — PapeX turns your shoebox into a searchable, exportable archive.",
+      tag: "That's you",
+      eyebrow: "The Keeper",
+      title: "You already do the work.",
+      body: "You keep everything, and it still takes effort. PapeX files it the moment you tap — searchable, exportable, no shoebox.",
     },
     {
       id: "casual",
-      eyebrow: "THE CASUAL",
-      title: "You keep receipts… when you remember.",
-      body: "You don't have to remember anymore. Every receipt is saved automatically when you tap. Returns, warranties, expenses — just there.",
-      message: 'The Casual — no more "where did that receipt go?" It\'s always saved for you.',
+      tag: "That's you",
+      eyebrow: "The Casual",
+      title: "You mean to keep them.",
+      body: "No more wondering where it went. Every receipt saves itself when you tap, so the one time you need it, it is already there.",
     },
     {
       id: "non",
-      eyebrow: "THE NON-KEEPER",
-      title: "You throw them all away. Until the one day you needed one.",
-      body: "You've been leaving money on the table. One tap and you're covered for deductions, warranties and returns — without changing a thing.",
-      message: "The Non-Keeper — you're now covered for every return, warranty and deduction.",
+      tag: "That's you",
+      eyebrow: "The Non-Keeper",
+      title: "You have been leaving money on the table.",
+      body: "Returns, warranties and deductions all need proof you never kept. One tap covers you, without changing how you shop.",
     },
-  ] satisfies PersonaCard[],
+  ] satisfies PersonaResult[],
 };
 
 export const featuresContent = {
+  eyebrow: "Once it's yours",
+  headline: "Every receipt, kept and searchable.",
   rows: [
     {
       eyebrow: "Everything in one place",
@@ -130,6 +220,15 @@ export const howItWorksContent = {
   eyebrow: "How it works",
   headline: "Get started in three taps.",
   mobileHeadline: "Get started in three taps.",
+  readerLabel: "PapeX RDH",
+  phoneAriaLabel: "Step through how PapeX works",
+  /** Cue line under the phone, one per step — index 2's "Replay" is bold in the design. */
+  cues: [
+    "Tap the phone on the reader",
+    "Tap again to put it away",
+    "That's it — saved, searchable, yours.",
+  ],
+  replayLabel: "Replay",
   steps: [
     {
       number: "01",

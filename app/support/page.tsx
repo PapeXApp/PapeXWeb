@@ -196,11 +196,11 @@ const CUSTOMER_QA: { q: string; a: React.ReactNode }[] = [
     a: (
       <>
         <span className="block">
-          <span className="font-semibold text-[#0a3d62]">Printer Replacement:</span> We went
+          <span className="font-semibold text-[#00121D]">Printer Replacement:</span> We went
           digital, but I can reprint one from the register if you need it.
         </span>
         <span className="mt-1 block">
-          <span className="font-semibold text-[#0a3d62]">Parallel Install:</span> Yep, you’ll still
+          <span className="font-semibold text-[#00121D]">Parallel Install:</span> Yep, you’ll still
           get a paper one too. The tap is just if you want it on your phone.
         </span>
       </>
@@ -221,19 +221,19 @@ function ContactBlock() {
     <div className="grid gap-4 sm:grid-cols-2">
       <a
         href="mailto:support@papex.app"
-        className="group rounded-2xl border border-[#0a3d62]/15 bg-white p-6 shadow-sm transition hover:border-[#ff9933] hover:shadow-md"
+        className="group rounded-2xl border border-[#00121D]/15 bg-white p-6 shadow-sm transition hover:border-[#EB7100] hover:shadow-md"
       >
-        <p className="text-xs font-semibold uppercase tracking-wide text-[#0a3d62]/50">Email us</p>
-        <p className="mt-2 text-2xl font-bold text-[#0a3d62] group-hover:text-[#ff9933] transition">
+        <p className="text-xs font-semibold uppercase tracking-wide text-[#00121D]/50">Email us</p>
+        <p className="mt-2 text-2xl font-bold text-[#00121D] group-hover:text-[#EB7100] transition">
           support@papex.app
         </p>
       </a>
       <a
         href="tel:+14152618675"
-        className="group rounded-2xl border border-[#0a3d62]/15 bg-white p-6 shadow-sm transition hover:border-[#ff9933] hover:shadow-md"
+        className="group rounded-2xl border border-[#00121D]/15 bg-white p-6 shadow-sm transition hover:border-[#EB7100] hover:shadow-md"
       >
-        <p className="text-xs font-semibold uppercase tracking-wide text-[#0a3d62]/50">Call us</p>
-        <p className="mt-2 text-2xl font-bold text-[#0a3d62] group-hover:text-[#ff9933] transition">
+        <p className="text-xs font-semibold uppercase tracking-wide text-[#00121D]/50">Call us</p>
+        <p className="mt-2 text-2xl font-bold text-[#00121D] group-hover:text-[#EB7100] transition">
           415-261-8675
         </p>
       </a>
@@ -248,13 +248,13 @@ export default function SupportPage() {
         <div className="mx-auto max-w-4xl space-y-12">
           {/* Header */}
           <header className="space-y-3 text-center md:text-left">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#ff9933]">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#EB7100]">
               PapeX RDH
             </p>
-            <h1 className="text-3xl md:text-4xl font-bold text-[#0a3d62] leading-tight">
+            <h1 className="text-3xl md:text-4xl font-bold text-[#00121D] leading-tight">
               Merchant Support
             </h1>
-            <p className="text-lg text-[#0a3d62]/70 leading-relaxed">
+            <p className="text-lg text-[#00121D]/70 leading-relaxed">
               Everything you need for your PapeX RDH.
             </p>
           </header>
@@ -264,14 +264,14 @@ export default function SupportPage() {
 
           {/* Status Light */}
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#0a3d62]">Status Light</h2>
-            <p className="text-[#0a3d62]/70 leading-relaxed">
+            <h2 className="text-2xl font-semibold text-[#00121D]">Status Light</h2>
+            <p className="text-[#00121D]/70 leading-relaxed">
               Your RDH has one visible status light. Here&rsquo;s what each state means:
             </p>
-            <div className="overflow-x-auto rounded-2xl border border-[#0a3d62]/15">
+            <div className="overflow-x-auto rounded-2xl border border-[#00121D]/15">
               <table className="w-full min-w-[38rem] text-sm">
                 <thead>
-                  <tr className="bg-[#0a3d62] text-white">
+                  <tr className="bg-[#00121D] text-white">
                     <th className="px-4 py-3 text-left font-semibold">Light</th>
                     <th className="px-4 py-3 text-left font-semibold">Means</th>
                     <th className="px-4 py-3 text-left font-semibold">What to do</th>
@@ -284,21 +284,21 @@ export default function SupportPage() {
                     return (
                       <tr
                         key={`${row.light}-${row.meaning}`}
-                        className={i % 2 === 0 ? 'bg-white' : 'bg-[#0a3d62]/[0.03]'}
+                        className={i % 2 === 0 ? 'bg-white' : 'bg-[#00121D]/[0.03]'}
                       >
-                        <td className="px-4 py-3 border-b border-[#0a3d62]/10">
-                          <span className="flex items-center gap-2 font-medium text-[#0a3d62]">
+                        <td className="px-4 py-3 border-b border-[#00121D]/10">
+                          <span className="flex items-center gap-2 font-medium text-[#00121D]">
                             <LightDot color={row.color} blink={row.blink} />
                             {row.light}
                           </span>
                         </td>
-                        <td className="px-4 py-3 border-b border-[#0a3d62]/10 text-[#0a3d62]/80">
+                        <td className="px-4 py-3 border-b border-[#00121D]/10 text-[#00121D]/80">
                           {row.meaning}
                         </td>
-                        <td className="px-4 py-3 border-b border-[#0a3d62]/10 text-[#0a3d62]/80">
+                        <td className="px-4 py-3 border-b border-[#00121D]/10 text-[#00121D]/80">
                           {row.detail}
                         </td>
-                        <td className="px-4 py-3 border-b border-[#0a3d62]/10">
+                        <td className="px-4 py-3 border-b border-[#00121D]/10">
                           <span className={`font-semibold ${sig.className}`}>{sig.label}</span>
                         </td>
                       </tr>
@@ -307,8 +307,8 @@ export default function SupportPage() {
                 </tbody>
               </table>
             </div>
-            <div className="rounded-xl border-l-4 border-[#ff9933] bg-[#ff9933]/[0.06] px-5 py-3">
-              <p className="text-[#0a3d62] font-medium">
+            <div className="rounded-xl border-l-4 border-[#EB7100] bg-[#EB7100]/[0.06] px-5 py-3">
+              <p className="text-[#00121D] font-medium">
                 <span className="font-semibold">Quick rule:</span> Green = tap now. Off = normal. Red
                 = check the table.
               </p>
@@ -317,28 +317,28 @@ export default function SupportPage() {
 
           {/* Troubleshooting */}
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#0a3d62]">Troubleshooting</h2>
+            <h2 className="text-2xl font-semibold text-[#00121D]">Troubleshooting</h2>
             <div className="space-y-3">
               {TROUBLESHOOTING.map((item) => (
                 <details
                   key={item.title}
-                  className="group rounded-2xl border border-[#0a3d62]/15 bg-white p-5 open:shadow-sm"
+                  className="group rounded-2xl border border-[#00121D]/15 bg-white p-5 open:shadow-sm"
                 >
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold text-[#0a3d62]">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold text-[#00121D]">
                     <span>{item.title}</span>
                     <span
                       aria-hidden
-                      className="text-[#ff9933] transition-transform group-open:rotate-45 text-xl leading-none"
+                      className="text-[#EB7100] transition-transform group-open:rotate-45 text-xl leading-none"
                     >
                       +
                     </span>
                   </summary>
                   <ul className="mt-4 space-y-2 pl-1">
                     {item.steps.map((step, i) => (
-                      <li key={i} className="flex gap-3 text-[#0a3d62]/80 leading-relaxed">
+                      <li key={i} className="flex gap-3 text-[#00121D]/80 leading-relaxed">
                         <span
                           aria-hidden
-                          className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#ff9933]"
+                          className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#EB7100]"
                         />
                         <span>{step}</span>
                       </li>
@@ -351,13 +351,13 @@ export default function SupportPage() {
 
           {/* Do's and Don'ts */}
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#0a3d62]">Do&rsquo;s and Don&rsquo;ts</h2>
+            <h2 className="text-2xl font-semibold text-[#00121D]">Do&rsquo;s and Don&rsquo;ts</h2>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="rounded-2xl border border-green-200 bg-green-50/50 p-6">
                 <h3 className="text-lg font-semibold text-green-700">Do</h3>
                 <ul className="mt-4 space-y-3">
                   {DOS.map((item) => (
-                    <li key={item} className="flex gap-3 text-[#0a3d62]/85 leading-relaxed">
+                    <li key={item} className="flex gap-3 text-[#00121D]/85 leading-relaxed">
                       <span aria-hidden className="mt-0.5 font-bold text-green-600">
                         ✓
                       </span>
@@ -370,7 +370,7 @@ export default function SupportPage() {
                 <h3 className="text-lg font-semibold text-red-600">Don&rsquo;t</h3>
                 <ul className="mt-4 space-y-3">
                   {DONTS.map((item) => (
-                    <li key={item} className="flex gap-3 text-[#0a3d62]/85 leading-relaxed">
+                    <li key={item} className="flex gap-3 text-[#00121D]/85 leading-relaxed">
                       <span aria-hidden className="mt-0.5 font-bold text-red-500">
                         ✕
                       </span>
@@ -386,26 +386,26 @@ export default function SupportPage() {
               items-start so a collapsed box next to an expanded one keeps its
               own height instead of stretching to match its row neighbour. */}
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#0a3d62]">FAQ&rsquo;s</h2>
-            <p className="text-[#0a3d62]/70 leading-relaxed">
+            <h2 className="text-2xl font-semibold text-[#00121D]">FAQ&rsquo;s</h2>
+            <p className="text-[#00121D]/70 leading-relaxed">
               Quick answers you can give at the counter.
             </p>
             <div className="grid items-start gap-3 sm:grid-cols-2">
               {CUSTOMER_QA.map((item) => (
                 <details
                   key={item.q}
-                  className="group rounded-xl border border-[#0a3d62]/15 bg-white p-4 open:shadow-sm"
+                  className="group rounded-xl border border-[#00121D]/15 bg-white p-4 open:shadow-sm"
                 >
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-sm font-semibold text-[#0a3d62]">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-sm font-semibold text-[#00121D]">
                     <span>{item.q}</span>
                     <span
                       aria-hidden
-                      className="flex-shrink-0 text-[#ff9933] transition-transform group-open:rotate-45 text-lg leading-none"
+                      className="flex-shrink-0 text-[#EB7100] transition-transform group-open:rotate-45 text-lg leading-none"
                     >
                       +
                     </span>
                   </summary>
-                  <div className="mt-3 text-sm text-[#0a3d62]/85 leading-relaxed">{item.a}</div>
+                  <div className="mt-3 text-sm text-[#00121D]/85 leading-relaxed">{item.a}</div>
                 </details>
               ))}
             </div>
@@ -416,9 +416,9 @@ export default function SupportPage() {
               outranks Tailwind's `text-white` on links (class+element > class). The
               `!text-white` important modifier is required so the button label is
               visible (white) rather than inheriting the dark body color. */}
-          <section className="overflow-hidden rounded-2xl border-t-4 border-[#ff9933] bg-gradient-to-b from-[#0a3d62] to-[#1e5b82] p-8 shadow-md">
+          <section className="overflow-hidden rounded-2xl border-t-4 border-[#EB7100] bg-gradient-to-b from-[#00121D] to-[#0a2431] p-8 shadow-md">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-white/10 text-[#ff9933]">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-white/10 text-[#EB7100]">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="24"
@@ -443,7 +443,7 @@ export default function SupportPage() {
                 </p>
                 <Link
                   href="/pci"
-                  className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#ff9933] px-6 py-3 text-sm font-semibold !text-white shadow-sm transition hover:bg-[#e67e22]"
+                  className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#EB7100] px-6 py-3 text-sm font-semibold !text-white shadow-sm transition hover:bg-[#cc6300]"
                 >
                   View PCI compliance statement
                   <svg
@@ -467,8 +467,8 @@ export default function SupportPage() {
           </section>
 
           {/* Footer contact block repeated */}
-          <footer className="border-t border-[#0a3d62]/10 pt-8 space-y-4">
-            <h2 className="text-lg font-semibold text-[#0a3d62]">Contact PapeX</h2>
+          <footer className="border-t border-[#00121D]/10 pt-8 space-y-4">
+            <h2 className="text-lg font-semibold text-[#00121D]">Contact PapeX</h2>
             <ContactBlock />
           </footer>
         </div>

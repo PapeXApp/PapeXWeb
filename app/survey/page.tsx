@@ -7,7 +7,7 @@ export default function SurveyPage() {
     <FramerPageShell>
       <div className="container mx-auto py-8 px-4">
         <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-8">
-          <div className="bg-[#0a3d62] text-white py-4 px-6 rounded-t-lg -mt-8 -mx-8 mb-8">
+          <div className="bg-[#00121D] text-white py-4 px-6 rounded-t-lg -mt-8 -mx-8 mb-8">
             <h1 className="text-3xl font-bold text-center font-gloock">Receipts and Coupons Survey</h1>
             <p className="text-center mt-2 opacity-90">Help us understand your preferences</p>
           </div>

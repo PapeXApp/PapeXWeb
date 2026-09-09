@@ -123,6 +123,944 @@
   box-shadow: 0 26px 55px rgba(235, 113, 0, 0.22);
 }
 
+/* ==========================================================================
+ * Hero live receipt demo — tap the phone, it bows onto the RDH, a REAL
+ * receipt (lib/escpos.ts + lib/receiptSummary.ts, see NfcPhone.tsx) decodes
+ * into App-Clip-styled UI (`.ac*`). Colours below are the App Clip's OWN
+ * theme, deliberately not this site's — see DemoReceiptView.tsx's doc
+ * comment and design-prototype/NOTES.md. Never swap these for --navy/--orange.
+ * ========================================================================== */
+
+.demoStage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.demoPhone {
+  position: relative;
+  z-index: 2;
+  cursor: pointer;
+  outline: none;
+  border-radius: 44px;
+}
+.demoPhone:focus-visible {
+  box-shadow: 0 0 0 3px rgba(251, 133, 0, 0.6);
+}
+
+.demoTilt {
+  transition: transform 0.42s cubic-bezier(0.45, 0, 0.2, 1);
+  transform-origin: 50% 100%;
+}
+.demoPhoneBowing .demoTilt {
+  transform: translateY(34px) rotate(7deg);
+}
+
+/* 346px+ is the point a standard 32-column receipt body stops needing to pan. */
+.demoShell {
+  position: relative;
+  width: clamp(288px, 34vw, 376px);
+  border-radius: 42px;
+  background: linear-gradient(160deg, #2a2d36, #15171d);
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 44px 90px rgba(0, 0, 0, 0.55);
+  padding: 11px;
+}
+
+/* Height is viewport-relative, not width-relative: the phone AND the reader
+   beneath it must both be visible together or the tap is undiscoverable. */
+.demoScreen {
+  position: relative;
+  height: clamp(380px, calc(100vh - 342px), 610px);
+  border-radius: 32px;
+  background: #181a20;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.demoNotch {
+  position: absolute;
+  top: 9px;
+  left: 50%;
+  margin-left: -52px;
+  width: 104px;
+  height: 26px;
+  background: #0b0c10;
+  border-radius: 0 0 16px 16px;
+  z-index: 6;
+}
+
+.demoRdh {
+  position: relative;
+  z-index: 1;
+  margin-top: clamp(-84px, -6.2vw, -36px);
+  transform: translateX(clamp(26px, 8.4vw, 108px));
+  width: clamp(212px, 21.5vw, 286px);
+  line-height: 0;
+  filter: drop-shadow(0 24px 44px rgba(0, 0, 0, 0.55));
+}
+.demoRdh svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+.rdhLed {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  transform-origin: 29px 59px;
+}
+.rdhLedPulsing {
+  opacity: 1;
+  transform: scale(1.5);
+}
+
+.demoHintRow {
+  min-height: 22px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13.5px;
+  color: rgba(245, 245, 245, 0.55);
+}
+.demoResetLink {
+  cursor: pointer;
+  color: var(--orange);
+  font-weight: 600;
+  font: inherit;
+  font-size: 13.5px;
+  background: none;
+  border: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+.demoResetLink:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* brand bar */
+.acBar {
+  flex: 0 0 auto;
+  padding: 34px 20px 8px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: linear-gradient(180deg, rgba(251, 133, 0, 0.14), rgba(251, 133, 0, 0));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+.acWordmark {
+  font-size: 17px;
+  font-weight: 500;
+  color: #f4f4f4;
+  letter-spacing: -0.01em;
+}
+.acDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: #fb8500;
+}
+.acBarLabel {
+  margin-left: auto;
+  font-size: 12px;
+  color: #c4c7cc;
+}
+
+.acScroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+.acCard {
+  background: rgba(20, 26, 36, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
+  padding: 16px;
+}
+.acSectionTitle {
+  font-size: 20px;
+  font-weight: 500;
+  color: #2b7fc6;
+  margin-bottom: 4px;
+}
+
+.acMerchant {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.acMonoBadge {
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #fb8500;
+  color: #fb8500;
+  font-size: 24px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.acMname {
+  font-size: 24px;
+  font-weight: 500;
+  color: #f4f4f4;
+  line-height: 1.15;
+}
+.acMaddr {
+  font-size: 14px;
+  color: #c4c7cc;
+  line-height: 1.35;
+}
+.acMdate {
+  font-size: 12px;
+  font-weight: 300;
+  color: #fb8500;
+  padding-top: 2px;
+}
+.acMsrc {
+  font-size: 12px;
+  color: #c4c7cc;
+  padding-top: 2px;
+}
+
+.acItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+.acItem:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.acItemName {
+  font-size: 16px;
+  font-weight: 500;
+  color: #f4f4f4;
+  line-height: 1.3;
+}
+.acItemQty {
+  font-size: 12px;
+  color: #9aa1a8;
+}
+.acItemPrice {
+  font-size: 16px;
+  font-weight: 500;
+  color: #f4f4f4;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.acTrow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 6px 0;
+}
+.acTlabel {
+  font-size: 16px;
+  color: #c4c7cc;
+}
+.acTval {
+  font-size: 16px;
+  font-weight: 500;
+  color: #f4f4f4;
+  font-variant-numeric: tabular-nums;
+}
+.acTvalBrand {
+  color: #2b7fc6;
+}
+.acTrule {
+  height: 2px;
+  background: #fb8500;
+  margin: 4px 0;
+}
+.acGrandLabel {
+  font-size: 20px;
+  font-weight: 500;
+  color: #fb8500;
+}
+.acGrandVal {
+  font-size: 24px;
+  font-weight: 500;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+.acChip {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #fff;
+  padding: 3px 7px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.acInforow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+.acInforow:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.acInfolabel {
+  font-size: 15px;
+  color: #c4c7cc;
+}
+.acInfoval {
+  font-size: 15px;
+  font-weight: 500;
+  color: #f4f4f4;
+  text-align: right;
+}
+
+.acOrig summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 20px;
+  font-weight: 500;
+  color: #2b7fc6;
+}
+.acOrig summary::-webkit-details-marker {
+  display: none;
+}
+.acChev {
+  transition: transform 0.25s ease;
+  color: #2b7fc6;
+  font-size: 13px;
+}
+.acOrig[open] .acChev {
+  transform: rotate(180deg);
+}
+/* white-space:pre is required — column alignment IS the receipt. */
+.acBody {
+  margin-top: 12px;
+  font-family: var(--font-mono);
+  color: #c4c7cc;
+  line-height: 1.55;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+.acLine {
+  white-space: pre;
+  font-size: 13px;
+}
+.acLine.acLineB {
+  font-weight: 700;
+}
+.acLine.acLineU {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+/* exactly one size class is emitted per line — mirrors the else-if chain in
+   PapeXWeb/app/r/ui.tsx styleClasses(), so don't make these additive */
+.acLine.acLineMd {
+  font-size: 15px;
+}
+.acLine.acLineLg {
+  font-size: 18px;
+}
+.acLine.acLineFb {
+  font-size: 11px;
+}
+.acLine.acAlCenter {
+  text-align: center;
+}
+.acLine.acAlRight {
+  text-align: right;
+}
+
+.acFoot {
+  flex: 0 0 auto;
+  padding: 16px 20px 20px;
+  background: #181a20;
+  display: flex;
+  gap: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.acBtn {
+  flex: 1;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  padding: 13px 0;
+  border-radius: 14px;
+  background: #fb8500;
+  color: #fff;
+  transition: opacity 0.2s;
+}
+.acBtn:hover {
+  opacity: 0.82;
+}
+
+.acIdle {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 32px;
+  text-align: center;
+  background: #181a20;
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+.demoPhoneDone .acIdle {
+  opacity: 0;
+  transform: scale(1.04);
+  pointer-events: none;
+}
+.acIdleRing {
+  position: relative;
+  width: 78px;
+  height: 78px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.acIdleRing span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  border: 2px solid #fb8500;
+  animation: nfcRipple 2.4s ease-out infinite;
+}
+.acIdleRing span:nth-child(2) {
+  animation-delay: 1.2s;
+}
+.acIdleRingDot {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #fb8500;
+  box-shadow: 0 0 0 8px rgba(251, 133, 0, 0.16);
+}
+.acIdleT {
+  font-size: 17px;
+  font-weight: 500;
+  color: #f4f4f4;
+}
+.acIdleS {
+  font-size: 13.5px;
+  color: #9aa1a8;
+  line-height: 1.45;
+}
+
+.acLive {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.demoPhoneDone .acLive {
+  opacity: 1;
+  transform: none;
+}
+
+/* ==========================================================================
+ * Problem — three tap-to-flip cards, each with a scripted scene on its back.
+ * ========================================================================== */
+
+.flipCard {
+  perspective: 1400px;
+  cursor: pointer;
+  outline: none;
+  height: 340px;
+}
+.flipCardInner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.flipCardFlipped .flipCardInner {
+  transform: rotateY(180deg);
+}
+.flipFace {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: var(--r-card);
+  background: #fff;
+  border: 1.5px solid var(--hairline-1);
+  box-shadow: 0 10px 30px rgba(0, 18, 29, 0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 26px 22px;
+  overflow: hidden;
+  text-align: center;
+}
+.flipFaceBack {
+  transform: rotateY(180deg);
+}
+.flipCard:hover .flipFace {
+  box-shadow: 0 20px 44px rgba(0, 18, 29, 0.12);
+}
+.flipHint {
+  position: absolute;
+  bottom: 16px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--orange);
+}
+.flipStage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: var(--r-card);
+}
+.flipNum {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(44px, 5.4vw, 68px);
+  color: var(--orange);
+  line-height: 1;
+}
+.flipCap {
+  margin-top: 10px;
+  font-size: 15px;
+  color: var(--body-on-light);
+  line-height: 1.45;
+  max-width: 26ch;
+}
+.flipResult {
+  position: relative;
+  z-index: 3;
+  opacity: 0;
+}
+.flipReveal {
+  animation: flipPop 0.62s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes flipPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.62);
+  }
+  64% {
+    opacity: 1;
+    transform: scale(1.07);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* card A — 256B: receipts shooting out of a printer, 240ms -> 40ms ramp */
+.scenePrinter {
+  position: absolute;
+  top: 26px;
+  left: 50%;
+  margin-left: -52px;
+  width: 104px;
+  height: 26px;
+  border-radius: 6px 6px 3px 3px;
+  background: linear-gradient(160deg, var(--navy-raised), var(--navy-deep));
+  box-shadow: 0 6px 14px rgba(0, 18, 29, 0.28);
+}
+.scenePrinter::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 4px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(245, 245, 245, 0.28);
+}
+.sceneSlip {
+  position: absolute;
+  top: 48px;
+  left: 50%;
+  width: 34px;
+  height: 46px;
+  margin-left: -17px;
+  background: #fff;
+  border: 1px solid var(--hairline-3);
+  border-radius: 2px;
+  opacity: 0;
+  box-shadow: 0 3px 8px rgba(0, 18, 29, 0.14);
+  animation: sceneEject 1.15s ease-in forwards;
+}
+.sceneSlipLine {
+  position: absolute;
+  left: 5px;
+  right: 5px;
+  height: 1.5px;
+  background: var(--hairline-3);
+  display: block;
+}
+@keyframes sceneEject {
+  0% {
+    opacity: 0;
+    transform: translate(0, -14px) rotate(0);
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), 190px) rotate(var(--rot));
+  }
+}
+
+/* card B — 10M: a forest grows in, then one axe swing takes it down */
+.sceneGround {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 34px;
+  height: 2px;
+  background: rgba(0, 18, 29, 0.14);
+}
+.sceneTree {
+  position: absolute;
+  bottom: 36px;
+  transform-origin: bottom center;
+  opacity: 0;
+  animation: sceneGrow 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.sceneTreeFelled {
+  animation: sceneFell 0.5s cubic-bezier(0.6, 0, 0.4, 1) forwards;
+}
+.sceneTreeCanopy {
+  display: block;
+  width: 0;
+  height: 0;
+  border-left: 9px solid transparent;
+  border-right: 9px solid transparent;
+  border-bottom: 26px solid #2f7d4f;
+}
+.sceneTreeTrunk {
+  display: block;
+  width: 4px;
+  height: 10px;
+  margin: 0 auto;
+  background: #6b4a2f;
+}
+@keyframes sceneGrow {
+  0% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes sceneFell {
+  0% {
+    transform: rotate(0);
+  }
+  100% {
+    transform: rotate(82deg);
+    opacity: 0.12;
+  }
+}
+.sceneAxe {
+  position: absolute;
+  top: 44%;
+  left: -30%;
+  width: 64px;
+  height: 5px;
+  background: linear-gradient(90deg, #6b4a2f 60%, #9aa3a8 60%);
+  border-radius: 2px;
+  opacity: 0;
+  transform-origin: left center;
+}
+.sceneAxeSwing {
+  animation: sceneSwing 0.62s cubic-bezier(0.5, 0, 0.3, 1) forwards;
+}
+@keyframes sceneSwing {
+  0% {
+    opacity: 0;
+    left: -30%;
+    transform: rotate(-38deg);
+  }
+  20% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+    left: 108%;
+    transform: rotate(26deg);
+  }
+  100% {
+    opacity: 0;
+    left: 130%;
+    transform: rotate(26deg);
+  }
+}
+
+/* card C — $0: one receipt feeds out with nothing on it */
+.sceneZero {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  margin-left: -52px;
+  width: 104px;
+  padding: 14px 10px 16px;
+  background: #fff;
+  border: 1px solid var(--hairline-3);
+  border-radius: 3px;
+  box-shadow: 0 8px 20px rgba(0, 18, 29, 0.12);
+  opacity: 0;
+}
+.sceneZeroFeed {
+  animation: sceneFeed 0.85s cubic-bezier(0.16, 1, 0.3, 1) 120ms forwards;
+}
+@keyframes sceneFeed {
+  0% {
+    opacity: 0;
+    transform: translateY(-104%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================================================
+ * Personas — three-question quiz (12 options, keeper/casual/non scoring).
+ * ========================================================================== */
+
+.quiz {
+  max-width: 760px;
+  margin: clamp(40px, 5vw, 64px) auto 0;
+  position: relative;
+  min-height: 330px;
+}
+.quizCard {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(14px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.quizCardOn {
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+  position: relative;
+}
+.quizPrompt {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(22px, 2.6vw, 30px);
+  line-height: 1.25;
+  color: var(--navy);
+  text-align: center;
+  max-width: 24ch;
+  margin: 0 auto 26px;
+}
+.quizOpts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+.quizOpt {
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--navy);
+  background: #fff;
+  border: 1.5px solid var(--hairline-3);
+  border-radius: 14px;
+  padding: 16px 18px;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+.quizOpt:hover {
+  border-color: var(--orange);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(235, 113, 0, 0.14);
+}
+.quizSteps {
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 26px;
+}
+.quizPip {
+  width: 26px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(0, 18, 29, 0.13);
+  transition: background 0.3s;
+}
+.quizPipOn {
+  background: var(--orange);
+}
+.quizResults {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+.quizResult {
+  position: relative;
+  background: #fff;
+  border: 1.5px solid var(--hairline-3);
+  border-radius: 18px;
+  padding: 26px 22px;
+  text-align: left;
+  opacity: 0.66;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.35s ease, box-shadow 0.35s ease,
+    opacity 0.35s ease;
+}
+.quizResultYou {
+  opacity: 1;
+  border-color: var(--orange);
+  border-width: 2.5px;
+  transform: translateY(-12px) scale(1.045);
+  box-shadow: 0 28px 58px rgba(235, 113, 0, 0.22);
+  z-index: 2;
+}
+.quizTag {
+  position: absolute;
+  top: -11px;
+  left: 22px;
+  background: var(--orange);
+  color: var(--navy);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 4px 11px;
+  border-radius: 999px;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+.quizResultYou .quizTag {
+  opacity: 1;
+  transform: none;
+}
+.quizResultEyebrow {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+  color: var(--orange);
+  text-transform: uppercase;
+}
+.quizResultTitle {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--navy);
+  margin-top: 9px;
+  line-height: 1.2;
+}
+.quizResultBody {
+  margin-top: 9px;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--body-on-light-2);
+}
+.quizRestart {
+  margin-top: 24px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--orange);
+  background: none;
+  border: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ==========================================================================
+ * How it works — two-click walkthrough (replaces the 300vh pinned scroll on
+ * this path; components/motion/PinnedSequence.tsx stays in the repo, just
+ * unused here).
+ * ========================================================================== */
+
+.walkPhone {
+  position: relative;
+  z-index: 2;
+  cursor: pointer;
+  outline: none;
+}
+.walkTilt {
+  transition: transform 0.42s cubic-bezier(0.45, 0, 0.2, 1);
+}
+.walkPhoneBowing .walkTilt {
+  transform: translateY(-26px) rotate(-4deg);
+}
+.walkScreen {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(12px);
+  transition: opacity 0.45s ease, transform 0.45s ease;
+  background: var(--offwhite);
+}
+.walkScreenOn {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+.walkCue {
+  font-size: 13.5px;
+  color: var(--muted-light-1);
+  min-height: 20px;
+  text-align: center;
+}
+.walkCue b {
+  color: var(--orange);
+  font-weight: 600;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .floaty,
   .floatySlow,
@@ -131,8 +1069,24 @@
   .nfcRingOffset,
   .pinnedNfcRing,
   .pinnedNfcRingOffset,
-  .arrowBob {
+  .arrowBob,
+  .demoTilt,
+  .walkTilt,
+  .flipCardInner,
+  .acIdle,
+  .acLive,
+  .acIdleRing span,
+  .rdhLed,
+  .quizCard,
+  .quizResult,
+  .quizTag,
+  .sceneSlip,
+  .sceneTree,
+  .sceneAxe,
+  .sceneZero,
+  .flipReveal {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
   }
 }

@@ -16,8 +16,8 @@ interface PlaceholderBoxProps {
 
 const STRIPE_THEME = {
   dark: {
-    a: "#0a2431",
-    b: "#0c2937",
+    a: "var(--navy-raised)",
+    b: "var(--navy-alt)",
     border: "rgba(255,255,255,.08)",
     text: "rgba(245,245,245,.4)",
   },

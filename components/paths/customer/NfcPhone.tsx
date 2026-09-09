@@ -1,146 +1,130 @@
 "use client";
 
-import { useState } from "react";
-import { receipt, heroContent } from "./content";
-import { ReceiptCard } from "./ReceiptCard";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useReducedMotion } from "motion/react";
+import { parseEscPos } from "@/lib/escpos";
+import { summarizeReceipt } from "@/lib/receiptSummary";
+import { cn } from "@/lib/utils";
+import { demoContent } from "./content";
+import { demoReceiptBytes } from "./demoReceipt";
+import { DemoReceiptView } from "./DemoReceiptView";
+import { RdhDevice } from "./RdhDevice";
 import styles from "./customer.module.css";
 
+type DemoState = "idle" | "bowing" | "done";
+
+/** How long the phone stays bowed onto the reader before the receipt lands (see customer.module.css .demoTilt). */
+const DEMO_BOW_MS = 460;
+
 /**
- * The hero's NFC phone — the signature moment of the customer path.
- * Tapping it replays the receipt materialize/hold/dismiss loop on demand
- * (nice-to-have called out in the design README's open questions).
+ * The hero's live receipt demo — the biggest build in the customer path.
+ * Tapping the phone bows it onto an isometric RDH device (RdhDevice) and a
+ * REAL receipt decodes and renders in App-Clip-styled UI (DemoReceiptView).
+ *
+ * "Real" means the bytes in demoReceipt.ts go straight through THIS REPO'S
+ * OWN `lib/escpos.ts` (`parseEscPos`) and `lib/receiptSummary.ts`
+ * (`summarizeReceipt`) — computed once via useMemo, never re-implemented or
+ * ported from the design prototype's standalone decoder script.
  */
 export function NfcPhone() {
-  const [replayKey, setReplayKey] = useState(0);
+  const [demo, setDemo] = useState<DemoState>("idle");
+  const prefersReduced = useReducedMotion();
+  const bowTimer = useRef<number | undefined>(undefined);
+
+  useEffect(() => () => window.clearTimeout(bowTimer.current), []);
+
+  const summary = useMemo(() => {
+    const receipt = parseEscPos(demoReceiptBytes());
+    return summarizeReceipt(receipt.lines);
+  }, []);
+
+  function tap() {
+    if (demo === "done") {
+      setDemo("idle");
+      return;
+    }
+    if (demo !== "idle") return;
+    if (prefersReduced) {
+      setDemo("done");
+      return;
+    }
+    setDemo("bowing");
+    window.clearTimeout(bowTimer.current);
+    bowTimer.current = window.setTimeout(() => setDemo("done"), DEMO_BOW_MS);
+  }
+
+  function reset() {
+    if (demo !== "done") return;
+    window.clearTimeout(bowTimer.current);
+    setDemo("idle");
+  }
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      aria-label="Tap to replay the receipt animation"
-      onClick={() => setReplayKey((key) => key + 1)}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          setReplayKey((key) => key + 1);
-        }
-      }}
-      className={styles.floaty}
-      style={{ position: "relative", flexShrink: 0, cursor: "pointer" }}
-    >
+    <div className={styles.demoStage}>
       <div
-        style={{
-          position: "relative",
-          width: "clamp(230px,24vw,300px)",
-          height: "clamp(470px,49vw,610px)",
-          borderRadius: 44,
-          background: "linear-gradient(160deg,#0a2431,#04161f)",
-          border: "2px solid rgba(255,255,255,.1)",
-          boxShadow: "0 40px 80px rgba(0,0,0,.5), inset 0 0 0 8px var(--navy)",
-          padding: 16,
-          overflow: "hidden",
+        role="button"
+        tabIndex={0}
+        aria-label={demoContent.phoneLabel}
+        aria-pressed={demo !== "idle"}
+        onClick={tap}
+        onKeyDown={(event) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          tap();
         }}
+        className={cn(
+          styles.demoPhone,
+          demo === "bowing" && styles.demoPhoneBowing,
+          demo === "done" && styles.demoPhoneDone,
+        )}
       >
-        <div
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            top: 18,
-            left: "50%",
-            transform: "translateX(-50%)",
-            width: 96,
-            height: 26,
-            background: "var(--navy)",
-            borderRadius: "0 0 16px 16px",
-            zIndex: 5,
-          }}
-        />
-        <div
-          style={{
-            width: "100%",
-            height: "100%",
-            borderRadius: 30,
-            background: "var(--offwhite)",
-            overflow: "hidden",
-            position: "relative",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <div
-            className="flex items-center justify-between"
-            style={{ padding: "34px 18px 14px", background: "#fff", borderBottom: "1px solid #ececec" }}
-          >
-            <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 17, color: "var(--navy)" }}>
-              Receipts
-            </span>
-            <span
-              aria-hidden="true"
-              className="flex items-center justify-center"
-              style={{
-                width: 30,
-                height: 30,
-                borderRadius: "50%",
-                background: "var(--orange)",
-                color: "#fff",
-                fontSize: 13,
-                fontWeight: 700,
-              }}
-            >
-              P
-            </span>
-          </div>
-          <div style={{ flex: 1, padding: 14, position: "relative", background: "var(--offwhite)" }}>
-            <ReceiptCard key={replayKey} data={receipt} loop showActions />
-          </div>
-          <div
-            className="flex flex-col items-center"
-            style={{ padding: 16, gap: 6, background: "#fff", borderTop: "1px solid #ececec" }}
-          >
-            <div className="relative flex items-center justify-center" style={{ width: 52, height: 52 }}>
-              <span
-                aria-hidden="true"
-                className={styles.nfcRing}
-                style={{
-                  position: "absolute",
-                  top: "50%",
-                  left: "50%",
-                  width: 52,
-                  height: 52,
-                  borderRadius: "50%",
-                  border: "2px solid var(--orange)",
-                }}
-              />
-              <span
-                aria-hidden="true"
-                className={styles.nfcRingOffset}
-                style={{
-                  position: "absolute",
-                  top: "50%",
-                  left: "50%",
-                  width: 52,
-                  height: 52,
-                  borderRadius: "50%",
-                  border: "2px solid var(--orange)",
-                }}
-              />
-              <span
-                aria-hidden="true"
-                className="relative"
-                style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: "50%",
-                  background: "var(--orange)",
-                  boxShadow: "0 0 0 6px rgba(235,113,0,.18)",
-                }}
-              />
+        <div className={styles.demoTilt}>
+          <div className={styles.demoShell}>
+            <div aria-hidden="true" className={styles.demoNotch} />
+            <div className={styles.demoScreen}>
+              <div className={styles.acLive}>
+                <div className={styles.acBar}>
+                  <span className={styles.acWordmark}>papex</span>
+                  <span aria-hidden="true" className={styles.acDot} />
+                  <span className={styles.acBarLabel}>{demoContent.barLabel}</span>
+                </div>
+                <div className={styles.acScroll}>
+                  <DemoReceiptView summary={summary} />
+                </div>
+                <div className={styles.acFoot}>
+                  <button type="button" className={styles.acBtn}>
+                    {demoContent.saveLabel}
+                  </button>
+                </div>
+              </div>
+              <div className={styles.acIdle}>
+                <div aria-hidden="true" className={styles.acIdleRing}>
+                  <span />
+                  <span />
+                  <b className={styles.acIdleRingDot} />
+                </div>
+                <div className={styles.acIdleT}>{demoContent.idleTitle}</div>
+                <div className={styles.acIdleS}>{demoContent.idleSubtitle}</div>
+              </div>
             </div>
-            <span style={{ fontSize: 11, fontWeight: 600, color: "var(--navy)", letterSpacing: ".04em" }}>
-              {heroContent.tapZoneLabel}
-            </span>
           </div>
         </div>
+      </div>
+
+      <div aria-hidden="true" className={styles.demoRdh}>
+        <RdhDevice pulsing={demo === "bowing"} />
+      </div>
+
+      <div className={styles.demoHintRow}>
+        <span aria-live="polite">{demoContent.hint[demo]}</span>
+        <button
+          type="button"
+          onClick={reset}
+          disabled={demo !== "done"}
+          className={styles.demoResetLink}
+        >
+          {demoContent.resetLabel}
+        </button>
       </div>
     </div>
   );

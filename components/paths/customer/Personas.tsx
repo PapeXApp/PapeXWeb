@@ -2,17 +2,41 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Reveal, Ripple, WordReveal } from "@/components/motion";
+import { Reveal, WordReveal } from "@/components/motion";
 import { personasContent, type PersonaId } from "./content";
 import styles from "./customer.module.css";
 
-/** 2.4 Personas — white, interactive persona selection (keeper / casual / non-keeper). */
-export function Personas() {
-  const [selected, setSelected] = useState<PersonaId | null>(null);
+/** Tried casual-first so it wins ties by design — the middle ground / safest read. */
+const TIE_BREAK_ORDER: PersonaId[] = ["casual", "keeper", "non"];
 
-  const statusMessage = selected
-    ? personasContent.cards.find((card) => card.id === selected)?.message ?? personasContent.defaultStatus
-    : personasContent.defaultStatus;
+function emptyScore(): Record<PersonaId, number> {
+  return { keeper: 0, casual: 0, non: 0 };
+}
+
+/** 2.4 Personas — white, three-question quiz (12 options, keeper/casual/non scoring). */
+export function Personas() {
+  const questionCount = personasContent.questions.length;
+  const [step, setStep] = useState(0); // 0..questionCount-1 = questions, questionCount = result
+  const [score, setScore] = useState<Record<PersonaId, number>>(emptyScore);
+  const [winner, setWinner] = useState<PersonaId | null>(null);
+
+  function answer(persona: PersonaId) {
+    const next = { ...score, [persona]: score[persona] + 1 };
+    setScore(next);
+    if (step < questionCount - 1) {
+      setStep(step + 1);
+      return;
+    }
+    const result = TIE_BREAK_ORDER.reduce((a, b) => (next[b] > next[a] ? b : a), TIE_BREAK_ORDER[0]);
+    setWinner(result);
+    setStep(questionCount);
+  }
+
+  function restart() {
+    setScore(emptyScore());
+    setWinner(null);
+    setStep(0);
+  }
 
   return (
     <section
@@ -43,79 +67,67 @@ export function Personas() {
           >
             {personasContent.headline}
           </WordReveal>
+          <p style={{ margin: "18px auto 0", fontSize: 17, lineHeight: 1.55, color: "#5a5a5a", maxWidth: "46ch" }}>
+            {personasContent.intro}
+          </p>
         </Reveal>
 
-        <div
-          role="radiogroup"
-          aria-label="Which one are you?"
-          className="grid"
-          style={{
-            gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))",
-            gap: "clamp(16px,2vw,26px)",
-            marginTop: "clamp(50px,6vw,80px)",
-          }}
-        >
-          {personasContent.cards.map((card) => {
-            const isSelected = selected === card.id;
-            return (
-              <Reveal variant="up" key={card.id}>
-                <Ripple variant="orange">
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={isSelected}
-                    onClick={() => setSelected(card.id)}
-                    className={cn(
-                      "relative block w-full overflow-hidden text-left",
-                      styles.personaCard,
-                      isSelected && styles.personaCardSelected,
-                    )}
-                    style={{
-                      background: isSelected ? "#fff" : "var(--offwhite)",
-                      border: isSelected ? "1.5px solid var(--orange)" : "1.5px solid transparent",
-                      padding: "34px 30px",
-                      borderRadius: 20,
-                      transform: isSelected ? "translateY(-8px)" : "translateY(0)",
-                      boxShadow: isSelected ? "0 26px 55px rgba(235,113,0,.22)" : "none",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <div
-                      /* TODO: promote to token — README lists Courier New as the mono
-                       * placeholder/persona-eyebrow face but no --font-mono var exists yet. */
-                      style={{
-                        fontFamily: "'Courier New', monospace",
-                        fontSize: 12,
-                        letterSpacing: ".1em",
-                        color: "var(--orange)",
-                        marginBottom: 16,
-                      }}
+        <Reveal variant="up">
+          <div
+            className={styles.quiz}
+            role="group"
+            aria-label="Which one are you? — three question quiz"
+            aria-live="polite"
+          >
+            {personasContent.questions.map((question, i) => (
+              <div
+                key={question.prompt}
+                className={cn(styles.quizCard, step === i && styles.quizCardOn)}
+                aria-hidden={step !== i}
+              >
+                <div className={styles.quizPrompt}>{question.prompt}</div>
+                <div className={styles.quizOpts}>
+                  {question.options.map((option) => (
+                    <button
+                      key={option.label}
+                      type="button"
+                      className={styles.quizOpt}
+                      onClick={() => answer(option.persona)}
+                      disabled={step !== i}
                     >
-                      {card.eyebrow}
-                    </div>
-                    <h3
-                      style={{
-                        fontFamily: "var(--font-display)",
-                        fontWeight: 700,
-                        fontSize: 24,
-                        lineHeight: 1.15,
-                      }}
-                    >
-                      {card.title}
-                    </h3>
-                    <p style={{ marginTop: 14, fontSize: 15, lineHeight: 1.5, color: "#5a5a5a" }}>{card.body}</p>
-                  </button>
-                </Ripple>
-              </Reveal>
-            );
-          })}
-        </div>
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
 
-        <Reveal
-          variant="up"
-          style={{ textAlign: "center", marginTop: 36, fontSize: 15, color: "#8a8a8a", minHeight: 24 }}
-        >
-          <p aria-live="polite">{statusMessage}</p>
+            <div
+              className={cn(styles.quizCard, step === questionCount && styles.quizCardOn)}
+              style={{ textAlign: "center" }}
+              aria-hidden={step !== questionCount}
+            >
+              <div className={styles.quizResults}>
+                {personasContent.results.map((result) => (
+                  <div key={result.id} className={cn(styles.quizResult, winner === result.id && styles.quizResultYou)}>
+                    <span className={styles.quizTag}>{result.tag}</span>
+                    <div className={styles.quizResultEyebrow}>{result.eyebrow}</div>
+                    <div className={styles.quizResultTitle}>{result.title}</div>
+                    <p className={styles.quizResultBody}>{result.body}</p>
+                  </div>
+                ))}
+              </div>
+              <button type="button" className={styles.quizRestart} onClick={restart} disabled={step !== questionCount}>
+                {personasContent.restartLabel}
+              </button>
+            </div>
+          </div>
+
+          <div className={styles.quizSteps} aria-hidden="true">
+            {Array.from({ length: questionCount }).map((_, i) => (
+              <span key={i} className={cn(styles.quizPip, i <= Math.min(step, questionCount - 1) && styles.quizPipOn)} />
+            ))}
+          </div>
         </Reveal>
       </div>
     </section>

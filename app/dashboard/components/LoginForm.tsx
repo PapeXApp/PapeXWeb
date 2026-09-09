@@ -21,7 +21,7 @@ export function LoginForm({ onLogin }: { onLogin: () => void }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-[#0c4b76] p-8 rounded-lg max-w-sm mx-auto mt-24"
+      className="bg-[#0a2431] p-8 rounded-lg max-w-sm mx-auto mt-24"
     >
       <div className="space-y-6">
         <h2 className="text-2xl font-bold text-center text-white mb-2">Login</h2>
@@ -34,7 +34,7 @@ export function LoginForm({ onLogin }: { onLogin: () => void }) {
             placeholder="Username"
             value={username}
             onChange={e => setUsername(e.target.value)}
-            className="bg-white text-[#0a3d62]"
+            className="bg-white text-[#00121D]"
             autoComplete="username"
           />
         </div>
@@ -48,12 +48,12 @@ export function LoginForm({ onLogin }: { onLogin: () => void }) {
             placeholder="Password"
             value={password}
             onChange={e => setPassword(e.target.value)}
-            className="bg-white text-[#0a3d62]"
+            className="bg-white text-[#00121D]"
             autoComplete="current-password"
           />
         </div>
         {error && <div className="text-red-400 text-sm text-center">{error}</div>}
-        <Button type="submit" className="w-full bg-[#ff9933] hover:bg-[#e67e22] text-white py-6 mt-2">
+        <Button type="submit" className="w-full bg-[#EB7100] hover:bg-[#cc6300] text-white py-6 mt-2">
           Login
         </Button>
       </div>

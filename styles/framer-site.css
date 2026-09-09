@@ -2,12 +2,15 @@
 .framer-site, .framer-site *, .framer-site *::before, .framer-site *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html:has(.framer-site) { scroll-behavior: smooth; font-size: 16px; }
 .framer-site {
-  font-family: Inter, "Inter Placeholder", -apple-system, BlinkMacSystemFont, sans-serif;
-  color: #0a3d62;
+  /* Barlow/Kameron replace Inter for the re-skin (PapeXWeb CLAUDE.md /
+     app/fonts.ts) — both are already loaded as CSS vars on <html> in
+     app/layout.tsx, so no local font import is needed here. */
+  font-family: var(--font-barlow), "Helvetica Neue", Arial, sans-serif;
+  color: #00121d;
   background:
-    radial-gradient(120% 80% at 85% 8%, rgba(255, 153, 51, 0.20) 0%, rgba(255, 153, 51, 0) 44%),
-    radial-gradient(100% 70% at 8% 0%, rgba(44, 125, 160, 0.34) 0%, rgba(44, 125, 160, 0) 50%),
-    linear-gradient(180deg, #88c6ee 0%, #a0d0f0 22%, #c4dff2 50%, #eaf4fc 78%, #ffffff 100%);
+    radial-gradient(120% 80% at 85% 8%, rgba(235, 113, 0, 0.20) 0%, rgba(235, 113, 0, 0) 44%),
+    radial-gradient(100% 70% at 8% 0%, rgba(20, 64, 90, 0.34) 0%, rgba(20, 64, 90, 0) 50%),
+    linear-gradient(180deg, #d3d5d7 0%, #dcdedf 22%, #e9eaea 50%, #f5f5f5 78%, #ffffff 100%);
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
@@ -21,34 +24,34 @@ html:has(.framer-site) { scroll-behavior: smooth; font-size: 16px; }
 .framer-site :where(button) { font: inherit; cursor: pointer; border: none; background: none; }
 
 :root {
-  --text: #0a3d62;
-  --text-muted: #3d6c8a;
-  --text-muted-light: #5a86a3;
-  --orange: #ff9933;
-  --orange-dark: #e67e22;
-  --orange-deep: #d35400;
-  --navy: #0a3d62;
-  --navy-mid: #1e5b82;
-  --navy-teal: #2c7da0;
-  --light-blue: #d0e4f4;
-  --light-blue-200: #b8daf2;
-  --light-blue-300: #a0d0f0;
-  --light-blue-400: #88c6ee;
-  --light-blue-500: #70bcec;
+  --text: #00121d;
+  --text-muted: #4a4a4a;
+  --text-muted-light: #5a5a5a;
+  --orange: #eb7100;
+  --orange-dark: #cc6300;
+  --orange-deep: #c85f00;
+  --navy: #00121d;
+  --navy-mid: #0a2431;
+  --navy-teal: #14405a;
+  --light-blue: #eceded;
+  --light-blue-200: #e4e5e6;
+  --light-blue-300: #dcdedf;
+  --light-blue-400: #d3d5d7;
+  --light-blue-500: #c9ccce;
   --white: #fff;
   --max: 1300px;
   --pad: 70px;
   --radius-pill: 100px;
   --radius-card: 20px;
   --radius-card-lg: 24px;
-  --shadow-nav: 0 10px 24px rgba(10, 61, 98, 0.12);
-  --shadow-card: 5px 5px 24px rgba(10, 61, 98, 0.12);
-  --shadow-card-strong: 5px 5px 28px rgba(10, 61, 98, 0.18);
-  --shadow-pill: 4px 4px 14px rgba(10, 61, 98, 0.28);
-  --gradient-card: linear-gradient(180deg, #ffffff 0%, #ffffff 60%, #eaf4fc 100%);
-  --gradient-step: linear-gradient(314deg, #eaf4fc 0%, #d0e4f4 100%);
-  --font-display: Inter, sans-serif;
-  --font-label: "Geist", Inter, sans-serif;
+  --shadow-nav: 0 10px 24px rgba(0, 18, 29, 0.12);
+  --shadow-card: 5px 5px 24px rgba(0, 18, 29, 0.12);
+  --shadow-card-strong: 5px 5px 28px rgba(0, 18, 29, 0.18);
+  --shadow-pill: 4px 4px 14px rgba(0, 18, 29, 0.28);
+  --gradient-card: linear-gradient(180deg, #ffffff 0%, #ffffff 60%, #f5f5f5 100%);
+  --gradient-step: linear-gradient(314deg, #f5f5f5 0%, #eceded 100%);
+  --font-display: var(--font-kameron), Georgia, serif;
+  --font-label: var(--font-barlow), "Helvetica Neue", Arial, sans-serif;
 }
 
 img { display: block; max-width: 100%; height: auto; }
@@ -120,19 +123,19 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   justify-content: center;
   gap: 8px;
   padding: 8px 16px;
-  background: linear-gradient(135deg, #ff9933 0%, #d35400 100%);
+  background: linear-gradient(135deg, #eb7100 0%, #c85f00 100%);
   color: var(--white);
   font-family: var(--font-label);
   font-size: 15px;
   font-weight: 500;
   border-radius: var(--radius-pill);
-  box-shadow: 0 4px 12px rgba(211, 84, 0, 0.35);
+  box-shadow: 0 4px 12px rgba(200, 95, 0, 0.35);
   white-space: nowrap;
   transition: transform 0.2s, box-shadow 0.2s;
 }
 .btn-download:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(211, 84, 0, 0.45);
+  box-shadow: 0 6px 18px rgba(200, 95, 0, 0.45);
 }
 
 .nav-menu-btn {
@@ -231,8 +234,8 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(70% 60% at 88% 6%, rgba(255, 153, 51, 0.22) 0%, rgba(255, 153, 51, 0) 55%),
-    linear-gradient(180deg, rgba(112, 188, 236, 0.62) 0%, rgba(160, 208, 240, 0.34) 24%, rgba(255, 255, 255, 0) 55%);
+    radial-gradient(70% 60% at 88% 6%, rgba(235, 113, 0, 0.22) 0%, rgba(235, 113, 0, 0) 55%),
+    linear-gradient(180deg, rgba(0, 18, 29, 0.21) 0%, rgba(0, 18, 29, 0.13) 24%, rgba(255, 255, 255, 0) 55%);
 }
 .hero-sky img,
 .hero-sky > span {
@@ -532,8 +535,8 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 .integrations {
   padding: 64px 0 80px;
   background:
-    radial-gradient(60% 50% at 50% 50%, rgba(255, 153, 51, 0.18) 0%, rgba(255, 153, 51, 0) 70%),
-    linear-gradient(180deg, #0a3d62 0%, #1e5b82 100%);
+    radial-gradient(60% 50% at 50% 50%, rgba(235, 113, 0, 0.18) 0%, rgba(235, 113, 0, 0) 70%),
+    linear-gradient(180deg, #00121d 0%, #0a2431 100%);
   overflow: hidden;
 }
 
@@ -570,7 +573,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   background: #fff;
   padding: 10px 16px;
   border-radius: 12px;
-  box-shadow: 0 6px 18px rgba(10, 61, 98, 0.18);
+  box-shadow: 0 6px 18px rgba(0, 18, 29, 0.18);
   filter: grayscale(10%);
 }
 
@@ -600,7 +603,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 .how-steps { display: flex; flex-direction: column; gap: 24px; }
 
 .how-step {
-  background: linear-gradient(314deg, #0a3d62 0%, #1e5b82 100%);
+  background: linear-gradient(314deg, #00121d 0%, #0a2431 100%);
   border-radius: var(--radius-card-lg);
   border-left: 4px solid var(--orange);
   padding: 32px;
@@ -663,8 +666,8 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 .faq {
   padding: 80px 0;
   background:
-    radial-gradient(60% 40% at 90% 4%, rgba(255, 153, 51, 0.18) 0%, rgba(255, 153, 51, 0) 60%),
-    linear-gradient(180deg, rgba(44, 125, 160, 0.42) 0%, transparent 36%);
+    radial-gradient(60% 40% at 90% 4%, rgba(235, 113, 0, 0.18) 0%, rgba(235, 113, 0, 0) 60%),
+    linear-gradient(180deg, rgba(20, 64, 90, 0.42) 0%, transparent 36%);
 }
 
 .faq-layout {
@@ -698,7 +701,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   background: var(--white);
   border-radius: 16px;
   border-left: 3px solid var(--orange);
-  box-shadow: 0 6px 8px rgba(10, 61, 98, 0.08);
+  box-shadow: 0 6px 8px rgba(0, 18, 29, 0.08);
   overflow: hidden;
 }
 
@@ -830,8 +833,8 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   padding: 160px 0 80px;
   text-align: center;
   background:
-    radial-gradient(60% 50% at 85% 8%, rgba(255, 153, 51, 0.12) 0%, rgba(255, 153, 51, 0) 55%),
-    radial-gradient(80% 70% at 50% 0%, #a0d0f0 0%, rgba(255, 255, 255, 0) 70%);
+    radial-gradient(60% 50% at 85% 8%, rgba(235, 113, 0, 0.12) 0%, rgba(235, 113, 0, 0) 55%),
+    radial-gradient(80% 70% at 50% 0%, #dcdedf 0%, rgba(255, 255, 255, 0) 70%);
 }
 .page-hero h1 {
   font-family: var(--font-display);
@@ -913,7 +916,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 /* ─── PRICING ─── */
 .pricing {
   padding: 64px 0 80px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(208, 228, 244, 0.45) 100%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(0, 18, 29, 0.08) 100%);
 }
 
 .pricing-head {
@@ -946,7 +949,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 }
 
 .pricing-card--featured {
-  background: linear-gradient(180deg, #0a3d62 0%, #1e5b82 100%);
+  background: linear-gradient(180deg, #00121d 0%, #0a2431 100%);
   border: 2px solid var(--orange);
 }
 .pricing-card--featured .pricing-plan-name,
@@ -994,8 +997,8 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--orange-deep);
-  background: rgba(255, 153, 51, 0.16);
-  border: 1px solid rgba(211, 84, 0, 0.35);
+  background: rgba(235, 113, 0, 0.16);
+  border: 1px solid rgba(200, 95, 0, 0.35);
   border-radius: 999px;
   padding: 4px 10px;
   flex-shrink: 0;
@@ -1065,8 +1068,8 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   padding-top: 100px;
   min-height: calc(100vh - 100px);
   background:
-    radial-gradient(90% 45% at 85% 0%, rgba(255, 153, 51, 0.10) 0%, rgba(255, 153, 51, 0) 50%),
-    linear-gradient(180deg, #a0d0f0 0%, #c4e0f3 18%, #eaf4fc 48%, #ffffff 100%);
+    radial-gradient(90% 45% at 85% 0%, rgba(235, 113, 0, 0.10) 0%, rgba(235, 113, 0, 0) 50%),
+    linear-gradient(180deg, #dcdedf 0%, #eaebeb 18%, #f5f5f5 48%, #ffffff 100%);
 }
 
 .subpage-inner {
@@ -1088,7 +1091,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 }
 
 .subpage-cta-card {
-  background: linear-gradient(180deg, #0a3d62 0%, #1e5b82 100%);
+  background: linear-gradient(180deg, #00121d 0%, #0a2431 100%);
   border-radius: var(--radius-card-lg);
   border-top: 4px solid var(--orange);
   padding: 40px 32px;
@@ -1136,7 +1139,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   align-items: center;
   justify-content: center;
   padding: 28px 28px 0;
-  background: linear-gradient(180deg, rgba(112, 188, 236, 0.22) 0%, transparent 100%);
+  background: linear-gradient(180deg, rgba(0, 18, 29, 0.12) 0%, transparent 100%);
 }
 
 .team-card-photo-inner {
@@ -1173,7 +1176,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   display: inline-block;
   padding: 4px 12px;
   border-radius: 999px;
-  background: rgba(255, 153, 51, 0.12);
+  background: rgba(235, 113, 0, 0.12);
   color: var(--orange);
   font-family: var(--font-label);
   font-size: 13px;
@@ -1251,7 +1254,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   position: relative;
   aspect-ratio: 1 / 1;
   overflow: hidden;
-  background: #eaf4fc;
+  background: #f5f5f5;
 }
 
 .blog-post-media img {
@@ -1285,7 +1288,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   gap: 6px;
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(2, 29, 45, 0.06);
+  background: rgba(0, 18, 29, 0.06);
   color: var(--text-muted);
   font-family: var(--font-label);
   font-size: 12px;
@@ -1503,7 +1506,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   left: 0;
   right: 0;
   height: 2px;
-  background-image: repeating-linear-gradient(90deg, rgba(10, 61, 98, 0.25) 0 5px, transparent 5px 13px);
+  background-image: repeating-linear-gradient(90deg, rgba(0, 18, 29, 0.25) 0 5px, transparent 5px 13px);
 }
 .flight-progress-fill {
   position: absolute;
@@ -1512,9 +1515,9 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   right: 0;
   height: 3px;
   transform-origin: left center;
-  background: linear-gradient(90deg, rgba(255, 153, 51, 0) 0%, #ff9933 18%, #e67e22 100%);
+  background: linear-gradient(90deg, rgba(235, 113, 0, 0) 0%, #eb7100 18%, #cc6300 100%);
   border-radius: 2px;
-  box-shadow: 0 0 10px rgba(255, 153, 51, 0.55);
+  box-shadow: 0 0 10px rgba(235, 113, 0, 0.55);
 }
 
 /* Feature cards: perspective wrapper so the Tilt has depth */
@@ -1537,13 +1540,13 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   height: 52px;
   border-radius: 50%;
   background: var(--white);
-  box-shadow: 0 8px 24px rgba(10, 61, 98, 0.25);
+  box-shadow: 0 8px 24px rgba(0, 18, 29, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
 }
-.fly-top:hover { box-shadow: 0 10px 28px rgba(211, 84, 0, 0.4); }
+.fly-top:hover { box-shadow: 0 10px 28px rgba(200, 95, 0, 0.4); }
 .fly-top img { width: 26px; height: auto; }
 @media (max-width: 809px) {
   .fly-top { right: 16px; bottom: 16px; width: 46px; height: 46px; }
@@ -1651,14 +1654,14 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 /* Faint full-route ghost so the path reads even before the reader scrolls
    there. Kept very quiet — a hint, not a line. */
 .flight-route-ghost {
-  stroke: rgba(255, 153, 51, 0.18);
+  stroke: rgba(235, 113, 0, 0.18);
   stroke-width: 1.5;
 }
 
 /* The revealed (drawn-in) dashed route: the brand's light orange contrail.
    Reads on the light sections and pops on the navy integrations band. */
 .flight-route-line {
-  stroke: rgba(255, 153, 51, 0.8);
+  stroke: rgba(235, 113, 0, 0.8);
   stroke-width: 2.25;
 }
 
@@ -1672,7 +1675,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   /* Deeper orange than the (now orange) base line so the pulse still reads. */
   stroke: var(--orange-dark);
   stroke-width: 2.75;
-  filter: drop-shadow(0 0 5px rgba(230, 126, 34, 0.7));
+  filter: drop-shadow(0 0 5px rgba(204, 99, 0, 0.7));
 }
 
 /* The courier sprite. Rides the route tip via offset-path; its size clamps with
@@ -1686,7 +1689,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   z-index: 40;
   width: clamp(44px, 5.5vw, 72px);
   will-change: transform, opacity;
-  filter: drop-shadow(0 6px 10px rgba(10, 61, 98, 0.28));
+  filter: drop-shadow(0 6px 10px rgba(0, 18, 29, 0.28));
 }
 .flight-route-plane-flip {
   /* Quick-but-eased turn so reversing direction reads as the plane banking

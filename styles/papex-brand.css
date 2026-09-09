@@ -496,19 +496,6 @@
   opacity: 0;
   transform: scale(0.96);
 }
-.rd-fork-glow {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  transition: transform 0.4s var(--ease-out-expo);
-}
-.rd-fork-watermark {
-  position: absolute;
-  width: min(260px, 20vw);
-  height: auto;
-  pointer-events: none;
-  transform: rotate(-8deg);
-}
 .rd-fork-seam {
   position: relative;
   z-index: 5;
@@ -681,15 +668,6 @@ html[data-fork-skip] .rd-fork {
     transform: translateX(-50%);
   }
 }
-@keyframes rd-seam-glow {
-  0%,
-  100% {
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 1;
-  }
-}
 @keyframes rd-arrow-bob {
   0%,
   100% {
@@ -704,9 +682,6 @@ html[data-fork-skip] .rd-fork {
 
 .rd-floaty {
   animation: rd-floaty 6s ease-in-out infinite;
-}
-.rd-seam-glow {
-  animation: rd-seam-glow 2.6s ease-in-out infinite;
 }
 .rd-arrow-bob {
   animation: rd-arrow-bob 1.9s ease-in-out infinite;

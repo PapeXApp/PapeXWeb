@@ -1,0 +1,1693 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+<!-- Production ESC/POS decoder + receipt summariser, ported verbatim from
+     PapeXWeb/lib/escpos.ts and lib/receiptSummary.ts. Exposes window.PapeXReceipt.
+     Drives the interactive demo in the customer path. -->
+<script src="./papex-receipt.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kameron:wght@400;500;600;700&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Barlow',sans-serif;background:#00121D;color:#F5F5F5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:#EB7100;text-decoration:none}
+  a:hover{color:#ff8a1f}
+  input,button,textarea,select{font-family:'Barlow',sans-serif}
+  ::selection{background:#EB7100;color:#00121D}
+  @keyframes ripple{0%{transform:translate(-50%,-50%) scale(.35);opacity:.6}100%{transform:translate(-50%,-50%) scale(2.2);opacity:0}}
+  @keyframes receiptCycle{0%,7%{opacity:0;transform:translateY(30px) scale(.97)}17%,80%{opacity:1;transform:translateY(0) scale(1)}94%,100%{opacity:0;transform:translateY(-14px) scale(.98)}}
+  @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  @keyframes pulseDot{0%,100%{opacity:.4;transform:scale(.9)}50%{opacity:1;transform:scale(1.15)}}
+  @keyframes slideRow{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  @keyframes arrowBob{0%,100%{transform:translateY(0);opacity:.5}50%{transform:translateY(7px);opacity:1}}
+  @keyframes spinSlow{to{transform:rotate(360deg)}}
+  @keyframes glowPulse{0%,100%{opacity:.35}50%{opacity:.8}}
+  /* ---- problem section: tap-to-flip stat cards ---------------------------- */
+  .pfx{perspective:1400px;cursor:pointer;outline:none}
+  .pfx-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .8s cubic-bezier(.2,.8,.2,1)}
+  .pfx.is-flipped .pfx-inner{transform:rotateY(180deg)}
+  .pfx-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:20px;background:#fff;border:1.5px solid #ececec;box-shadow:0 10px 30px rgba(0,18,29,.06);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:26px 22px;overflow:hidden;text-align:center}
+  .pfx-back{transform:rotateY(180deg)}
+  .pfx:hover .pfx-face{box-shadow:0 20px 44px rgba(0,18,29,.12)}
+  .pfx-hint{position:absolute;bottom:16px;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#EB7100}
+  .pfx-stage{position:absolute;inset:0;overflow:hidden;border-radius:20px}
+  .pfx-num{font-family:'Kameron',serif;font-weight:700;font-size:clamp(44px,5.4vw,68px);color:#EB7100;line-height:1}
+  .pfx-cap{margin-top:10px;font-size:15px;color:#4a4a4a;line-height:1.45;max-width:26ch}
+  .pfx-result{position:relative;z-index:3;opacity:0}
+  .pfx-result.pfx-reveal{animation:pfxPop .62s cubic-bezier(.16,1,.3,1) forwards}
+  @keyframes pfxPop{0%{opacity:0;transform:scale(.62)}64%{opacity:1;transform:scale(1.07)}100%{opacity:1;transform:scale(1)}}
+  /* 256B — receipts shooting out of a printer */
+  .pfx-printer{position:absolute;top:26px;left:50%;margin-left:-52px;width:104px;height:26px;border-radius:6px 6px 3px 3px;background:linear-gradient(160deg,#0a2431,#04161f);box-shadow:0 6px 14px rgba(0,18,29,.28)}
+  .pfx-printer:after{content:'';position:absolute;left:12px;right:12px;bottom:4px;height:3px;border-radius:2px;background:rgba(245,245,245,.28)}
+  .pfx-slip{position:absolute;top:48px;left:50%;width:34px;height:46px;margin-left:-17px;background:#fff;border:1px solid #e2e2e2;border-radius:2px;opacity:0;box-shadow:0 3px 8px rgba(0,18,29,.14)}
+  .pfx-slip i{position:absolute;left:5px;right:5px;height:1.5px;background:#e6e6e6;display:block}
+  @keyframes pfxEject{0%{opacity:0;transform:translate(0,-14px) rotate(0)}10%{opacity:1}100%{opacity:0;transform:translate(var(--dx),190px) rotate(var(--rot))}}
+  /* 10M — a forest, then one axe swing */
+  .pfx-ground{position:absolute;left:0;right:0;bottom:34px;height:2px;background:rgba(0,18,29,.14)}
+  .pfx-tree{position:absolute;bottom:36px;transform-origin:bottom center;opacity:0}
+  .pfx-tree b{display:block;width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-bottom:26px solid #2f7d4f}
+  .pfx-tree u{display:block;width:4px;height:10px;margin:0 auto;background:#6b4a2f}
+  @keyframes pfxGrow{0%{opacity:0;transform:scale(.2)}100%{opacity:1;transform:scale(1)}}
+  @keyframes pfxFell{0%{transform:rotate(0)}100%{transform:rotate(82deg);opacity:.12}}
+  .pfx-axe{position:absolute;top:44%;left:-30%;width:64px;height:5px;background:linear-gradient(90deg,#6b4a2f 60%,#9aa3a8 60%);border-radius:2px;opacity:0;transform-origin:left center}
+  @keyframes pfxSwing{0%{opacity:0;left:-30%;transform:rotate(-38deg)}20%{opacity:1}70%{opacity:1;left:108%;transform:rotate(26deg)}100%{opacity:0;left:130%;transform:rotate(26deg)}}
+  /* $0 — a single receipt with nothing on it */
+  .pfx-zero{position:absolute;top:16px;left:50%;margin-left:-52px;width:104px;padding:14px 10px 16px;background:#fff;border:1px solid #e2e2e2;border-radius:3px;box-shadow:0 8px 20px rgba(0,18,29,.12);opacity:0}
+  @keyframes pfxFeed{0%{opacity:0;transform:translateY(-104%)}100%{opacity:1;transform:translateY(0)}}
+  /* ---- how it works: two-click walkthrough -------------------------------- */
+  .hiw-step{display:flex;gap:22px;opacity:.32;transform:translateX(-8px);transition:opacity .45s ease,transform .45s ease}
+  .hiw-step.is-active{opacity:1;transform:none}
+  .hiw-step.is-done{opacity:.55;transform:none}
+  .hiw-bar{position:relative;width:3px;border-radius:3px;background:rgba(0,18,29,.1);flex:0 0 3px;align-self:stretch;overflow:hidden}
+  .hiw-bar i{position:absolute;top:0;left:0;width:100%;height:0;background:#EB7100;border-radius:3px;transition:height .55s cubic-bezier(.16,1,.3,1)}
+  .hiw-step.is-active .hiw-bar i,.hiw-step.is-done .hiw-bar i{height:100%}
+  .hiw-stage{position:relative;display:flex;align-items:flex-end;justify-content:center;padding-top:64px}
+  .hiw-rdh{position:absolute;z-index:1;top:0;left:50%;margin-left:-92px;width:184px;border-radius:16px;background:linear-gradient(160deg,#12303e,#081d27);border:1px solid rgba(255,255,255,.12);box-shadow:0 20px 44px rgba(0,18,29,.32);padding:12px 12px 30px;display:flex;flex-direction:column;align-items:center;gap:7px}
+  .hiw-phone{position:relative;z-index:2;cursor:pointer;outline:none}
+  .hiw-tilt{transition:transform .42s cubic-bezier(.45,0,.2,1)}
+  .hiw-phone.is-bowing .hiw-tilt{transform:translateY(-26px) rotate(-4deg)}
+  .hiw-screen{position:absolute;inset:0;opacity:0;pointer-events:none;transform:translateY(12px);transition:opacity .45s ease,transform .45s ease;background:#F5F5F5}
+  .hiw-screen.is-on{opacity:1;transform:none;pointer-events:auto}
+  /* ---- personas: three-question quiz ------------------------------------- */
+  .qz{max-width:760px;margin:clamp(40px,5vw,64px) auto 0;position:relative;min-height:330px}
+  .qz-card{position:absolute;inset:0;opacity:0;pointer-events:none;transform:translateY(14px);transition:opacity .4s ease,transform .4s ease}
+  .qz-card.is-on{opacity:1;pointer-events:auto;transform:none;position:relative}
+  .qz-prompt{font-family:'Kameron',serif;font-weight:700;font-size:clamp(22px,2.6vw,30px);line-height:1.25;color:#00121D;text-align:center;max-width:24ch;margin:0 auto 26px}
+  .qz-opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+  .qz-opt{text-align:left;cursor:pointer;font:inherit;font-size:15px;line-height:1.45;color:#00121D;background:#fff;border:1.5px solid #e6e6e6;border-radius:14px;padding:16px 18px;transition:border-color .2s,box-shadow .2s,transform .2s}
+  .qz-opt:hover{border-color:#EB7100;transform:translateY(-2px);box-shadow:0 14px 30px rgba(235,113,0,.14)}
+  .qz-steps{display:flex;justify-content:center;gap:7px;margin-top:26px}
+  .qz-pip{width:26px;height:4px;border-radius:2px;background:rgba(0,18,29,.13);transition:background .3s}
+  .qz-pip.is-on{background:#EB7100}
+  .qz-res{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:16px;align-items:stretch}
+  .qz-p{position:relative;background:#fff;border:1.5px solid #e6e6e6;border-radius:18px;padding:26px 22px;text-align:left;opacity:.66;transition:transform .5s cubic-bezier(.16,1,.3,1),border-color .35s ease,box-shadow .35s ease,opacity .35s ease}
+  .qz-p.is-you{opacity:1;border-color:#EB7100;border-width:2.5px;transform:translateY(-12px) scale(1.045);box-shadow:0 28px 58px rgba(235,113,0,.22);z-index:2}
+  .qz-tag{position:absolute;top:-11px;left:22px;background:#EB7100;color:#00121D;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:4px 11px;border-radius:999px;opacity:0;transform:translateY(4px);transition:opacity .35s ease,transform .35s ease}
+  .qz-p.is-you .qz-tag{opacity:1;transform:none}
+  .qz-p-eyebrow{font-family:'Courier New',monospace;font-size:11.5px;letter-spacing:.1em;color:#EB7100;text-transform:uppercase}
+  .qz-p-title{font-family:'Kameron',serif;font-weight:700;font-size:20px;color:#00121D;margin-top:9px;line-height:1.2}
+  .qz-p-body{margin-top:9px;font-size:14.5px;line-height:1.5;color:#5a5a5a}
+  .qz-restart{margin-top:24px;cursor:pointer;font:inherit;font-size:14px;font-weight:600;color:#EB7100;background:none;border:none;text-decoration:underline;text-underline-offset:3px}
+  /* ---- app clip receipt demo ---------------------------------------------
+     Colours and metrics below are lifted verbatim from the real App Clip:
+     Papex_AppClip/Sources/AppClip/Theme.swift + ReceiptView.swift. They are
+     deliberately NOT the site palette (#EB7100/#00121D) — this is a render of
+     the actual product, so it uses the product's tokens. Keep them in sync with
+     Theme.swift, not with the rest of this page.
+       background #181A20   surfaceGlass rgba(20,26,36,.72)   accent  #FB8500
+       brand      #2B7FC6   text         #F4F4F4              secondary #C4C7CC
+       muted      #9AA1A8   border       rgba(255,255,255,.12)
+     Radii: card 24, button 14, badge 4.  Font: Barlow (already loaded above). */
+  /* Sized 1.15x the original pool and centred on the headline rather than the
+     section. 29% is where the h1's centre measures at desktop; once the hero
+     wraps and the copy goes full-width, its centre moves to 50%. */
+  .hero-glow{position:absolute;left:29%;top:50%;transform:translate(-50%,-50%);width:min(1012px,80vw);height:min(874px,100vh);pointer-events:none;background:radial-gradient(ellipse at 50% 50%,rgba(16,53,72,.92) 0%,rgba(13,43,60,.66) 30%,rgba(9,30,43,.34) 52%,rgba(5,22,32,.13) 70%,rgba(0,18,29,0) 84%)}
+  @media (max-width:900px){.hero-glow{left:50%}}
+  .demo-stage{position:relative;display:flex;flex-direction:column;align-items:center}
+  .demo-phone{position:relative;z-index:2;cursor:pointer;outline:none;border-radius:44px}
+  .demo-phone:focus-visible{box-shadow:0 0 0 3px rgba(251,133,0,.6)}
+  .demo-tilt{transition:transform .42s cubic-bezier(.45,0,.2,1);transform-origin:50% 100%}
+  .demo-phone.is-bowing .demo-tilt{transform:translateY(34px) rotate(7deg)}
+  /* wide enough that text wraps roughly where it does on a real handset — at
+     ~330px the address broke lines the device never would. 346px is the point
+     where a standard 32-column receipt body stops needing to pan. */
+  .demo-shell{position:relative;width:clamp(288px,34vw,376px);border-radius:42px;background:linear-gradient(160deg,#2a2d36,#15171d);border:2px solid rgba(255,255,255,.12);box-shadow:0 44px 90px rgba(0,0,0,.55);padding:11px}
+  /* Height is tied to the viewport, not the width: this now lives in the hero,
+     where the phone AND the reader under it have to be visible together or the
+     tap is undiscoverable. 300px is the rest of the stage — hero padding, the
+     hint line, and the RDH below. */
+  .demo-screen{position:relative;height:clamp(380px,calc(100vh - 342px),610px);border-radius:32px;background:#181A20;overflow:hidden;display:flex;flex-direction:column}
+  .demo-notch{position:absolute;top:9px;left:50%;margin-left:-52px;width:104px;height:26px;background:#0b0c10;border-radius:0 0 16px 16px;z-index:6}
+  /* brand bar */
+  .ac-bar{flex:0 0 auto;padding:34px 20px 8px;display:flex;align-items:center;gap:7px;background:linear-gradient(180deg,rgba(251,133,0,.14),rgba(251,133,0,0));border-bottom:1px solid rgba(255,255,255,.12)}
+  .ac-wordmark{font-size:17px;font-weight:500;color:#F4F4F4;letter-spacing:-.01em}
+  .ac-dot{width:7px;height:7px;border-radius:2px;background:#FB8500}
+  .ac-bar-label{margin-left:auto;font-size:12px;color:#C4C7CC}
+  /* scrolling content */
+  .ac-scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:16px 20px 20px;display:flex;flex-direction:column;gap:20px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.18) transparent}
+  .ac-scroll::-webkit-scrollbar{width:4px}
+  .ac-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:2px}
+  .ac-card{background:rgba(20,26,36,.72);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.12);border-radius:24px;padding:16px}
+  .ac-section-title{font-size:20px;font-weight:500;color:#2B7FC6;margin-bottom:4px}
+  /* merchant */
+  .ac-merchant{display:flex;gap:12px;align-items:flex-start}
+  .ac-mono-badge{flex:0 0 auto;width:56px;height:56px;border-radius:50%;background:#fff;border:2px solid #FB8500;color:#FB8500;font-size:24px;font-weight:500;display:flex;align-items:center;justify-content:center}
+  .ac-mname{font-size:24px;font-weight:500;color:#F4F4F4;line-height:1.15}
+  .ac-maddr{font-size:14px;color:#C4C7CC;line-height:1.35}
+  .ac-mdate{font-size:12px;font-weight:300;color:#FB8500;padding-top:2px}
+  .ac-msrc{font-size:12px;color:#C4C7CC;padding-top:2px}
+  /* items */
+  .ac-item{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.12)}
+  .ac-item:last-child{border-bottom:none;padding-bottom:0}
+  .ac-item-name{font-size:16px;font-weight:500;color:#F4F4F4;line-height:1.3}
+  .ac-item-qty{font-size:12px;color:#9AA1A8}
+  .ac-item-price{font-size:16px;font-weight:500;color:#F4F4F4;font-variant-numeric:tabular-nums;white-space:nowrap}
+  /* totals */
+  .ac-trow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:6px 0}
+  .ac-tlabel{font-size:16px;color:#C4C7CC}
+  .ac-tval{font-size:16px;font-weight:500;color:#F4F4F4;font-variant-numeric:tabular-nums}
+  .ac-tval.is-brand{color:#2B7FC6}
+  .ac-trule{height:2px;background:#FB8500;margin:4px 0}
+  .ac-grand-label{font-size:20px;font-weight:500;color:#FB8500}
+  .ac-grand-val{font-size:24px;font-weight:500;color:#fff;font-variant-numeric:tabular-nums}
+  .ac-chip{font-size:11px;font-weight:700;letter-spacing:.5px;color:#fff;padding:3px 7px;border-radius:4px;display:inline-block}
+  /* receipt information */
+  .ac-inforow{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.12)}
+  .ac-inforow:last-child{border-bottom:none;padding-bottom:0}
+  .ac-infolabel{font-size:15px;color:#C4C7CC}
+  .ac-infoval{font-size:15px;font-weight:500;color:#F4F4F4;text-align:right}
+  /* original receipt — verbatim monospace body */
+  .ac-orig summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;font-size:20px;font-weight:500;color:#2B7FC6}
+  .ac-orig summary::-webkit-details-marker{display:none}
+  .ac-chev{transition:transform .25s ease;color:#2B7FC6;font-size:13px}
+  .ac-orig[open] .ac-chev{transform:rotate(180deg)}
+  /* white-space:pre is required — column alignment IS the receipt. A 32-column
+     receipt at 13px needs ~250px, which only fits once .demo-shell is ~346px+,
+     so below that the body pans rather than silently truncating the amounts. */
+  .ac-body{margin-top:12px;font-family:'Courier New',monospace;color:#C4C7CC;line-height:1.55;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.18) transparent}
+  .ac-body::-webkit-scrollbar{height:4px}
+  .ac-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:2px}
+  .ac-line{white-space:pre;font-size:13px}
+  .ac-line.is-b{font-weight:700}
+  .ac-line.is-u{text-decoration:underline;text-underline-offset:2px}
+  /* exactly one size class is emitted per line — the JS mirrors the else-if
+     chain in PapeXWeb/app/r/ui.tsx styleClasses(), so don't make these additive */
+  .ac-line.is-md{font-size:15px}
+  .ac-line.is-lg{font-size:18px}
+  .ac-line.is-fb{font-size:11px}
+  .ac-line.al-center{text-align:center}
+  .ac-line.al-right{text-align:right}
+  /* footer cta */
+  .ac-foot{flex:0 0 auto;padding:16px 20px 20px;background:#181A20;display:flex;gap:16px;border-top:1px solid rgba(255,255,255,.06)}
+  .ac-btn{flex:1;border:none;cursor:pointer;font:inherit;font-size:16px;font-weight:500;padding:13px 0;border-radius:14px;background:#FB8500;color:#fff;transition:opacity .2s}
+  .ac-btn:hover{opacity:.82}
+  .ac-btn.is-secondary{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:#F4F4F4}
+  /* idle state — before the tap */
+  .ac-idle{position:absolute;inset:0;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:32px;text-align:center;background:#181A20;transition:opacity .45s ease,transform .45s ease}
+  .demo-phone.is-done .ac-idle{opacity:0;transform:scale(1.04);pointer-events:none}
+  .ac-idle-ring{position:relative;width:78px;height:78px;display:flex;align-items:center;justify-content:center}
+  .ac-idle-ring i{position:absolute;top:50%;left:50%;width:78px;height:78px;border-radius:50%;border:2px solid #FB8500;animation:ripple 2.4s ease-out infinite}
+  .ac-idle-ring i:nth-child(2){animation-delay:1.2s}
+  .ac-idle-ring b{width:30px;height:30px;border-radius:50%;background:#FB8500;box-shadow:0 0 0 8px rgba(251,133,0,.16)}
+  .ac-idle-t{font-size:17px;font-weight:500;color:#F4F4F4}
+  .ac-idle-s{font-size:13.5px;color:#9AA1A8;line-height:1.45}
+  /* the receipt content fades in once the tap lands */
+  .ac-live{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;transform:translateY(14px);transition:opacity .5s cubic-bezier(.16,1,.3,1),transform .5s cubic-bezier(.16,1,.3,1)}
+  .demo-phone.is-done .ac-live{opacity:1;transform:none}
+  /* RDH hardware — placeholder until the 3D render lands */
+  /* Tucked well behind the phone and pushed right, so it reads as a device the
+     phone is resting over rather than a sliver poking out underneath. More of
+     its body is visible this way even though the overlap is much deeper. */
+  /* Contents sit bottom-right because that corner is the part not covered by
+     the phone — centring them would hide the NFC dot behind it. */
+  /* the offset has to scale with the viewport — a flat 140px pushed the reader
+     60px off the right edge of a 375px screen */
+  /* Both offsets scale with the viewport. On a narrow screen there is no room to
+     move right, so the reader shows itself below the phone instead of beside it
+     — hence the shallower tuck there. clamp() min/max are inverted-looking here
+     because the values are negative: -92px is the *deepest* tuck. */
+  /* Wrapper only — the device itself is the inline <svg> (see rdh-device.svg,
+     which is the same artwork used as an <img> on the business path). Offsets
+     are clamp()d to the viewport: on desktop the reader tucks deep behind the
+     phone and shows itself to the right; on a narrow screen there is no room
+     to the right, so it shows below instead. */
+  .demo-rdh{position:relative;z-index:1;margin-top:clamp(-84px,-6.2vw,-36px);transform:translateX(clamp(26px,8.4vw,108px));width:clamp(212px,21.5vw,286px);line-height:0;filter:drop-shadow(0 24px 44px rgba(0,0,0,.55))}
+  .demo-rdh svg{width:100%;height:auto;display:block;overflow:visible}
+  /* the status LED answers the tap the way the real unit does */
+  .rdh-led{transition:opacity .3s ease,transform .3s ease;transform-origin:29px 59px}
+  .demo-phone.is-bowing ~ .demo-rdh .rdh-led{opacity:1;transform:scale(1.5)}
+  /* ---- business why: claim cards ----------------------------------------- */
+  /* the stagger wrapper takes the inline reveal transform, so .wcard keeps its
+     own transform free for the hover lift — inline styles would beat the rule */
+  .wgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(16px,1.8vw,22px);margin-top:clamp(50px,6vw,84px)}
+  .wgrid>div{display:flex}
+  .wcard{flex:1;position:relative;overflow:hidden;background:#fff;border:1.5px solid #ececec;border-radius:24px;padding:clamp(32px,3.6vw,46px);box-shadow:0 12px 30px rgba(0,18,29,.05);transition:transform .45s cubic-bezier(.16,1,.3,1),box-shadow .45s ease,border-color .35s ease}
+  .wcard:hover{transform:translateY(-6px);border-color:rgba(235,113,0,.5);box-shadow:0 28px 56px rgba(0,18,29,.11)}
+  .wc-val{font-family:'Kameron',serif;font-weight:700;font-size:clamp(50px,6.4vw,86px);line-height:.92;letter-spacing:-.03em;color:#EB7100;white-space:nowrap}
+  .wc-rule{width:46px;height:3px;border-radius:3px;background:#EB7100;margin:22px 0 18px}
+  .wc-title{font-family:'Kameron',serif;font-weight:700;font-size:clamp(21px,2.1vw,27px);line-height:1.15;letter-spacing:-.01em;color:#00121D}
+  .wc-body{margin-top:12px;font-size:16px;line-height:1.55;color:#5a5a5a;max-width:34ch}
+  /* free-forever is the strongest merchant argument — invert it so the set has
+     hierarchy of its own, not just hierarchy inside each card */
+  .wcard.is-lead{background:#00121D;border-color:#00121D;box-shadow:0 18px 44px rgba(0,18,29,.18)}
+  .wcard.is-lead:hover{border-color:rgba(235,113,0,.5);box-shadow:0 32px 66px rgba(0,18,29,.3)}
+  .wcard.is-lead .wc-title{color:#F5F5F5}
+  .wcard.is-lead .wc-body{color:rgba(245,245,245,.62)}
+  .wc-glow{position:absolute;top:-160px;right:-130px;width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,rgba(235,113,0,.22),transparent 68%);pointer-events:none}
+  @media (max-width:820px){.wgrid{grid-template-columns:1fr}}
+  /* ---- business process: roadmap ----------------------------------------- */
+  .rmap{position:relative;display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:clamp(24px,3vw,34px)}
+  .rmap-node{position:relative;padding-top:4px}
+  .rmap-dot{position:relative;z-index:2;width:56px;height:56px;border-radius:50%;background:#00121D;border:2px solid #EB7100;color:#EB7100;font-family:'Kameron',serif;font-weight:700;font-size:19px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 8px #00121D}
+  .rmap-node:not(:last-child):after{content:'';position:absolute;z-index:1;top:32px;left:56px;right:calc(-1 * clamp(24px,3vw,34px));height:2px;background:repeating-linear-gradient(90deg,rgba(235,113,0,.55) 0 7px,transparent 7px 14px)}
+  @media (max-width:820px){.rmap-node:not(:last-child):after{display:none}}
+  .hiw-cue{font-size:13.5px;color:#8a8a8a;min-height:20px;text-align:center}
+  .hiw-cue b{color:#EB7100;font-weight:600}
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;animation-iteration-count:1!important}.pfx-inner,.hiw-tilt,.hiw-screen,.hiw-step{transition-duration:.001ms}}
+</style>
+</helmet>
+<div ref="{{ setRoot }}" style="position:relative;width:100%;min-height:100vh;background:#00121D">
+
+  <!-- ===================== NAV ===================== -->
+  <nav style="position:fixed;top:0;left:0;right:0;z-index:120;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:clamp(12px,2vw,20px) clamp(14px,4vw,40px);pointer-events:none">
+    <div onClick="{{ goSplit }}" style="pointer-events:auto;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;padding:9px 17px 9px 14px;border-radius:999px;background:rgba(8,26,37,.5);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border:1px solid rgba(255,255,255,.13);box-shadow:0 12px 34px rgba(0,18,29,.3),inset 0 1px 0 rgba(255,255,255,.16);transition:border-color .3s" style-hover="border-color:rgba(235,113,0,.5)">
+      <div style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;transform:rotate(-8deg)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M2 12L22 3L15 21L11.5 13.5L2 12Z" fill="#EB7100"></path><path d="M11.5 13.5L22 3L11.5 13.5Z" fill="#c85f00"></path></svg></div>
+      <span style="font-family:'Kameron',serif;font-weight:700;font-size:20px;letter-spacing:-.01em;color:#F5F5F5">PapeX</span>
+    </div>
+
+    <sc-if value="{{ notMobile }}" hint-placeholder-val="{{ true }}">
+    <div style="pointer-events:auto;display:flex;align-items:center;gap:2px;padding:6px;border-radius:999px;white-space:nowrap;background:rgba(8,26,37,.5);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border:1px solid rgba(255,255,255,.13);box-shadow:0 12px 34px rgba(0,18,29,.3),inset 0 1px 0 rgba(255,255,255,.16)" data-navlinks>
+      <span onClick="{{ goSplit }}" style="cursor:pointer;padding:9px 15px;border-radius:999px;font-size:14.5px;font-weight:500;color:rgba(245,245,245,.72);transition:.25s" style-hover="background:rgba(255,255,255,.1);color:#F5F5F5">Home</span>
+      <span onClick="{{ goCustomer }}" style="cursor:pointer;padding:9px 15px;border-radius:999px;font-size:14.5px;font-weight:500;color:{{ linkCust }};background:{{ linkCustBg }};transition:.25s" style-hover="background:rgba(255,255,255,.1)">For Customers</span>
+      <span onClick="{{ goMerchant }}" style="cursor:pointer;padding:9px 15px;border-radius:999px;font-size:14.5px;font-weight:500;color:{{ linkMerch }};background:{{ linkMerchBg }};transition:.25s" style-hover="background:rgba(255,255,255,.1)">For Business</span>
+    </div>
+    </sc-if>
+
+    <div style="pointer-events:auto;display:flex;align-items:center;gap:10px">
+      <button onClick="{{ ctaClick }}" data-ripple="rgba(0,18,29,.22)" style="border:none;cursor:pointer;padding:12px 22px;border-radius:999px;background:#EB7100;color:#00121D;font-weight:600;font-size:14.5px;letter-spacing:.01em;white-space:nowrap;position:relative;overflow:hidden;transition:transform .25s,box-shadow .25s;box-shadow:0 8px 24px rgba(235,113,0,.35)" style-hover="transform:translateY(-1px);box-shadow:0 12px 30px rgba(235,113,0,.5)">{{ ctaLabel }}</button>
+      <sc-if value="{{ mobile }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ toggleMenu }}" style="display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;cursor:pointer;width:46px;height:46px;border-radius:999px;background:rgba(8,26,37,.5);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border:1px solid rgba(255,255,255,.13);box-shadow:0 12px 34px rgba(0,18,29,.3),inset 0 1px 0 rgba(255,255,255,.16)">
+        <span style="width:18px;height:2px;background:#F5F5F5;display:block;border-radius:2px"></span>
+        <span style="width:18px;height:2px;background:#F5F5F5;display:block;border-radius:2px"></span>
+        <span style="width:18px;height:2px;background:#F5F5F5;display:block;border-radius:2px"></span>
+      </div>
+      </sc-if>
+    </div>
+
+    <sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="pointer-events:auto;position:absolute;top:calc(100% + 4px);left:clamp(14px,4vw,40px);right:clamp(14px,4vw,40px);border-radius:22px;background:rgba(8,26,37,.72);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border:1px solid rgba(255,255,255,.13);box-shadow:0 22px 50px rgba(0,18,29,.4),inset 0 1px 0 rgba(255,255,255,.16);display:flex;flex-direction:column;padding:10px 16px 16px">
+      <span onClick="{{ goSplit }}" style="cursor:pointer;color:#F5F5F5;font-size:17px;font-weight:500;padding:13px 6px;border-bottom:1px solid rgba(255,255,255,.07)">Home</span>
+      <span onClick="{{ goCustomer }}" style="cursor:pointer;color:#F5F5F5;font-size:17px;font-weight:500;padding:13px 6px;border-bottom:1px solid rgba(255,255,255,.07)">For Customers</span>
+      <span onClick="{{ goMerchant }}" style="cursor:pointer;color:#F5F5F5;font-size:17px;font-weight:500;padding:13px 6px">For Business</span>
+    </div>
+    </sc-if>
+  </nav>
+
+  <!-- ===================== FORK / SPLIT ===================== -->
+  <sc-if value="{{ isSplit }}" hint-placeholder-val="{{ true }}">
+  <div style="position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;overflow:hidden;background:#00121D">
+
+    <!-- top half: customers -->
+    <div onClick="{{ goCustomer }}" style="{{ custHalfStyle }}" style-hover="filter:brightness(1.08)">
+      <div data-spotlight="70" style="position:absolute;inset:0;background:radial-gradient(120% 90% at 30% 20%,rgba(235,113,0,.16),transparent 60%);transition:transform .4s cubic-bezier(.16,1,.3,1)"></div>
+      <div style="position:absolute;inset:0;background:repeating-linear-gradient(115deg,rgba(255,255,255,.02),rgba(255,255,255,.02) 2px,transparent 2px,transparent 26px)"></div>
+      <img src="plane-white.png" alt="" style="position:absolute;top:22%;left:5%;width:min(260px,20vw);opacity:.05;pointer-events:none;transform:rotate(-8deg)">
+      <div style="position:relative;text-align:center;padding:0 24px;transition:opacity .5s,transform .6s;opacity:{{ custContentOpacity }};transform:{{ custContentTransform }}">
+        <div style="font-family:'Barlow';font-size:13px;font-weight:600;letter-spacing:.28em;text-transform:uppercase;color:#EB7100;margin-bottom:16px">For Customers</div>
+        <h2 style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(34px,5.4vw,72px);line-height:1.02;letter-spacing:-.02em;color:#F5F5F5;max-width:15ch;margin:0 auto">Never lose a receipt again.</h2>
+        <div style="margin-top:26px;display:inline-flex;align-items:center;gap:10px;font-size:15px;color:rgba(245,245,245,.62);font-weight:500">
+          <span style="display:inline-block;width:9px;height:9px;border-top:2px solid #EB7100;border-right:2px solid #EB7100;transform:rotate(-45deg)"></span>
+          Scroll up or click to enter
+        </div>
+      </div>
+    </div>
+
+    <!-- seam -->
+    <div style="{{ seamStyle }}">
+      <!-- The label that sat here ("Choose your path") was removed; the two
+           gradients still meet at centre, so the seam reads brightest in the
+           middle and fades to both edges on its own. gap:0 closes the hole the
+           text left behind. -->
+      <div style="display:flex;align-items:center;gap:0;padding:0 22px;width:100%;pointer-events:none">
+        <div style="height:1px;flex:1;background:linear-gradient(90deg,transparent,rgba(235,113,0,.5))"></div>
+        <div style="height:1px;flex:1;background:linear-gradient(90deg,rgba(235,113,0,.5),transparent)"></div>
+      </div>
+    </div>
+
+    <!-- bottom half: business -->
+    <div onClick="{{ goMerchant }}" style="{{ merchHalfStyle }}" style-hover="filter:brightness(1.06)">
+      <div data-spotlight="60" style="position:absolute;inset:0;background:radial-gradient(120% 90% at 70% 80%,rgba(235,113,0,.1),transparent 60%);transition:transform .4s cubic-bezier(.16,1,.3,1)"></div>
+      <img src="plane-blue.png" alt="" style="position:absolute;bottom:20%;right:5%;width:min(260px,20vw);opacity:.06;pointer-events:none;transform:rotate(-8deg)">
+      <div style="position:relative;text-align:center;padding:0 24px;transition:opacity .5s,transform .6s;opacity:{{ merchContentOpacity }};transform:{{ merchContentTransform }}">
+        <div style="font-family:'Barlow';font-size:13px;font-weight:600;letter-spacing:.28em;text-transform:uppercase;color:#EB7100;margin-bottom:16px">For Business</div>
+        <h2 style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(34px,5.4vw,72px);line-height:1.02;letter-spacing:-.02em;color:#00121D;max-width:16ch;margin:0 auto">Modern checkout. Zero paper.</h2>
+        <div style="margin-top:26px;display:inline-flex;align-items:center;gap:10px;font-size:15px;color:rgba(0,18,29,.55);font-weight:500">
+          <span style="display:inline-block;width:9px;height:9px;border-bottom:2px solid #EB7100;border-right:2px solid #EB7100;transform:rotate(45deg)"></span>
+          Scroll down or click to enter
+        </div>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ===================== CUSTOMER PATH ===================== -->
+  <sc-if value="{{ isCustomer }}" hint-placeholder-val="{{ false }}">
+  <div style="position:relative">
+
+    <!-- hero -->
+    <section style="{{ custHeroSection }}">
+      <div data-spotlight="70" style="position:absolute;inset:0;background:radial-gradient(90% 70% at 78% 30%,rgba(235,113,0,.14),transparent 55%);transition:transform .4s cubic-bezier(.16,1,.3,1)"></div>
+      <!-- Soft pool of light behind the headline. Unclipped and oversized on
+           purpose so it dissolves into #00121D rather than ending on an edge.
+           Centred on the h1 (measured at 29% of the section width, 50% of its
+           height at desktop), not on the section - see .hero-glow. -->
+      <div class="hero-glow"></div>
+      <div style="{{ custHeroInner }}">
+        <!-- flex-basis is deliberately 420px, not auto: with `auto` the basis is
+             the headline's natural width (~1030px), which exceeds the line and
+             wraps the stage underneath the copy, pushing the reader below the
+             fold. The tap is undiscoverable if the reader isn't on screen. -->
+        <!-- Asymmetric horizontal padding (small left, larger right) pulls the
+             centred copy toward the left edge to fill the space the old side
+             reader used to occupy. The glow behind it is NOT a background on
+             this element — clipped to the box it terminated at the card's edges
+             and read as a rectangular panel. It lives on the section instead
+             (above), where it can fade out past the copy in every direction. -->
+        <div data-reveal data-stagger style="flex:1 1 500px;min-width:0;position:relative;text-align:center;padding:clamp(44px,4.6vw,74px) clamp(26px,3vw,52px) clamp(44px,4.6vw,74px) clamp(6px,1vw,18px)">
+          <div style="font-size:13px;font-weight:600;letter-spacing:.26em;text-transform:uppercase;color:#EB7100;margin-bottom:16px">Digital receipts, one tap away</div>
+          <h1 data-words style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(42px,5.9vw,88px);line-height:.94;letter-spacing:-.03em;color:#F5F5F5">The last receipt you'll ever lose.</h1>
+          <div style="margin-top:26px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:center">
+            <button onClick="{{ ctaClick }}" data-ripple="rgba(0,18,29,.22)" style="border:none;cursor:pointer;padding:19px 44px;border-radius:999px;background:#EB7100;color:#00121D;font-weight:600;font-size:19px;letter-spacing:-.005em;position:relative;overflow:hidden;transition:transform .35s cubic-bezier(.16,1,.3,1),box-shadow .25s;box-shadow:0 8px 28px rgba(235,113,0,.34)" style-hover="box-shadow:0 14px 40px rgba(235,113,0,.52)">Download the free app</button>
+          </div>
+        </div>
+        <!-- INTERACTIVE STAGE: tap the phone, it bows onto the RDH, the real
+             App Clip receipt arrives. Not a mockup — renderDemoReceipt() runs
+             the production ESC/POS decoder (papex-receipt.js) over real bytes
+             from demoReceiptBytes(). See NOTES.md before changing either. -->
+        <!-- padding-right reserves the room the RDH extends into. Without it the
+             phone sits flush against the container edge and the reader — which is
+             offset right to stay visible — gets clipped by the section's
+             overflow:hidden. -->
+        <div style="flex:0 0 auto;min-width:0;display:flex;flex-direction:column;align-items:center;gap:10px;padding-right:clamp(0px,7vw,104px)">
+          <div class="demo-stage">
+            <div class="demo-phone" ref="{{ setDemoPhone }}" tabindex="0" role="button" aria-label="Tap the phone on the PapeX reader to receive a receipt">
+              <div class="demo-tilt">
+                <div class="demo-shell">
+                  <div class="demo-notch"></div>
+                  <div class="demo-screen">
+                    <div class="ac-live">
+                      <div class="ac-bar">
+                        <span class="ac-wordmark">papex</span><span class="ac-dot"></span>
+                        <span class="ac-bar-label">Receipt</span>
+                      </div>
+                      <div class="ac-scroll" ref="{{ setDemoScroll }}"></div>
+                      <div class="ac-foot">
+                        <button class="ac-btn" onClick="{{ noSubmit }}">Save to PapeX</button>
+                      </div>
+                    </div>
+                    <div class="ac-idle">
+                      <div class="ac-idle-ring"><i></i><i></i><b></b></div>
+                      <div class="ac-idle-t">Tap to receive</div>
+                      <div class="ac-idle-s">Tap the phone on the reader below — no app needed to get it.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- placeholder until the 3D hardware render lands -->
+            <div class="demo-rdh" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 169.5 138.0" role="img" aria-label="The PapeX RDH: a small matte-black device with a green status light and a PapeX label on top.">
+                <!--
+                  PapeX RDH - isometric vector render, GENERATED from a true projection of a
+                  100 x 68 x 30 box (the real unit is ~95 x 62 x 25mm). Do not hand-edit the
+                  face coordinates - regenerate if the proportions change.
+                  Axis convention: sx=(x-z)cos30, sy=(x+z)sin30-y, so +z runs TOWARD the
+                  viewer; the visible walls are the z=D and x=W faces, not z=0/x=0.
+                  The <g> matrix maps label-space (x 0-100, y 0-68) onto the top surface, so the
+                  label and LED sit in plain rectangular coordinates and land projected.
+                  Corner rounding is stroke-linejoin:round with a stroke matching the fill.
+                -->
+                <defs>
+                  <linearGradient id="rdhTop" x1="0" y1="0" x2=".55" y2="1">
+                    <stop offset="0" stop-color="#2f3542"/><stop offset="1" stop-color="#1e222b"/></linearGradient>
+                  <linearGradient id="rdhFront" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#171b23"/><stop offset="1" stop-color="#0e1118"/></linearGradient>
+                  <linearGradient id="rdhSide" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#0f1319"/><stop offset="1" stop-color="#080a0f"/></linearGradient>
+                  <radialGradient id="ledGlow">
+                    <stop offset="0" stop-color="#3ee584" stop-opacity=".8"/>
+                    <stop offset="1" stop-color="#3ee584" stop-opacity="0"/></radialGradient>
+                </defs>
+                <path d="M12.00 46.00 L98.60 96.00 L98.60 126.00 L12.00 76.00 Z" fill="url(#rdhFront)" stroke="#141821" stroke-width="4.5" stroke-linejoin="round"/>
+                <path d="M157.49 62.00 L98.60 96.00 L98.60 126.00 L157.49 92.00 Z" fill="url(#rdhSide)" stroke="#0c0f15" stroke-width="4.5" stroke-linejoin="round"/>
+                <path d="M70.89 12.00 L157.49 62.00 L98.60 96.00 L12.00 46.00 Z" fill="url(#rdhTop)" stroke="#282e39" stroke-width="4.5" stroke-linejoin="round"/>
+                <g transform="matrix(0.86603,0.50000,-0.86603,0.50000,70.890,12.000)">
+                  <circle class="rdh-led" cx="29" cy="59" r="12" fill="url(#ledGlow)"/>
+                  <circle cx="29" cy="59" r="3.4" fill="#54ffa6"/>
+                  <circle cx="29" cy="59" r="1.6" fill="#f0fff7"/>
+                  <rect x="47" y="9" width="47" height="50" rx="2.5" fill="#f7f7f5"/>
+                  <!-- textLength pins the wordmark inside the label even if Kameron never loads -->
+                  <text x="70.5" y="28" text-anchor="middle" font-family="Kameron, Georgia, serif"
+                        font-weight="700" font-size="13" fill="#12161c"
+                        textLength="36" lengthAdjust="spacingAndGlyphs">PapeX</text>
+                  <g transform="translate(58.5,33) scale(0.92)">
+                    <path d="M2 12L22 3L15 21L11.5 13.5L2 12Z" fill="#EB7100"/>
+                    <path d="M11.5 13.5L22 3" stroke="#c05a00" stroke-width="1.2" fill="none"/>
+                  </g>
+                </g>
+                <path d="M12.00 46.00 L70.89 12.00 L157.49 62.00" fill="none" stroke="#3d4552" stroke-width="1" stroke-linecap="round" opacity=".85"/>
+              </svg>
+            </div>
+          </div>
+          <div style="min-height:22px;display:flex;align-items:center;gap:12px;font-size:13.5px;color:rgba(245,245,245,.55)">
+            <span>{{ demoHint }}</span>
+            <span onClick="{{ demoReset }}" style="{{ demoResetStyle }}">Reset</span>
+          </div>
+        </div>
+      </div>
+      <div style="position:absolute;bottom:26px;left:50%;transform:translateX(-50%);font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:rgba(245,245,245,.4);display:flex;flex-direction:column;align-items:center;gap:8px">Scroll<span style="width:1px;height:26px;background:linear-gradient(rgba(245,245,245,.7),transparent);animation:arrowBob 1.9s ease-in-out infinite"></span></div>
+    </section>
+
+    <!-- problem (light) -->
+    <section style="background:#F5F5F5;color:#00121D;padding:clamp(90px,11vw,170px) clamp(20px,5vw,56px)">
+      <div style="max-width:1100px;margin:0 auto">
+        <div data-reveal>
+          <div style="font-size:13px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:#EB7100;margin-bottom:18px">The problem</div>
+          <h2 data-words style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(32px,4.6vw,62px);line-height:1.02;letter-spacing:-.02em;max-width:20ch">Paper receipts fade. So does the money you could get back.</h2>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:clamp(20px,3vw,40px);margin-top:clamp(50px,6vw,90px)" data-reveal>
+          <div class="pfx" ref="{{ setCardA }}" tabindex="0" role="button" aria-label="Flip card: How many receipts do we print?" style="height:340px">
+            <div class="pfx-inner">
+              <div class="pfx-face">
+                <div style="width:58px;height:44px;border-radius:7px 7px 4px 4px;background:linear-gradient(160deg,#0a2431,#04161f);position:relative"><span style="position:absolute;left:9px;right:9px;bottom:8px;height:3px;border-radius:2px;background:rgba(245,245,245,.3)"></span><span style="position:absolute;left:14px;right:14px;top:-11px;height:14px;background:#fff;border:1px solid #e2e2e2;border-radius:2px"></span></div>
+                <div style="margin-top:14px;font-family:'Kameron',serif;font-weight:700;font-size:21px;color:#00121D;line-height:1.2;max-width:18ch">How many receipts do we print?</div>
+                <span class="pfx-hint">Tap to flip</span>
+              </div>
+              <div class="pfx-face pfx-back">
+                <div class="pfx-stage"><div class="pfx-printer"></div><div class="pfx-slips"></div></div>
+                <div class="pfx-result">
+                  <div class="pfx-num">256B</div>
+                  <p class="pfx-cap">receipts printed every year in the US alone — most in the trash by lunch.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="pfx" ref="{{ setCardB }}" tabindex="0" role="button" aria-label="Flip card: What does that cost the forest?" style="height:340px">
+            <div class="pfx-inner">
+              <div class="pfx-face">
+                <div style="display:flex;align-items:flex-end;gap:5px"><span style="display:block;width:0;height:0;border-left:11px solid transparent;border-right:11px solid transparent;border-bottom:30px solid #2f7d4f"></span><span style="display:block;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:22px solid #3c9160"></span><span style="display:block;width:0;height:0;border-left:11px solid transparent;border-right:11px solid transparent;border-bottom:30px solid #2f7d4f"></span></div>
+                <div style="margin-top:14px;font-family:'Kameron',serif;font-weight:700;font-size:21px;color:#00121D;line-height:1.2;max-width:18ch">What does that cost the forest?</div>
+                <span class="pfx-hint">Tap to flip</span>
+              </div>
+              <div class="pfx-face pfx-back">
+                <div class="pfx-stage"><div class="pfx-ground"></div><div class="pfx-forest"></div><div class="pfx-axe"></div></div>
+                <div class="pfx-result">
+                  <div class="pfx-num">10M</div>
+                  <p class="pfx-cap">trees cut down annually to print receipts nobody keeps.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="pfx" ref="{{ setCardC }}" tabindex="0" role="button" aria-label="Flip card: What do you get back without proof?" style="height:340px">
+            <div class="pfx-inner">
+              <div class="pfx-face">
+                <div style="width:56px;padding:10px 8px 12px;background:#fff;border:1.5px solid #e2e2e2;border-radius:3px;box-shadow:0 6px 16px rgba(0,18,29,.1)"><span style="display:block;font-family:'Kameron',serif;font-weight:700;font-size:26px;color:#00121D;line-height:1">$0</span><span style="display:block;margin-top:6px;height:1.5px;background:#ececec"></span><span style="display:block;margin-top:4px;height:1.5px;background:#f0f0f0"></span></div>
+                <div style="margin-top:14px;font-family:'Kameron',serif;font-weight:700;font-size:21px;color:#00121D;line-height:1.2;max-width:18ch">What do you get back without proof?</div>
+                <span class="pfx-hint">Tap to flip</span>
+              </div>
+              <div class="pfx-face pfx-back">
+                <div class="pfx-stage"><div class="pfx-zero"><span style="display:block;font-family:'Kameron',serif;font-weight:700;font-size:46px;color:#00121D;line-height:1">0</span><span style="display:block;margin-top:10px;height:1.5px;background:#ececec"></span><span style="display:block;margin-top:5px;height:1.5px;background:#f0f0f0"></span><span style="display:block;margin-top:5px;height:1.5px;background:#f4f4f4"></span></div></div>
+                <div class="pfx-result">
+                  <div class="pfx-num">$0</div>
+                  <p class="pfx-cap">back on the return, warranty, or deduction — because you lost the receipt.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- marquee -->
+    <div style="background:#EB7100;overflow:hidden;padding:15px 0">
+      <div style="display:inline-flex;white-space:nowrap;animation:marquee 30s linear infinite;will-change:transform">
+        <span style="display:inline-flex;align-items:center;font-family:'Kameron',serif;font-weight:700;font-size:clamp(20px,2.3vw,30px);color:#00121D">
+          <span style="padding:0 30px">One tap, done.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">No paper.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">No app to receive.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">Saved forever.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">Fully searchable.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">Zero waste.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+        </span>
+        <span aria-hidden="true" style="display:inline-flex;align-items:center;font-family:'Kameron',serif;font-weight:700;font-size:clamp(20px,2.3vw,30px);color:#00121D">
+          <span style="padding:0 30px">One tap, done.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">No paper.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">No app to receive.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">Saved forever.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">Fully searchable.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">Zero waste.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+        </span>
+      </div>
+    </div>
+
+    <!-- personas: three-question quiz (light) -->
+    <section style="background:#fff;color:#00121D;padding:clamp(90px,11vw,160px) clamp(20px,5vw,56px)">
+      <div style="max-width:1150px;margin:0 auto">
+        <div data-reveal style="text-align:center">
+          <div style="font-size:13px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:#EB7100;margin-bottom:18px">Which one are you?</div>
+          <h2 data-words style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(30px,4.4vw,58px);line-height:1.03;letter-spacing:-.02em;max-width:24ch;margin:0 auto">Three kinds of receipt people. PapeX works for all of them.</h2>
+          <p style="margin:18px auto 0;font-size:17px;line-height:1.55;color:#5a5a5a;max-width:46ch">Three questions. We'll tell you which one you are.</p>
+        </div>
+
+        <div class="qz" ref="{{ setQuizRoot }}">
+        <div class="qz-card is-on" data-qz-step="0">
+          <div class="qz-prompt">Someone asks you for a receipt from three months ago.</div>
+          <div class="qz-opts">
+            <button class="qz-opt" data-persona="keeper">I pull it up in seconds. It's filed.</button>
+            <button class="qz-opt" data-persona="keeper">I'd find it — give me a drawer and a minute.</button>
+            <button class="qz-opt" data-persona="casual">I'd search my email and hope.</button>
+            <button class="qz-opt" data-persona="non">It's gone. It was gone that day.</button>
+          </div>
+        </div>
+        <div class="qz-card" data-qz-step="1">
+          <div class="qz-prompt">At the register, they ask if you want the receipt.</div>
+          <div class="qz-opts">
+            <button class="qz-opt" data-persona="keeper">Always yes — it goes straight in the folder.</button>
+            <button class="qz-opt" data-persona="casual">Yes, then it lives in my bag for a month.</button>
+            <button class="qz-opt" data-persona="casual">Only for the expensive stuff.</button>
+            <button class="qz-opt" data-persona="non">No thanks. Every single time.</button>
+          </div>
+        </div>
+        <div class="qz-card" data-qz-step="2">
+          <div class="qz-prompt">Something you bought breaks. The warranty needs proof of purchase.</div>
+          <div class="qz-opts">
+            <button class="qz-opt" data-persona="keeper">Already have it, sorted by date.</button>
+            <button class="qz-opt" data-persona="casual">I'd dig for a while and probably win.</button>
+            <button class="qz-opt" data-persona="casual">I'd try my card statement instead.</button>
+            <button class="qz-opt" data-persona="non">I'd just accept the loss and move on.</button>
+          </div>
+        </div>
+          <div class="qz-card" data-qz-step="3" style="text-align:center">
+            <div class="qz-res">
+            <div class="qz-p" data-p="keeper">
+              <span class="qz-tag">That's you</span>
+              <div class="qz-p-eyebrow">The Keeper</div>
+              <div class="qz-p-title">You already do the work.</div>
+              <p class="qz-p-body">You keep everything, and it still takes effort. PapeX files it the moment you tap — searchable, exportable, no shoebox.</p>
+            </div>
+            <div class="qz-p" data-p="casual">
+              <span class="qz-tag">That's you</span>
+              <div class="qz-p-eyebrow">The Casual</div>
+              <div class="qz-p-title">You mean to keep them.</div>
+              <p class="qz-p-body">No more wondering where it went. Every receipt saves itself when you tap, so the one time you need it, it is already there.</p>
+            </div>
+            <div class="qz-p" data-p="non">
+              <span class="qz-tag">That's you</span>
+              <div class="qz-p-eyebrow">The Non-Keeper</div>
+              <div class="qz-p-title">You have been leaving money on the table.</div>
+              <p class="qz-p-body">Returns, warranties and deductions all need proof you never kept. One tap covers you, without changing how you shop.</p>
+            </div>
+            </div>
+            <button class="qz-restart">Take it again</button>
+          </div>
+        </div>
+
+        <div class="qz-steps">
+          <span class="qz-pip is-on"></span><span class="qz-pip"></span><span class="qz-pip"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- feature claims (dark) — the interactive demo that used to live here moved
+         into the hero; this keeps the two claims that were alongside it. -->
+    <section style="background:#00121D;color:#F5F5F5;padding:clamp(90px,11vw,160px) clamp(20px,5vw,56px)">
+      <div style="max-width:1000px;margin:0 auto">
+        <div data-reveal>
+          <div style="font-size:13px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:#EB7100;margin-bottom:18px">Once it's yours</div>
+          <h2 data-words style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(30px,4.4vw,58px);line-height:1.03;letter-spacing:-.02em;max-width:20ch">Every receipt, kept and searchable.</h2>
+        </div>
+        <div data-reveal data-stagger style="margin-top:clamp(46px,5vw,72px);display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:clamp(24px,3vw,44px)">
+          <div>
+            <div style="width:44px;height:3px;border-radius:3px;background:#EB7100;margin-bottom:20px"></div>
+            <h3 style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(21px,2.1vw,27px);line-height:1.15;letter-spacing:-.01em">Everything in one place</h3>
+            <p style="margin-top:12px;font-size:16.5px;line-height:1.55;color:rgba(245,245,245,.62)">Filter by store, date, category or amount. Categorise food, transport, business and personal. Export for taxes without lifting a finger.</p>
+          </div>
+          <div>
+            <div style="width:44px;height:3px;border-radius:3px;background:#EB7100;margin-bottom:20px"></div>
+            <h3 style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(21px,2.1vw,27px);line-height:1.15;letter-spacing:-.01em">Share in a tap</h3>
+            <p style="margin-top:12px;font-size:16.5px;line-height:1.55;color:rgba(245,245,245,.62)">Text, email or AirDrop any receipt in seconds. Split an expense or send proof of purchase — no photos of crumpled paper, no scanning.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- how it works: two-click walkthrough -->
+    <section ref="{{ setHiwRoot }}" style="background:#F5F5F5;color:#00121D;padding:clamp(80px,10vw,140px) clamp(20px,5vw,56px)">
+      <div style="max-width:1150px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:clamp(34px,6vw,80px);align-items:center">
+        <div data-reveal>
+          <div style="font-size:13px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:#EB7100;margin-bottom:18px">How it works</div>
+          <h2 data-words style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(34px,4.4vw,60px);line-height:1.02;letter-spacing:-.02em;max-width:16ch">Get started in three taps.</h2>
+          <div style="margin-top:clamp(28px,3.6vw,44px);display:grid;gap:8px">
+              <div class="hiw-step is-active">
+                <div class="hiw-bar"><i></i></div>
+                <div style="padding-bottom:22px"><div style="font-family:'Kameron',serif;font-weight:700;font-size:14px;color:#EB7100;letter-spacing:.04em">01</div><h4 style="font-family:'Kameron',serif;font-weight:600;font-size:clamp(20px,2.2vw,26px);margin-top:3px">Tap at checkout</h4><p style="margin-top:7px;font-size:15px;color:#5a5a5a;line-height:1.5;max-width:34ch">Hold your phone to any PapeX device at the register. No app required.</p></div>
+              </div>
+              <div class="hiw-step">
+                <div class="hiw-bar"><i></i></div>
+                <div style="padding-bottom:22px"><div style="font-family:'Kameron',serif;font-weight:700;font-size:14px;color:#EB7100;letter-spacing:.04em">02</div><h4 style="font-family:'Kameron',serif;font-weight:600;font-size:clamp(20px,2.2vw,26px);margin-top:3px">Receipt appears instantly</h4><p style="margin-top:7px;font-size:15px;color:#5a5a5a;line-height:1.5;max-width:34ch">Your digital receipt lands on your phone the moment you tap.</p></div>
+              </div>
+              <div class="hiw-step">
+                <div class="hiw-bar"><i></i></div>
+                <div style=""><div style="font-family:'Kameron',serif;font-weight:700;font-size:14px;color:#EB7100;letter-spacing:.04em">03</div><h4 style="font-family:'Kameron',serif;font-weight:600;font-size:clamp(20px,2.2vw,26px);margin-top:3px">Saved &amp; organized</h4><p style="margin-top:7px;font-size:15px;color:#5a5a5a;line-height:1.5;max-width:34ch">Download the app to keep, search and categorize everything automatically.</p></div>
+              </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;align-items:center;gap:18px">
+          <div class="hiw-stage">
+            <!-- reader sits behind the phone, only its head showing -->
+            <div class="hiw-rdh">
+              <span style="font-family:'Kameron',serif;font-weight:700;font-size:12.5px;color:#F5F5F5">PapeX RDH</span>
+              <div style="position:relative;width:44px;height:44px;display:flex;align-items:center;justify-content:center">
+                <span class="hiw-ring" style="position:absolute;top:50%;left:50%;width:44px;height:44px;border-radius:50%;border:2px solid #EB7100;animation:ripple 2.2s ease-out infinite"></span>
+                <span style="position:relative;width:18px;height:18px;border-radius:50%;background:#EB7100;box-shadow:0 0 0 6px rgba(235,113,0,.18)"></span>
+              </div>
+            </div>
+
+            <div class="hiw-phone" ref="{{ setHiwPhone }}" tabindex="0" role="button" aria-label="Step through how PapeX works">
+              <div class="hiw-tilt">
+                <div style="position:relative;height:min(520px,56vh);aspect-ratio:300/600;border-radius:42px;background:linear-gradient(160deg,#0a2431,#04161f);border:2px solid rgba(255,255,255,.1);box-shadow:0 34px 76px rgba(0,18,29,.3);padding:13px">
+                  <div style="position:absolute;top:15px;left:50%;transform:translateX(-50%);width:86px;height:22px;background:#04161f;border-radius:0 0 13px 13px;z-index:8"></div>
+                  <div style="position:relative;width:100%;height:100%;border-radius:30px;overflow:hidden;background:#F5F5F5">
+
+                    <div class="hiw-screen is-on" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:26px">
+                      <div style="position:relative;width:120px;height:120px;display:flex;align-items:center;justify-content:center">
+                        <span style="position:absolute;top:50%;left:50%;width:120px;height:120px;border-radius:50%;border:2px solid #EB7100;animation:ripple 2.1s ease-out infinite"></span>
+                        <span style="position:absolute;top:50%;left:50%;width:120px;height:120px;border-radius:50%;border:2px solid #EB7100;animation:ripple 2.1s ease-out infinite 1.05s"></span>
+                        <span style="position:relative;width:42px;height:42px;border-radius:50%;background:#EB7100;box-shadow:0 0 0 9px rgba(235,113,0,.16)"></span>
+                      </div>
+                      <div style="text-align:center"><div style="font-family:'Kameron',serif;font-weight:700;font-size:20px;color:#00121D">Ready to tap</div><div style="margin-top:6px;font-size:12.5px;color:#8a8a8a">Hold your phone to the device</div></div>
+                    </div>
+
+                    <div class="hiw-screen" style="display:flex;flex-direction:column;justify-content:center;padding:18px">
+                      <div style="background:#fff;border-radius:16px;padding:18px 16px;box-shadow:0 14px 34px rgba(0,18,29,.12)">
+                        <div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1.5px dashed #d8d8d8;padding-bottom:11px;margin-bottom:12px"><div><div style="font-family:'Kameron',serif;font-weight:700;font-size:15px;color:#00121D">Blue Bottle Coffee</div><div style="font-size:10.5px;color:#9a9a9a;margin-top:2px">Jul 22, 2026 · 8:41 AM</div></div><div style="font-size:9px;font-weight:700;color:#EB7100;border:1px solid #EB7100;border-radius:5px;padding:3px 6px;letter-spacing:.04em">TAPPED</div></div>
+                        <div style="display:flex;justify-content:space-between;font-size:12px;color:#4a4a4a;margin-bottom:8px"><span>Cappuccino</span><span>$5.25</span></div>
+                        <div style="display:flex;justify-content:space-between;font-size:12px;color:#4a4a4a;margin-bottom:12px"><span>Almond croissant</span><span>$4.75</span></div>
+                        <div style="display:flex;justify-content:space-between;border-top:1.5px solid #00121D;padding-top:11px;font-weight:700;font-size:15px;color:#00121D"><span>Total</span><span>$10.90</span></div>
+                      </div>
+                      <div style="text-align:center;margin-top:13px;font-size:12px;color:#8a8a8a">Delivered the instant you tapped</div>
+                    </div>
+
+                    <div class="hiw-screen" style="display:flex;flex-direction:column;gap:10px;padding:18px 15px">
+                      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px"><span style="font-family:'Kameron',serif;font-weight:700;font-size:17px;color:#00121D">Receipts</span><span style="width:27px;height:27px;border-radius:50%;background:#EB7100;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11.5px">P</span></div>
+                      <div style="display:flex;align-items:center;gap:8px;background:#fff;border-radius:10px;padding:9px 12px;font-size:12px;color:#9a9a9a">Search receipts</div>
+                      <div style="display:flex;justify-content:space-between;align-items:center;background:#fff;border-radius:12px;padding:11px 13px"><div><div style="font-weight:600;font-size:13px;color:#00121D">Blue Bottle</div><div style="font-size:10px;color:#EB7100;margin-top:2px">Food</div></div><span style="font-weight:700;font-size:13px;color:#00121D">$10.90</span></div>
+                      <div style="display:flex;justify-content:space-between;align-items:center;background:#fff;border-radius:12px;padding:11px 13px"><div><div style="font-weight:600;font-size:13px;color:#00121D">Whole Foods</div><div style="font-size:10px;color:#EB7100;margin-top:2px">Groceries</div></div><span style="font-weight:700;font-size:13px;color:#00121D">$63.40</span></div>
+                      <div style="display:flex;justify-content:space-between;align-items:center;background:#fff;border-radius:12px;padding:11px 13px"><div><div style="font-weight:600;font-size:13px;color:#00121D">Uber</div><div style="font-size:10px;color:#EB7100;margin-top:2px">Transport</div></div><span style="font-weight:700;font-size:13px;color:#00121D">$18.20</span></div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="hiw-cue" ref="{{ setHiwCue }}">Tap the phone on the reader</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- closing cta (dark) -->
+    <section style="background:#00121D;color:#F5F5F5;padding:clamp(80px,9vw,130px) clamp(20px,5vw,56px)">
+      <div style="max-width:760px;margin:0 auto;text-align:center">
+        <div data-reveal>
+          <h2 data-words style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(32px,4.8vw,62px);line-height:1.03;letter-spacing:-.02em">Start with your next receipt.</h2>
+          <p style="margin-top:20px;font-size:17px;line-height:1.55;color:rgba(245,245,245,.6);max-width:46ch;margin-left:auto;margin-right:auto">Free on the App Store — and you don't even need it to receive your first one.</p>
+        </div>
+        <div data-reveal style="margin-top:42px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
+          <button onClick="{{ ctaClick }}" data-ripple="rgba(0,18,29,.22)" style="border:none;cursor:pointer;padding:16px 34px;border-radius:999px;background:#EB7100;color:#00121D;font-weight:600;font-size:16px;position:relative;overflow:hidden;transition:transform .35s cubic-bezier(.16,1,.3,1),box-shadow .25s;box-shadow:0 6px 22px rgba(235,113,0,.3)" style-hover="box-shadow:0 12px 34px rgba(235,113,0,.5)">Download the App</button>
+          <button onClick="{{ goMerchant }}" style="cursor:pointer;padding:16px 34px;border-radius:999px;background:transparent;color:#F5F5F5;font-weight:600;font-size:16px;border:1.5px solid rgba(255,255,255,.2);transition:border-color .2s,background .2s" style-hover="border-color:#F5F5F5;background:rgba(255,255,255,.06)">Get the RDH for Business</button>
+        </div>
+      </div>
+    </section>
+
+    <dc-import name="PapeX Footer" hint-size="100%,340px"></dc-import>
+  </div>
+  </sc-if>
+
+  <!-- ===================== MERCHANT PATH ===================== -->
+  <sc-if value="{{ isMerchant }}" hint-placeholder-val="{{ false }}">
+  <div style="position:relative">
+
+    <!-- hero -->
+    <section style="min-height:100vh;background:#F5F5F5;color:#00121D;display:flex;align-items:center;padding:120px clamp(20px,5vw,56px) 80px;position:relative;overflow:hidden">
+      <div data-spotlight="70" style="position:absolute;inset:0;background:radial-gradient(80% 70% at 22% 40%,rgba(235,113,0,.16),transparent 55%);transition:transform .4s cubic-bezier(.16,1,.3,1)"></div>
+      <div style="max-width:1200px;margin:0 auto;width:100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:clamp(30px,5vw,70px);align-items:center;position:relative" data-merch-hero>
+        <div data-reveal data-stagger style="max-width:560px">
+          <div style="font-size:13px;font-weight:600;letter-spacing:.26em;text-transform:uppercase;color:#EB7100;margin-bottom:22px">For Business</div>
+          <h1 data-words style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(38px,5.6vw,80px);line-height:1;letter-spacing:-.025em">Modernize your checkout. No cost. No hassle.</h1>
+          <p style="margin-top:26px;font-size:clamp(17px,1.5vw,20px);line-height:1.5;color:rgba(0,18,29,.62);max-width:46ch">The RDH plugs into your existing POS and sends customers a digital receipt when they tap. Free hardware, free install, zero paper.</p>
+          <div style="margin-top:36px;display:flex;gap:14px;flex-wrap:wrap;align-items:center">
+            <button onClick="{{ ctaClick }}" data-ripple="rgba(0,18,29,.22)" style="border:none;cursor:pointer;padding:15px 30px;border-radius:999px;background:#EB7100;color:#00121D;font-weight:600;font-size:16px;position:relative;overflow:hidden;transition:transform .35s cubic-bezier(.16,1,.3,1),box-shadow .25s;box-shadow:0 6px 22px rgba(235,113,0,.3)" style-hover="box-shadow:0 12px 34px rgba(235,113,0,.5)">Request a Demo</button>
+            <a href="tel:+14152618675" style="display:inline-flex;align-items:center;gap:11px;padding:7px 20px;border-radius:999px;background:#fff;border:1.5px solid rgba(0,18,29,.14);text-decoration:none;box-shadow:0 6px 18px rgba(0,18,29,.06);transition:border-color .25s,box-shadow .25s,transform .25s" style-hover="border-color:#00121D;box-shadow:0 12px 28px rgba(0,18,29,.13);transform:translateY(-1px)">
+              <span style="width:30px;height:30px;border-radius:50%;background:rgba(235,113,0,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#EB7100" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              </span>
+              <span style="display:flex;flex-direction:column;line-height:1.15">
+                <span style="font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(0,18,29,.45)">or call</span>
+                <span style="font-size:17px;font-weight:700;color:#00121D;letter-spacing:-.01em">415-261-8675</span>
+              </span>
+            </a>
+          </div>
+        </div>
+        <!-- RDH device at POS -->
+        <div style="position:relative;display:flex;align-items:center;justify-content:center;animation:floaty 7s ease-in-out infinite">
+          <img src="rdh-device.svg" alt="The PapeX RDH: a small matte-black device with a green status light and a PapeX label on top." style="width:clamp(300px,34vw,430px);height:auto;display:block;filter:drop-shadow(0 30px 60px rgba(0,18,29,.4))">
+        </div>
+      </div>
+    </section>
+
+    <!-- why merchants love it (light) -->
+    <section style="background:#F5F5F5;color:#00121D;padding:clamp(90px,11vw,160px) clamp(20px,5vw,56px)">
+      <div style="max-width:1150px;margin:0 auto">
+        <div data-reveal><div style="font-size:13px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:#EB7100;margin-bottom:18px">Why merchants love PapeX</div><h2 data-words style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(30px,4.6vw,60px);line-height:1.04;letter-spacing:-.02em">Every reason to switch. None to say no.</h2></div>
+        <div class="wgrid" data-reveal data-stagger>
+          <div>
+            <div class="wcard is-lead">
+              <span class="wc-glow"></span>
+              <div class="wc-val">$0</div>
+              <div class="wc-rule"></div>
+              <div class="wc-title">Free forever</div>
+              <p class="wc-body">The device, the install, and support cost you nothing. No hardware fee, no subscription, no contract to sign.</p>
+            </div>
+          </div>
+          <div>
+            <div class="wcard">
+              <div class="wc-val">1 port</div>
+              <div class="wc-rule"></div>
+              <div class="wc-title">Works with your POS</div>
+              <p class="wc-body">Connects through a standard port you already have. No new system, no software change, no retraining.</p>
+            </div>
+          </div>
+          <div>
+            <div class="wcard">
+              <div class="wc-val">1 tap</div>
+              <div class="wc-rule"></div>
+              <div class="wc-title">Customers love it</div>
+              <p class="wc-body">Faster at the counter than waiting on a printer — and the receipt can't fade, tear, or end up in the trash.</p>
+            </div>
+          </div>
+          <div>
+            <div class="wcard">
+              <div class="wc-val">0 rolls</div>
+              <div class="wc-rule"></div>
+              <div class="wc-title">Cut paper and cost</div>
+              <p class="wc-body">Stop buying thermal paper. Stand out from the shop next door still handing out waste.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- marquee -->
+    <div style="background:#EB7100;overflow:hidden;padding:15px 0">
+      <div style="display:inline-flex;white-space:nowrap;animation:marquee 32s linear infinite;will-change:transform">
+        <span style="display:inline-flex;align-items:center;font-family:'Kameron',serif;font-weight:700;font-size:clamp(20px,2.3vw,30px);color:#00121D">
+          <span style="padding:0 30px">Free device.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">Free install.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">Works with your POS.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">Zero paper.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">PCI compliant.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">No contract.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+        </span>
+        <span aria-hidden="true" style="display:inline-flex;align-items:center;font-family:'Kameron',serif;font-weight:700;font-size:clamp(20px,2.3vw,30px);color:#00121D">
+          <span style="padding:0 30px">Free device.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">Free install.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">Works with your POS.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">Zero paper.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">PCI compliant.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+          <span style="padding:0 30px">No contract.</span><i style="width:9px;height:9px;background:#00121D;transform:rotate(45deg);display:inline-block"></i>
+        </span>
+      </div>
+    </div>
+
+    <!-- how it works for business (dark) -->
+    <section style="background:#00121D;color:#F5F5F5;padding:clamp(90px,11vw,160px) clamp(20px,5vw,56px)">
+      <div style="max-width:1100px;margin:0 auto">
+        <div data-reveal style="max-width:760px">
+          <div style="font-size:13px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:#EB7100;margin-bottom:18px">Getting set up</div>
+          <h2 data-words style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(30px,4.6vw,60px);line-height:1.04;letter-spacing:-.02em">Up and running the same afternoon.</h2>
+          <p style="margin-top:18px;font-size:17px;line-height:1.55;color:rgba(245,245,245,.62);max-width:52ch">Four steps, one visit. Follow the line — nothing about your existing setup has to change.</p>
+        </div>
+        <div class="rmap" style="margin-top:clamp(52px,6vw,84px)">
+          <div class="rmap-node" data-reveal>
+            <div class="rmap-dot">01</div>
+            <h4 style="font-family:'Kameron',serif;font-weight:600;font-size:19px;margin-top:18px">We install the RDH</h4>
+            <p style="margin-top:8px;font-size:15px;color:rgba(245,245,245,.6);line-height:1.5;max-width:26ch">A small device fits right at your point of sale.</p>
+          </div>
+          <div class="rmap-node" data-reveal>
+            <div class="rmap-dot">02</div>
+            <h4 style="font-family:'Kameron',serif;font-weight:600;font-size:19px;margin-top:18px">It connects to your POS</h4>
+            <p style="margin-top:8px;font-size:15px;color:rgba(245,245,245,.6);line-height:1.5;max-width:26ch">Through a standard port — no terminal modification.</p>
+          </div>
+          <div class="rmap-node" data-reveal>
+            <div class="rmap-dot">03</div>
+            <h4 style="font-family:'Kameron',serif;font-weight:600;font-size:19px;margin-top:18px">Customers tap</h4>
+            <p style="margin-top:8px;font-size:15px;color:rgba(245,245,245,.6);line-height:1.5;max-width:26ch">They get a digital receipt instantly, no app required.</p>
+          </div>
+          <div class="rmap-node" data-reveal>
+            <div class="rmap-dot">04</div>
+            <h4 style="font-family:'Kameron',serif;font-weight:600;font-size:19px;margin-top:18px">You see it all</h4>
+            <p style="margin-top:8px;font-size:15px;color:rgba(245,245,245,.6);line-height:1.5;max-width:26ch">Your dashboard is live from the first receipt.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- the RDH device (light) -->
+    <section style="background:#fff;color:#00121D;padding:clamp(90px,11vw,160px) clamp(20px,5vw,56px)">
+      <div style="max-width:1150px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:clamp(30px,5vw,70px);align-items:center" data-reveal data-rdh>
+        <div data-reveal="mask" style="display:flex;align-items:center;justify-content:center;padding:clamp(20px,4vw,44px)"><img src="rdh-device.svg" alt="The PapeX RDH: a small matte-black device with a green status light and a PapeX label on top." style="width:100%;max-width:460px;height:auto;display:block"></div>
+        <div>
+          <div style="font-size:13px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:#EB7100;margin-bottom:16px">The RDH device</div>
+          <h2 style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(28px,3.8vw,50px);line-height:1.03;letter-spacing:-.02em">Small device. Standard ports. PCI compliant.</h2>
+          <div style="margin-top:26px;display:grid;gap:14px">
+            <div style="display:flex;gap:14px;align-items:flex-start"><span style="color:#EB7100;font-weight:700;font-size:18px;line-height:1.4">→</span><span style="font-size:16px;color:#4a4a4a;line-height:1.45">Plugs into standard POS ports — USB, serial or Ethernet. No terminal modification.</span></div>
+            <div style="display:flex;gap:14px;align-items:flex-start"><span style="color:#EB7100;font-weight:700;font-size:18px;line-height:1.4">→</span><span style="font-size:16px;color:#4a4a4a;line-height:1.45">Two installation modes: printer replacement or inline extension.</span></div>
+            <div style="display:flex;gap:14px;align-items:flex-start"><span style="color:#EB7100;font-weight:700;font-size:18px;line-height:1.4">→</span><span style="font-size:16px;color:#4a4a4a;line-height:1.45">PCI DSS compliant out of the box — <span style="color:#EB7100;cursor:pointer">see documentation</span>.</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- merchant dashboard (dark) -->
+    <!-- merchant-dashboard.png is a real capture of PapeXWeb/app/merchant/insights
+         running in mock mode (NEXT_PUBLIC_MERCHANT_MOCK=1), not a mockup. The
+         merchant shown is Bluebird Coffee — the same fixture as the receipt in
+         the customer hero, so the two sections tell one story. Re-capture with
+         the CDP script noted in NOTES.md if the dashboard changes. -->
+    <section style="background:#00121D;color:#F5F5F5;padding:clamp(90px,11vw,160px) clamp(20px,5vw,56px)">
+      <div style="max-width:1080px;margin:0 auto" data-reveal>
+        <div style="text-align:center">
+          <div style="font-size:13px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:#EB7100;margin-bottom:18px">Included, free</div>
+          <h2 data-words style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(30px,4.4vw,58px);line-height:1.03;letter-spacing:-.02em;max-width:22ch;margin:0 auto">A dashboard for your digital receipts.</h2>
+          <p style="margin:20px auto 0;font-size:17px;line-height:1.55;color:rgba(245,245,245,.62);max-width:56ch">Every receipt the RDH sends is searchable the moment it lands. See what's selling, when you're busy, and how many customers are taking the digital copy.</p>
+        </div>
+        <div data-reveal="mask" style="margin-top:clamp(40px,5vw,60px);border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.1);box-shadow:0 40px 90px rgba(0,0,0,.5)">
+          <img src="merchant-dashboard.png" alt="The PapeX merchant dashboard, showing transaction count, gross, average ticket and tap rate, with charts of busiest hours and days and a ranked list of top items." style="display:block;width:100%;height:auto">
+        </div>
+        <div style="margin-top:clamp(40px,5vw,60px);display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:clamp(24px,3vw,44px)">
+          <div>
+            <div style="width:40px;height:3px;border-radius:3px;background:#EB7100;margin-bottom:16px"></div>
+            <h3 style="font-family:'Kameron',serif;font-weight:700;font-size:20px;line-height:1.2">Every receipt, searchable</h3>
+            <p style="margin-top:10px;font-size:15.5px;line-height:1.55;color:rgba(245,245,245,.6)">Filter by amount, item, card or date. Open any receipt exactly as the customer saw it.</p>
+          </div>
+          <div>
+            <div style="width:40px;height:3px;border-radius:3px;background:#EB7100;margin-bottom:16px"></div>
+            <h3 style="font-family:'Kameron',serif;font-weight:700;font-size:20px;line-height:1.2">Know your busiest hours</h3>
+            <p style="margin-top:10px;font-size:15.5px;line-height:1.55;color:rgba(245,245,245,.6)">Volume by hour and by weekday, plus the items that actually move. Staff to the real curve.</p>
+          </div>
+          <div>
+            <div style="width:40px;height:3px;border-radius:3px;background:#EB7100;margin-bottom:16px"></div>
+            <h3 style="font-family:'Kameron',serif;font-weight:700;font-size:20px;line-height:1.2">Watch your devices</h3>
+            <p style="margin-top:10px;font-size:15.5px;line-height:1.55;color:rgba(245,245,245,.6)">Every RDH box and when it last checked in, so a quiet register never goes unnoticed.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- get started / demo form (light) -->
+    <section style="background:#F5F5F5;color:#00121D;padding:clamp(90px,11vw,160px) clamp(20px,5vw,56px)">
+      <div style="max-width:960px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:clamp(30px,5vw,70px);align-items:start" data-reveal data-demo>
+        <div>
+          <div style="font-size:13px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;color:#EB7100;margin-bottom:16px">Get started</div>
+          <h2 style="font-family:'Kameron',serif;font-weight:700;font-size:clamp(30px,4vw,54px);line-height:1.03;letter-spacing:-.02em">Request a demo.</h2>
+          <p style="margin-top:18px;font-size:17px;line-height:1.55;color:#5a5a5a;max-width:34ch">See the RDH in action and get set up — free for qualified merchants.</p>
+          <p style="margin-top:24px;font-size:16px;color:#00121D;font-weight:600">Or call us: <span style="color:#EB7100">415-261-8675</span></p>
+        </div>
+        <form onSubmit="{{ noSubmit }}" style="display:grid;gap:12px">
+          <input placeholder="Your name" style="padding:14px 16px;border-radius:12px;border:1px solid rgba(0,18,29,.14);background:#fff;font-size:15px;outline:none;color:#00121D">
+          <input placeholder="Business name" style="padding:14px 16px;border-radius:12px;border:1px solid rgba(0,18,29,.14);background:#fff;font-size:15px;outline:none;color:#00121D">
+          <input type="email" placeholder="Email" style="padding:14px 16px;border-radius:12px;border:1px solid rgba(0,18,29,.14);background:#fff;font-size:15px;outline:none;color:#00121D">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <input placeholder="Phone" style="padding:14px 16px;border-radius:12px;border:1px solid rgba(0,18,29,.14);background:#fff;font-size:15px;outline:none;color:#00121D">
+            <input placeholder="POS system" style="padding:14px 16px;border-radius:12px;border:1px solid rgba(0,18,29,.14);background:#fff;font-size:15px;outline:none;color:#00121D">
+          </div>
+          <button type="submit" style="margin-top:6px;border:none;cursor:pointer;padding:15px;border-radius:12px;background:#EB7100;color:#00121D;font-weight:600;font-size:16px;transition:transform .2s" style-hover="transform:translateY(-1px)">Request Demo</button>
+        </form>
+      </div>
+    </section>
+
+    <dc-import name="PapeX Footer" hint-size="100%,340px"></dc-import>
+  </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:&quot;100%&quot;},&quot;forkStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;horizontal&quot;,&quot;diagonal&quot;],&quot;default&quot;:&quot;horizontal&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Fork&quot;,&quot;label&quot;:&quot;Split seam style&quot;}}">
+class Component extends DCLogic {
+  state = { view: 'split', committing: null, persona: null, mobile: false, menuOpen: false, demo: 'idle' };
+
+  componentDidMount() {
+    this.wheelLock = false;
+    this.onWheel = (e) => {
+      if (this.state.view !== 'split' || this.wheelLock) return;
+      if (Math.abs(e.deltaY) < 6) return;
+      this.wheelLock = true;
+      this.commit(e.deltaY < 0 ? 'customer' : 'merchant');
+    };
+    window.addEventListener('wheel', this.onWheel, { passive: true });
+    // touch swipe on split
+    this.ts = 0;
+    this.onTS = (e) => { this.ts = e.touches[0].clientY; };
+    this.onTE = (e) => {
+      if (this.state.view !== 'split' || this.wheelLock) return;
+      const dy = this.ts - e.changedTouches[0].clientY;
+      if (Math.abs(dy) < 40) return;
+      this.wheelLock = true;
+      this.commit(dy < 0 ? 'customer' : 'merchant');
+    };
+    window.addEventListener('touchstart', this.onTS, { passive: true });
+    window.addEventListener('touchend', this.onTE, { passive: true });
+    this.mq = window.matchMedia('(max-width:820px)');
+    this.applyMq = () => this.setState({ mobile: this.mq.matches });
+    this.applyMq();
+    this.mq.addEventListener('change', this.applyMq);
+    // motion engine
+    this._raf = null;
+    this.onScroll = () => { if (!this._raf) this._raf = requestAnimationFrame(this.updateScroll); };
+    window.addEventListener('scroll', this.onScroll, { passive: true });
+    this.fine = window.matchMedia('(pointer:fine)').matches;
+    this.onMove = (e) => this.handlePointer(e.clientX, e.clientY);
+    if (this.fine) window.addEventListener('pointermove', this.onMove, { passive: true });
+    this.onDown = (e) => this.spawnRipple(e);
+    window.addEventListener('pointerdown', this.onDown, { passive: true });
+  }
+  componentWillUnmount() {
+    window.removeEventListener('wheel', this.onWheel);
+    window.removeEventListener('touchstart', this.onTS);
+    window.removeEventListener('touchend', this.onTE);
+    window.removeEventListener('scroll', this.onScroll);
+    window.removeEventListener('pointermove', this.onMove);
+    window.removeEventListener('pointerdown', this.onDown);
+    if (this.mq) this.mq.removeEventListener('change', this.applyMq);
+    if (this.io) this.io.disconnect();
+    this.detachDemoTap();
+    clearTimeout(this._demoBow);
+  }
+  componentDidUpdate(pp, ps) {
+    // support.js calls this as componentDidUpdate(prevProps) — there is no second
+    // argument, so `ps` is always undefined. Reveals are re-run by the setRoot ref
+    // below, which fires on every view change; guard rather than double-run them.
+    if (!ps) return;
+    if (ps.view !== this.state.view && this.state.view !== 'split') {
+      clearTimeout(this._rv);
+      this._rv = setTimeout(() => this.runReveals(), 40);
+    }
+  }
+  commit(path) {
+    this.setState({ committing: path });
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+      this.setState({ view: path, committing: null });
+      this.wheelLock = false;
+    }, 620);
+  }
+  goSplit = () => { window.scrollTo(0, 0); this.wheelLock = false; if (this.io) this.io.disconnect(); this.setState({ view: 'split', committing: null, menuOpen: false }); };
+  goCustomer = () => { if (this.state.view === 'split') { this.commit('customer'); } else { window.scrollTo(0, 0); this.setState({ view: 'customer', menuOpen: false }); } };
+  goMerchant = () => { if (this.state.view === 'split') { this.commit('merchant'); } else { window.scrollTo(0, 0); this.setState({ view: 'merchant', menuOpen: false }); } };
+  toggleMenu = () => this.setState((s) => ({ menuOpen: !s.menuOpen }));
+
+  runReveals() {
+    if (!this.root) return;
+    if (this.io) this.io.disconnect();
+    this.setupWords();
+    const EASE = 'cubic-bezier(.16,1,.3,1)';
+    const els = Array.from(this.root.querySelectorAll('[data-reveal]'));
+    els.forEach((el) => {
+      // Already revealed — leave it alone. runReveals() is re-run by the setRoot
+      // ref on EVERY setState, including a phone tap in the hero. Without this
+      // guard each tap reset the hero copy to opacity:0 and replayed the .9s
+      // fade, so the headline visibly flashed every time you used the demo.
+      if (el.dataset.revealed === '1') return;
+      const v = el.getAttribute('data-reveal') || 'up';
+      el.style.willChange = 'opacity, transform';
+      if (v === 'mask') {
+        el.style.clipPath = 'inset(0 100% 0 0)';
+        el.style.transition = 'clip-path 1.1s cubic-bezier(.7,0,.15,1)';
+      } else {
+        el.style.opacity = '0';
+        el.style.transition = 'opacity .9s ' + EASE + ', transform .9s ' + EASE;
+        el.style.transform = v === 'left' ? 'translateX(-48px)' : v === 'right' ? 'translateX(48px)' : v === 'scale' ? 'scale(.92)' : 'translateY(46px)';
+      }
+      if (el.hasAttribute('data-stagger')) {
+        Array.from(el.children).forEach((c, i) => {
+          c.style.opacity = '0';
+          c.style.transform = 'translateY(30px)';
+          c.style.transition = 'opacity .75s ' + EASE + ' ' + (i * 0.08) + 's, transform .75s ' + EASE + ' ' + (i * 0.08) + 's';
+        });
+      }
+    });
+    const show = (el) => {
+      const v = el.getAttribute('data-reveal') || 'up';
+      el.dataset.revealed = '1';
+      if (v === 'mask') el.style.clipPath = 'inset(0 0 0 0)';
+      else { el.style.opacity = '1'; el.style.transform = 'none'; }
+      if (el.hasAttribute('data-stagger')) Array.from(el.children).forEach((c) => { c.style.opacity = '1'; c.style.transform = 'none'; });
+      el.querySelectorAll('[data-word]').forEach((w) => { w.style.transform = 'translateY(0)'; w.style.opacity = '1'; });
+    };
+    this.io = new IntersectionObserver((entries) => {
+      entries.forEach((en) => {
+        if (!en.isIntersecting) return;
+        show(en.target);
+        this.io.unobserve(en.target);
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
+    els.forEach((el) => { if (el.dataset.revealed !== '1') this.io.observe(el); });
+    this.root.querySelectorAll('[data-spotlight]').forEach((el) => { el.style.transition = 'transform .4s ' + EASE; });
+    this.root.querySelectorAll('[data-parallax]').forEach((el) => { el.dataset.pbase = el.style.transform || ''; });
+    this.updateScroll();
+  }
+  setupWords() {
+    if (!this.root) return;
+    this.root.querySelectorAll('[data-words]').forEach((h) => {
+      if (h.dataset.wdone) return; h.dataset.wdone = '1';
+      const text = h.textContent.trim();
+      h.textContent = '';
+      text.split(' ').forEach((word, i) => {
+        const wrap = document.createElement('span');
+        wrap.style.cssText = 'display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.12em;margin-bottom:-.12em';
+        const inner = document.createElement('span');
+        inner.setAttribute('data-word', '');
+        inner.style.cssText = 'display:inline-block;transform:translateY(115%);opacity:0;transition:transform .85s cubic-bezier(.16,1,.3,1) ' + (i * 0.055) + 's, opacity .6s ' + (i * 0.055) + 's';
+        inner.textContent = word;
+        wrap.appendChild(inner);
+        h.appendChild(wrap);
+        h.appendChild(document.createTextNode(' '));
+      });
+    });
+  }
+  updateScroll = () => {
+    this._raf = null;
+    if (!this.root) return;
+    const vh = window.innerHeight;
+    this.root.querySelectorAll('[data-parallax]').forEach((el) => {
+      const sp = parseFloat(el.getAttribute('data-parallax')) || 0;
+      const r = el.getBoundingClientRect();
+      const center = r.top + r.height / 2 - vh / 2;
+      el.style.transform = (el.dataset.pbase || '') + ' translate3d(0,' + (-center * sp).toFixed(1) + 'px,0)';
+    });
+  }
+  handlePointer(x, y) {
+    if (!this.root) return;
+    this.root.querySelectorAll('[data-spotlight]').forEach((el) => {
+      const r = el.getBoundingClientRect(); if (!r.width) return;
+      const s = parseFloat(el.getAttribute('data-spotlight')) || 30;
+      const dx = (x - (r.left + r.width / 2)) / r.width;
+      const dy = (y - (r.top + r.height / 2)) / r.height;
+      el.style.transform = 'translate3d(' + (dx * s).toFixed(1) + 'px,' + (dy * s).toFixed(1) + 'px,0)';
+    });
+  }
+  spawnRipple(e) {
+    const t = e.target && e.target.closest && e.target.closest('[data-ripple]');
+    if (!t) return;
+    const r = t.getBoundingClientRect();
+    const size = Math.max(r.width, r.height) * 2.2;
+    const s = document.createElement('span');
+    s.style.cssText = 'position:absolute;pointer-events:none;border-radius:50%;left:' + (e.clientX - r.left - size / 2) + 'px;top:' + (e.clientY - r.top - size / 2) + 'px;width:' + size + 'px;height:' + size + 'px;background:' + (t.getAttribute('data-ripple') || 'rgba(0,18,29,.18)') + ';transform:scale(0);opacity:.6;transition:transform .6s ease-out,opacity .7s ease-out';
+    t.appendChild(s);
+    requestAnimationFrame(() => { s.style.transform = 'scale(1)'; s.style.opacity = '0'; });
+    setTimeout(() => s.remove(), 720);
+  }
+  // ---- NFC tap ------------------------------------------------------------
+  // Click (or Enter/Space) makes the phone bow toward the RDH the way you'd
+  // actually tip a handset onto a reader, then the receipt lands. State-driven
+  // rather than imperative, so nothing fights the template's re-renders.
+  // ---- interactive app demo -----------------------------------------------
+  // Unlike the hero (which fakes a receipt with static markup), this runs the
+  // production decoder over real bytes. papex-receipt.js is a verbatim port of
+  // PapeXWeb/lib/escpos.ts + receiptSummary.ts — fix a parser bug there and it
+  // must be re-ported here, same as the Swift/TS parity rule in CLAUDE.md.
+  DEMO_BOW_MS = 460;
+
+  // A real ESC/POS stream, not a pre-decoded object. Mirrors the Bluebird Coffee
+  // fixture in PapeXWeb/lib/sampleReceipt.ts so the two stay comparable, but as
+  // bytes so the demo exercises the actual parser.
+  demoReceiptBytes() {
+    if (this._demoBytes) return this._demoBytes;
+    const out = [];
+    const txt = (s) => { for (let i = 0; i < s.length; i++) out.push(s.charCodeAt(i) & 0xFF); };
+    const line = (s) => { txt(s); out.push(0x0A); };
+    out.push(0x1B, 0x40);              // ESC @    initialise
+    out.push(0x1B, 0x61, 0x01);        // ESC a 1  centre
+    out.push(0x1B, 0x21, 0x30);        // ESC ! 48 double height + double width
+    line('BLUEBIRD COFFEE');
+    out.push(0x1B, 0x21, 0x00);        // ESC ! 0  back to normal
+    line('412 Walnut St');
+    line('Syracuse, NY 13202');
+    line('(315) 555-0142');
+    out.push(0x0A);
+    out.push(0x1B, 0x61, 0x00);        // ESC a 0  left
+    line('Order #1042   Jun 8, 2026  10:24 AM');
+    line('Server: Maya');
+    line('--------------------------------');
+    line('1  Cortado                  4.25');
+    line('1  Oat milk add-on          0.75');
+    line('1  Almond croissant         4.50');
+    line('1  Sparkling water          2.00');
+    line('--------------------------------');
+    line('Subtotal                   11.50');
+    line('Tax (8%)                    0.92');
+    out.push(0x1B, 0x45, 0x01);        // ESC E 1  bold on
+    line('TOTAL                      12.42');
+    out.push(0x1B, 0x45, 0x00);        // ESC E 0  bold off
+    out.push(0x0A);
+    line('VISA  ****4729   APPROVED');
+    out.push(0x0A);
+    out.push(0x1B, 0x61, 0x01);        // ESC a 1  centre
+    line('Thanks for stopping in!');
+    line('bluebird.coffee');
+    out.push(0x1D, 0x56, 0x00);        // GS V 0   cut
+    this._demoBytes = new Uint8Array(out);
+    return this._demoBytes;
+  }
+
+  setDemoPhone = (el) => {
+    if (this.demoPhoneEl === el) return;
+    this.detachDemoTap();
+    this.demoPhoneEl = el;
+    if (!el) return;
+    this.onDemoTap = () => this.state.demo === 'done' ? this.demoReset() : this.demoTap();
+    this.onDemoKey = (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      this.onDemoTap();
+    };
+    el.addEventListener('click', this.onDemoTap);
+    el.addEventListener('keydown', this.onDemoKey);
+    this.applyDemo(this.state.demo);   // a re-render swapped the node — restore it
+  };
+
+  detachDemoTap() {
+    if (!this.demoPhoneEl || !this.onDemoTap) return;
+    this.demoPhoneEl.removeEventListener('click', this.onDemoTap);
+    this.demoPhoneEl.removeEventListener('keydown', this.onDemoKey);
+  }
+
+  setDemoScroll = (el) => {
+    this.demoScrollEl = el;
+    if (el && !el.childElementCount) this.renderDemoReceipt(el);
+  };
+
+  // Same stale-ref hazard as tilt(): after a re-render the stored node is truthy
+  // but detached, so writes to it silently do nothing.
+  demoPhone() {
+    let el = this.demoPhoneEl;
+    if (!el || !document.contains(el)) el = this.root && this.root.querySelector('.demo-phone');
+    this.demoPhoneEl = el;
+    return el;
+  }
+
+  applyDemo(s) {
+    const el = this.demoPhone();
+    if (!el) return;
+    el.classList.toggle('is-bowing', s === 'bowing');
+    el.classList.toggle('is-done', s === 'done');
+  }
+
+  demoTap() {
+    if (this.state.demo !== 'idle') return;
+    clearTimeout(this._demoBow);
+    this.setState({ demo: 'bowing' });
+    this.applyDemo('bowing');
+    this._demoBow = setTimeout(() => {
+      this.setState({ demo: 'done' });
+      this.applyDemo('done');
+    }, this.DEMO_BOW_MS);
+  }
+
+  demoReset = () => {
+    if (this.state.demo !== 'done') return;
+    clearTimeout(this._demoBow);
+    this.setState({ demo: 'idle' });
+    this.applyDemo('idle');
+    const sc = this.demoScrollEl;
+    if (sc && document.contains(sc)) sc.scrollTop = 0;
+  };
+
+  renderDemoReceipt(root) {
+    if (!root) return;
+    root.textContent = '';
+    const el = (tag, cls, text) => {
+      const n = document.createElement(tag);
+      if (cls) n.className = cls;
+      if (text != null) n.textContent = text;
+      return n;
+    };
+    const note = (msg) => {
+      const w = el('div', 'ac-card', msg);
+      w.style.cssText += ';color:#C4C7CC;font-size:14px;line-height:1.5';
+      root.appendChild(w);
+    };
+    const R = window.PapeXReceipt;
+    if (!R) { note('Receipt decoder did not load. This page must be served over HTTP — papex-receipt.js sits next to it.'); return; }
+
+    let sum;
+    try {
+      sum = R.summarizeReceipt(R.parseEscPos(this.demoReceiptBytes()).lines);
+    } catch (err) {
+      // the parser contract is skip-unknown-never-throw, so this should be
+      // unreachable — but a blank phone screen would be a worse failure.
+      note('Could not decode the sample receipt: ' + (err && err.message ? err.message : err));
+      return;
+    }
+
+    const money = (n) => (n < 0 ? '-$' : '$') + Math.abs(n).toFixed(2);
+
+    // merchant
+    if (sum.merchantName || sum.addressLines.length) {
+      const card = el('div', 'ac-card');
+      const row = el('div', 'ac-merchant');
+      row.appendChild(el('div', 'ac-mono-badge', (sum.merchantName || '?').trim().charAt(0).toUpperCase()));
+      const col = el('div');
+      col.style.cssText = 'min-width:0;flex:1';
+      if (sum.merchantName) col.appendChild(el('div', 'ac-mname', sum.merchantName));
+      sum.addressLines.forEach((a) => col.appendChild(el('div', 'ac-maddr', a)));
+      if (sum.dateline) col.appendChild(el('div', 'ac-mdate', sum.dateline));
+      col.appendChild(el('div', 'ac-msrc', 'RDH Receipt'));
+      row.appendChild(col);
+      card.appendChild(row);
+      root.appendChild(card);
+    }
+
+    // items
+    if (sum.items.length) {
+      const card = el('div', 'ac-card');
+      card.appendChild(el('div', 'ac-section-title', 'Items'));
+      sum.items.forEach((it) => {
+        const r = el('div', 'ac-item');
+        const left = el('div');
+        left.style.cssText = 'min-width:0';
+        left.appendChild(el('div', 'ac-item-name', it.name));
+        if (it.qty > 1) left.appendChild(el('div', 'ac-item-qty', 'Qty ' + it.qty));
+        r.appendChild(left);
+        r.appendChild(el('div', 'ac-item-price', money(it.amount)));
+        card.appendChild(r);
+      });
+      root.appendChild(card);
+    }
+
+    // totals
+    if (sum.subtotal != null || sum.tax != null || sum.total != null) {
+      const card = el('div', 'ac-card');
+      const row = (label, val, cls) => {
+        const r = el('div', 'ac-trow');
+        r.appendChild(el('div', 'ac-tlabel', label));
+        r.appendChild(el('div', 'ac-tval' + (cls ? ' ' + cls : ''), val));
+        card.appendChild(r);
+      };
+      if (sum.subtotal != null) row('Subtotal', money(sum.subtotal), 'is-brand');
+      if (sum.tax != null) {
+        let label = 'Tax';
+        if (sum.subtotal) {
+          const rate = (sum.tax / sum.subtotal) * 100;
+          if (isFinite(rate) && rate > 0 && rate < 100) label = 'Tax (' + rate.toFixed(2).replace(/\.?0+$/, '') + '%)';
+        }
+        row(label, money(sum.tax));
+      }
+      if (sum.tip != null) row('Tip', money(sum.tip));
+      if (sum.discount != null) row('Discount', money(-Math.abs(sum.discount)));
+      if (sum.total != null) {
+        card.appendChild(el('div', 'ac-trule'));
+        const r = el('div', 'ac-trow');
+        r.appendChild(el('div', 'ac-grand-label', 'Total'));
+        r.appendChild(el('div', 'ac-grand-val', money(sum.total)));
+        card.appendChild(r);
+      }
+      if (sum.paymentLine) {
+        const net = R.detectPaymentMethod(sum.paymentLine);
+        const last4 = R.extractLastFour(sum.paymentLine);
+        const r = el('div', 'ac-trow');
+        r.appendChild(el('div', 'ac-tlabel', 'Payment'));
+        const right = el('div');
+        right.style.cssText = 'display:flex;align-items:center;gap:8px';
+        if (net && R.PAYMENT_METHOD_STYLES[net]) {
+          const st = R.PAYMENT_METHOD_STYLES[net];
+          const chip = el('span', 'ac-chip', st.label);
+          chip.style.background = st.bg;
+          chip.style.color = st.textColor;
+          right.appendChild(chip);
+        }
+        if (last4) right.appendChild(el('span', 'ac-tval', '•••• ' + last4));
+        r.appendChild(right);
+        card.appendChild(r);
+      }
+      root.appendChild(card);
+    }
+
+    // receipt information — only fields the summary actually carries
+    const info = [];
+    if (sum.dateline) info.push(['Date', sum.dateline]);
+    info.push(['Source', 'PapeX RDH · NFC tap']);
+    const infoCard = el('div', 'ac-card');
+    infoCard.appendChild(el('div', 'ac-section-title', 'Receipt Information'));
+    info.forEach((kv) => {
+      const r = el('div', 'ac-inforow');
+      r.appendChild(el('div', 'ac-infolabel', kv[0]));
+      r.appendChild(el('div', 'ac-infoval', kv[1]));
+      infoCard.appendChild(r);
+    });
+    root.appendChild(infoCard);
+
+    // original receipt, verbatim
+    const origCard = el('div', 'ac-card');
+    const det = el('details', 'ac-orig');
+    if (!R.hasStructure(sum)) det.open = true;
+    const sm = el('summary');
+    sm.appendChild(el('span', null, 'Original receipt'));
+    sm.appendChild(el('span', 'ac-chev', '▾'));
+    det.appendChild(sm);
+    const body = el('div', 'ac-body');
+    sum.bodyLines.forEach((l) => {
+      const st = l.style || {};
+      const cls = ['ac-line'];
+      // one size class only — mirrors styleClasses() in PapeXWeb/app/r/ui.tsx
+      if (st.doubleHeight && st.doubleWidth) cls.push('is-lg');
+      else if (st.doubleHeight || st.doubleWidth) cls.push('is-md');
+      else if (st.fontB) cls.push('is-fb');
+      if (st.bold) cls.push('is-b');
+      if (st.underline) cls.push('is-u');
+      if (l.align === 'center') cls.push('al-center');
+      else if (l.align === 'right') cls.push('al-right');
+      body.appendChild(el('div', cls.join(' '), l.text.length ? l.text : ' '));
+    });
+    det.appendChild(body);
+    origCard.appendChild(det);
+    root.appendChild(origCard);
+  }
+
+  // ---- personas: three-question quiz --------------------------------------
+  // Three questions, four options each, scored into one of three personas.
+  // Ties fall to The Casual — it's the middle ground and the safest read.
+  setQuizRoot = (el) => {
+    if (this.qzRoot === el) return;
+    this.qzRoot = el;
+    if (!el || el.dataset.qzBound) return;
+    el.dataset.qzBound = '1';
+    this.qzReset();
+    el.addEventListener('click', (e) => {
+      const opt = e.target.closest && e.target.closest('.qz-opt');
+      if (opt) return this.qzAnswer(opt.getAttribute('data-persona'));
+      if (e.target.closest && e.target.closest('.qz-restart')) this.qzReset();
+    });
+  };
+
+  qzReset = () => {
+    this.qzScore = { keeper: 0, casual: 0, non: 0 };
+    this.qzAt = 0;
+    const root = this.qzRootLive();
+    if (root) root.querySelectorAll('.qz-p').forEach((el) => el.classList.remove('is-you'));
+    this.qzShow(0);
+  };
+
+  qzAnswer(persona) {
+    if (!this.qzScore[persona] && this.qzScore[persona] !== 0) return;
+    this.qzScore[persona]++;
+    this.qzAt++;
+    if (this.qzAt < 3) return this.qzShow(this.qzAt);
+    const s = this.qzScore;
+    // casual first so it wins ties
+    const winner = ['casual', 'keeper', 'non'].reduce((a, b) => (s[b] > s[a] ? b : a), 'casual');
+    const root = this.qzRootLive();
+    // every persona stays readable; the match is lifted and outlined
+    if (root) root.querySelectorAll('.qz-p').forEach((el) => {
+      el.classList.toggle('is-you', el.getAttribute('data-p') === winner);
+    });
+    this.qzShow(3);
+  }
+
+  qzRootLive() {
+    return this.qzRoot && document.contains(this.qzRoot) ? this.qzRoot : document.querySelector('.qz');
+  }
+
+  qzShow(n) {
+    const root = this.qzRootLive();
+    if (!root) return;
+    root.querySelectorAll('[data-qz-step]').forEach((el) => {
+      el.classList.toggle('is-on', +el.getAttribute('data-qz-step') === n);
+    });
+    const sec = root.closest('section');
+    if (sec) sec.querySelectorAll('.qz-pip').forEach((p, i) => p.classList.toggle('is-on', i <= Math.min(n, 2)));
+  }
+
+  // ---- how it works: two clicks, three steps ------------------------------
+  // Click 1 lifts the phone onto the reader behind it and the receipt lands.
+  // Click 2 dismisses the receipt into the saved-receipts list. Click 3 replays.
+  HIW_CUES = [
+    'Tap the phone on the reader',
+    'Tap again to put it away',
+    "That's it — saved, searchable, yours. <b>Replay</b>"
+  ];
+
+  setHiwRoot = (el) => { this.hiwRoot = el; };
+  setHiwCue = (el) => { this.hiwCue = el; };
+
+  setHiwPhone = (el) => {
+    if (this.hiwPhone === el) return;
+    this.hiwPhone = el;
+    if (!el || el.dataset.hiwBound) return;
+    el.dataset.hiwBound = '1';
+    this.hiwStep = 0;
+    const go = () => this.advanceHiw();
+    el.addEventListener('click', go);
+    el.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      go();
+    });
+  };
+
+  advanceHiw() {
+    const phone = this.hiwPhone;
+    if (!phone || !document.contains(phone)) return;
+    clearTimeout(this._hiw);
+    const from = this.hiwStep || 0;
+    if (from === 0) {
+      // lift onto the reader, then let the receipt land as it settles back
+      phone.classList.add('is-bowing');
+      this._hiw = setTimeout(() => {
+        phone.classList.remove('is-bowing');
+        this.applyHiw(1);
+      }, 380);
+      return;
+    }
+    this.applyHiw(from === 1 ? 2 : 0);
+  }
+
+  applyHiw(n) {
+    this.hiwStep = n;
+    const root = this.hiwRoot && document.contains(this.hiwRoot)
+      ? this.hiwRoot
+      : (this.hiwPhone && this.hiwPhone.closest('section'));
+    if (!root) return;
+    root.querySelectorAll('.hiw-step').forEach((el, i) => {
+      el.classList.toggle('is-active', i === n);
+      el.classList.toggle('is-done', i < n);
+    });
+    root.querySelectorAll('.hiw-screen').forEach((el, i) => el.classList.toggle('is-on', i === n));
+    if (this.hiwCue && document.contains(this.hiwCue)) this.hiwCue.innerHTML = this.HIW_CUES[n];
+  }
+
+  // ---- problem section: tap-to-flip stat cards ----------------------------
+  // Each card flips, plays a scene on its back face, then the number pops in.
+  // Scenes are built imperatively so the template's style parser never sees
+  // them (it truncates any bound style at the first top-level comma).
+  setCardA = (el) => this.bindCard(0, el);
+  setCardB = (el) => this.bindCard(1, el);
+  setCardC = (el) => this.bindCard(2, el);
+
+  bindCard(i, el) {
+    this.cards = this.cards || [];
+    this.cardTimers = this.cardTimers || [];
+    if (this.cards[i] === el) return;
+    this.cards[i] = el;
+    if (!el || el.dataset.pfxBound) return;
+    el.dataset.pfxBound = '1';
+    const go = () => this.toggleCard(i);
+    el.addEventListener('click', go);
+    el.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      go();
+    });
+  }
+
+  toggleCard(i) {
+    const el = this.cards && this.cards[i];
+    if (!el || !document.contains(el)) return;
+    const opening = !el.classList.contains('is-flipped');
+    el.classList.toggle('is-flipped', opening);
+    (this.cardTimers[i] || []).forEach(clearTimeout);
+    this.cardTimers[i] = [];
+    const result = el.querySelector('.pfx-result');
+    const stage = el.querySelector('.pfx-stage');
+    if (result) result.classList.remove('pfx-reveal');
+    if (!opening) { if (stage) this.clearScene(stage); return; }
+    // wait for the flip to expose the back face before the scene runs
+    const after = (ms, fn) => this.cardTimers[i].push(setTimeout(fn, ms));
+    after(360, () => {
+      const dur = [this.scenePrinter, this.sceneForest, this.sceneZero][i].call(this, stage);
+      after(360 + dur, () => {
+        if (stage) this.clearScene(stage);
+        if (result) result.classList.add('pfx-reveal');
+      });
+    });
+  }
+
+  clearScene(stage) {
+    if (!stage) return;
+    const slips = stage.querySelector('.pfx-slips');
+    if (slips) slips.innerHTML = '';
+    const forest = stage.querySelector('.pfx-forest');
+    if (forest) forest.innerHTML = '';
+    ['.pfx-printer', '.pfx-axe', '.pfx-zero', '.pfx-ground'].forEach((sel) => {
+      const n = stage.querySelector(sel);
+      if (n) { n.style.animation = 'none'; n.style.opacity = ''; }
+    });
+  }
+
+  // receipts eject faster and faster, then the paper runs out
+  scenePrinter(stage) {
+    const host = stage.querySelector('.pfx-slips');
+    if (!host) return 2400;
+    host.innerHTML = '';
+    const N = 20;
+    let t = 0, last = 0;
+    for (let k = 0; k < N; k++) {
+      const gap = 240 - 200 * (k / (N - 1));          // 240ms -> 40ms
+      t += gap;
+      last = t;
+      const slip = document.createElement('div');
+      slip.className = 'pfx-slip';
+      slip.innerHTML = '<i style="top:9px"></i><i style="top:16px"></i><i style="top:23px"></i>';
+      const spread = (k % 2 ? 1 : -1) * (14 + (k * 4.5) % 62);
+      slip.style.setProperty('--dx', spread + 'px');
+      slip.style.setProperty('--rot', ((k % 2 ? 1 : -1) * (12 + (k * 7) % 46)) + 'deg');
+      slip.style.animation = 'pfxEject 1.15s ease-in ' + t + 'ms forwards';
+      host.appendChild(slip);
+    }
+    return last + 900;
+  }
+
+  // a forest grows in, then one axe swing takes it down
+  sceneForest(stage) {
+    const host = stage.querySelector('.pfx-forest');
+    const axe = stage.querySelector('.pfx-axe');
+    if (!host) return 2400;
+    host.innerHTML = '';
+    const N = 11;
+    for (let k = 0; k < N; k++) {
+      const tree = document.createElement('div');
+      tree.className = 'pfx-tree';
+      tree.innerHTML = '<b></b><u></u>';
+      tree.style.left = (7 + k * 8.2) + '%';
+      const scale = 0.72 + ((k * 37) % 45) / 100;
+      tree.style.animation = 'pfxGrow .4s cubic-bezier(.16,1,.3,1) ' + (k * 68) + 'ms forwards';
+      tree.style.zoom = scale;
+      host.appendChild(tree);
+    }
+    const grown = N * 68 + 400;
+    if (axe) { axe.style.animation = 'none'; void axe.offsetWidth; axe.style.animation = 'pfxSwing .62s cubic-bezier(.5,0,.3,1) ' + (grown + 120) + 'ms forwards'; }
+    setTimeout(() => {
+      [...host.children].forEach((tree, k) => {
+        tree.style.animation = 'pfxFell .5s cubic-bezier(.6,0,.4,1) ' + (k * 26) + 'ms forwards';
+      });
+    }, grown + 400);
+    return grown + 400 + N * 26 + 620;
+  }
+
+  // one receipt feeds out with a big fat nothing on it
+  sceneZero(stage) {
+    const slip = stage.querySelector('.pfx-zero');
+    if (!slip) return 1400;
+    slip.style.animation = 'none';
+    void slip.offsetWidth;
+    slip.style.animation = 'pfxFeed .85s cubic-bezier(.16,1,.3,1) 120ms forwards';
+    return 1500;
+  }
+
+  ctaClick = () => {};
+  noSubmit = (e) => { e.preventDefault(); };
+  pickKeeper = () => this.setState({ persona: 'keeper' });
+  pickCasual = () => this.setState({ persona: 'casual' });
+  pickNon = () => this.setState({ persona: 'non' });
+
+  renderVals() {
+    const v = this.state.view;
+    const committing = this.state.committing;
+    const forkStyle = this.props.forkStyle || 'horizontal';
+    const diag = forkStyle === 'diagonal';
+
+    // fork halves
+    const baseHalf = 'position:relative;flex:1;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:flex-grow .6s cubic-bezier(.7,0,.3,1),filter .4s;overflow:hidden;';
+    let custGrow = 1, merchGrow = 1;
+    if (committing === 'customer') { custGrow = 40; merchGrow = 0.0001; }
+    if (committing === 'merchant') { custGrow = 0.0001; merchGrow = 40; }
+    const custHalfStyle = baseHalf + 'background:#00121D;flex-grow:' + custGrow + (diag ? ';clip-path:polygon(0 0,100% 0,100% 78%,0 100%)' : '') + (committing === 'merchant' ? ';pointer-events:none' : '');
+    const merchHalfStyle = baseHalf + 'background:#F5F5F5;flex-grow:' + merchGrow + (diag ? ';clip-path:polygon(0 22%,100% 0,100% 100%,0 100%);margin-top:-4%' : '') + (committing === 'customer' ? ';pointer-events:none' : '');
+
+    const seamStyle = 'position:relative;z-index:5;flex:0 0 auto;height:1px;display:flex;align-items:center;' + (committing ? 'opacity:0;transition:opacity .3s' : 'opacity:1');
+
+    // nav colors depend on view
+    const dark = v === 'split' || v === 'customer' || v === 'merchant'; // nav sits on dark heros
+    const onLight = false;
+    const navFg = '#F5F5F5';
+    const cardBase = 'background:#F5F5F5;border-radius:20px;padding:34px 30px;cursor:pointer;transition:transform .3s,box-shadow .3s,background .3s;border:1.5px solid transparent;';
+    const sel = (k) => this.state.persona === k
+      ? cardBase + 'background:#00121D;color:#F5F5F5;border-color:#EB7100;'
+      : cardBase;
+    // adjust text color inside selected card handled by inheritance; set color explicitly
+    const cardFor = (k) => this.state.persona === k
+      ? 'position:relative;overflow:hidden;background:#fff;border-radius:20px;padding:34px 30px;cursor:pointer;transition:transform .35s cubic-bezier(.16,1,.3,1),box-shadow .35s,background .35s;border:1.5px solid #EB7100;transform:translateY(-8px);box-shadow:0 26px 55px rgba(235,113,0,.22);'
+      : 'position:relative;overflow:hidden;background:#F5F5F5;border-radius:20px;padding:34px 30px;cursor:pointer;transition:transform .35s cubic-bezier(.16,1,.3,1),box-shadow .35s,background .35s;border:1.5px solid transparent;';
+
+    const pmsg = { keeper: 'The Keeper — PapeX turns your shoebox into a searchable, exportable archive.', casual: 'The Casual — no more \u201cwhere did that receipt go?\u201d It\u2019s always saved for you.', non: 'The Non-Keeper — you\u2019re now covered for every return, warranty and deduction.' };
+
+    // interactive demo — no commas in this bound style (see trap #1 in NOTES.md)
+    const demo = this.state.demo;
+    const demoHint = demo === 'done'
+      ? 'Scroll it, or open the original receipt at the bottom.'
+      : (demo === 'bowing' ? 'Tapping…' : 'Tap the phone to receive the receipt');
+    const demoResetStyle = 'cursor:pointer;color:#EB7100;font-weight:600;text-decoration:underline;text-underline-offset:3px;' +
+      (demo === 'done' ? 'opacity:1;pointer-events:auto' : 'opacity:0;pointer-events:none');
+
+    const custHeroSection = 'min-height:100vh;background:#00121D;color:#F5F5F5;display:flex;align-items:center;padding:96px clamp(20px,5vw,56px) 40px;position:relative;overflow:hidden';
+    // Horizontal: copy card left, drag-to-tap stage right. Side by side is the only
+    // arrangement where the whole phone clears the fold at this size.
+    const custHeroInner = 'max-width:1240px;margin:0 auto;width:100%;display:flex;align-items:center;justify-content:space-between;gap:clamp(24px,3.4vw,56px);flex-wrap:wrap;position:relative';
+
+    return {
+      // Fires on every re-render, deliberately: nodes mount late during the 620ms
+      // path transition and need to be picked up. runReveals() is idempotent —
+      // it skips anything already revealed — so re-running it is safe.
+      setRoot: (el) => { this.root = el; if (el && this.state.view !== 'split') this.runReveals(); },
+      isSplit: v === 'split', isCustomer: v === 'customer', isMerchant: v === 'merchant',
+      goSplit: this.goSplit, goCustomer: this.goCustomer, goMerchant: this.goMerchant,
+      ctaClick: this.ctaClick, tapNfc: this.ctaClick, noSubmit: this.noSubmit,
+      pickKeeper: this.pickKeeper, pickCasual: this.pickCasual, pickNon: this.pickNon,
+      mobile: this.state.mobile, notMobile: !this.state.mobile, menuOpen: this.state.menuOpen, toggleMenu: this.toggleMenu,
+      custHalfStyle, merchHalfStyle, seamStyle,
+      custContentOpacity: committing === 'merchant' ? 0 : 1,
+      custContentTransform: committing === 'merchant' ? 'scale(.96)' : 'none',
+      merchContentOpacity: committing === 'customer' ? 0 : 1,
+      merchContentTransform: committing === 'customer' ? 'scale(.96)' : 'none',
+      navBg: v === 'split' ? 'rgba(0,18,29,0)' : 'rgba(0,18,29,.72)',
+      navFg, navFgDim: 'rgba(245,245,245,.7)',
+      linkCust: v === 'customer' ? '#EB7100' : 'rgba(245,245,245,.72)',
+      linkMerch: v === 'merchant' ? '#EB7100' : 'rgba(245,245,245,.72)',
+      linkCustBg: v === 'customer' ? 'rgba(235,113,0,.15)' : 'transparent',
+      linkMerchBg: v === 'merchant' ? 'rgba(235,113,0,.15)' : 'transparent',
+      ctaLabel: v === 'merchant' ? 'Get the RDH' : (v === 'customer' ? 'Download App' : 'Get Started'),
+      keeperCard: cardFor('keeper'), casualCard: cardFor('casual'), nonCard: cardFor('non'),
+      personaMsg: this.state.persona ? pmsg[this.state.persona] : 'Tap a card above.',
+      custHeroSection, custHeroInner,
+      setDemoPhone: this.setDemoPhone, setDemoScroll: this.setDemoScroll, demoReset: this.demoReset,
+      demoHint, demoResetStyle,
+      setCardA: this.setCardA, setCardB: this.setCardB, setCardC: this.setCardC,
+      setHiwRoot: this.setHiwRoot, setHiwPhone: this.setHiwPhone, setHiwCue: this.setHiwCue,
+      setQuizRoot: this.setQuizRoot,
+    };
+  }
+}
+</script>
+</body>
+</html>

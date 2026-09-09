@@ -12,7 +12,7 @@
 export const T = {
   orange: "#FB8500",
   orangeDim: "rgba(251, 133, 0, 0.16)",
-  blue: "#2B7FC6",
+  blue: "#0088EA", // retired from #2B7FC6 — canonical info blue (matches app/App Clip)
   text: "#F4F4F4",
   textSecondary: "#C4C7CC",
   textMuted: "#9AA1A8",

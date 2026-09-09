@@ -37,9 +37,9 @@ export default function WaitlistForm() {
 
   if (isSubmitted) {
     return (
-      <div className="bg-[#0c4b76] p-8 rounded-lg text-center">
+      <div className="bg-[#0a2431] p-8 rounded-lg text-center">
         <div className="flex justify-center mb-4">
-          <CheckCircle className="h-16 w-16 text-[#ff9933]" />
+          <CheckCircle className="h-16 w-16 text-[#EB7100]" />
         </div>
         <h3 className="text-2xl font-bold mb-4">Thank You!</h3>
         <p className="text-lg">You've been added to our waitlist. We'll keep you updated on our progress!</p>
@@ -48,7 +48,7 @@ export default function WaitlistForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-[#0c4b76] p-8 rounded-lg">
+    <form onSubmit={handleSubmit} className="bg-[#0a2431] p-8 rounded-lg">
       <div className="space-y-6">
         <div className="space-y-2 text-left">
           <Label htmlFor="fullName" className="text-white">
@@ -61,7 +61,7 @@ export default function WaitlistForm() {
             required
             value={formState.fullName}
             onChange={handleChange}
-            className="bg-white text-[#0a3d62]"
+            className="bg-white text-[#00121D]"
           />
         </div>
 
@@ -77,11 +77,11 @@ export default function WaitlistForm() {
             required
             value={formState.email}
             onChange={handleChange}
-            className="bg-white text-[#0a3d62]"
+            className="bg-white text-[#00121D]"
           />
         </div>
 
-        <Button type="submit" className="w-full bg-[#ff9933] hover:bg-[#e67e22] text-white py-6" disabled={isLoading}>
+        <Button type="submit" className="w-full bg-[#EB7100] hover:bg-[#cc6300] text-white py-6" disabled={isLoading}>
           {isLoading ? "Submitting..." : "Join Waitlist"}
         </Button>
 

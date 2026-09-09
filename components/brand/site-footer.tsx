@@ -13,6 +13,12 @@
 //
 // Link set note: the prototype lists Features and About; neither route exists
 // in this repo, so those slots are filled with real routes rather than 404s.
+//
+// Platform column: the legacy framer-footer.tsx links to the landing page's
+// own #feature/#integration/#faq anchor sections — those aren't real routes,
+// but they are live destinations, so they're carried over here rather than
+// dropped (see PapeXWeb CLAUDE.md / the re-skin brief: "the footer must not
+// lose a single link").
 
 import { useState } from 'react'
 import Link from 'next/link'
@@ -21,6 +27,14 @@ import { AdminLogin } from '@/components/AdminLogin'
 import { SALES_PHONE, SALES_PHONE_HREF, SUPPORT_EMAIL } from './links'
 
 const COLUMNS: { title: string; links: { href: string; label: string }[] }[] = [
+  {
+    title: 'Platform',
+    links: [
+      { href: '/#feature', label: 'Features' },
+      { href: '/#integration', label: 'Integration' },
+      { href: '/#faq', label: 'FAQ' },
+    ],
+  },
   {
     title: 'Product',
     links: [

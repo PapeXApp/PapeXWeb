@@ -50,8 +50,8 @@ const INTEGER_FIELDS: EditableField[] = [
   "uniqueCustomersPerMerchantPerMonth",
 ]
 
-const BLUE_INPUT_CELL_CLASS = "bg-[#d0e4f4]/80"
-const ORANGE_TOTAL_ROW_CLASS = "bg-[#ff9933]/20"
+const BLUE_INPUT_CELL_CLASS = "bg-[#eceded]/80"
+const ORANGE_TOTAL_ROW_CLASS = "bg-[#EB7100]/20"
 
 export default function PosCalculatorClient() {
   const router = useRouter()
@@ -95,16 +95,16 @@ export default function PosCalculatorClient() {
 
         <div className="relative z-10 space-y-6">
           <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
-            <TabsList className="bg-white/90 border border-[#0a3d62]/20 h-auto p-1 w-full sm:w-auto inline-flex">
+            <TabsList className="bg-white/90 border border-[#00121D]/20 h-auto p-1 w-full sm:w-auto inline-flex">
               <TabsTrigger
                 value="condensed"
-                className="data-[state=active]:bg-[#0a3d62] data-[state=active]:text-white text-[#0a3d62]"
+                className="data-[state=active]:bg-[#00121D] data-[state=active]:text-white text-[#00121D]"
               >
                 Condensed
               </TabsTrigger>
               <TabsTrigger
                 value="full"
-                className="data-[state=active]:bg-[#0a3d62] data-[state=active]:text-white text-[#0a3d62]"
+                className="data-[state=active]:bg-[#00121D] data-[state=active]:text-white text-[#00121D]"
               >
                 Full model
               </TabsTrigger>
@@ -114,11 +114,11 @@ export default function PosCalculatorClient() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl">
                 <Card className="bg-white/95 border border-white/40">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-lg text-[#0a3d62]">Inputs</CardTitle>
+                    <CardTitle className="text-lg text-[#00121D]">Inputs</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid gap-2">
-                      <p className="text-[#0a3d62] text-sm font-medium">Merchant locations</p>
+                      <p className="text-[#00121D] text-sm font-medium">Merchant locations</p>
                       <Input
                         type="number"
                         inputMode="numeric"
@@ -126,11 +126,11 @@ export default function PosCalculatorClient() {
                         step={100}
                         value={inputs.merchantCount}
                         onChange={(e) => handleChange("merchantCount", e.target.value)}
-                        className="bg-[#d0e4f4]/60 border-[#0a3d62]/20 text-[#0a3d62]"
+                        className="bg-[#eceded]/60 border-[#00121D]/20 text-[#00121D]"
                       />
                     </div>
                     <div className="grid gap-2">
-                      <p className="text-[#0a3d62] text-sm font-medium">
+                      <p className="text-[#00121D] text-sm font-medium">
                         Transactions per merchant / month
                       </p>
                       <Input
@@ -142,11 +142,11 @@ export default function PosCalculatorClient() {
                         onChange={(e) =>
                           handleChange("transactionsPerMerchantPerMonth", e.target.value)
                         }
-                        className="bg-[#d0e4f4]/60 border-[#0a3d62]/20 text-[#0a3d62]"
+                        className="bg-[#eceded]/60 border-[#00121D]/20 text-[#00121D]"
                       />
                     </div>
                     <div className="grid gap-2">
-                      <p className="text-[#0a3d62] text-sm font-medium">
+                      <p className="text-[#00121D] text-sm font-medium">
                         Unique customers per merchant / month
                       </p>
                       <Input
@@ -158,11 +158,11 @@ export default function PosCalculatorClient() {
                         onChange={(e) =>
                           handleChange("uniqueCustomersPerMerchantPerMonth", e.target.value)
                         }
-                        className="bg-[#d0e4f4]/60 border-[#0a3d62]/20 text-[#0a3d62]"
+                        className="bg-[#eceded]/60 border-[#00121D]/20 text-[#00121D]"
                       />
                     </div>
                     <div className="grid gap-2">
-                      <p className="text-[#0a3d62] text-sm font-medium">Average order value ($)</p>
+                      <p className="text-[#00121D] text-sm font-medium">Average order value ($)</p>
                       <Input
                         type="number"
                         inputMode="decimal"
@@ -170,7 +170,7 @@ export default function PosCalculatorClient() {
                         step={0.5}
                         value={inputs.averageOrderValue}
                         onChange={(e) => handleChange("averageOrderValue", e.target.value)}
-                        className="bg-[#d0e4f4]/60 border-[#0a3d62]/20 text-[#0a3d62]"
+                        className="bg-[#eceded]/60 border-[#00121D]/20 text-[#00121D]"
                       />
                     </div>
                   </CardContent>
@@ -178,14 +178,14 @@ export default function PosCalculatorClient() {
 
                 <Card className="bg-white/95 border border-white/40">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-lg text-[#0a3d62]">Outputs</CardTitle>
+                    <CardTitle className="text-lg text-[#00121D]">Outputs</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    <div className="rounded-xl border-2 border-[#ff9933]/50 bg-[#ff9933]/10 p-5 text-center">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-[#0a3d62]/80">
+                    <div className="rounded-xl border-2 border-[#EB7100]/50 bg-[#EB7100]/10 p-5 text-center">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-[#00121D]/80">
                         Additional annual POS revenue
                       </p>
-                      <p className="text-3xl md:text-4xl font-black text-[#ff9933] leading-tight mt-1">
+                      <p className="text-3xl md:text-4xl font-black text-[#EB7100] leading-tight mt-1">
                         {currencyFormatter.format(
                           model.analytics.additionalAnnualPosRevenueWithPapeX
                         )}
@@ -193,13 +193,13 @@ export default function PosCalculatorClient() {
                     </div>
 
                     <div className="space-y-3 text-sm">
-                      <div className="flex justify-between items-baseline text-[#0a3d62]">
+                      <div className="flex justify-between items-baseline text-[#00121D]">
                         <span>Total transactions / month</span>
                         <span className="font-medium">
                           {integerFormatter.format(model.grossMargin.totalTransactionsPerMonth)}
                         </span>
                       </div>
-                      <div className="flex justify-between items-baseline text-[#0a3d62]">
+                      <div className="flex justify-between items-baseline text-[#00121D]">
                         <span>Yearly e-receipt cost</span>
                         <span className="font-medium">
                           {currencyFormatter.format(
@@ -216,25 +216,25 @@ export default function PosCalculatorClient() {
             <TabsContent value="full" className="space-y-6">
               <Card className="bg-white/95 border border-white/40">
                 <CardHeader>
-                  <CardTitle className="text-xl text-[#0a3d62]">Modeled outcomes</CardTitle>
-                  <CardDescription className="text-[#0a3d62]/75">
+                  <CardTitle className="text-xl text-[#00121D]">Modeled outcomes</CardTitle>
+                  <CardDescription className="text-[#00121D]/75">
                     Gross margin and analytics views are stacked below with sources at the bottom.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-8">
                   <section className="space-y-4">
-                    <h2 className="text-lg font-semibold text-[#0a3d62]">Gross Margin</h2>
+                    <h2 className="text-lg font-semibold text-[#00121D]">Gross Margin</h2>
 
-                    <div className="overflow-x-auto rounded-md border border-[#0a3d62]/20">
+                    <div className="overflow-x-auto rounded-md border border-[#00121D]/20">
                       <Table className="min-w-[760px] text-sm">
                         <TableHeader>
                           <TableRow>
-                            <TableHead className="text-[#0a3d62]">Cost</TableHead>
-                            <TableHead className="text-right text-[#0a3d62]">Value</TableHead>
-                            <TableHead className="text-[#0a3d62]">Reference</TableHead>
+                            <TableHead className="text-[#00121D]">Cost</TableHead>
+                            <TableHead className="text-right text-[#00121D]">Value</TableHead>
+                            <TableHead className="text-[#00121D]">Reference</TableHead>
                           </TableRow>
                         </TableHeader>
-                        <TableBody className="text-[#0a3d62]">
+                        <TableBody className="text-[#00121D]">
                           <TableRow>
                             <TableCell>Per printed receipt</TableCell>
                             <TableCell className="text-right">
@@ -261,11 +261,11 @@ export default function PosCalculatorClient() {
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                      <Card className="border-[#0a3d62]/15">
+                      <Card className="border-[#00121D]/15">
                         <CardHeader className="pb-3">
-                          <CardTitle className="text-base text-[#0a3d62]">Costs for ESPs</CardTitle>
+                          <CardTitle className="text-base text-[#00121D]">Costs for ESPs</CardTitle>
                         </CardHeader>
-                        <CardContent className="pt-0 text-sm text-[#0a3d62]/85">
+                        <CardContent className="pt-0 text-sm text-[#00121D]/85">
                           <ul className="list-disc pl-5 space-y-1">
                             <li>Engineering time</li>
                             <li>Deliverability monitoring</li>
@@ -277,11 +277,11 @@ export default function PosCalculatorClient() {
                         </CardContent>
                       </Card>
 
-                      <Card className="border-[#0a3d62]/15">
+                      <Card className="border-[#00121D]/15">
                         <CardHeader className="pb-3">
-                          <CardTitle className="text-base text-[#0a3d62]">Costs for SMS</CardTitle>
+                          <CardTitle className="text-base text-[#00121D]">Costs for SMS</CardTitle>
                         </CardHeader>
-                        <CardContent className="pt-0 text-sm text-[#0a3d62]/85">
+                        <CardContent className="pt-0 text-sm text-[#00121D]/85">
                           <ul className="list-disc pl-5 space-y-1">
                             <li>Delivery tracking</li>
                             <li>Opt-out processing ("STOP" handling)</li>
@@ -293,16 +293,16 @@ export default function PosCalculatorClient() {
                       </Card>
                     </div>
 
-                    <div className="overflow-x-auto rounded-md border border-[#0a3d62]/20">
+                    <div className="overflow-x-auto rounded-md border border-[#00121D]/20">
                       <Table className="min-w-[820px] text-sm">
                         <TableHeader>
                           <TableRow>
-                            <TableHead className="text-[#0a3d62]">Example</TableHead>
-                            <TableHead className="text-right text-[#0a3d62]">Input / Mix</TableHead>
-                            <TableHead className="text-right text-[#0a3d62]">Monthly Count</TableHead>
+                            <TableHead className="text-[#00121D]">Example</TableHead>
+                            <TableHead className="text-right text-[#00121D]">Input / Mix</TableHead>
+                            <TableHead className="text-right text-[#00121D]">Monthly Count</TableHead>
                           </TableRow>
                         </TableHeader>
-                        <TableBody className="text-[#0a3d62]">
+                        <TableBody className="text-[#00121D]">
                           <TableRow>
                             <TableCell>Merchant locations</TableCell>
                             <TableCell className={`text-right font-medium ${BLUE_INPUT_CELL_CLASS}`}>
@@ -316,7 +316,7 @@ export default function PosCalculatorClient() {
                                 onChange={(event) =>
                                   handleChange("merchantCount", event.target.value)
                                 }
-                                className="h-8 border-[#0a3d62]/20 bg-[#d0e4f4]/60 text-right text-[#0a3d62] focus-visible:ring-[#0a3d62]/20"
+                                className="h-8 border-[#00121D]/20 bg-[#eceded]/60 text-right text-[#00121D] focus-visible:ring-[#00121D]/20"
                               />
                             </TableCell>
                             <TableCell className="text-right">-</TableCell>
@@ -334,7 +334,7 @@ export default function PosCalculatorClient() {
                                 onChange={(event) =>
                                   handleChange("transactionsPerMerchantPerMonth", event.target.value)
                                 }
-                                className="h-8 border-[#0a3d62]/20 bg-[#d0e4f4]/60 text-right text-[#0a3d62] focus-visible:ring-[#0a3d62]/20"
+                                className="h-8 border-[#00121D]/20 bg-[#eceded]/60 text-right text-[#00121D] focus-visible:ring-[#00121D]/20"
                               />
                             </TableCell>
                             <TableCell className="text-right">-</TableCell>
@@ -352,7 +352,7 @@ export default function PosCalculatorClient() {
                                 onChange={(event) =>
                                   handleChange("uniqueCustomersPerMerchantPerMonth", event.target.value)
                                 }
-                                className="h-8 border-[#0a3d62]/20 bg-[#d0e4f4]/60 text-right text-[#0a3d62] focus-visible:ring-[#0a3d62]/20"
+                                className="h-8 border-[#00121D]/20 bg-[#eceded]/60 text-right text-[#00121D] focus-visible:ring-[#00121D]/20"
                               />
                             </TableCell>
                             <TableCell className="text-right">-</TableCell>
@@ -370,7 +370,7 @@ export default function PosCalculatorClient() {
                                 onChange={(event) =>
                                   handleChange("averageOrderValue", event.target.value)
                                 }
-                                className="h-8 border-[#0a3d62]/20 bg-[#d0e4f4]/60 text-right text-[#0a3d62] focus-visible:ring-[#0a3d62]/20"
+                                className="h-8 border-[#00121D]/20 bg-[#eceded]/60 text-right text-[#00121D] focus-visible:ring-[#00121D]/20"
                               />
                             </TableCell>
                             <TableCell className="text-right">-</TableCell>
@@ -435,17 +435,17 @@ export default function PosCalculatorClient() {
                       </Table>
                     </div>
 
-                    <div className="overflow-x-auto rounded-md border border-[#0a3d62]/20">
+                    <div className="overflow-x-auto rounded-md border border-[#00121D]/20">
                       <Table className="min-w-[760px] text-sm">
                         <TableHeader>
                           <TableRow>
-                            <TableHead className="text-[#0a3d62]">Type of Receipt</TableHead>
-                            <TableHead className="text-right text-[#0a3d62]">
+                            <TableHead className="text-[#00121D]">Type of Receipt</TableHead>
+                            <TableHead className="text-right text-[#00121D]">
                               Monthly POS Costs (indirect to merchants)
                             </TableHead>
                           </TableRow>
                         </TableHeader>
-                        <TableBody className="text-[#0a3d62]">
+                        <TableBody className="text-[#00121D]">
                           <TableRow>
                             <TableCell>print + email</TableCell>
                             <TableCell className="text-right">
@@ -483,20 +483,20 @@ export default function PosCalculatorClient() {
                     </div>
                   </section>
 
-                  <section className="space-y-4 border-t border-[#0a3d62]/15 pt-6">
-                    <h2 className="text-lg font-semibold text-[#0a3d62]">Analytics</h2>
+                  <section className="space-y-4 border-t border-[#00121D]/15 pt-6">
+                    <h2 className="text-lg font-semibold text-[#00121D]">Analytics</h2>
 
                     <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)] gap-4">
-                      <div className="overflow-x-auto rounded-md border border-[#0a3d62]/20">
+                      <div className="overflow-x-auto rounded-md border border-[#00121D]/20">
                         <Table className="min-w-[760px] text-sm">
                           <TableHeader>
                             <TableRow>
-                              <TableHead className="text-[#0a3d62]">Basic Metrics for Example</TableHead>
-                              <TableHead className="text-right text-[#0a3d62]">Value</TableHead>
-                              <TableHead className="text-[#0a3d62]">Notes</TableHead>
+                              <TableHead className="text-[#00121D]">Basic Metrics for Example</TableHead>
+                              <TableHead className="text-right text-[#00121D]">Value</TableHead>
+                              <TableHead className="text-[#00121D]">Notes</TableHead>
                             </TableRow>
                           </TableHeader>
-                          <TableBody className="text-[#0a3d62]">
+                          <TableBody className="text-[#00121D]">
                             <TableRow>
                               <TableCell>Average Order Value ($)</TableCell>
                               <TableCell className="text-right">
@@ -543,11 +543,11 @@ export default function PosCalculatorClient() {
                         </Table>
                       </div>
 
-                      <Card className="border-[#0a3d62]/15">
+                      <Card className="border-[#00121D]/15">
                         <CardHeader className="pb-3">
-                          <CardTitle className="text-base text-[#0a3d62]">They would get:</CardTitle>
+                          <CardTitle className="text-base text-[#00121D]">They would get:</CardTitle>
                         </CardHeader>
-                        <CardContent className="pt-0 text-sm text-[#0a3d62]/85">
+                        <CardContent className="pt-0 text-sm text-[#00121D]/85">
                           <ul className="list-disc pl-5 space-y-1">
                             <li>Higher digital receipt penetration</li>
                             <li>More identifiable transactions</li>
@@ -559,17 +559,17 @@ export default function PosCalculatorClient() {
                       </Card>
                     </div>
 
-                    <div className="overflow-x-auto rounded-md border border-[#0a3d62]/20">
+                    <div className="overflow-x-auto rounded-md border border-[#00121D]/20">
                       <Table className="min-w-[900px] text-sm">
                         <TableHeader>
                           <TableRow>
-                            <TableHead className="text-[#0a3d62]">Example</TableHead>
-                            <TableHead className="text-right text-[#0a3d62]">Without PapeX</TableHead>
-                            <TableHead className="text-right text-[#0a3d62]">With PapeX</TableHead>
-                            <TableHead className="text-[#0a3d62]">Notes</TableHead>
+                            <TableHead className="text-[#00121D]">Example</TableHead>
+                            <TableHead className="text-right text-[#00121D]">Without PapeX</TableHead>
+                            <TableHead className="text-right text-[#00121D]">With PapeX</TableHead>
+                            <TableHead className="text-[#00121D]">Notes</TableHead>
                           </TableRow>
                         </TableHeader>
-                        <TableBody className="text-[#0a3d62]">
+                        <TableBody className="text-[#00121D]">
                           <TableRow>
                             <TableCell>Identified Transactions Rate (%)</TableCell>
                             <TableCell className="text-right">
@@ -672,35 +672,35 @@ export default function PosCalculatorClient() {
                       </Table>
                     </div>
 
-                    <div className="rounded-xl border-2 border-[#ff9933]/50 bg-[#ff9933]/10 p-5 text-center">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-[#0a3d62]/80">
+                    <div className="rounded-xl border-2 border-[#EB7100]/50 bg-[#EB7100]/10 p-5 text-center">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-[#00121D]/80">
                         Value Added by PapeX
                       </p>
-                      <p className="text-4xl md:text-5xl font-black text-[#ff9933] leading-tight mt-1">
+                      <p className="text-4xl md:text-5xl font-black text-[#EB7100] leading-tight mt-1">
                         {currencyFormatter.format(model.analytics.additionalAnnualPosRevenueWithPapeX)}
                       </p>
-                      <p className="text-sm font-semibold text-[#0a3d62] mt-1">
+                      <p className="text-sm font-semibold text-[#00121D] mt-1">
                         Additional annual POS revenue
                       </p>
                     </div>
                   </section>
 
-                  <section className="space-y-3 border-t border-[#0a3d62]/15 pt-6">
-                    <h2 className="text-lg font-semibold text-[#0a3d62]">Sources</h2>
+                  <section className="space-y-3 border-t border-[#00121D]/15 pt-6">
+                    <h2 className="text-lg font-semibold text-[#00121D]">Sources</h2>
                     {posValuePropSources.map((source) => (
                       <a
                         key={source.url}
                         href={source.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="block rounded-lg border border-[#0a3d62]/15 p-4 hover:border-[#ff9933]/50 transition-colors"
+                        className="block rounded-lg border border-[#00121D]/15 p-4 hover:border-[#EB7100]/50 transition-colors"
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <p className="font-semibold text-[#0a3d62]">{source.label}</p>
-                            <p className="text-sm text-[#0a3d62]/70">{source.note}</p>
+                            <p className="font-semibold text-[#00121D]">{source.label}</p>
+                            <p className="text-sm text-[#00121D]/70">{source.note}</p>
                           </div>
-                          <ExternalLink className="h-4 w-4 text-[#0a3d62]/70 flex-shrink-0 mt-1" />
+                          <ExternalLink className="h-4 w-4 text-[#00121D]/70 flex-shrink-0 mt-1" />
                         </div>
                       </a>
                     ))}

@@ -20,9 +20,15 @@ export function SiteShell({
   children: ReactNode
 }) {
   const isFork = path === 'fork'
+  // SiteShell is only ever mounted with 'fork' | 'customer' | 'business'
+  // (the 'page' variant is rendered standalone by framer-page-shell.tsx, not
+  // through here), but SitePath now also includes 'page', so narrow
+  // explicitly rather than `!isFork` to keep RememberPath's stricter
+  // PathChoice prop type-safe.
+  const pathChoice = path === 'customer' || path === 'business' ? path : null
   return (
     <div className="rd">
-      {!isFork && <RememberPath choice={path} />}
+      {pathChoice && <RememberPath choice={pathChoice} />}
       <SiteNav path={path} />
       <main>{children}</main>
       {!isFork && <SiteFooter />}

@@ -20,7 +20,10 @@ import { useGlassTheme, type GlassTheme } from './use-glass-theme'
 import { clearPathChoice, type PathChoice } from '@/lib/pathChoice'
 import { APP_STORE_URL } from './links'
 
-export type SitePath = 'fork' | PathChoice
+// 'page' is a neutral fourth value for standalone subpages (contact, blog,
+// legal, etc.) that sit outside the fork/customer/business flow: no
+// path-choice logic, no RememberPath, default CTA, light glass by default.
+export type SitePath = 'fork' | 'page' | PathChoice
 
 /** Fired by nav links while the fork is on screen so the commit animation
  *  runs instead of a bare route change. Consumed by components/brand/fork.tsx. */
@@ -40,12 +43,14 @@ const CTA: Record<SitePath, { label: string; href: string; external?: boolean }>
   fork: { label: 'Get Started', href: '/customers' },
   customer: { label: 'Download App', href: APP_STORE_URL, external: true },
   business: { label: 'Get the RDH', href: '/contact' },
+  page: { label: 'Get Started', href: '/customers' },
 }
 
 export function SiteNav({ path }: { path: SitePath }) {
-  // Business hero opens on #F5F5F5, so start light there and avoid a one-frame
-  // dark-bubble flash before the probe runs.
-  const initialGlass: GlassTheme = path === 'business' ? 'light' : 'dark'
+  // Business hero opens on #F5F5F5, and standalone pages are light content
+  // pages too, so start light there and avoid a one-frame dark-bubble flash
+  // before the probe runs.
+  const initialGlass: GlassTheme = path === 'business' || path === 'page' ? 'light' : 'dark'
   const glass = useGlassTheme(initialGlass)
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -101,7 +106,7 @@ export function SiteNav({ path }: { path: SitePath }) {
         data-glass={glass}
         aria-label="PapeX — back to the start"
       >
-        <Logo size={26} />
+        <Logo size={26} theme={glass} />
       </Link>
 
       <div className="rd-glass rd-links-bubble" data-glass={glass}>
