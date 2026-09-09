@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 169.5 138.0" role="img" aria-label="The PapeX RDH: a small matte-black device with a green status light and a PapeX label on top.">
+  <!--
+    PapeX RDH - isometric vector render, GENERATED from a true projection of a
+    100 x 68 x 30 box (the real unit is ~95 x 62 x 25mm). Do not hand-edit the
+    face coordinates - regenerate if the proportions change.
+    Axis convention: sx=(x-z)cos30, sy=(x+z)sin30-y, so +z runs TOWARD the
+    viewer; the visible walls are the z=D and x=W faces, not z=0/x=0.
+    The <g> matrix maps label-space (x 0-100, y 0-68) onto the top surface, so the
+    label and LED sit in plain rectangular coordinates and land projected.
+    Corner rounding is stroke-linejoin:round with a stroke matching the fill.
+  -->
+  <defs>
+    <linearGradient id="rdhTop" x1="0" y1="0" x2=".55" y2="1">
+      <stop offset="0" stop-color="#2f3542"/><stop offset="1" stop-color="#1e222b"/></linearGradient>
+    <linearGradient id="rdhFront" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#171b23"/><stop offset="1" stop-color="#0e1118"/></linearGradient>
+    <linearGradient id="rdhSide" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0f1319"/><stop offset="1" stop-color="#080a0f"/></linearGradient>
+    <radialGradient id="ledGlow">
+      <stop offset="0" stop-color="#3ee584" stop-opacity=".8"/>
+      <stop offset="1" stop-color="#3ee584" stop-opacity="0"/></radialGradient>
+  </defs>
+  <path d="M12.00 46.00 L98.60 96.00 L98.60 126.00 L12.00 76.00 Z" fill="url(#rdhFront)" stroke="#141821" stroke-width="4.5" stroke-linejoin="round"/>
+  <path d="M157.49 62.00 L98.60 96.00 L98.60 126.00 L157.49 92.00 Z" fill="url(#rdhSide)" stroke="#0c0f15" stroke-width="4.5" stroke-linejoin="round"/>
+  <path d="M70.89 12.00 L157.49 62.00 L98.60 96.00 L12.00 46.00 Z" fill="url(#rdhTop)" stroke="#282e39" stroke-width="4.5" stroke-linejoin="round"/>
+  <g transform="matrix(0.86603,0.50000,-0.86603,0.50000,70.890,12.000)">
+    <circle class="rdh-led" cx="29" cy="59" r="12" fill="url(#ledGlow)"/>
+    <circle cx="29" cy="59" r="3.4" fill="#54ffa6"/>
+    <circle cx="29" cy="59" r="1.6" fill="#f0fff7"/>
+    <rect x="47" y="9" width="47" height="50" rx="2.5" fill="#f7f7f5"/>
+    <!-- textLength pins the wordmark inside the label even if Kameron never loads -->
+    <text x="70.5" y="28" text-anchor="middle" font-family="Kameron, Georgia, serif"
+          font-weight="700" font-size="13" fill="#12161c"
+          textLength="36" lengthAdjust="spacingAndGlyphs">PapeX</text>
+    <g transform="translate(58.5,33) scale(0.92)">
+      <path d="M2 12L22 3L15 21L11.5 13.5L2 12Z" fill="#EB7100"/>
+      <path d="M11.5 13.5L22 3" stroke="#c05a00" stroke-width="1.2" fill="none"/>
+    </g>
+  </g>
+  <path d="M12.00 46.00 L70.89 12.00 L157.49 62.00" fill="none" stroke="#3d4552" stroke-width="1" stroke-linecap="round" opacity=".85"/>
+</svg>

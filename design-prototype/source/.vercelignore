@@ -1,0 +1,7 @@
+# A static deploy uploads every file in this directory, so anything secret or
+# local-only has to be excluded explicitly. .env.local holds the VERCEL_OIDC_TOKEN
+# that `vercel link` wrote — it must never be served.
+.env*
+.vercel
+.gitignore
+.vercelignore
