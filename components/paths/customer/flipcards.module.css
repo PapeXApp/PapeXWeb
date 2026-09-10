@@ -209,10 +209,14 @@
   background-size: 14px 14px;
   background-position: 7px 7px;
   box-shadow: inset 0 1px 2px rgba(0, 18, 29, 0.03);
+  /* the painted illustration bleeds to the plate's rounded edge */
+  overflow: hidden;
 }
 .artSvg {
-  width: 88%;
-  max-height: 88%;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
 .question {
@@ -412,13 +416,17 @@
   color: rgba(0, 18, 29, 0.58);
 }
 
-/* ---- SVG line language (front art + scenes) ----------------------------- */
+/* ---- illustration system (front art + scenes) ---------------------------
+   Fills and gradients live in the SVG as attributes (Defs in FlipCards.tsx);
+   this file owns only stroke defaults, the in-scene type, and the motion.
+   Motion is transform/opacity only. Every animated group is drawn around its
+   own local 0,0 (slip top at the slot, tree cut point, axe grip) so the
+   transform pivots there — hence transform-origin 0 0 on the view-box.
+   Keyframes that read var() are fine; only the `animation` shorthand must stay
+   var()-free, or CSS Modules stops hashing the keyframe name. */
 
 .artSvg,
 .sceneSvg {
-  fill: none;
-  stroke: var(--fc-navy);
-  stroke-width: 1.5;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
@@ -426,88 +434,86 @@
 .sceneSvg * {
   vector-effect: non-scaling-stroke;
 }
-.paper {
-  fill: #ffffff;
-}
-.ink {
-  stroke: var(--fc-navy);
-}
-.inkSoft {
-  stroke: rgba(0, 18, 29, 0.32);
-}
-.accent {
-  stroke: var(--fc-orange);
-}
-.accentStroke {
-  stroke: var(--fc-orange);
-}
-.shadow {
-  fill: rgba(0, 18, 29, 0.07);
-  stroke: none;
-}
-.slot {
-  fill: var(--fc-navy);
-  stroke: none;
-}
-.coin {
-  fill: var(--fc-orange);
-  stroke: none;
-  font-family: var(--fc-mono);
-  font-size: 15px;
-  font-weight: 700;
+.slip,
+.treeGrow,
+.treeFell,
+.chip,
+.dust,
+.axe {
+  transform-box: view-box;
+  transform-origin: 0 0;
 }
 
-/* print: slips extrude from the slot, then drop and scatter */
+/* print: slips feed out of the slot, tear, drop forward and pile on the counter
+   (flattened by --sy: a slip lying on the counter is seen in perspective) */
 .slip {
-  transform-box: fill-box;
-  transform-origin: 50% 0%;
-  opacity: 0;
-  animation: fcEject 1s cubic-bezier(0.45, 0, 0.8, 0.5) both;
+  animation: fcEject 1s linear both;
 }
 @keyframes fcEject {
   0% {
-    opacity: 1;
-    transform: translate(0, -46px) rotate(0);
+    transform: translate(0, -66px) scale(1, 1) rotate(0deg);
+    animation-timing-function: linear;
   }
-  22% {
-    opacity: 1;
-    transform: translate(0, 2px) rotate(0);
+  24% {
+    transform: translate(0, 0) scale(1, 1) rotate(0deg);
+    animation-timing-function: ease-out;
   }
-  85% {
-    opacity: 1;
+  31% {
+    transform: translate(0, 5px) scale(1, 1) rotate(0deg);
+    animation-timing-function: cubic-bezier(0.45, 0, 0.9, 0.55);
   }
+  74% {
+    transform: translate(var(--dx), var(--dy)) scale(var(--sx), var(--sy)) rotate(var(--rot));
+    animation-timing-function: ease-out;
+  }
+  82% {
+    transform: translate(var(--dx), calc(var(--dy) - 3px)) scale(var(--sx), var(--sy)) rotate(var(--rot));
+    animation-timing-function: ease-in;
+  }
+  90%,
   100% {
-    opacity: 0;
-    transform: translate(var(--dx), 250px) rotate(var(--rot));
+    transform: translate(var(--dx), var(--dy)) scale(var(--sx), var(--sy)) rotate(var(--rot));
   }
 }
-.led {
+/* the roll behind the printer's lid thins as it prints (duration set inline) */
+.printRoll {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: fcRollOut ease-in both;
+}
+@keyframes fcRollOut {
+  from {
+    transform: scale(1, 1);
+  }
+  to {
+    transform: scale(1, 0.26);
+  }
+}
+.ledOn {
+  opacity: 0;
   animation: fcLed 0.9s linear both;
 }
 @keyframes fcLed {
   0%,
   8% {
-    fill: #ffffff;
-    stroke: var(--fc-navy);
+    opacity: 0;
   }
   9%,
   30%,
   55%,
   100% {
-    fill: var(--fc-orange);
-    stroke: var(--fc-orange);
+    opacity: 1;
   }
   20%,
   44% {
-    fill: #ffffff;
-    stroke: var(--fc-orange);
+    opacity: 0.15;
   }
 }
 .paperOut {
   fill: var(--fc-orange);
-  stroke: none;
   font-family: var(--fc-mono);
   font-size: 10px;
+  font-weight: 500;
   letter-spacing: 0.18em;
   opacity: 0;
   animation: fcFade 0.3s ease-out both;
@@ -521,12 +527,8 @@
   }
 }
 
-/* forest: grow in → cut sweeps → fall → stumps remain */
-.treeGrow,
-.treeFell {
-  transform-box: fill-box;
-  transform-origin: 50% 100%;
-}
+/* forest: grow in → the axe swings in and sweeps the row → each tree tips,
+   falls, bounces, dissolves → stumps remain */
 .treeGrow {
   opacity: 0;
   animation: fcGrow 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -542,43 +544,140 @@
   }
 }
 .treeFell {
-  animation: fcFell 0.6s cubic-bezier(0.55, 0, 0.75, 0.4) both;
-  animation-play-state: running;
+  animation: fcFell 1s linear both;
 }
 @keyframes fcFell {
   0% {
     opacity: 1;
-    transform: rotate(0);
+    transform: rotate(0deg);
+    animation-timing-function: cubic-bezier(0.55, 0, 0.9, 0.45);
   }
-  80% {
-    opacity: 0.6;
+  50% {
+    transform: rotate(90deg);
+    animation-timing-function: ease-out;
+  }
+  57% {
+    transform: rotate(83deg);
+    animation-timing-function: ease-in;
+  }
+  64% {
+    transform: rotate(90deg);
+    animation-timing-function: ease-out;
+  }
+  70% {
+    opacity: 1;
+    transform: rotate(88deg);
   }
   100% {
     opacity: 0;
-    transform: rotate(86deg);
+    transform: rotate(88deg);
   }
 }
-.stump {
-  opacity: 0;
-  animation: fcFade 0.2s ease-out both;
+.treeShadow {
+  animation: fcShadowOut 0.45s ease-in both;
 }
-.sweep {
-  stroke-width: 2;
-  opacity: 0;
-  animation: fcSweep linear both;
+@keyframes fcShadowOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
-@keyframes fcSweep {
+/* wood chips at the cut, leaves at the impact: a two-leg arc */
+.chip {
+  opacity: 0;
+  animation: fcChip 0.7s linear both;
+}
+@keyframes fcChip {
   0% {
     opacity: 0;
-    transform: translateX(0);
+    transform: translate(0, 0) rotate(0deg);
+    animation-timing-function: cubic-bezier(0.2, 0.6, 0.4, 1);
   }
-  8%,
-  88% {
+  4% {
+    opacity: 1;
+  }
+  45% {
+    transform: translate(var(--cmx), var(--cmy)) rotate(calc(var(--cr) * 0.5));
+    animation-timing-function: cubic-bezier(0.6, 0, 0.9, 0.5);
+  }
+  80% {
     opacity: 1;
   }
   100% {
     opacity: 0;
-    transform: translateX(360px);
+    transform: translate(var(--cex), var(--cey)) rotate(var(--cr));
+  }
+}
+/* A soft puff, not a disc: a solid ellipse at .8 read as hard white plates over
+   the fallen trees. Static blur (tiny element, cheap) + a lower peak. */
+.dust {
+  opacity: 0;
+  filter: blur(1.8px);
+  animation: fcDust 0.7s ease-out both;
+}
+@keyframes fcDust {
+  0% {
+    opacity: 0;
+    transform: scale(0.3, 0.5);
+  }
+  25% {
+    opacity: 0.45;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.3, 1.1);
+  }
+}
+.swoosh {
+  opacity: 0;
+  animation: fcSwoosh 0.5s linear both;
+}
+@keyframes fcSwoosh {
+  0% {
+    opacity: 0;
+  }
+  40% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+/* The axe pivots on its grip. Positions come from FlipCards.tsx (--h*); the
+   percentages are AXE_LEAD / SWEEP_MS / AXE_EXIT = 600 / 760 / 300 of 1660ms:
+   wind-up 380ms (22.89%), strike at 600ms (36.14%), sweep ends at 1360ms (81.93%).
+   The sweep leg is linear so each tree's fellDelay lands as the bit passes it. */
+.axe {
+  opacity: 0;
+  animation: fcAxe 1.66s linear both;
+}
+@keyframes fcAxe {
+  0% {
+    opacity: 0;
+    transform: translate(var(--hex), var(--hey)) rotate(160deg);
+    animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1);
+  }
+  10% {
+    opacity: 1;
+  }
+  22.89% {
+    transform: translate(var(--hwx), var(--hwy)) rotate(135deg);
+    animation-timing-function: cubic-bezier(0.55, 0, 0.95, 0.55);
+  }
+  36.14% {
+    transform: translate(var(--h0x), var(--h0y)) rotate(-18deg);
+    animation-timing-function: linear;
+  }
+  81.93% {
+    opacity: 1;
+    transform: translate(var(--h1x), var(--h1y)) rotate(-10deg);
+    animation-timing-function: cubic-bezier(0.2, 0.6, 0.4, 1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--hxx), var(--hxy)) rotate(-55deg);
   }
 }
 
@@ -608,23 +707,18 @@
   }
 }
 .tillLabel {
-  fill: rgba(0, 18, 29, 0.5);
-  stroke: none;
+  fill: #ff8a1f;
+  fill-opacity: 0.62;
   font-family: var(--fc-mono);
-  font-size: 8px;
-  letter-spacing: 0.16em;
+  font-size: 7px;
+  letter-spacing: 0.2em;
 }
 .tillTotal {
-  fill: var(--fc-orange);
-  stroke: none;
+  fill: #ff8a1f;
   font-family: var(--fc-mono);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-}
-.key {
-  fill: #ffffff;
-  stroke: rgba(0, 18, 29, 0.28);
 }
 
 /* ---- reduced motion: JS already skips the scene and the count; CSS makes the flip and reveal instant */
