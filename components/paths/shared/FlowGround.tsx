@@ -63,10 +63,6 @@ export function FlowGround({ initial, children }: { initial: Ground; children: R
   return (
     <div ref={ref} className={styles.flow} data-ground={initial}>
       <div aria-hidden="true" className={styles.kit}>
-        {/* Bottom scrim: the last section's bottom padding fades into the
-            navy footer, so a light final section never ends in a hard cut
-            while the footer is still below the middle of the viewport. */}
-        <div className={styles.scrim} />
         <div className={styles.viewport}>
           <div className={`${styles.aurora} ${styles.auroraLight}`}>
             <div className={`${styles.pool} ${styles.poolA}`} />
@@ -90,6 +86,12 @@ export function FlowGround({ initial, children }: { initial: Ground; children: R
           <i className={`${styles.rail} ${styles.railR}`} />
         </div>
       </div>
+      {/* Bottom scrim: the last section's bottom padding fades into the navy
+          footer, so a light final section never ends in a hard cut while the
+          footer is still below the middle of the viewport. Deliberately a
+          sibling of the kit, not inside it: the kit is masked to transparent
+          over its last 320px, which would erase this exact strip. */}
+      <div aria-hidden="true" className={styles.scrim} />
       <div className={styles.content}>{children}</div>
     </div>
   )
