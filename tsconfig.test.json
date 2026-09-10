@@ -1,0 +1,7 @@
+{
+  // Next compiles JSX itself, so tsconfig.json leaves `jsx: "preserve"`. The
+  // standalone test scripts run through `tsx`, which needs a real runtime —
+  // the automatic one, so components stay free of an unused React import.
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "jsx": "react-jsx" }
+}

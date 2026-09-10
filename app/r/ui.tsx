@@ -35,6 +35,7 @@ import {
 import SaveToPapex from "./SaveToPapex";
 import styles from "./glass.module.css";
 import { GlassCard, S, Shell, T } from "./chrome";
+import { DecodedText } from "@/components/DecodedText";
 import { APP_STORE_URL, PLAY_STORE_URL, type Platform } from "@/lib/storeLinks";
 
 // Re-exported so `from "./ui"` keeps working for callers that want the
@@ -343,11 +344,11 @@ export function MerchantHeaderCard({
         </div>
         <div className="min-w-0 flex-1">
           <h1 className="font-barlow truncate text-2xl font-medium" style={{ color: T.text }}>
-            {merchantName ?? "Your receipt"}
+            {merchantName ? <DecodedText text={merchantName} /> : "Your receipt"}
           </h1>
           {addressLines.length > 0 && (
             <p className="mt-0.5 truncate text-sm" style={{ color: T.textMuted }}>
-              {addressLines.join(", ")}
+              <DecodedText text={addressLines.join(", ")} />
             </p>
           )}
           {dateline && (
@@ -390,7 +391,7 @@ export function ItemsCard({ summary }: { summary: ReceiptSummary }) {
               }
             >
               <span className="font-barlow min-w-0 flex-1 truncate text-base font-medium" style={{ color: T.text }}>
-                {item.name}
+                <DecodedText text={item.name} />
               </span>
               <div className="flex shrink-0 flex-col items-end">
                 {item.qty > 1 && (
