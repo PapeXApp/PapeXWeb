@@ -17,7 +17,7 @@
 
 /* --- Light pool: replaces the inert `.rd-fork-glow`. ----------------------
    The prototype tracks the pointer with translate3d(dx*s, dy*s, 0) at s=70
-   (customer) / s=60 (business); fork.tsx writes those transforms. There is
+   (navy half) / s=60 (light half); fork.tsx writes those transforms. There is
    deliberately NO CSS transition on it — the smoothing is a lerp in the rAF
    loop, and a transition on top of a per-frame write only adds lag. */
 .glow,
@@ -61,10 +61,13 @@
   mix-blend-mode: overlay;
 }
 
-/* --- Per-side atmosphere -------------------------------------------------- */
-/* Navy: deep and lit — a warm brand pool upper-left, a cool counter-light
+/* --- Per-surface atmosphere ----------------------------------------------
+   Keyed on `data-surface`, NOT on which path the half leads to: the navy
+   half is always the top one and keeps this atmosphere even when the
+   destinations are swapped. See the header note in fork.tsx. */
+/* Navy (top): deep and lit — a warm brand pool upper-left, a cool counter-light
    lower-right so the darkness has a direction, and a real vignette. */
-[data-side="customer"] .glow {
+[data-surface="navy"] .glow {
   background: radial-gradient(
     58% 52% at 32% 26%,
     rgba(235, 113, 0, 0.22),
@@ -72,27 +75,27 @@
     transparent 72%
   );
 }
-[data-side="customer"] .haze {
+[data-surface="navy"] .haze {
   background: radial-gradient(
     72% 62% at 78% 84%,
     rgba(96, 166, 214, 0.11),
     transparent 68%
   );
 }
-[data-side="customer"] .vignette {
+[data-surface="navy"] .vignette {
   background: radial-gradient(
     120% 92% at 50% 50%,
     transparent 42%,
     rgba(0, 7, 12, 0.55) 100%
   );
 }
-[data-side="customer"] .grain {
+[data-surface="navy"] .grain {
   opacity: 0.055;
 }
 
-/* Off-white: airy, not empty — a soft warm pool low-right (under the plane),
+/* Light (bottom): airy, not empty — a soft warm pool low-right (under the plane),
    a bright white lift top-left, and only a whisper of edge shading. */
-[data-side="business"] .glow {
+[data-surface="light"] .glow {
   background: radial-gradient(
     56% 50% at 70% 74%,
     rgba(235, 113, 0, 0.15),
@@ -100,7 +103,7 @@
     transparent 72%
   );
 }
-[data-side="business"] .haze {
+[data-surface="light"] .haze {
   background: radial-gradient(
     76% 66% at 22% 16%,
     rgba(255, 255, 255, 0.95),
@@ -108,14 +111,14 @@
     transparent 72%
   );
 }
-[data-side="business"] .vignette {
+[data-surface="light"] .vignette {
   background: radial-gradient(
     120% 95% at 50% 50%,
     transparent 45%,
     rgba(0, 18, 29, 0.07) 100%
   );
 }
-[data-side="business"] .grain {
+[data-surface="light"] .grain {
   opacity: 0.03;
 }
 

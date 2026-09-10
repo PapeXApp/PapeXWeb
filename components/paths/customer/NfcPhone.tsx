@@ -82,7 +82,16 @@ export function NfcPhone() {
           <div className={styles.demoShell}>
             <div aria-hidden="true" className={styles.demoNotch} />
             <div className={styles.demoScreen}>
-              <div className={styles.acLive}>
+              {/* Taps inside the live receipt belong to the receipt — opening
+                  "Original receipt" must not also fire the phone's toggle and
+                  reset the demo. Stopping propagation here is what lets the two
+                  tap targets coexist: receipt UI in here, replay anywhere else
+                  on the phone (or the "Tap again" link below it). */}
+              <div
+                className={styles.acLive}
+                onClick={(event) => event.stopPropagation()}
+                onKeyDown={(event) => event.stopPropagation()}
+              >
                 <div className={styles.acBar}>
                   <span className={styles.acWordmark}>papex</span>
                   <span aria-hidden="true" className={styles.acDot} />

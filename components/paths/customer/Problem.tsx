@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactElement } fr
 import { useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { Reveal, WordReveal } from "@/components/motion";
+import { Atmosphere, AtmosphereContent } from "./Atmosphere";
 import { problemContent, type ProblemCardId } from "./content";
 import styles from "./customer.module.css";
 
@@ -310,13 +311,19 @@ export function Problem() {
   return (
     <section
       data-nav-theme="light"
+      className={styles.atmosHost}
       style={{
         background: "var(--offwhite)",
         color: "var(--navy)",
         padding: "clamp(90px,11vw,170px) clamp(20px,5vw,56px)",
       }}
     >
-      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+      {/* The hero above this is flat navy and used to end in a straight cut.
+          seamTop bleeds that navy down into the light so the two surfaces meet
+          instead of colliding; the orbs, skewed rules and plane watermark give
+          the band something behind the cards. */}
+      <Atmosphere tone="light" seam="top" />
+      <AtmosphereContent style={{ maxWidth: 1100, margin: "0 auto" }}>
         <Reveal variant="up">
           <div
             style={{
@@ -351,7 +358,7 @@ export function Problem() {
             ))}
           </div>
         </Reveal>
-      </div>
+      </AtmosphereContent>
     </section>
   );
 }

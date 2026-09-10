@@ -472,11 +472,14 @@
 .rd-fork-half:hover {
   filter: brightness(1.06);
 }
-.rd-fork-half[data-side="customer"] {
+/* Keyed on the painted surface, not the destination — the navy half is always
+   the top one. Swapping which path a half leads to (TOP_PATH / BOTTOM_PATH in
+   components/brand/fork.tsx) must not repaint the fork. */
+.rd-fork-half[data-surface="navy"] {
   background: var(--navy);
   color: var(--offwhite);
 }
-.rd-fork-half[data-side="business"] {
+.rd-fork-half[data-surface="light"] {
   background: var(--offwhite);
   color: var(--navy);
 }

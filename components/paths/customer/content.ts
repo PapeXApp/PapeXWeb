@@ -46,7 +46,7 @@ export const demoContent = {
   hint: {
     idle: "Tap the phone to receive the receipt",
     bowing: "Tapping…",
-    done: "Scroll it, or open the original receipt at the bottom.",
+    done: "Scroll it, open the original receipt, or tap the frame to replay.",
   },
   resetLabel: "Reset",
   saveLabel: "Save to PapeX",
@@ -197,6 +197,9 @@ export const personasContent = {
   ] satisfies PersonaResult[],
 };
 
+// The two rows are rendered as REAL app screens by FeatureScreens.tsx (built
+// from PapeXV2's own design tokens), not as images — so there is no asset path
+// and no placeholder label here any more.
 export const featuresContent = {
   eyebrow: "Once it's yours",
   headline: "Every receipt, kept and searchable.",
@@ -205,13 +208,11 @@ export const featuresContent = {
       eyebrow: "Everything in one place",
       title: "Your entire receipt history, always a search away.",
       body: "Filter by store, date, category or amount. Categorize food, transport, business and personal. Export for taxes without lifting a finger.",
-      placeholderLabel: "[ app screen: receipt list + search ]",
     },
     {
       eyebrow: "Share in a tap",
       title: "Text, email or AirDrop any receipt in seconds.",
       body: "Split an expense, submit a reimbursement, or send proof of purchase — no photos of crumpled paper, no scanning.",
-      placeholderLabel: "[ app screen: share sheet ]",
     },
   ],
 };
@@ -257,12 +258,17 @@ export const howItWorksContent = {
   ],
 };
 
+// Shaped like a real PapeXV2 receipts list: an initial for the logo circle, a
+// "category · date" meta line, and an `unreviewed` flag that draws the orange
+// left bar on exactly one row — in the app most rows have already been seen.
 export const receiptsListContent = {
+  title: "Receipts",
   searchPlaceholder: "Search receipts",
+  avatarInitial: "N",
   rows: [
-    { merchant: "Blue Bottle", category: "Food", amount: "$10.90" },
-    { merchant: "Whole Foods", category: "Groceries", amount: "$63.40" },
-    { merchant: "Uber", category: "Transport", amount: "$18.20" },
+    { merchant: "Blue Bottle Coffee", initial: "B", category: "Dining", date: "Today", amount: "$10.90", unreviewed: true },
+    { merchant: "Whole Foods Market", initial: "W", category: "Groceries", date: "Yesterday", amount: "$63.40", unreviewed: false },
+    { merchant: "Uber", initial: "U", category: "Gas & auto", date: "Mon", amount: "$18.20", unreviewed: false },
   ],
 };
 

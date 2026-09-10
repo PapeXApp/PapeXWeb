@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Magnetic, Reveal, Ripple, WordReveal } from "@/components/motion";
+import { Atmosphere, AtmosphereContent } from "./Atmosphere";
 import { visionContent } from "./content";
 import styles from "./customer.module.css";
 
@@ -14,13 +15,15 @@ export function Vision() {
   return (
     <section
       data-nav-theme="light"
+      className={styles.atmosHost}
       style={{
         background: "var(--offwhite)",
         color: "var(--navy)",
         padding: "clamp(90px,11vw,160px) clamp(20px,5vw,56px)",
       }}
     >
-      <div style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
+      <Atmosphere tone="light" seam="top" watermark />
+      <AtmosphereContent style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
         <Reveal variant="up">
           <div
             style={{
@@ -98,7 +101,7 @@ export function Vision() {
             {visionContent.secondaryCta}
           </Link>
         </Reveal>
-      </div>
+      </AtmosphereContent>
     </section>
   );
 }

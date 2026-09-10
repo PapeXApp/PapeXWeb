@@ -1,6 +1,7 @@
 "use client";
 
 import { ChildStagger, Magnetic, Ripple, Spotlight, WordReveal } from "@/components/motion";
+import { Atmosphere } from "./Atmosphere";
 import { heroContent } from "./content";
 import { NfcPhone } from "./NfcPhone";
 import styles from "./customer.module.css";
@@ -14,9 +15,19 @@ export function Hero() {
       style={{
         minHeight: "100vh",
         background: "var(--navy)",
-        padding: "120px clamp(20px,5vw,56px) 80px",
+        padding: "clamp(84px,11vh,120px) clamp(20px,5vw,56px) clamp(62px,8vh,80px)",
       }}
     >
+      {/* Static depth under the pointer-tracked Spotlight: skewed rules, a
+          second light pool, the plane watermark, and a bleed of the light
+          section below so the hero doesn't end on a hard line. */}
+      <Atmosphere
+        tone="dark"
+        seam="bottom"
+        watermark
+        watermarkStyle={{ left: "-8%", top: "-10%", right: "auto", bottom: "auto" }}
+      />
+
       <Spotlight strength={70} className="pointer-events-none absolute inset-0">
         <div
           aria-hidden="true"
@@ -28,11 +39,16 @@ export function Hero() {
         />
       </Spotlight>
 
+      {/* justify-CENTER, not justify-between. The phone lost ~78px of width when
+          it was corrected to a real iPhone ratio, and `justify-between` spent
+          every one of those pixels on the gap — 318px of dead space between the
+          headline and the device. The pair is now sized to its content and
+          centred as one composition. */}
       <div
-        className="relative flex w-full flex-wrap items-center justify-between gap-16"
-        style={{ maxWidth: 1200 }}
+        className="relative flex w-full flex-wrap items-center justify-center"
+        style={{ maxWidth: 1080, gap: "clamp(28px,4.5vw,64px)", zIndex: 1 }}
       >
-        <div style={{ maxWidth: 560 }}>
+        <div style={{ maxWidth: 560, flex: "1 1 420px" }}>
           <ChildStagger>
             <div
               style={{
@@ -94,6 +110,12 @@ export function Hero() {
         <NfcPhone />
       </div>
 
+      {/* The original cue: the word plus a hairline. Restored 2026-09-09 after
+          it was briefly replaced with a glass tab — Nico had never actually SEEN
+          this one, because on a short viewport the hero grew past 100vh and an
+          absolutely-positioned bottom element ends up below the fold. The fix
+          was the hero's height budget (see the phone sizing in
+          customer.module.css), not the cue. */}
       <div
         aria-hidden="true"
         className="absolute flex flex-col items-center"
@@ -106,6 +128,7 @@ export function Hero() {
           textTransform: "uppercase",
           color: "rgba(245,245,245,.4)",
           gap: 8,
+          zIndex: 2,
         }}
       >
         {heroContent.scrollCue}
@@ -118,6 +141,7 @@ export function Hero() {
           }}
         />
       </div>
+
     </section>
   );
 }

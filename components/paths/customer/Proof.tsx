@@ -1,4 +1,5 @@
 import { Counter, Parallax, Reveal } from "@/components/motion";
+import { Atmosphere } from "./Atmosphere";
 import { proofContent } from "./content";
 
 /** 2.7 Social proof — dark. Counters animate once on reveal; logos are illustrative placeholders. */
@@ -13,6 +14,10 @@ export function Proof() {
         padding: "clamp(90px,11vw,160px) clamp(20px,5vw,56px)",
       }}
     >
+      {/* HowItWorks above is off-white — bleed it down so the band change is
+          a fade rather than a cut. */}
+      <Atmosphere tone="dark" seam="top" lines="none" />
+
       <Parallax factor={0.06} className="pointer-events-none absolute inset-0">
         <div
           aria-hidden="true"
@@ -25,18 +30,54 @@ export function Proof() {
       </Parallax>
 
       <div className="relative" style={{ maxWidth: 1100, margin: "0 auto" }}>
+        {/* Presentation only — the numbers themselves are still the
+            illustrative placeholders flagged in content.ts and need real data
+            before launch. Each stat is a cell in one hairline-framed strip with
+            dividers between, tabular figures so the counting-up doesn't jitter
+            the width, and a tracked caps label under a short orange rule. */}
         <Reveal
           variant="up"
           className="grid text-center"
-          style={{ gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: "clamp(24px,4vw,60px)" }}
+          style={{
+            gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))",
+            borderRadius: 24,
+            border: "1px solid rgba(245,245,245,.10)",
+            background: "linear-gradient(180deg, rgba(245,245,245,.045), rgba(245,245,245,.015))",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,.07), 0 30px 60px rgba(0,0,0,.25)",
+            overflow: "hidden",
+          }}
         >
-          {proofContent.counters.map((counter) => (
-            <div key={counter.label}>
+          {proofContent.counters.map((counter, index) => (
+            <div
+              key={counter.label}
+              style={{
+                padding: "clamp(28px,4vw,48px) clamp(16px,2vw,28px)",
+                borderLeft: index === 0 ? "none" : "1px solid rgba(245,245,245,.08)",
+              }}
+            >
               <Counter
                 value={counter.value}
-                className="block [font-family:var(--font-display)] font-bold text-[clamp(44px,6vw,80px)] leading-none text-[var(--orange)]"
+                className="block [font-family:var(--font-display)] font-bold text-[clamp(40px,5.2vw,68px)] leading-none tracking-[-.02em] text-[var(--orange)] [font-variant-numeric:tabular-nums]"
               />
-              <div style={{ marginTop: 8, fontSize: 15, color: "rgba(245,245,245,.6)", letterSpacing: ".02em" }}>
+              <div
+                aria-hidden="true"
+                style={{
+                  width: 28,
+                  height: 2,
+                  margin: "18px auto 14px",
+                  borderRadius: 2,
+                  background: "linear-gradient(90deg, transparent, rgba(235,113,0,.8), transparent)",
+                }}
+              />
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  letterSpacing: ".16em",
+                  textTransform: "uppercase",
+                  color: "rgba(245,245,245,.62)",
+                }}
+              >
                 {counter.label}
               </div>
             </div>

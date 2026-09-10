@@ -15,7 +15,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Logo } from './logo'
+import { FullLogo } from './full-logo'
 import { useGlassTheme, type GlassTheme } from './use-glass-theme'
 import { clearPathChoice, type PathChoice } from '@/lib/pathChoice'
 import { APP_STORE_URL } from './links'
@@ -106,7 +106,14 @@ export function SiteNav({ path }: { path: SitePath }) {
         data-glass={glass}
         aria-label="PapeX — back to the start"
       >
-        <Logo size={26} theme={glass} />
+        {/* The real lockup (plane + letterforms), not the plane alone and not
+            "PapeX" set in the display face — see components/brand/full-logo.tsx.
+            `letters` inherits the nav-glass ink via currentColor; only the
+            plane highlights need to know which glass they sit on. */}
+        <FullLogo
+          size={76}
+          lines={glass === 'light' ? 'var(--navy)' : 'var(--white)'}
+        />
       </Link>
 
       <div className="rd-glass rd-links-bubble" data-glass={glass}>

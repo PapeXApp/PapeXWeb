@@ -4,18 +4,24 @@ import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { Reveal, WordReveal } from "@/components/motion";
-import { howItWorksContent, receipt, receiptsListContent } from "./content";
-import { ReceiptCard } from "./ReceiptCard";
+import { Atmosphere, AtmosphereContent } from "./Atmosphere";
+import { WalkPhone } from "./WalkPhone";
+import { howItWorksContent } from "./content";
 import styles from "./customer.module.css";
 
 /** How long the phone stays lifted onto the reader before the receipt lands (mirrors NfcPhone's bow). */
 const BOW_MS = 380;
 
 /**
- * 2.6 How it works — light. A 2-click walkthrough (replaces the 300vh pinned
- * scroll): tap once to lift the phone onto the reader and land the receipt,
- * tap again to file it into the saved list, tap a third time to replay.
+ * 2.6 How it works — light. A tap-driven walkthrough (replaces the 300vh pinned
+ * scroll): tap once to lift the phone onto the reader and land the receipt, tap
+ * again to file it into the saved list, tap a third time to replay.
  * `components/motion/PinnedSequence.tsx` stays in the repo — just unused here.
+ *
+ * DELIBERATELY NOT SCROLL-DRIVEN. A scroll-progress version was tried on
+ * 2026-09-09 and reverted: advancing the steps as the section travels past
+ * changes the phone under the reader while they are still reading it, and it
+ * fights a tap. The page scrolls; the phone is tapped. Keep them separate.
  */
 export function HowItWorks() {
   const stepCount = howItWorksContent.steps.length;
@@ -26,7 +32,23 @@ export function HowItWorks() {
 
   useEffect(() => () => window.clearTimeout(bowTimer.current), []);
 
-  function advance() {
+
+  /** Where a drag started. Null when no drag is in flight. */
+  const dragFrom = useRef<{ x: number; y: number } | null>(null);
+  /** A swipe was just handled, so the click the browser fires at the end of the
+   *  same pointer sequence must not advance a second time. Cleared on the next
+   *  pointerdown so it can never eat an unrelated click later on. */
+  const swallowClick = useRef(false);
+
+  /** Below this a drag is a click, not a swipe. */
+  const SWIPE_MIN = 34;
+
+  /* stepForward/stepBack are the real navigation. `advance` (the click
+     handler) wraps stepForward with the swipe guard — keeping them separate is
+     the point: an earlier version had the swipe set the guard and then call the
+     guarded function, which immediately swallowed its own call and made swiping
+     forward do nothing at all. */
+  function stepForward() {
     if (bowing) return;
     if (step === 0) {
       if (prefersReduced) {
@@ -43,18 +65,66 @@ export function HowItWorks() {
     setStep(step === 1 ? 2 : 0);
   }
 
+  function stepBack() {
+    if (bowing) return;
+    window.clearTimeout(bowTimer.current);
+    setBowing(false);
+    setStep(step === 0 ? stepCount - 1 : step - 1);
+  }
+
+  function advance() {
+    if (swallowClick.current) {
+      swallowClick.current = false;
+      return;
+    }
+    stepForward();
+  }
+
+  function onPointerDown(event: React.PointerEvent) {
+    swallowClick.current = false;
+    dragFrom.current = { x: event.clientX, y: event.clientY };
+  }
+
+  function onPointerUp(event: React.PointerEvent) {
+    const from = dragFrom.current;
+    dragFrom.current = null;
+    if (!from) return;
+    const dx = event.clientX - from.x;
+    const dy = event.clientY - from.y;
+    // Any real drag stops the trailing click from also counting as a tap —
+    // including a vertical one, which is the visitor scrolling the page THROUGH
+    // the phone and must not change the step at all.
+    if (Math.abs(dx) >= SWIPE_MIN || Math.abs(dy) >= SWIPE_MIN) {
+      swallowClick.current = true;
+    }
+    // Horizontal intent only.
+    if (Math.abs(dx) < SWIPE_MIN || Math.abs(dx) < Math.abs(dy)) return;
+    if (dx < 0) stepForward();
+    else stepBack();
+  }
+
   const cue = howItWorksContent.cues[step];
+  // The optional-copy fields are typed loosely in content.ts; fall back rather
+  // than widen WalkPhone's props to allow undefined.
+  const tapCopy = {
+    headline: howItWorksContent.steps[0].phoneHeadline ?? "Tap to receive",
+    subline: howItWorksContent.steps[0].phoneSubline ?? "Hold near the reader",
+    caption: howItWorksContent.steps[1].phoneCaption ?? "Saved to your receipts",
+  };
 
   return (
     <section
       data-nav-theme="light"
+      className={styles.atmosHost}
       style={{
         background: "var(--offwhite)",
         color: "var(--navy)",
         padding: "clamp(80px,10vw,140px) clamp(20px,5vw,56px)",
       }}
     >
-      <div
+      {/* Features above is flat navy — bleed it down across the boundary. */}
+      <Atmosphere tone="light" seam="top" />
+      <AtmosphereContent
         className="grid items-center"
         style={{
           maxWidth: 1150,
@@ -145,10 +215,7 @@ export function HowItWorks() {
         </Reveal>
 
         <Reveal variant="up" className="flex flex-col items-center" style={{ gap: 18 }}>
-          <div
-            className="relative flex items-end justify-center"
-            style={{ paddingTop: 64 }}
-          >
+          <div className="relative flex items-end justify-center" style={{ paddingTop: 64 }}>
             {/* reader sits behind the phone, only its head showing */}
             <div
               aria-hidden="true"
@@ -160,156 +227,76 @@ export function HowItWorks() {
                 marginLeft: -92,
                 width: 184,
                 borderRadius: 16,
-                background: "linear-gradient(160deg,#12303e,#081d27)",
-                border: "1px solid rgba(255,255,255,.12)",
-                boxShadow: "0 20px 44px rgba(0,18,29,.32)",
+                background: "linear-gradient(160deg,#F58A1B,#C75F00)",
+                border: "1px solid rgba(255,255,255,.18)",
+                boxShadow: "0 20px 44px rgba(0,18,29,.28)",
                 padding: "12px 12px 30px",
                 gap: 7,
               }}
             >
-              <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 12.5, color: "var(--offwhite)" }}>
+              <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 12.5, color: "#fff" }}>
                 {howItWorksContent.readerLabel}
               </span>
               <div className="relative flex items-center justify-center" style={{ width: 44, height: 44 }}>
                 <span
                   aria-hidden="true"
                   className={styles.nfcRing}
-                  style={{ position: "absolute", top: "50%", left: "50%", width: 44, height: 44, borderRadius: "50%", border: "2px solid var(--orange)" }}
+                  style={{ position: "absolute", top: "50%", left: "50%", width: 44, height: 44, borderRadius: "50%", border: "2px solid rgba(255,255,255,.85)" }}
                 />
                 <span
                   aria-hidden="true"
                   className="relative"
-                  style={{ width: 18, height: 18, borderRadius: "50%", background: "var(--orange)", boxShadow: "0 0 0 6px rgba(235,113,0,.18)" }}
+                  style={{ width: 18, height: 18, borderRadius: "50%", background: "#fff", boxShadow: "0 0 0 6px rgba(255,255,255,.22)" }}
                 />
               </div>
             </div>
 
+            {/* Tap OR swipe. Swipe matters more than tap: most visitors will
+                never think to tap a picture of a phone, so without a drag the
+                walkthrough is invisible to them. Pointer Events cover mouse,
+                trackpad and touch in one path. */}
             <div
               role="button"
               tabIndex={0}
               aria-label={howItWorksContent.phoneAriaLabel}
               onClick={advance}
               onKeyDown={(event) => {
+                if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+                  event.preventDefault();
+                  advance();
+                  return;
+                }
+                if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+                  event.preventDefault();
+                  stepBack();
+                  return;
+                }
                 if (event.key !== "Enter" && event.key !== " ") return;
                 event.preventDefault();
                 advance();
               }}
+              onPointerDown={onPointerDown}
+              onPointerUp={onPointerUp}
+              onPointerCancel={() => {
+                dragFrom.current = null;
+              }}
               className={cn(styles.walkPhone, bowing && styles.walkPhoneBowing)}
+              style={{ touchAction: "pan-y", cursor: "grab" }}
             >
               <div className={styles.walkTilt}>
-                <div
-                  style={{
-                    position: "relative",
-                    height: "min(520px,56vh)",
-                    aspectRatio: "300 / 600",
-                    borderRadius: 42,
-                    background: "linear-gradient(160deg,var(--navy-raised),var(--navy-deep))",
-                    border: "2px solid rgba(255,255,255,.1)",
-                    boxShadow: "0 34px 76px rgba(0,18,29,.3)",
-                    padding: 13,
-                  }}
-                >
-                  <div
-                    aria-hidden="true"
-                    className="absolute"
-                    style={{
-                      top: 15,
-                      left: "50%",
-                      transform: "translateX(-50%)",
-                      width: 86,
-                      height: 22,
-                      background: "var(--navy-deep)",
-                      borderRadius: "0 0 13px 13px",
-                      zIndex: 8,
-                    }}
-                  />
-                  <div
-                    className="relative"
-                    style={{ width: "100%", height: "100%", borderRadius: 30, overflow: "hidden", background: "var(--offwhite)" }}
-                  >
-                    {/* state 0: tap */}
-                    <div
-                      className={cn(styles.walkScreen, step === 0 && styles.walkScreenOn, "flex flex-col items-center justify-center")}
-                      style={{ gap: 22, padding: 26 }}
-                    >
-                      <div className="relative flex items-center justify-center" style={{ width: 120, height: 120 }}>
-                        <span
-                          aria-hidden="true"
-                          className={styles.nfcRing}
-                          style={{ position: "absolute", top: "50%", left: "50%", width: 120, height: 120, borderRadius: "50%", border: "2px solid var(--orange)" }}
-                        />
-                        <span
-                          aria-hidden="true"
-                          className={styles.nfcRingOffset}
-                          style={{ position: "absolute", top: "50%", left: "50%", width: 120, height: 120, borderRadius: "50%", border: "2px solid var(--orange)" }}
-                        />
-                        <span
-                          aria-hidden="true"
-                          className="relative"
-                          style={{ width: 42, height: 42, borderRadius: "50%", background: "var(--orange)", boxShadow: "0 0 0 9px rgba(235,113,0,.16)" }}
-                        />
-                      </div>
-                      <div className="text-center">
-                        <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 20, color: "var(--navy)" }}>
-                          {howItWorksContent.steps[0].phoneHeadline}
-                        </div>
-                        <div style={{ marginTop: 6, fontSize: 12.5, color: "#8a8a8a" }}>{howItWorksContent.steps[0].phoneSubline}</div>
-                      </div>
-                    </div>
-
-                    {/* state 1: receipt appears */}
-                    <div
-                      className={cn(styles.walkScreen, step === 1 && styles.walkScreenOn, "flex flex-col justify-center")}
-                      style={{ padding: 18 }}
-                    >
-                      <ReceiptCard data={receipt} />
-                      <div className="text-center" style={{ marginTop: 13, fontSize: 12, color: "#8a8a8a" }}>
-                        {howItWorksContent.steps[1].phoneCaption}
-                      </div>
-                    </div>
-
-                    {/* state 2: organized */}
-                    <div
-                      className={cn(styles.walkScreen, step === 2 && styles.walkScreenOn, "flex flex-col")}
-                      style={{ gap: 10, padding: "18px 15px" }}
-                    >
-                      <div className="flex items-center justify-between" style={{ marginTop: 6 }}>
-                        <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 17, color: "var(--navy)" }}>
-                          Receipts
-                        </span>
-                        <span
-                          aria-hidden="true"
-                          className="flex items-center justify-center"
-                          style={{ width: 27, height: 27, borderRadius: "50%", background: "var(--orange)", color: "#fff", fontWeight: 700, fontSize: 11.5 }}
-                        >
-                          P
-                        </span>
-                      </div>
-                      <div
-                        className="flex items-center"
-                        style={{ gap: 8, background: "#fff", borderRadius: 10, padding: "9px 12px", fontSize: 12, color: "#9a9a9a" }}
-                      >
-                        {receiptsListContent.searchPlaceholder}
-                      </div>
-                      {receiptsListContent.rows.map((row) => (
-                        <div
-                          key={row.merchant}
-                          className="flex items-center justify-between"
-                          style={{ background: "#fff", borderRadius: 12, padding: "11px 13px" }}
-                        >
-                          <div>
-                            <div style={{ fontWeight: 600, fontSize: 13, color: "var(--navy)" }}>{row.merchant}</div>
-                            <div style={{ fontSize: 10, color: "var(--orange)", marginTop: 2 }}>{row.category}</div>
-                          </div>
-                          <span style={{ fontWeight: 700, fontSize: 13, color: "var(--navy)" }}>{row.amount}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                <WalkPhone step={step} tapCopy={tapCopy} />
               </div>
             </div>
           </div>
+
+          {/* Page dots: the affordance that says "there are three of these and
+              you can move between them". */}
+          <div className={styles.wpDots} aria-hidden="true">
+            {howItWorksContent.steps.map((s, i) => (
+              <span key={s.number} className={cn(styles.wpDot, i === step && styles.wpDotOn)} />
+            ))}
+          </div>
+
           <div className={styles.walkCue} aria-live="polite">
             {step === 2 ? (
               <>
@@ -320,7 +307,7 @@ export function HowItWorks() {
             )}
           </div>
         </Reveal>
-      </div>
+      </AtmosphereContent>
     </section>
   );
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Reveal, WordReveal } from "@/components/motion";
+import { Atmosphere, AtmosphereContent } from "./Atmosphere";
 import { personasContent, type PersonaId } from "./content";
 import styles from "./customer.module.css";
 
@@ -41,13 +42,15 @@ export function Personas() {
   return (
     <section
       data-nav-theme="light"
+      className={styles.atmosHost}
       style={{
         background: "var(--white)",
         color: "var(--navy)",
         padding: "clamp(90px,11vw,160px) clamp(20px,5vw,56px)",
       }}
     >
-      <div style={{ maxWidth: 1150, margin: "0 auto" }}>
+      <Atmosphere tone="light" seam="top" lines="none" />
+      <AtmosphereContent style={{ maxWidth: 1150, margin: "0 auto" }}>
         <Reveal variant="up" style={{ textAlign: "center" }}>
           <div
             style={{
@@ -129,7 +132,7 @@ export function Personas() {
             ))}
           </div>
         </Reveal>
-      </div>
+      </AtmosphereContent>
     </section>
   );
 }

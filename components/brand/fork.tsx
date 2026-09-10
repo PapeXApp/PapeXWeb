@@ -2,20 +2,31 @@
 
 // components/brand/fork.tsx
 //
-// Screen 1 — the fork. A full-viewport fixed split: dark #00121D "For
-// Customers" on top, light #F5F5F5 "For Business" below. One deliberate
-// gesture commits to a path; the chosen half's flex-grow runs 1 -> 40 over
-// 620ms cubic-bezier(.7,0,.3,1) while the loser collapses, and then we
-// navigate.
+// Screen 1 — the fork. A full-viewport fixed split: dark #00121D on top,
+// light #F5F5F5 below. One deliberate gesture commits to a path; the chosen
+// half's flex-grow runs 1 -> 40 over 620ms cubic-bezier(.7,0,.3,1) while the
+// loser collapses, and then we navigate.
 //
-// Color continuity is the whole point: the halves are flat brand colors and
-// each destination hero opens on the same flat color, so the expansion reads
-// as one surface growing rather than a page swap. Do not put gradients on the
-// half backgrounds. (The atmosphere layers below are separate absolutely
-// positioned children — the half's own `background` stays flat.)
+// SURFACE AND DESTINATION ARE DECOUPLED — this is deliberate, and the reason
+// the file reads positionally (top/bottom) rather than by path name.
+//   * `data-surface` ("navy" | "light") owns everything you SEE: the flat
+//     background, the atmosphere gradients, the plane artwork, the light-pool
+//     amplitude. It is bound to POSITION and does not move.
+//   * `data-side` ("customer" | "business") owns where the half GOES.
+// Swapping which path lives on which half is therefore a one-line change to
+// TOP_PATH / BOTTOM_PATH below — nothing else needs to move. It has been
+// swapped once already (2026-09-09: down now leads to /customers), so expect
+// it to move again and keep the two concerns separate.
+//
+// The halves no longer colour-match their destination hero, and that is the
+// point: up and down are two DIFFERENT pages, not one surface with more of
+// itself below the fold. The colour change on commit is the signal that you
+// arrived somewhere else. Do not put gradients on the half backgrounds —
+// the atmosphere layers are separate absolutely positioned children, and the
+// half's own `background` stays flat.
 //
 // Commit inputs (README "The commit interaction"):
-//   wheel up   |deltaY| >= 6  -> customer      wheel down -> business
+//   wheel up   |deltaY| >= 6  -> TOP_PATH      wheel down -> BOTTOM_PATH
 //   swipe      |dy|     >= 40 -> same mapping
 //   click either half, or a nav link while the fork is up (FORK_COMMIT_EVENT)
 // A wheelLock latch means one trackpad flick can only ever commit once.
@@ -52,6 +63,16 @@ const COMMIT_MS = 620
 const WHEEL_MIN = 6
 const SWIPE_MIN = 40
 
+// Which destination each half leads to. Position and colour are fixed by the
+// design (navy above the seam, light below); only this mapping moves. Swapping
+// these two values swaps the fork, and nothing else in this file has to change.
+const TOP_PATH: PathChoice = 'business'
+const BOTTOM_PATH: PathChoice = 'customer'
+
+// The two painted surfaces, keyed by position rather than by path — see the
+// header note. 'navy' is always the top half, 'light' always the bottom.
+type Surface = 'navy' | 'light'
+
 // --- Ambience tuning --------------------------------------------------------
 
 // Resting opacity of the plane watermark. The prototype's .05/.06 is below the
@@ -60,9 +81,9 @@ const SWIPE_MIN = 40
 // still loses decisively to the headline. The light half sits lower because
 // navy-on-off-white carries far more contrast per unit of alpha than
 // orange-on-navy does.
-const PLANE_REST_OPACITY: Record<PathChoice, number> = {
-  customer: 0.15,
-  business: 0.11,
+const PLANE_REST_OPACITY: Record<Surface, number> = {
+  navy: 0.15,
+  light: 0.11,
 }
 
 // The brand plane's fixed angle — same as the nav logo's.
@@ -86,7 +107,7 @@ const RECEDE_SCALE = 0.06 // and away again on the half being scrolled away from
 // Three different numbers on three layers is what turns a flat field of colour
 // into a lit volume: the light pool leads, the plane follows at a third of the
 // distance, the haze counter-moves.
-const GLOW_STRENGTH: Record<PathChoice, number> = { customer: 70, business: 60 }
+const GLOW_STRENGTH: Record<Surface, number> = { navy: 70, light: 60 }
 const HAZE_FACTOR = -0.42 // of GLOW_STRENGTH, i.e. opposite and shorter
 const PLANE_PARALLAX = 26
 
@@ -111,15 +132,16 @@ export function Fork() {
   const lock = useRef(false)
   const timer = useRef<number | null>(null)
 
-  // Ambience nodes. Written to imperatively by the rAF loop.
-  const custHalf = useRef<HTMLButtonElement>(null)
-  const bizHalf = useRef<HTMLButtonElement>(null)
-  const custPlane = useRef<HTMLSpanElement>(null)
-  const bizPlane = useRef<HTMLSpanElement>(null)
-  const custGlow = useRef<HTMLSpanElement>(null)
-  const bizGlow = useRef<HTMLSpanElement>(null)
-  const custHaze = useRef<HTMLSpanElement>(null)
-  const bizHaze = useRef<HTMLSpanElement>(null)
+  // Ambience nodes, named by POSITION (see header): top = navy, bottom =
+  // light. Written to imperatively by the rAF loop.
+  const topHalf = useRef<HTMLButtonElement>(null)
+  const bottomHalf = useRef<HTMLButtonElement>(null)
+  const topPlane = useRef<HTMLSpanElement>(null)
+  const bottomPlane = useRef<HTMLSpanElement>(null)
+  const topGlow = useRef<HTMLSpanElement>(null)
+  const bottomGlow = useRef<HTMLSpanElement>(null)
+  const topHaze = useRef<HTMLSpanElement>(null)
+  const bottomHaze = useRef<HTMLSpanElement>(null)
 
   const raf = useRef<number | null>(null)
   // Scroll intent, -1 = all the way toward customers, +1 = toward business.
@@ -136,8 +158,8 @@ export function Fork() {
       cancelAnimationFrame(raf.current)
       raf.current = null
     }
-    const won = winner === 'customer' ? custPlane.current : bizPlane.current
-    const lost = winner === 'customer' ? bizPlane.current : custPlane.current
+    const won = winner === TOP_PATH ? topPlane.current : bottomPlane.current
+    const lost = winner === TOP_PATH ? bottomPlane.current : topPlane.current
 
     if (won) {
       const dx = Math.round(window.innerWidth * 0.62)
@@ -195,7 +217,7 @@ export function Fork() {
         gesture.current = clamp(gesture.current + event.deltaY * 0.09, -1, 1)
         return
       }
-      commit(event.deltaY < 0 ? 'customer' : 'business')
+      commit(event.deltaY < 0 ? TOP_PATH : BOTTOM_PATH)
     }
 
     let startY = 0
@@ -220,8 +242,10 @@ export function Fork() {
       if (lock.current) return
       const dy = startY - event.changedTouches[0].clientY
       if (Math.abs(dy) < SWIPE_MIN) return
-      // Swipe up (content moves up, dy > 0) reveals what is above: customers.
-      commit(dy < 0 ? 'customer' : 'business')
+      // dy > 0 means the finger travelled UP, which scrolls the page DOWN —
+      // the same direction as a positive wheel deltaY. Both therefore land on
+      // BOTTOM_PATH, and the two input paths stay in agreement.
+      commit(dy < 0 ? TOP_PATH : BOTTOM_PATH)
     }
     const onTouchCancel = () => {
       touching.current = false
@@ -270,23 +294,23 @@ export function Fork() {
 
     const sides = [
       {
-        side: 'customer' as PathChoice,
+        surface: 'navy' as Surface,
         dir: -1, // negative intent points at this half
         phase: 0,
-        half: custHalf.current,
-        plane: custPlane.current,
-        glow: custGlow.current,
-        haze: custHaze.current,
+        half: topHalf.current,
+        plane: topPlane.current,
+        glow: topGlow.current,
+        haze: topHaze.current,
         rect: null as DOMRect | null,
       },
       {
-        side: 'business' as PathChoice,
+        surface: 'light' as Surface,
         dir: 1,
         phase: 2.3, // out of phase with the other plane; they never pulse together
-        half: bizHalf.current,
-        plane: bizPlane.current,
-        glow: bizGlow.current,
-        haze: bizHaze.current,
+        half: bottomHalf.current,
+        plane: bottomPlane.current,
+        glow: bottomGlow.current,
+        haze: bottomHaze.current,
         rect: null as DOMRect | null,
       },
     ]
@@ -355,7 +379,7 @@ export function Fork() {
             -1,
             1,
           )
-          const strength = GLOW_STRENGTH[s.side]
+          const strength = GLOW_STRENGTH[s.surface]
           if (s.glow) {
             s.glow.style.transform = `translate3d(${(hx * strength).toFixed(2)}px,${(hy * strength).toFixed(2)}px,0)`
           }
@@ -386,7 +410,7 @@ export function Fork() {
 
         plane.style.transform = `translate3d(${tx.toFixed(2)}px,${ty.toFixed(2)}px,0) rotate(${rot.toFixed(2)}deg) scale(${scale.toFixed(4)})`
         plane.style.opacity = clamp(
-          PLANE_REST_OPACITY[s.side] * (1 + approach * 0.28),
+          PLANE_REST_OPACITY[s.surface] * (1 + approach * 0.28),
           0,
           1,
         ).toFixed(3)
@@ -408,97 +432,30 @@ export function Fork() {
 
   return (
     <div className="rd-fork" data-committing={committing !== null} data-nav-theme="dark">
+      {/* TOP HALF — navy surface, always. Its destination is TOP_PATH. */}
       <button
-        ref={custHalf}
+        ref={topHalf}
         type="button"
         className="rd-fork-half rd-hairlines"
-        data-side="customer"
-        data-state={stateFor('customer')}
-        onClick={() => commit('customer')}
-        aria-label="Enter the customer site"
+        data-surface="navy"
+        data-side={TOP_PATH}
+        data-state={stateFor(TOP_PATH)}
+        onClick={() => commit(TOP_PATH)}
+        aria-label="Enter the business site"
       >
-        <span ref={custGlow} className={styles.glow} aria-hidden="true" />
-        <span ref={custHaze} className={styles.haze} aria-hidden="true" />
+        <span ref={topGlow} className={styles.glow} aria-hidden="true" />
+        <span ref={topHaze} className={styles.haze} aria-hidden="true" />
         <span className={styles.vignette} aria-hidden="true" />
         <span className={styles.grain} aria-hidden="true" />
         <span
-          ref={custPlane}
+          ref={topPlane}
           className={styles.planeWrap}
-          style={{ top: '22%', left: '5%', opacity: PLANE_REST_OPACITY.customer }}
+          style={{ top: '22%', left: '5%', opacity: PLANE_REST_OPACITY.navy }}
           aria-hidden="true"
         >
           {/* Orange body / white lines — the dark-surface variant. */}
           <Image
             src="/brand/plane-orange-white.png"
-            alt=""
-            width={260}
-            height={260}
-            priority
-          />
-        </span>
-        <span className="rd-fork-content">
-          <span
-            className="rd-eyebrow rd-eyebrow-wide"
-            style={{ display: 'block', color: 'var(--orange)', marginBottom: 16 }}
-          >
-            For Customers
-          </span>
-          <span
-            className="rd-display"
-            style={{
-              display: 'block',
-              fontSize: 'var(--fs-fork-heading)',
-              lineHeight: 1.02,
-              maxWidth: '15ch',
-              margin: '0 auto',
-              color: 'var(--offwhite)',
-            }}
-          >
-            Never lose a receipt again.
-          </span>
-          <span
-            className="rd-fork-cue"
-            style={{ color: 'rgba(245,245,245,.62)' }}
-          >
-            <span className="rd-chevron rd-chevron-up" aria-hidden="true" />
-            Scroll up or click to enter
-          </span>
-        </span>
-      </button>
-
-      {/* One centre-bright rule, no label. The designer deleted the "Choose
-          your path" span (and its rd-seam-glow pulse) in the latest prototype:
-          the seam is brightest at the middle and fades to both edges on its
-          own, and closing the gap the text left is the point. */}
-      <div className="rd-fork-seam" aria-hidden="true">
-        <div className={styles.seamRule} />
-      </div>
-
-      <button
-        ref={bizHalf}
-        type="button"
-        className="rd-fork-half"
-        data-side="business"
-        data-state={stateFor('business')}
-        onClick={() => commit('business')}
-        aria-label="Enter the business site"
-      >
-        <span ref={bizGlow} className={styles.glow} aria-hidden="true" />
-        <span ref={bizHaze} className={styles.haze} aria-hidden="true" />
-        <span className={styles.vignette} aria-hidden="true" />
-        <span className={styles.grain} aria-hidden="true" />
-        <span
-          ref={bizPlane}
-          className={styles.planeWrap}
-          style={{ bottom: '20%', right: '5%', opacity: PLANE_REST_OPACITY.business }}
-          aria-hidden="true"
-        >
-          {/* Navy body / white lines. The off-white half already spends its
-              orange on the eyebrow, the chevron and the light pool; a fourth
-              orange element there competes with the accent instead of
-              supporting it, and navy-on-off-white reads as depth. */}
-          <Image
-            src="/brand/plane-navy-white.png"
             alt=""
             width={260}
             height={260}
@@ -520,10 +477,81 @@ export function Fork() {
               lineHeight: 1.02,
               maxWidth: '16ch',
               margin: '0 auto',
-              color: 'var(--navy)',
+              color: 'var(--offwhite)',
             }}
           >
             Modern checkout. Zero paper.
+          </span>
+          <span
+            className="rd-fork-cue"
+            style={{ color: 'rgba(245,245,245,.62)' }}
+          >
+            <span className="rd-chevron rd-chevron-up" aria-hidden="true" />
+            Scroll up or click to enter
+          </span>
+        </span>
+      </button>
+
+      {/* One centre-bright rule, no label. The designer deleted the "Choose
+          your path" span (and its rd-seam-glow pulse) in the latest prototype:
+          the seam is brightest at the middle and fades to both edges on its
+          own, and closing the gap the text left is the point. */}
+      <div className="rd-fork-seam" aria-hidden="true">
+        <div className={styles.seamRule} />
+      </div>
+
+      {/* BOTTOM HALF — light surface, always. Its destination is BOTTOM_PATH. */}
+      <button
+        ref={bottomHalf}
+        type="button"
+        className="rd-fork-half"
+        data-surface="light"
+        data-side={BOTTOM_PATH}
+        data-state={stateFor(BOTTOM_PATH)}
+        onClick={() => commit(BOTTOM_PATH)}
+        aria-label="Enter the customer site"
+      >
+        <span ref={bottomGlow} className={styles.glow} aria-hidden="true" />
+        <span ref={bottomHaze} className={styles.haze} aria-hidden="true" />
+        <span className={styles.vignette} aria-hidden="true" />
+        <span className={styles.grain} aria-hidden="true" />
+        <span
+          ref={bottomPlane}
+          className={styles.planeWrap}
+          style={{ bottom: '20%', right: '5%', opacity: PLANE_REST_OPACITY.light }}
+          aria-hidden="true"
+        >
+          {/* Navy body / white lines. The light half already spends its orange
+              on the eyebrow, the chevron and the light pool; a fourth orange
+              element there competes with the accent instead of supporting it,
+              and navy-on-off-white reads as depth. */}
+          <Image
+            src="/brand/plane-navy-white.png"
+            alt=""
+            width={260}
+            height={260}
+            priority
+          />
+        </span>
+        <span className="rd-fork-content">
+          <span
+            className="rd-eyebrow rd-eyebrow-wide"
+            style={{ display: 'block', color: 'var(--orange)', marginBottom: 16 }}
+          >
+            For Customers
+          </span>
+          <span
+            className="rd-display"
+            style={{
+              display: 'block',
+              fontSize: 'var(--fs-fork-heading)',
+              lineHeight: 1.02,
+              maxWidth: '15ch',
+              margin: '0 auto',
+              color: 'var(--navy)',
+            }}
+          >
+            Never lose a receipt again.
           </span>
           <span className="rd-fork-cue" style={{ color: 'rgba(0,18,29,.55)' }}>
             <span className="rd-chevron rd-chevron-down" aria-hidden="true" />

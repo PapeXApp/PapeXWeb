@@ -14,11 +14,27 @@ type MagneticProps = {
 // "Easing & Duration" table ("reveals, magnetic pull, card lift").
 const EASE = "cubic-bezier(.16,1,.3,1)"
 
+// Pull factors and — the important part — HARD CAPS on the result.
+//
+// The original spec was `translate(dx*0.28, dy*0.4)` with no ceiling, inside a
+// catch radius of `width*0.9 + 60`. On a ~170px CTA that radius is ~213px, so
+// at its edge the button could travel 60px across and 85px down — further than
+// its own height. It read as the button fleeing the cursor rather than leaning
+// toward it. The caps below are what keep the pull tight; the factors only
+// decide how quickly it reaches them.
+const PULL_X = 0.18
+const PULL_Y = 0.24
+const MAX_X = 12 // px
+const MAX_Y = 9 // px — less than X: vertical drift is far more noticeable
+
+const clamp = (value: number, limit: number) =>
+  value > limit ? limit : value < -limit ? -limit : value
+
 /**
  * Magnetic-pull wrapper for primary CTAs. Tracks `pointermove` window-wide;
- * within `width*0.9 + 60px` of the cursor it translates by
- * `translate(dx*0.28, dy*0.4)` (raw pixel offsets from the element's center,
- * asymmetric per axis per spec); otherwise it eases back to `0,0`. 350ms
+ * within `width*0.9 + 60px` of the cursor it leans toward the pointer by
+ * `dx*PULL_X` / `dy*PULL_Y`, capped at MAX_X / MAX_Y px so the element never
+ * travels further than a nudge; otherwise it eases back to `0,0`. 350ms
  * expo-out.
  *
  * Fine pointers only — no-ops (renders children, no transform/listener) on
@@ -53,7 +69,15 @@ export function Magnetic({ children, className, style }: MagneticProps) {
         const dx = event.clientX - cx
         const dy = event.clientY - cy
         const distance = Math.hypot(dx, dy)
-        setOffset(distance < rect.width * 0.9 + 60 ? { x: dx * 0.28, y: dy * 0.4 } : { x: 0, y: 0 })
+        const inRange = distance < rect.width * 0.9 + 60
+        setOffset(
+          inRange
+            ? {
+                x: clamp(dx * PULL_X, MAX_X),
+                y: clamp(dy * PULL_Y, MAX_Y),
+              }
+            : { x: 0, y: 0 },
+        )
       })
     }
     window.addEventListener("pointermove", onMove, { passive: true })

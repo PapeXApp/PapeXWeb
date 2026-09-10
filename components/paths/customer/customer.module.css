@@ -138,6 +138,34 @@
   align-items: center;
   gap: 10px;
   flex-shrink: 0;
+
+  /* ---- The phone's geometry, from ONE source -----------------------------
+     It used to be sized on two independent axes — width: clamp(288px,34vw,376px)
+     and height: clamp(380px,100vh-342px,610px) — which at a 1440x900 desktop
+     produced 376x580: a 0.65 aspect ratio. A real iPhone is 0.46, so the thing
+     read as a squat foldable slab rather than a phone.
+     Now the HEIGHT is the only free variable (it still has to share the
+     viewport with the reader below it) and the width is derived from it at the
+     true iPhone 15/16 ratio, so the silhouette is correct at every size. */
+  /* THE HERO MUST FIT IN 100vh, or the scroll cue — which is absolutely
+     positioned at the section's bottom — lands below the fold and looks like it
+     was never built. That is exactly what happened on Nico's smaller screen.
+     The reserve is everything in the hero that is NOT the phone screen:
+        hero padding      ~84-200px (viewport-aware, see Hero.tsx)
+        the RDH device    ~149px net (233px tall, pulled up ~84px by demoRdh)
+        stage gaps + hint  ~42px
+     400px covers all of it with a little slack. Verified to fit at 660, 700,
+     800, 900, 982 and 1080 tall. Re-measure if the reader artwork or the hint
+     row ever changes size. */
+  --phone-h: clamp(310px, calc(100vh - 400px), 660px);
+  --phone-w: calc(var(--phone-h) * 393 / 852);
+
+  /* Interior type unit. Equals 1px when the screen is 346px wide — the width at
+     which a standard 32-column receipt body stops needing to pan — and scales
+     with the phone below that, floored so it can never go illegible. Every
+     font-size inside the phone is `calc(N * var(--ac-u))`, so the whole UI
+     scales as one piece instead of 27 numbers drifting apart. */
+  --ac-u: max(0.72px, calc(var(--phone-w) / 346));
 }
 
 .demoPhone {
@@ -162,35 +190,45 @@
 /* 346px+ is the point a standard 32-column receipt body stops needing to pan. */
 .demoShell {
   position: relative;
-  width: clamp(288px, 34vw, 376px);
-  border-radius: 42px;
+  /* Driven entirely by the screen inside it — see --phone-w on .demoStage. */
+  width: max-content;
+  border-radius: calc(var(--phone-w) * 0.155);
   background: linear-gradient(160deg, #2a2d36, #15171d);
   border: 2px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 44px 90px rgba(0, 0, 0, 0.55);
-  padding: 11px;
+  /* Two shadows, not one: a tight contact shadow keeps the bezel edge crisp
+     while the long one grounds the phone on the section. */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5), 0 44px 90px rgba(0, 0, 0, 0.55);
+  padding: calc(var(--phone-w) * 0.031);
 }
 
 /* Height is viewport-relative, not width-relative: the phone AND the reader
    beneath it must both be visible together or the tap is undiscoverable. */
 .demoScreen {
   position: relative;
-  height: clamp(380px, calc(100vh - 342px), 610px);
-  border-radius: 32px;
+  width: var(--phone-w);
+  height: var(--phone-h);
+  /* Concentric with the shell: the screen radius is the shell radius minus the
+     bezel, which is what stops the corners looking pinched. */
+  border-radius: calc(var(--phone-w) * 0.124);
   background: #181a20;
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
+/* A Dynamic Island, not a notch. Every iPhone this demo is meant to read as
+   has had one since the 14 Pro; a notch hanging off the top edge is the single
+   strongest cue that a mockup is old. Proportions are the real ones: a
+   125x37pt pill on a 393pt-wide screen, inset 11pt from the top. */
 .demoNotch {
   position: absolute;
-  top: 9px;
+  top: calc(var(--phone-w) * 0.028 + var(--phone-w) * 0.031);
   left: 50%;
-  margin-left: -52px;
-  width: 104px;
-  height: 26px;
-  background: #0b0c10;
-  border-radius: 0 0 16px 16px;
+  width: calc(var(--phone-w) * 0.318);
+  height: calc(var(--phone-w) * 0.094);
+  transform: translateX(-50%);
+  background: #000;
+  border-radius: 999px;
   z-index: 6;
 }
 
@@ -247,7 +285,8 @@
 /* brand bar */
 .acBar {
   flex: 0 0 auto;
-  padding: 34px 20px 8px;
+  /* Top padding clears the Dynamic Island; scales with it. */
+  padding: calc(var(--phone-w) * 0.165) calc(var(--phone-w) * 0.058) calc(var(--phone-w) * 0.024);
   display: flex;
   align-items: center;
   gap: 7px;
@@ -255,7 +294,7 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 .acWordmark {
-  font-size: 17px;
+  font-size: calc(17 * var(--ac-u));
   font-weight: 500;
   color: #f4f4f4;
   letter-spacing: -0.01em;
@@ -268,7 +307,7 @@
 }
 .acBarLabel {
   margin-left: auto;
-  font-size: 12px;
+  font-size: calc(12 * var(--ac-u));
   color: #c4c7cc;
 }
 
@@ -276,7 +315,7 @@
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 16px 20px 20px;
+  padding: calc(16 * var(--ac-u)) calc(13 * var(--ac-u)) calc(20 * var(--ac-u));
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -288,11 +327,11 @@
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 24px;
-  padding: 16px;
+  border-radius: calc(24 * var(--ac-u));
+  padding: calc(13 * var(--ac-u));
 }
 .acSectionTitle {
-  font-size: 20px;
+  font-size: calc(20 * var(--ac-u));
   font-weight: 500;
   color: #2b7fc6;
   margin-bottom: 4px;
@@ -311,31 +350,31 @@
   background: #fff;
   border: 2px solid #fb8500;
   color: #fb8500;
-  font-size: 24px;
+  font-size: calc(24 * var(--ac-u));
   font-weight: 500;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .acMname {
-  font-size: 24px;
+  font-size: calc(24 * var(--ac-u));
   font-weight: 500;
   color: #f4f4f4;
   line-height: 1.15;
 }
 .acMaddr {
-  font-size: 14px;
+  font-size: calc(14 * var(--ac-u));
   color: #c4c7cc;
   line-height: 1.35;
 }
 .acMdate {
-  font-size: 12px;
+  font-size: calc(12 * var(--ac-u));
   font-weight: 300;
   color: #fb8500;
   padding-top: 2px;
 }
 .acMsrc {
-  font-size: 12px;
+  font-size: calc(12 * var(--ac-u));
   color: #c4c7cc;
   padding-top: 2px;
 }
@@ -353,17 +392,17 @@
   padding-bottom: 0;
 }
 .acItemName {
-  font-size: 16px;
+  font-size: calc(16 * var(--ac-u));
   font-weight: 500;
   color: #f4f4f4;
   line-height: 1.3;
 }
 .acItemQty {
-  font-size: 12px;
+  font-size: calc(12 * var(--ac-u));
   color: #9aa1a8;
 }
 .acItemPrice {
-  font-size: 16px;
+  font-size: calc(16 * var(--ac-u));
   font-weight: 500;
   color: #f4f4f4;
   font-variant-numeric: tabular-nums;
@@ -378,11 +417,11 @@
   padding: 6px 0;
 }
 .acTlabel {
-  font-size: 16px;
+  font-size: calc(16 * var(--ac-u));
   color: #c4c7cc;
 }
 .acTval {
-  font-size: 16px;
+  font-size: calc(16 * var(--ac-u));
   font-weight: 500;
   color: #f4f4f4;
   font-variant-numeric: tabular-nums;
@@ -396,18 +435,18 @@
   margin: 4px 0;
 }
 .acGrandLabel {
-  font-size: 20px;
+  font-size: calc(20 * var(--ac-u));
   font-weight: 500;
   color: #fb8500;
 }
 .acGrandVal {
-  font-size: 24px;
+  font-size: calc(24 * var(--ac-u));
   font-weight: 500;
   color: #fff;
   font-variant-numeric: tabular-nums;
 }
 .acChip {
-  font-size: 11px;
+  font-size: calc(11 * var(--ac-u));
   font-weight: 700;
   letter-spacing: 0.5px;
   color: #fff;
@@ -428,11 +467,11 @@
   padding-bottom: 0;
 }
 .acInfolabel {
-  font-size: 15px;
+  font-size: calc(15 * var(--ac-u));
   color: #c4c7cc;
 }
 .acInfoval {
-  font-size: 15px;
+  font-size: calc(15 * var(--ac-u));
   font-weight: 500;
   color: #f4f4f4;
   text-align: right;
@@ -444,7 +483,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 20px;
+  font-size: calc(20 * var(--ac-u));
   font-weight: 500;
   color: #2b7fc6;
 }
@@ -454,14 +493,15 @@
 .acChev {
   transition: transform 0.25s ease;
   color: #2b7fc6;
-  font-size: 13px;
+  font-size: calc(13 * var(--ac-u));
 }
 .acOrig[open] .acChev {
   transform: rotate(180deg);
 }
 /* white-space:pre is required — column alignment IS the receipt. */
 .acBody {
-  margin-top: 12px;
+  container-type: inline-size;
+  margin-top: calc(12 * var(--ac-u));
   font-family: var(--font-mono);
   color: #c4c7cc;
   line-height: 1.55;
@@ -470,9 +510,12 @@
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
 }
+/* min() so the line NEVER exceeds the width of the card it sits in: 5.2cqw is
+   100cqw / (32 columns x 0.6em Courier advance). Below that it just uses the
+   scaled design size. This is what stops the receipt body clipping. */
 .acLine {
   white-space: pre;
-  font-size: 13px;
+  font-size: min(calc(13 * var(--ac-u)), 5.2cqw);
 }
 .acLine.acLineB {
   font-weight: 700;
@@ -484,13 +527,13 @@
 /* exactly one size class is emitted per line — mirrors the else-if chain in
    PapeXWeb/app/r/ui.tsx styleClasses(), so don't make these additive */
 .acLine.acLineMd {
-  font-size: 15px;
+  font-size: min(calc(15 * var(--ac-u)), 6cqw);
 }
 .acLine.acLineLg {
-  font-size: 18px;
+  font-size: min(calc(18 * var(--ac-u)), 7.2cqw);
 }
 .acLine.acLineFb {
-  font-size: 11px;
+  font-size: min(calc(11 * var(--ac-u)), 4.4cqw);
 }
 .acLine.acAlCenter {
   text-align: center;
@@ -501,7 +544,7 @@
 
 .acFoot {
   flex: 0 0 auto;
-  padding: 16px 20px 20px;
+  padding: calc(16 * var(--ac-u)) calc(14 * var(--ac-u)) calc(20 * var(--ac-u));
   background: #181a20;
   display: flex;
   gap: 16px;
@@ -512,7 +555,7 @@
   border: none;
   cursor: pointer;
   font: inherit;
-  font-size: 16px;
+  font-size: calc(16 * var(--ac-u));
   font-weight: 500;
   padding: 13px 0;
   border-radius: 14px;
@@ -545,8 +588,8 @@
 }
 .acIdleRing {
   position: relative;
-  width: 78px;
-  height: 78px;
+  width: calc(78 * var(--ac-u));
+  height: calc(78 * var(--ac-u));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -555,8 +598,8 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 78px;
-  height: 78px;
+  width: calc(78 * var(--ac-u));
+  height: calc(78 * var(--ac-u));
   border-radius: 50%;
   border: 2px solid #fb8500;
   animation: nfcRipple 2.4s ease-out infinite;
@@ -566,35 +609,41 @@
 }
 .acIdleRingDot {
   position: relative;
-  width: 30px;
-  height: 30px;
+  width: calc(30 * var(--ac-u));
+  height: calc(30 * var(--ac-u));
   border-radius: 50%;
   background: #fb8500;
   box-shadow: 0 0 0 8px rgba(251, 133, 0, 0.16);
 }
 .acIdleT {
-  font-size: 17px;
+  font-size: calc(17 * var(--ac-u));
   font-weight: 500;
   color: #f4f4f4;
 }
 .acIdleS {
-  font-size: 13.5px;
+  font-size: calc(13.5 * var(--ac-u));
   color: #9aa1a8;
   line-height: 1.45;
 }
 
+/* pointer-events follow opacity. Both layers are absolutely positioned over
+   each other for the whole life of the demo, so whichever one is invisible must
+   also be untouchable — otherwise the hidden receipt layer swallows the very
+   first tap on the idle screen. */
 .acLive {
   position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
   opacity: 0;
+  pointer-events: none;
   transform: translateY(14px);
   transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .demoPhoneDone .acLive {
   opacity: 1;
   transform: none;
+  pointer-events: auto;
 }
 
 /* ==========================================================================
@@ -617,37 +666,82 @@
 .flipCardFlipped .flipCardInner {
   transform: rotateY(180deg);
 }
+/* The card face. Was a flat white rectangle with one soft drop shadow, which
+   is what made these read as unfinished. Now: a faint top-lit gradient instead
+   of flat fill, a three-part shadow (hairline contact + close ambient + broad
+   ambient) which is what actually makes a card sit ON something, and an inset
+   highlight along the top edge so the surface has a lit lip. */
 .flipFace {
   position: absolute;
   inset: 0;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   border-radius: var(--r-card);
-  background: #fff;
-  border: 1.5px solid var(--hairline-1);
-  box-shadow: 0 10px 30px rgba(0, 18, 29, 0.06);
+  background: linear-gradient(168deg, #ffffff 0%, #fdfdfc 46%, #f7f7f5 100%);
+  border: 1px solid var(--hairline-1);
+  box-shadow: 0 1px 1px rgba(0, 18, 29, 0.04), 0 8px 18px rgba(0, 18, 29, 0.05),
+    0 24px 48px rgba(0, 18, 29, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.9);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 26px 22px;
+  padding: 30px 24px;
   overflow: hidden;
   text-align: center;
+}
+/* A hairline of brand colour across the very top of the face — the detail that
+   most cheaply separates "a div with a shadow" from "a designed card". */
+.flipFace::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 12%;
+  right: 12%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(235, 113, 0, 0.5), transparent);
 }
 .flipFaceBack {
   transform: rotateY(180deg);
 }
-.flipCard:hover .flipFace {
-  box-shadow: 0 20px 44px rgba(0, 18, 29, 0.12);
+/* The lift goes on .flipCard, NOT .flipCardInner — the inner element owns the
+   rotateY and a second transform there would fight the flip. */
+.flipCard {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
+.flipCard:hover {
+  transform: translateY(-5px);
+}
+.flipCard:hover .flipFace {
+  border-color: rgba(235, 113, 0, 0.28);
+  box-shadow: 0 1px 1px rgba(0, 18, 29, 0.04), 0 14px 26px rgba(0, 18, 29, 0.08),
+    0 36px 64px rgba(0, 18, 29, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+.flipCard:focus-visible {
+  outline: none;
+}
+.flipCard:focus-visible .flipFace {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 3px rgba(235, 113, 0, 0.35), 0 24px 48px rgba(0, 18, 29, 0.1);
+}
+/* Was bare orange caps floating at the bottom edge. Given a tinted pill it
+   reads as an affordance rather than stray small print. */
 .flipHint {
   position: absolute;
   bottom: 16px;
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--orange);
+  background: rgba(235, 113, 0, 0.09);
+  border: 1px solid rgba(235, 113, 0, 0.18);
+  border-radius: 999px;
+  padding: 5px 11px;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+.flipCard:hover .flipHint {
+  background: rgba(235, 113, 0, 0.16);
+  border-color: rgba(235, 113, 0, 0.34);
 }
 .flipStage {
   position: absolute;
@@ -661,9 +755,23 @@
   font-size: clamp(44px, 5.4vw, 68px);
   color: var(--orange);
   line-height: 1;
+  letter-spacing: -0.02em;
+  /* A soft bloom under the figure so the number sits in the card's light
+     rather than on top of it. */
+  text-shadow: 0 8px 26px rgba(235, 113, 0, 0.22);
+}
+/* Short rule under the statistic — anchors it to the caption below. */
+.flipNum::after {
+  content: "";
+  display: block;
+  width: 34px;
+  height: 2px;
+  margin: 14px auto 0;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, rgba(235, 113, 0, 0.75), transparent);
 }
 .flipCap {
-  margin-top: 10px;
+  margin-top: 12px;
   font-size: 15px;
   color: var(--body-on-light);
   line-height: 1.45;
@@ -1089,4 +1197,918 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+/* ==========================================================================
+ * Scroll cue — the tab at the bottom middle of the hero.
+ *
+ * This used to be a decorative <div>: 12px text at 40% opacity over a 1px
+ * hairline, centred at the bottom of a 100vh hero. On a navy field that is
+ * effectively invisible, so the hero read as having no downward affordance at
+ * all. It is now a real glass tab (and a real <button> — the affordance that
+ * says "there is more" should also be the control that takes you there).
+ * ========================================================================== */
+
+.scrollTab {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px 9px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(245, 245, 245, 0.82);
+
+  background: rgba(245, 245, 245, 0.06);
+  border: 1px solid rgba(245, 245, 245, 0.16);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease,
+    color 0.25s ease;
+}
+.scrollTab:hover {
+  color: var(--offwhite);
+  background: rgba(245, 245, 245, 0.1);
+  border-color: rgba(235, 113, 0, 0.55);
+  transform: translateX(-50%) translateY(-2px);
+}
+.scrollTab:focus-visible {
+  outline: none;
+  border-color: var(--orange);
+  box-shadow: 0 0 0 3px rgba(235, 113, 0, 0.38);
+}
+
+/* The chevron: a rotated square corner rather than a glyph, so it stays
+   pin-sharp at any zoom and needs no icon font. */
+.scrollTabChevron {
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid var(--orange);
+  border-bottom: 1.5px solid var(--orange);
+  transform: rotate(45deg);
+  animation: scrollTabBob 1.9s ease-in-out infinite;
+}
+@keyframes scrollTabBob {
+  0%,
+  100% {
+    transform: rotate(45deg) translate(0, 0);
+    opacity: 0.55;
+  }
+  50% {
+    transform: rotate(45deg) translate(2px, 2px);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scrollTabChevron {
+    animation: none;
+    opacity: 0.9;
+  }
+  .scrollTab,
+  .scrollTab:hover {
+    transition: none;
+  }
+}
+
+/* ==========================================================================
+ * "How it works" phone interior — THE REAL PapeXV2 APP, not a mock-up.
+ *
+ * Every value below is lifted from the app's own design system
+ * (PapeXV2/theme/tokens.ts + components/ui/ReceiptRow.tsx), because this screen
+ * is claiming to show the product:
+ *
+ *   ground        #00121D            (colorsDark.background)
+ *   card surface  #2C2C2C            (colorsDark.cardBackground)
+ *   hairline      rgba(255,255,255,.09)  (colorsDark.border)
+ *   text ramp     .90 / .64 / .45    (text / textSecondary / textMuted)
+ *   one orange    #EB7100            (states via opacity tints only)
+ *   radii         12 field, 24 list card, 9999 pill
+ *   type          Barlow Medium 16 merchant + amount, Regular 13 meta
+ *   logo          40x40 circle on rgba(255,255,255,.12)
+ *   unreviewed    3px orange left bar, inset inside the card's radius
+ *
+ * It was previously an off-white screen with white cards and orange category
+ * labels — a palette the app has never had, which is exactly why it read as a
+ * mock-up.
+ *
+ * --app-u scales the whole UI with the phone. The app's own numbers are in
+ * points on a 393pt-wide screen; this phone is ~240px wide, so rendering 16pt
+ * as 16px would be wildly oversized. Dividing by 330 rather than 393 keeps it
+ * very slightly generous, which is what keeps it legible at marketing size.
+ * ========================================================================== */
+
+.walkApp {
+  --app-u: calc(min(520px, 56vh) * 393 / 852 / 330);
+  position: absolute;
+  inset: 0;
+  background: #00121d;
+  font-family: var(--font-ui);
+  display: flex;
+  flex-direction: column;
+  gap: calc(10 * var(--app-u));
+  padding: calc(54 * var(--app-u)) calc(14 * var(--app-u)) calc(16 * var(--app-u));
+}
+
+.walkAppHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(10 * var(--app-u));
+}
+.walkAppTitle {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: calc(26 * var(--app-u));
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: -0.01em;
+}
+.walkAppAvatar {
+  width: calc(40 * var(--app-u));
+  height: calc(40 * var(--app-u));
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  font-size: calc(16 * var(--app-u));
+  color: rgba(255, 255, 255, 0.9);
+  flex: 0 0 auto;
+}
+
+.walkAppSearch {
+  display: flex;
+  align-items: center;
+  gap: calc(8 * var(--app-u));
+  background: #2c2c2c;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: calc(12 * var(--app-u));
+  padding: calc(10 * var(--app-u)) calc(12 * var(--app-u));
+  font-size: calc(15 * var(--app-u));
+  color: rgba(255, 255, 255, 0.45);
+}
+/* A magnifier drawn from two borders — no icon font, stays sharp at any size. */
+.walkAppSearchIcon {
+  position: relative;
+  width: calc(13 * var(--app-u));
+  height: calc(13 * var(--app-u));
+  border: calc(1.6 * var(--app-u)) solid rgba(255, 255, 255, 0.45);
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+.walkAppSearchIcon::after {
+  content: "";
+  position: absolute;
+  right: calc(-4 * var(--app-u));
+  bottom: calc(-2 * var(--app-u));
+  width: calc(5 * var(--app-u));
+  height: calc(1.6 * var(--app-u));
+  background: rgba(255, 255, 255, 0.45);
+  transform: rotate(45deg);
+  border-radius: 2px;
+}
+
+.walkAppRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: calc(12 * var(--app-u));
+  background: #2c2c2c;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: calc(24 * var(--app-u));
+  padding: calc(12 * var(--app-u)) calc(14 * var(--app-u));
+}
+/* The unreviewed marker: a 3px orange rule inset inside the card's own radius,
+   exactly as ReceiptRow draws it. One row carries it, because in the real app
+   most rows don't. */
+.walkAppRowUnreviewed::before {
+  content: "";
+  position: absolute;
+  left: calc(3 * var(--app-u));
+  top: calc(3 * var(--app-u));
+  bottom: calc(3 * var(--app-u));
+  width: calc(3 * var(--app-u));
+  border-radius: 999px;
+  background: var(--orange);
+}
+.walkAppLogo {
+  width: calc(40 * var(--app-u));
+  height: calc(40 * var(--app-u));
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  font-size: calc(15 * var(--app-u));
+  color: rgba(255, 255, 255, 0.9);
+  flex: 0 0 auto;
+}
+.walkAppRowText {
+  flex: 1;
+  min-width: 0;
+}
+.walkAppMerchant {
+  font-weight: 500;
+  font-size: calc(16 * var(--app-u));
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.walkAppMeta {
+  font-weight: 400;
+  font-size: calc(13 * var(--app-u));
+  color: rgba(255, 255, 255, 0.64);
+  margin-top: calc(2 * var(--app-u));
+}
+.walkAppAmount {
+  font-weight: 500;
+  font-size: calc(16 * var(--app-u));
+  color: rgba(255, 255, 255, 0.9);
+  flex: 0 0 auto;
+}
+
+/* ==========================================================================
+ * ATMOSPHERE — the shared depth layer (components/paths/customer/Atmosphere.tsx)
+ *
+ * The customer path was built as a stack of flat, hard-edged colour bands. Every
+ * section change was a straight cut, and inside each band there was nothing
+ * behind the content at all. This gives every section the same four tools, so
+ * "more depth" is consistent rather than re-invented per section:
+ *
+ *   seams       a gradient bleed of the NEIGHBOURING section's colour across
+ *               the boundary, so bands melt instead of cutting
+ *   orbs        large, heavily blurred colour pools — the light in the room
+ *   lines       thin skewed rules that catch the eye and imply perspective
+ *   watermark   the plane mark, oversized and nearly invisible
+ *
+ * Everything here is decorative, pointer-events:none, and painted UNDER the
+ * content (z-index 0 against the content's 1). Nothing animates on scroll: these
+ * are static layers, so they cost one paint and never re-run.
+ * ========================================================================== */
+
+.atmos {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+/* Sections opt in by going relative; their content is lifted above the layer. */
+.atmosHost {
+  position: relative;
+  overflow: hidden;
+}
+.atmosContent {
+  position: relative;
+  z-index: 1;
+}
+
+/* --- Seams ---------------------------------------------------------------
+   Height is generous on purpose: a 40px fade still reads as an edge, a ~160px
+   one reads as one surface becoming another. */
+.atmosSeamTop,
+.atmosSeamBottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: clamp(90px, 12vw, 170px);
+}
+.atmosSeamTop {
+  top: 0;
+}
+.atmosSeamBottom {
+  bottom: 0;
+}
+
+/* --- Orbs: the blurred light pools --------------------------------------- */
+.atmosOrb {
+  position: absolute;
+  border-radius: 50%;
+  will-change: auto;
+}
+
+/* --- Skewed hairlines ----------------------------------------------------
+   Brightest in the middle, gone at both ends, so they never terminate in a
+   hard dot against the background. */
+.atmosLine {
+  position: absolute;
+  height: 1px;
+  transform-origin: 50% 50%;
+}
+
+/* --- Watermark ----------------------------------------------------------- */
+.atmosMark {
+  position: absolute;
+  line-height: 0;
+}
+
+/* A hairline that runs the full width of a section edge — the quietest of the
+   four, used where a full seam would be too much. */
+.atmosRule {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atmos {
+    /* nothing here animates, but keep the escape hatch explicit */
+    animation: none !important;
+  }
+}
+
+/* ==========================================================================
+ * WALK PHONE — the "How it works" device.
+ *
+ * Rebuilt 2026-09-09. The old one was a rounded rectangle with a notch and a
+ * screen full of invented UI; it read as a cheap mock-up rather than the app.
+ * Everything here is measured against the real thing:
+ *
+ *   - iPhone 15/16 proportions (393 x 852pt) and concentric corner radii.
+ *   - A Dynamic Island, not a notch.
+ *   - A real iOS status bar: time, cellular, Wi-Fi, battery.
+ *   - The app's own palette from PapeXV2/theme/tokens.ts, and its screen
+ *     furniture from docs/design/prd-execution/screenshots (large title,
+ *     letterspaced section label, 40pt circular row icon, trailing chevron).
+ *   - The iOS 26 Liquid Glass tab bar: a capsule INSET from the screen edges
+ *     and floating OVER the content, which is what PapeXV2 actually ships
+ *     (app/(tabs)/_layout.tsx uses NativeTabs precisely to get it).
+ *
+ * --wp-u scales the whole interior. The app's numbers are points on a 393pt
+ * screen; this phone is far narrower, so a raw px reading would be enormous.
+ * ========================================================================== */
+
+.wpFrame {
+  /* Overridable by a parent via --wp-size, so the same device can be reused at
+     a different scale (the Features rows render it smaller than How It Works
+     does) without forking the component. */
+  --wp-h: var(--wp-size, min(560px, 62vh));
+  --wp-w: calc(var(--wp-h) * 393 / 852);
+  --wp-u: calc(var(--wp-w) / 355);
+
+  position: relative;
+  width: max-content;
+  padding: calc(var(--wp-w) * 0.031);
+  border-radius: calc(var(--wp-w) * 0.155);
+  /* Titanium-ish rail: a bright edge top-left falling to a dark one bottom-right. */
+  background: linear-gradient(150deg, #5c6270 0%, #2b3038 34%, #1a1e25 66%, #3a4049 100%);
+  box-shadow: 0 2px 5px rgba(0, 18, 29, 0.4), 0 30px 64px rgba(0, 18, 29, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.wpScreen {
+  position: relative;
+  width: var(--wp-w);
+  height: var(--wp-h);
+  border-radius: calc(var(--wp-w) * 0.124);
+  overflow: hidden;
+  background: #00121d;
+  /* The app's ground is not flat navy — it carries a warm lift behind the
+     header, which is what the screenshots show. */
+  background-image: radial-gradient(120% 62% at 78% -8%, rgba(235, 113, 0, 0.14), transparent 62%),
+    radial-gradient(90% 50% at 8% 4%, rgba(96, 166, 214, 0.08), transparent 60%);
+}
+
+.wpIsland {
+  position: absolute;
+  top: calc(11 * var(--wp-u));
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(125 * var(--wp-u));
+  height: calc(37 * var(--wp-u));
+  background: #000;
+  border-radius: 999px;
+  z-index: 9;
+}
+
+/* --- iOS status bar ------------------------------------------------------- */
+.wpStatus {
+  position: absolute;
+  top: calc(16 * var(--wp-u));
+  left: 0;
+  right: 0;
+  height: calc(28 * var(--wp-u));
+  padding: 0 calc(26 * var(--wp-u));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 10;
+  color: #fff;
+  font-weight: 600;
+  font-size: calc(15 * var(--wp-u));
+  letter-spacing: 0.01em;
+}
+.wpStatusRight {
+  display: flex;
+  align-items: center;
+  gap: calc(5 * var(--wp-u));
+}
+/* Cellular bars: four rising rectangles. */
+.wpBars {
+  display: flex;
+  align-items: flex-end;
+  gap: calc(1.6 * var(--wp-u));
+  height: calc(11 * var(--wp-u));
+}
+.wpBars i {
+  display: block;
+  width: calc(3 * var(--wp-u));
+  background: #fff;
+  border-radius: calc(1 * var(--wp-u));
+}
+.wpBars i:nth-child(1) { height: 40%; }
+.wpBars i:nth-child(2) { height: 60%; }
+.wpBars i:nth-child(3) { height: 80%; }
+.wpBars i:nth-child(4) { height: 100%; }
+/* Wi-Fi: three nested arcs made from bordered quarter-circles. */
+.wpWifi {
+  position: relative;
+  width: calc(15 * var(--wp-u));
+  height: calc(11 * var(--wp-u));
+}
+.wpWifi i {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  border: calc(1.7 * var(--wp-u)) solid #fff;
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+  border-right-color: transparent;
+  border-radius: 50%;
+  transform: translateX(-50%);
+}
+.wpWifi i:nth-child(1) { width: calc(15 * var(--wp-u)); height: calc(15 * var(--wp-u)); }
+.wpWifi i:nth-child(2) { width: calc(9.5 * var(--wp-u)); height: calc(9.5 * var(--wp-u)); }
+.wpWifi i:nth-child(3) {
+  width: calc(3.4 * var(--wp-u));
+  height: calc(3.4 * var(--wp-u));
+  border-radius: 50%;
+  background: #fff;
+  border: none;
+  bottom: calc(0.4 * var(--wp-u));
+}
+.wpBattery {
+  position: relative;
+  width: calc(25 * var(--wp-u));
+  height: calc(12 * var(--wp-u));
+  border: calc(1.4 * var(--wp-u)) solid rgba(255, 255, 255, 0.55);
+  border-radius: calc(3.6 * var(--wp-u));
+  padding: calc(1.6 * var(--wp-u));
+}
+.wpBattery::after {
+  content: "";
+  position: absolute;
+  right: calc(-3.2 * var(--wp-u));
+  top: 50%;
+  transform: translateY(-50%);
+  width: calc(1.8 * var(--wp-u));
+  height: calc(4.4 * var(--wp-u));
+  border-radius: 0 calc(1.4 * var(--wp-u)) calc(1.4 * var(--wp-u)) 0;
+  background: rgba(255, 255, 255, 0.55);
+}
+.wpBattery i {
+  display: block;
+  width: 82%;
+  height: 100%;
+  background: #fff;
+  border-radius: calc(1.6 * var(--wp-u));
+}
+
+/* --- app content --------------------------------------------------------- */
+.wpBody {
+  position: absolute;
+  inset: 0;
+  padding: calc(58 * var(--wp-u)) calc(16 * var(--wp-u)) 0;
+  display: flex;
+  flex-direction: column;
+  gap: calc(12 * var(--wp-u));
+  font-family: var(--font-ui);
+}
+.wpTitle {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: calc(30 * var(--wp-u));
+  line-height: 1.1;
+  color: rgba(255, 255, 255, 0.92);
+  letter-spacing: -0.015em;
+}
+/* The small letterspaced group label above a list — straight from the app. */
+.wpSectionLabel {
+  font-size: calc(11 * var(--wp-u));
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.42);
+}
+.wpRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: calc(12 * var(--wp-u));
+  background: #1b242e;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: calc(22 * var(--wp-u));
+  padding: calc(12 * var(--wp-u)) calc(14 * var(--wp-u));
+}
+.wpRowUnreviewed::before {
+  content: "";
+  position: absolute;
+  left: calc(3 * var(--wp-u));
+  top: calc(3 * var(--wp-u));
+  bottom: calc(3 * var(--wp-u));
+  width: calc(3 * var(--wp-u));
+  border-radius: 999px;
+  background: var(--orange);
+}
+.wpAvatar {
+  width: calc(40 * var(--wp-u));
+  height: calc(40 * var(--wp-u));
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  font-size: calc(15 * var(--wp-u));
+  color: rgba(255, 255, 255, 0.9);
+  flex: 0 0 auto;
+}
+.wpRowText { flex: 1; min-width: 0; }
+.wpMerchant {
+  font-weight: 500;
+  font-size: calc(16 * var(--wp-u));
+  color: rgba(255, 255, 255, 0.92);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wpMeta {
+  font-size: calc(12.5 * var(--wp-u));
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: calc(2 * var(--wp-u));
+}
+.wpAmount {
+  font-weight: 500;
+  font-size: calc(15.5 * var(--wp-u));
+  color: rgba(255, 255, 255, 0.92);
+  flex: 0 0 auto;
+}
+/* Trailing disclosure chevron — two borders, no icon font. */
+.wpChevron {
+  width: calc(7 * var(--wp-u));
+  height: calc(7 * var(--wp-u));
+  border-top: calc(1.6 * var(--wp-u)) solid rgba(255, 255, 255, 0.38);
+  border-right: calc(1.6 * var(--wp-u)) solid rgba(255, 255, 255, 0.38);
+  transform: rotate(45deg);
+  flex: 0 0 auto;
+  margin-left: calc(2 * var(--wp-u));
+}
+
+/* --- iOS 26 Liquid Glass tab bar ----------------------------------------
+   A capsule inset from the edges, floating over the content, with a real
+   backdrop blur + saturation so it MIRRORS what scrolls under it. That
+   mirroring is the whole character of the bar. */
+.wpTabBar {
+  position: absolute;
+  left: calc(14 * var(--wp-u));
+  right: calc(14 * var(--wp-u));
+  bottom: calc(14 * var(--wp-u));
+  height: calc(56 * var(--wp-u));
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 calc(8 * var(--wp-u));
+  z-index: 8;
+
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.06);
+}
+.wpTab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(4 * var(--wp-u));
+  font-size: calc(10 * var(--wp-u));
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+}
+.wpTabOn { color: var(--orange); }
+.wpTabGlyph {
+  width: calc(20 * var(--wp-u));
+  height: calc(20 * var(--wp-u));
+  display: block;
+}
+
+/* --- home indicator ------------------------------------------------------ */
+.wpHomeBar {
+  position: absolute;
+  bottom: calc(6 * var(--wp-u));
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(126 * var(--wp-u));
+  height: calc(4.5 * var(--wp-u));
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.32);
+  z-index: 11;
+}
+
+/* --- the tap/idle screen ------------------------------------------------- */
+.wpTapWrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(22 * var(--wp-u));
+  padding: calc(26 * var(--wp-u));
+  text-align: center;
+}
+
+/* --- screen switching ---------------------------------------------------- */
+.wpScene {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: translateX(14px);
+  transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+.wpSceneOn {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+/* --- page dots: the swipe affordance ------------------------------------- */
+.wpDots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 14px;
+}
+.wpDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(0, 18, 29, 0.18);
+  transition: background 0.3s ease, width 0.3s ease;
+}
+.wpDotOn {
+  width: 20px;
+  background: var(--orange);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wpScene { transition: none; }
+}
+
+/* --- Film grain over a whole section --------------------------------------
+   The single most-cited depth technique in current practice: an feTurbulence
+   noise tile at low opacity, which stops large flat fills and wide gradients
+   looking like plastic and kills gradient banding on the orbs underneath.
+
+   Two deliberate differences from the fork's grain (components/brand/fork.module.css):
+     - NO mix-blend-mode. The fork blends because it sits on a saturated brand
+       field; here it would force a full-section backdrop re-read on a layer
+       that is already stacked over blurred orbs, and on these near-neutral
+       surfaces plain alpha is visually indistinguishable.
+     - A larger tile (180px) so the repeat is never legible as a pattern.
+   Opacity stays low: at the 15-30% the trend pieces suggest, this reads as a
+   dirty screen rather than as texture. */
+.atmosGrain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 180px 180px;
+}
+
+/* ==========================================================================
+ * FEATURE SCREENS — the two "Once it's yours" app shots.
+ *
+ * These two cells used to be literal TODO boxes: a 45-degree stripe pattern
+ * with "[ app screen: receipt list + search ]" set in Courier. They were left
+ * that way waiting on real simulator captures of PapeXV2. They are now built
+ * the same way WalkPhone is — from the app's own design tokens — so they need
+ * no capture, stay in sync with the product, and scale cleanly.
+ * ========================================================================== */
+
+.featShot {
+  position: relative;
+  /* width must be definite before aspect-ratio can produce a height, and the
+     height must be definite before the phone inside can be sized from it —
+     without this the whole cell collapses to a few pixels. */
+  width: 100%;
+  container-type: size;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid var(--hairline-dark);
+  background: radial-gradient(120% 90% at 50% -10%, rgba(235, 113, 0, 0.16), transparent 62%),
+    linear-gradient(168deg, var(--navy-raised), var(--navy-alt));
+}
+/* The device is deliberately cropped by the cell's bottom edge — a full phone
+   floating inside a box reads as a sticker, a cropped one reads as a product
+   shot continuing past the frame. */
+.featShotPhone {
+  /* cqh, not % — a percentage height here would resolve against the phone's own
+     content-driven box and go circular. 118 means the device is taller than the
+     cell, which is what produces the crop. */
+  --wp-size: 118cqh;
+  transform: translateY(9%);
+}
+
+/* --- search field in its active state ------------------------------------ */
+.wpSearchActive {
+  display: flex;
+  align-items: center;
+  gap: calc(8 * var(--wp-u));
+  background: #1b242e;
+  border: 1px solid rgba(235, 113, 0, 0.5);
+  border-radius: calc(12 * var(--wp-u));
+  padding: calc(10 * var(--wp-u)) calc(12 * var(--wp-u));
+  font-size: calc(15 * var(--wp-u));
+  color: rgba(255, 255, 255, 0.92);
+}
+.wpCaret {
+  width: calc(1.5 * var(--wp-u));
+  height: calc(16 * var(--wp-u));
+  background: var(--orange);
+  margin-left: calc(-4 * var(--wp-u));
+}
+
+/* --- filter chips --------------------------------------------------------- */
+.wpChips {
+  display: flex;
+  gap: calc(6 * var(--wp-u));
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+.wpChip {
+  flex: 0 0 auto;
+  font-size: calc(11.5 * var(--wp-u));
+  padding: calc(6 * var(--wp-u)) calc(11 * var(--wp-u));
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: rgba(255, 255, 255, 0.62);
+  white-space: nowrap;
+}
+.wpChipOn {
+  background: rgba(235, 113, 0, 0.16);
+  border-color: rgba(235, 113, 0, 0.45);
+  color: var(--orange);
+}
+
+/* --- iOS share sheet ------------------------------------------------------ */
+.wpDim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 12;
+}
+.wpSheet {
+  position: absolute;
+  left: calc(6 * var(--wp-u));
+  right: calc(6 * var(--wp-u));
+  bottom: calc(6 * var(--wp-u));
+  z-index: 13;
+  border-radius: calc(26 * var(--wp-u));
+  padding: calc(10 * var(--wp-u)) 0 calc(10 * var(--wp-u));
+  /* iOS sheets are a translucent material over the dimmed screen, not a solid
+     panel — the blur is what makes it read as iOS rather than a modal div. */
+  background: rgba(46, 48, 54, 0.82);
+  backdrop-filter: blur(26px) saturate(180%);
+  -webkit-backdrop-filter: blur(26px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: calc(10 * var(--wp-u));
+}
+.wpSheetHead {
+  display: flex;
+  align-items: center;
+  gap: calc(10 * var(--wp-u));
+  padding: calc(4 * var(--wp-u)) calc(14 * var(--wp-u)) calc(10 * var(--wp-u));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+.wpSheetThumb {
+  width: calc(38 * var(--wp-u));
+  height: calc(46 * var(--wp-u));
+  border-radius: calc(5 * var(--wp-u));
+  background: #f4f4f2;
+  flex: 0 0 auto;
+  position: relative;
+  overflow: hidden;
+}
+/* Three ruled lines so the thumbnail reads as a receipt, not a blank card. */
+.wpSheetThumb::after {
+  content: "";
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  top: 26%;
+  height: calc(2 * var(--wp-u));
+  border-radius: 2px;
+  background: #b9bec4;
+  box-shadow: 0 calc(7 * var(--wp-u)) 0 #cfd3d8, 0 calc(14 * var(--wp-u)) 0 #cfd3d8;
+}
+.wpSheetTitle {
+  font-size: calc(15 * var(--wp-u));
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+}
+.wpSheetSub {
+  font-size: calc(12.5 * var(--wp-u));
+  color: rgba(255, 255, 255, 0.55);
+  margin-top: calc(2 * var(--wp-u));
+}
+.wpSheetClose {
+  margin-left: auto;
+  width: calc(26 * var(--wp-u));
+  height: calc(26 * var(--wp-u));
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(13 * var(--wp-u));
+  flex: 0 0 auto;
+}
+.wpShareRow {
+  display: flex;
+  gap: calc(16 * var(--wp-u));
+  padding: 0 calc(14 * var(--wp-u)) calc(8 * var(--wp-u));
+  overflow: hidden;
+}
+.wpShareApp {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(6 * var(--wp-u));
+  flex: 0 0 auto;
+  width: calc(56 * var(--wp-u));
+  text-align: center;
+}
+.wpShareIcon {
+  width: calc(54 * var(--wp-u));
+  height: calc(54 * var(--wp-u));
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.wpShareLabel {
+  font-size: calc(11 * var(--wp-u));
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.2;
+}
+.wpSheetActions {
+  margin: 0 calc(10 * var(--wp-u));
+  border-radius: calc(14 * var(--wp-u));
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+.wpSheetAction {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(11 * var(--wp-u)) calc(14 * var(--wp-u));
+  font-size: calc(14.5 * var(--wp-u));
+  color: rgba(255, 255, 255, 0.92);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+.wpSheetAction:last-child { border-bottom: none; }
+.wpActionGlyph {
+  width: calc(18 * var(--wp-u));
+  height: calc(18 * var(--wp-u));
+  color: rgba(255, 255, 255, 0.72);
 }

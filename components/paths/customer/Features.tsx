@@ -1,4 +1,7 @@
 import { Reveal, WordReveal } from "@/components/motion";
+import styles from "./customer.module.css";
+import { Atmosphere, AtmosphereContent } from "./Atmosphere";
+import { ReceiptListShot, ShareSheetShot } from "./FeatureScreens";
 import { featuresContent } from "./content";
 
 /** 2.5 Features — dark. Two mirrored rows revealed with the clip-path mask wipe. */
@@ -6,12 +9,15 @@ export function Features() {
   return (
     <section
       data-nav-theme="dark"
+      className={styles.atmosHost}
       style={{
         background: "var(--navy)",
         color: "var(--offwhite)",
         padding: "clamp(90px,11vw,160px) clamp(20px,5vw,56px)",
       }}
     >
+      <Atmosphere tone="dark" seam="top" />
+      <AtmosphereContent>
       <div style={{ maxWidth: 1000, margin: "0 auto" }}>
         <Reveal variant="up">
           <div
@@ -43,7 +49,11 @@ export function Features() {
               key={row.eyebrow}
               className="grid items-center"
               style={{
-                gridTemplateColumns: "1fr 1fr",
+                // Was a hard "1fr 1fr", so even a 390px phone got two squeezed
+                // columns (the app shot rendered 160px wide). auto-fit with a
+                // floor collapses to one column when two can't breathe; the
+                // min(100%, …) stops the floor itself overflowing tiny screens.
+                gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))",
                 gap: "clamp(30px,5vw,80px)",
               }}
             >
@@ -85,27 +95,19 @@ export function Features() {
               </div>
               <Reveal
                 variant="mask"
-                className="flex items-center justify-center text-center"
-                style={{
-                  order: mirrored ? 1 : 2,
-                  aspectRatio: "4 / 3",
-                  borderRadius: 20,
-                  background: "repeating-linear-gradient(45deg,var(--navy-raised) 0 12px,var(--navy-alt) 12px 24px)",
-                  border: "1px solid var(--hairline-dark)",
-                  /* TODO: promote to token — Courier New mono placeholder face has no shared var yet. */
-                  fontFamily: "'Courier New', monospace",
-                  fontSize: 13,
-                  color: "var(--muted-on-dark)",
-                  letterSpacing: ".08em",
-                  padding: 20,
-                }}
+                className="flex items-center justify-center"
+                style={{ order: mirrored ? 1 : 2 }}
               >
-                <span aria-hidden="true">{row.placeholderLabel}</span>
+                {/* Real app screens, built from PapeXV2's own tokens — these
+                    were striped "[ app screen: … ]" TODO boxes waiting on
+                    simulator captures that never arrived. See FeatureScreens.tsx. */}
+                {index === 0 ? <ReceiptListShot /> : <ShareSheetShot />}
               </Reveal>
             </Reveal>
           );
         })}
       </div>
+      </AtmosphereContent>
     </section>
   );
 }

@@ -22,7 +22,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Logo } from './logo'
+import { FullLogo } from './full-logo'
 import { AdminLogin } from '@/components/AdminLogin'
 import { SALES_PHONE, SALES_PHONE_HREF, SUPPORT_EMAIL } from './links'
 
@@ -68,7 +68,8 @@ export function SiteFooter() {
             aria-label="PapeX home"
             style={{ display: 'inline-flex', marginBottom: 18 }}
           >
-            <Logo />
+            {/* The real lockup, same as the nav — the footer is always on navy. */}
+            <FullLogo size={96} lines="var(--white)" />
           </Link>
           <p
             style={{
