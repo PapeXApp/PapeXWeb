@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Reveal, WordReveal } from "@/components/motion";
-import { Atmosphere, AtmosphereContent } from "./Atmosphere";
+import { FlowSection } from "../shared/FlowSection";
+import { PointerLitGroup } from "../shared/PointerLit";
+import { SectionLabel } from "../shared/SectionLabel";
 import { personasContent, type PersonaId } from "./content";
 import styles from "./customer.module.css";
 
@@ -14,7 +16,7 @@ function emptyScore(): Record<PersonaId, number> {
   return { keeper: 0, casual: 0, non: 0 };
 }
 
-/** 2.4 Personas — white, three-question quiz (12 options, keeper/casual/non scoring). */
+/** 2.4 Personas — light ground, white quiz cards (12 options, keeper/casual/non scoring). */
 export function Personas() {
   const questionCount = personasContent.questions.length;
   const [step, setStep] = useState(0); // 0..questionCount-1 = questions, questionCount = result
@@ -40,43 +42,27 @@ export function Personas() {
   }
 
   return (
-    <section
-      data-nav-theme="light"
-      className={styles.atmosHost}
-      style={{
-        background: "var(--white)",
-        color: "var(--navy)",
-        padding: "clamp(90px,11vw,160px) clamp(20px,5vw,56px)",
-      }}
+    <FlowSection
+      ground="light"
+      index="03"
+      style={{ padding: "clamp(64px,7vw,110px) clamp(20px,5vw,56px) clamp(90px,11vw,160px)" }}
     >
-      <Atmosphere tone="light" seam="top" lines="none" />
-      <AtmosphereContent style={{ maxWidth: 1150, margin: "0 auto" }}>
+      <div style={{ maxWidth: 1150, margin: "0 auto" }}>
         <Reveal variant="up" style={{ textAlign: "center" }}>
-          <div
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              letterSpacing: ".24em",
-              textTransform: "uppercase",
-              color: "var(--orange)",
-              marginBottom: 18,
-            }}
-          >
-            {personasContent.eyebrow}
-          </div>
+          <SectionLabel index="03">{personasContent.eyebrow}</SectionLabel>
           <WordReveal
             as="h2"
             className="mx-auto max-w-[24ch] [font-family:var(--font-display)] font-bold text-[clamp(30px,4.4vw,58px)] leading-[1.03] tracking-[-.02em]"
           >
             {personasContent.headline}
           </WordReveal>
-          <p style={{ margin: "18px auto 0", fontSize: 17, lineHeight: 1.55, color: "#5a5a5a", maxWidth: "46ch" }}>
+          <p style={{ margin: "18px auto 0", fontSize: 17, lineHeight: 1.55, color: "var(--flow-fg-2)", maxWidth: "46ch" }}>
             {personasContent.intro}
           </p>
         </Reveal>
 
         <Reveal variant="up">
-          <div
+          <PointerLitGroup
             className={styles.quiz}
             role="group"
             aria-label="Which one are you? — three question quiz"
@@ -94,6 +80,7 @@ export function Personas() {
                     <button
                       key={option.label}
                       type="button"
+                      data-lit=""
                       className={styles.quizOpt}
                       onClick={() => answer(option.persona)}
                       disabled={step !== i}
@@ -112,7 +99,11 @@ export function Personas() {
             >
               <div className={styles.quizResults}>
                 {personasContent.results.map((result) => (
-                  <div key={result.id} className={cn(styles.quizResult, winner === result.id && styles.quizResultYou)}>
+                  <div
+                    key={result.id}
+                    data-lit=""
+                    className={cn(styles.quizResult, winner === result.id && styles.quizResultYou)}
+                  >
                     <span className={styles.quizTag}>{result.tag}</span>
                     <div className={styles.quizResultEyebrow}>{result.eyebrow}</div>
                     <div className={styles.quizResultTitle}>{result.title}</div>
@@ -124,7 +115,7 @@ export function Personas() {
                 {personasContent.restartLabel}
               </button>
             </div>
-          </div>
+          </PointerLitGroup>
 
           <div className={styles.quizSteps} aria-hidden="true">
             {Array.from({ length: questionCount }).map((_, i) => (
@@ -132,7 +123,7 @@ export function Personas() {
             ))}
           </div>
         </Reveal>
-      </AtmosphereContent>
-    </section>
+      </div>
+    </FlowSection>
   );
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { useReducedMotion } from "motion/react"
+import { useSafeReducedMotion } from "./useSafeReducedMotion"
 import type { CSSProperties, ReactNode } from "react"
 
 type MagneticProps = {
@@ -41,7 +41,7 @@ const clamp = (value: number, limit: number) =>
  * touch devices and under `prefers-reduced-motion: reduce`.
  */
 export function Magnetic({ children, className, style }: MagneticProps) {
-  const prefersReduced = useReducedMotion()
+  const prefersReduced = useSafeReducedMotion()
   const ref = useRef<HTMLSpanElement>(null)
   const [fine, setFine] = useState(false)
   const [offset, setOffset] = useState({ x: 0, y: 0 })

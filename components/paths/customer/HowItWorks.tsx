@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { Reveal, WordReveal } from "@/components/motion";
-import { Atmosphere, AtmosphereContent } from "./Atmosphere";
+import { FlowSection } from "../shared/FlowSection";
+import { SectionLabel } from "../shared/SectionLabel";
 import { WalkPhone } from "./WalkPhone";
 import { howItWorksContent } from "./content";
 import styles from "./customer.module.css";
@@ -31,7 +32,6 @@ export function HowItWorks() {
   const bowTimer = useRef<number | undefined>(undefined);
 
   useEffect(() => () => window.clearTimeout(bowTimer.current), []);
-
 
   /** Where a drag started. Null when no drag is in flight. */
   const dragFrom = useRef<{ x: number; y: number } | null>(null);
@@ -113,18 +113,8 @@ export function HowItWorks() {
   };
 
   return (
-    <section
-      data-nav-theme="light"
-      className={styles.atmosHost}
-      style={{
-        background: "var(--offwhite)",
-        color: "var(--navy)",
-        padding: "clamp(80px,10vw,140px) clamp(20px,5vw,56px)",
-      }}
-    >
-      {/* Features above is flat navy — bleed it down across the boundary. */}
-      <Atmosphere tone="light" seam="top" />
-      <AtmosphereContent
+    <FlowSection ground="light" index="05" style={{ padding: "clamp(80px,10vw,140px) clamp(20px,5vw,56px)" }}>
+      <div
         className="grid items-center"
         style={{
           maxWidth: 1150,
@@ -134,18 +124,7 @@ export function HowItWorks() {
         }}
       >
         <Reveal variant="up">
-          <div
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              letterSpacing: ".24em",
-              textTransform: "uppercase",
-              color: "var(--orange)",
-              marginBottom: 18,
-            }}
-          >
-            {howItWorksContent.eyebrow}
-          </div>
+          <SectionLabel index="05">{howItWorksContent.eyebrow}</SectionLabel>
           <WordReveal
             as="h2"
             className="max-w-[16ch] [font-family:var(--font-display)] font-bold text-[clamp(34px,4.4vw,60px)] leading-[1.02] tracking-[-.02em]"
@@ -169,7 +148,7 @@ export function HowItWorks() {
                 >
                   <div
                     className="relative self-stretch"
-                    style={{ width: 3, borderRadius: 3, background: "var(--hairline-light)", flex: "0 0 3px" }}
+                    style={{ width: 2, borderRadius: 2, background: "var(--flow-hair)", flex: "0 0 2px" }}
                   >
                     <div
                       className="absolute left-0 top-0"
@@ -177,7 +156,7 @@ export function HowItWorks() {
                         width: "100%",
                         height: isActive || isDone ? "100%" : "0%",
                         background: "var(--orange)",
-                        borderRadius: 3,
+                        borderRadius: 2,
                         transition: "height .55s cubic-bezier(.16,1,.3,1)",
                       }}
                     />
@@ -185,11 +164,11 @@ export function HowItWorks() {
                   <div style={{ paddingBottom: index < stepCount - 1 ? 22 : 0 }}>
                     <div
                       style={{
-                        fontFamily: "var(--font-display)",
-                        fontWeight: 700,
-                        fontSize: 14,
+                        fontFamily: "var(--font-label)",
+                        fontWeight: 500,
+                        fontSize: 12,
                         color: "var(--orange)",
-                        letterSpacing: ".04em",
+                        letterSpacing: ".08em",
                       }}
                     >
                       {s.number}
@@ -204,7 +183,7 @@ export function HowItWorks() {
                     >
                       {s.title}
                     </h4>
-                    <p style={{ marginTop: 7, fontSize: 15, color: "#5a5a5a", lineHeight: 1.5, maxWidth: "34ch" }}>
+                    <p style={{ marginTop: 7, fontSize: 15, color: "var(--flow-fg-2)", lineHeight: 1.5, maxWidth: "34ch" }}>
                       {s.body}
                     </p>
                   </div>
@@ -229,7 +208,7 @@ export function HowItWorks() {
                 borderRadius: 16,
                 background: "linear-gradient(160deg,#F58A1B,#C75F00)",
                 border: "1px solid rgba(255,255,255,.18)",
-                boxShadow: "0 20px 44px rgba(0,18,29,.28)",
+                boxShadow: "0 20px 44px rgba(0,18,29,.24)",
                 padding: "12px 12px 30px",
                 gap: 7,
               }}
@@ -307,7 +286,7 @@ export function HowItWorks() {
             )}
           </div>
         </Reveal>
-      </AtmosphereContent>
-    </section>
+      </div>
+    </FlowSection>
   );
 }

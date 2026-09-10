@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { useReducedMotion } from "motion/react"
+import { useSafeReducedMotion } from "./useSafeReducedMotion"
 import type { CSSProperties, ReactNode } from "react"
 
 type SpotlightProps = {
@@ -28,7 +28,7 @@ const EASE = "cubic-bezier(.16,1,.3,1)"
  * on touch devices and under `prefers-reduced-motion: reduce`.
  */
 export function Spotlight({ strength = 70, children, className, style }: SpotlightProps) {
-  const prefersReduced = useReducedMotion()
+  const prefersReduced = useSafeReducedMotion()
   const ref = useRef<HTMLDivElement>(null)
   const [fine, setFine] = useState(false)
   const [transform, setTransform] = useState<string | undefined>(undefined)

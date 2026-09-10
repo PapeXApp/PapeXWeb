@@ -1,3 +1,4 @@
+import { FlowGround } from "../shared/FlowGround";
 import { Hero } from "./Hero";
 import { Problem } from "./Problem";
 import { MarqueeBand } from "./MarqueeBand";
@@ -9,13 +10,18 @@ import { Vision } from "./Vision";
 
 /**
  * "For Customers" homepage — Screen 2 of the forked landing redesign.
- * Section order + background rhythm is strict alternation, see
- * docs/design/forked-landing/README.md → "Screen 2: Customer Path".
+ *
+ * Sections no longer paint their own bands. Each declares a ground and
+ * FlowGround crossfades ONE page-level ground between them (see
+ * components/paths/shared/flow.module.css):
+ *   Hero light · Problem light · ribbon · Personas light · Features navy ·
+ *   HowItWorks light · Proof navy · Vision light → (footer navy)
+ * `initial="light"` is the hero's colour and MUST match the fork's bottom half.
  * Footer is owned by another agent and rendered by the caller.
  */
 export function CustomerPath() {
   return (
-    <>
+    <FlowGround initial="light">
       <Hero />
       <Problem />
       <MarqueeBand />
@@ -24,6 +30,6 @@ export function CustomerPath() {
       <HowItWorks />
       <Proof />
       <Vision />
-    </>
+    </FlowGround>
   );
 }

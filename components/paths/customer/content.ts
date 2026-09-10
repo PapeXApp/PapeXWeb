@@ -69,34 +69,45 @@ export interface ProblemCard {
   hint: string;
   value: string;
   caption: string;
+  /** Short citation shown on the card's back face. Required — no unsourced figures. */
+  source: string;
 }
 
 export const problemContent = {
   eyebrow: "The problem",
   headline: "Paper receipts fade. So does the money you could get back.",
   flipHint: "Tap to flip",
-  // ILLUSTRATIVE PLACEHOLDER STATS — pending real sourcing, not factual.
+  // SOURCED 2026-09-10. Every figure traces to a named source, shown on the card.
+  // Rejected on purpose: "256B receipts" (a garbled 256,300-TONS figure, not a
+  // count — no traceable receipt count exists), "10M trees" (2013 blog, no
+  // method; Green America withdrew its own 10M/12.4M figures), "$1.64B/yr"
+  // (unsourced lobby claim). The two $ / lbs figures are Grand View Research
+  // (paywalled market research) as cited by Epson; the tree figure is Green
+  // America's 2022 update, computed with the EPN Paper Calculator v4.0.
   cards: [
     {
       id: "print",
-      question: "How many receipts do we print?",
-      hint: "Tap to flip",
-      value: "256B",
-      caption: "receipts printed every year in the US alone — most in the trash by lunch.",
+      question: "How much paper goes into US receipts?",
+      hint: "Tap to reveal",
+      value: "620M lbs",
+      caption: "of receipt paper used in the US every year. Most of it ends up in the trash.",
+      source: "Epson, citing Grand View Research (2025)",
     },
     {
       id: "forest",
       question: "What does that cost the forest?",
-      hint: "Tap to flip",
-      value: "10M",
-      caption: "trees cut down annually to print receipts nobody keeps.",
+      hint: "Tap to reveal",
+      value: "3.7M",
+      caption: "trees cut down every year for US receipts, plus 10 billion gallons of water.",
+      source: "Green America, Skip the Slip (2022)",
     },
     {
       id: "proof",
-      question: "What do you get back without proof?",
-      hint: "Tap to flip",
-      value: "$0",
-      caption: "back on the return, warranty, or deduction — because you lost the receipt.",
+      question: "What do businesses pay for it?",
+      hint: "Tap to reveal",
+      value: "$540M+",
+      caption: "spent by US businesses on receipt paper every year, before printers and repairs.",
+      source: "Epson, citing Grand View Research (2025)",
     },
   ] satisfies ProblemCard[],
 };
@@ -273,14 +284,17 @@ export const receiptsListContent = {
 };
 
 export const proofContent = {
-  // ILLUSTRATIVE PLACEHOLDER COUNTERS — pending real usage data, not factual.
+  // PRODUCT FACTS, not usage stats (2026-09-10). Each is true of the shipped
+  // pilot: one NFC tap; the App Clip needs no install; iPhone opens the App
+  // Clip and every other phone gets the /r web page. Swap for real pilot
+  // numbers once they exist — never back to invented counters.
   counters: [
-    { value: 1284920, label: "receipts delivered" },
-    { value: 4210, label: "trees saved" },
-    { value: 342, label: "merchants onboarded" },
+    { value: 1, label: "tap to get your receipt" },
+    { value: 0, label: "apps to download first" },
+    { value: 2, label: "ways to open it: iPhone instantly, any phone in the browser" },
   ],
-  // Press/merchant logo slots are placeholders pending real assets.
-  pressLogoSlots: 4,
+  // No press row until we have outlets we can name. Nico supplies the logos.
+  pressLogoSlots: 0,
 };
 
 export const visionContent = {

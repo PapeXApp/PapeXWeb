@@ -18,12 +18,16 @@
 // swapped once already (2026-09-09: down now leads to /customers), so expect
 // it to move again and keep the two concerns separate.
 //
-// The halves no longer colour-match their destination hero, and that is the
-// point: up and down are two DIFFERENT pages, not one surface with more of
-// itself below the fold. The colour change on commit is the signal that you
-// arrived somewhere else. Do not put gradients on the half backgrounds —
-// the atmosphere layers are separate absolutely positioned children, and the
-// half's own `background` stays flat.
+// The halves DO colour-match their destination hero (since 2026-09-10): the
+// navy top half leads to /business, whose hero opens on flat #00121D, and the
+// light bottom half leads to /customers, whose hero opens on flat #F5F5F5.
+// That continuity is what makes the commit read as the chosen half growing
+// into the page instead of a page swap. The heroes get their first-paint
+// colour from FlowGround's `initial` prop in components/paths/{business,
+// customer}/index.tsx — if TOP_PATH / BOTTOM_PATH ever swap again, swap those
+// two `initial` values (and the heroes' `ground`) with them. Do not put
+// gradients on the half backgrounds — the atmosphere layers are separate
+// absolutely positioned children, and the half's own `background` stays flat.
 //
 // Commit inputs (README "The commit interaction"):
 //   wheel up   |deltaY| >= 6  -> TOP_PATH      wheel down -> BOTTOM_PATH

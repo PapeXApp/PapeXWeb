@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { useReducedMotion } from "motion/react"
+import { useSafeReducedMotion } from "./useSafeReducedMotion"
 import type { CSSProperties, ReactNode } from "react"
 
 type ParallaxProps = {
@@ -20,7 +20,7 @@ type ParallaxProps = {
  * Renders with no transform (static) under `prefers-reduced-motion: reduce`.
  */
 export function Parallax({ factor = 0.06, children, className, style }: ParallaxProps) {
-  const prefersReduced = useReducedMotion()
+  const prefersReduced = useSafeReducedMotion()
   const ref = useRef<HTMLDivElement>(null)
   const [offset, setOffset] = useState(0)
 

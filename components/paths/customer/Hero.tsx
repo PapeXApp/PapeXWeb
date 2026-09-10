@@ -1,40 +1,44 @@
 "use client";
 
 import { ChildStagger, Magnetic, Ripple, Spotlight, WordReveal } from "@/components/motion";
-import { Atmosphere } from "./Atmosphere";
+import { FlowSection } from "../shared/FlowSection";
+import { SectionLabel } from "../shared/SectionLabel";
 import { heroContent } from "./content";
 import { NfcPhone } from "./NfcPhone";
 import styles from "./customer.module.css";
 
-/** 2.1 Hero — dark. The signature "last receipt you'll ever lose" moment. */
+/**
+ * 2.1 Hero — LIGHT. The signature "last receipt you'll ever lose" moment.
+ *
+ * Light because the fork's light bottom half leads here (2026-09-10): the
+ * page must open on the same flat #F5F5F5 so the fork's commit reads as that
+ * half growing into this page. The ground itself is painted by FlowGround
+ * (`initial="light"`); this section only declares it. Text uses the ground's
+ * --flow-* ink so it stays correct while the ground crossfades below.
+ *
+ * The demo phone keeps its dark bezel — a phone is a dark object — and the
+ * receipt inside it keeps the App Clip palette on purpose.
+ */
 export function Hero() {
   return (
-    <section
-      data-nav-theme="dark"
-      className="relative flex items-center justify-center overflow-hidden"
+    <FlowSection
+      ground="light"
+      className="flex items-center justify-center overflow-hidden"
       style={{
         minHeight: "100vh",
-        background: "var(--navy)",
         padding: "clamp(84px,11vh,120px) clamp(20px,5vw,56px) clamp(62px,8vh,80px)",
       }}
     >
-      {/* Static depth under the pointer-tracked Spotlight: skewed rules, a
-          second light pool, the plane watermark, and a bleed of the light
-          section below so the hero doesn't end on a hard line. */}
-      <Atmosphere
-        tone="dark"
-        seam="bottom"
-        watermark
-        watermarkStyle={{ left: "-8%", top: "-10%", right: "auto", bottom: "auto" }}
-      />
-
+      {/* The hero keeps its own pointer-tracked glow: it is part of the live
+          demo moment, not decoration. Everything else (aurora, grain,
+          watermark, rails) comes from the page-level kit. */}
       <Spotlight strength={70} className="pointer-events-none absolute inset-0">
         <div
           aria-hidden="true"
           style={{
             position: "absolute",
             inset: 0,
-            background: "radial-gradient(90% 70% at 78% 30%, rgba(235,113,0,.14), transparent 55%)",
+            background: "radial-gradient(80% 65% at 76% 34%, rgba(235,113,0,.11), transparent 58%)",
           }}
         />
       </Spotlight>
@@ -50,21 +54,10 @@ export function Hero() {
       >
         <div style={{ maxWidth: 560, flex: "1 1 420px" }}>
           <ChildStagger>
-            <div
-              style={{
-                fontSize: 13,
-                fontWeight: 600,
-                letterSpacing: ".26em",
-                textTransform: "uppercase",
-                color: "var(--orange)",
-                marginBottom: 22,
-              }}
-            >
-              {heroContent.eyebrow}
-            </div>
+            <SectionLabel index="01">{heroContent.eyebrow}</SectionLabel>
             <WordReveal
               as="h1"
-              className="[font-family:var(--font-display)] font-bold text-[clamp(40px,6vw,84px)] leading-[.98] tracking-[-.025em] text-[var(--offwhite)]"
+              className="[font-family:var(--font-display)] font-bold text-[clamp(40px,6vw,84px)] leading-[.98] tracking-[-.025em] text-[var(--flow-fg)]"
             >
               {heroContent.headline}
             </WordReveal>
@@ -73,7 +66,7 @@ export function Hero() {
                 marginTop: 26,
                 fontSize: "clamp(17px,1.5vw,20px)",
                 lineHeight: 1.5,
-                color: "var(--muted-on-dark)",
+                color: "var(--flow-fg-2)",
                 maxWidth: "44ch",
                 fontWeight: 400,
               }}
@@ -82,6 +75,8 @@ export function Hero() {
             </p>
             <div className="flex flex-wrap items-center" style={{ marginTop: 36, gap: 14 }}>
               <Magnetic>
+                {/* Navy ripple: it's the press feedback ON the orange button,
+                    so it's right on either ground. */}
                 <Ripple variant="navy">
                   <button
                     type="button"
@@ -95,14 +90,14 @@ export function Hero() {
                       color: "var(--navy)",
                       fontWeight: 600,
                       fontSize: 16,
-                      boxShadow: "0 6px 22px rgba(235,113,0,.3)",
+                      boxShadow: "0 6px 22px rgba(235,113,0,.28)",
                     }}
                   >
                     {heroContent.ctaLabel}
                   </button>
                 </Ripple>
               </Magnetic>
-              <span style={{ fontSize: 14, color: "rgba(245,245,245,.5)" }}>{heroContent.ctaSubtext}</span>
+              <span style={{ fontSize: 14, color: "var(--flow-fg-3)" }}>{heroContent.ctaSubtext}</span>
             </div>
           </ChildStagger>
         </div>
@@ -110,23 +105,22 @@ export function Hero() {
         <NfcPhone />
       </div>
 
-      {/* The original cue: the word plus a hairline. Restored 2026-09-09 after
-          it was briefly replaced with a glass tab — Nico had never actually SEEN
-          this one, because on a short viewport the hero grew past 100vh and an
-          absolutely-positioned bottom element ends up below the fold. The fix
-          was the hero's height budget (see the phone sizing in
-          customer.module.css), not the cue. */}
+      {/* The original cue: the word plus a hairline. On a short viewport the
+          hero used to grow past 100vh and this absolutely-positioned element
+          landed below the fold — the fix is the hero's height budget (see the
+          phone sizing in customer.module.css), not the cue. */}
       <div
         aria-hidden="true"
-        className="absolute flex flex-col items-center"
+        className={`absolute flex flex-col items-center ${styles.heroCue}`}
         style={{
           bottom: 26,
           left: "50%",
           transform: "translateX(-50%)",
-          fontSize: 12,
+          fontFamily: "var(--font-label)",
+          fontSize: 11,
           letterSpacing: ".2em",
           textTransform: "uppercase",
-          color: "rgba(245,245,245,.4)",
+          color: "var(--flow-fg-3)",
           gap: 8,
           zIndex: 2,
         }}
@@ -137,11 +131,10 @@ export function Hero() {
           style={{
             width: 1,
             height: 26,
-            background: "linear-gradient(rgba(245,245,245,.7), transparent)",
+            background: "linear-gradient(var(--flow-fg-2), transparent)",
           }}
         />
       </div>
-
-    </section>
+    </FlowSection>
   );
 }

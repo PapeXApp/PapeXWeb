@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { useInView, useReducedMotion } from "motion/react"
+import { useInView } from "motion/react"
+import { useSafeReducedMotion } from "./useSafeReducedMotion"
 import type { CSSProperties } from "react"
 
 type CounterProps = {
@@ -34,7 +35,7 @@ const VIEWPORT = { once: true, amount: 0.12, margin: "0px 0px -6% 0px" } as cons
  * `prefers-reduced-motion: reduce`.
  */
 export function Counter({ value, prefix = "", suffix = "", className, style, locale = "en-US" }: CounterProps) {
-  const prefersReduced = useReducedMotion()
+  const prefersReduced = useSafeReducedMotion()
   const ref = useRef<HTMLSpanElement>(null)
   const inView = useInView(ref, VIEWPORT)
   const [display, setDisplay] = useState(0)

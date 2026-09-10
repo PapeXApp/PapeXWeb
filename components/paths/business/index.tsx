@@ -1,3 +1,4 @@
+import { FlowGround } from "../shared/FlowGround"
 import { Hero } from "./Hero"
 import { WhyMerchants } from "./WhyMerchants"
 import { MarqueeBand } from "./MarqueeBand"
@@ -8,13 +9,17 @@ import { DemoForm } from "./DemoForm"
 
 // The "For Business" (merchant) homepage — Screen 3 of the forked-landing
 // redesign (docs/design/forked-landing/README.md, sections 3.1-3.7).
-// Section order and backgrounds are locked by the design spec's rhythm:
-// hero -> why -> marquee -> how -> RDH -> dashboard -> demo. The shared
-// footer (Screen 3 continues with `footer #00121D`) is owned by another
-// agent and rendered outside this component.
+// Section order: hero -> why -> ribbon -> how -> RDH -> dashboard -> demo.
+// Sections declare a ground; FlowGround crossfades one page-level ground
+// between them (components/paths/shared/flow.module.css):
+//   Hero navy · Why light · ribbon · How navy · RDH light · Dashboard navy ·
+//   Demo light -> (footer navy)
+// `initial="navy"` is the hero's colour and MUST match the fork's top half.
+// The shared footer is owned by another agent and rendered outside this
+// component.
 export function BusinessPath() {
   return (
-    <>
+    <FlowGround initial="navy">
       <Hero />
       <WhyMerchants />
       <MarqueeBand />
@@ -22,6 +27,6 @@ export function BusinessPath() {
       <RdhDevice />
       <DashboardPreview />
       <DemoForm />
-    </>
+    </FlowGround>
   )
 }

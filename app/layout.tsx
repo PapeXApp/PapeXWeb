@@ -12,8 +12,21 @@ import './globals.css'
 // may be hoisted to `:root`.
 import '@/styles/papex-brand.css'
 import { barlow, gloock, kameron } from './fonts'
+import { Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/react'
 import Script from 'next/script'
+
+// Mono face for the path homes' section labels and ribbon — exposed as
+// --font-geist-mono and consumed through the `--font-label` token in
+// styles/papex-brand.css (which keeps a real system fallback stack).
+// Deliberately NOT wired to `--font-mono`: that token stays Courier because
+// the /customers receipt demo sizes its 32-column body on Courier's advance.
+const geistMono = Geist_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-geist-mono',
+  display: 'swap',
+})
 
 const GA_MEASUREMENT_ID = 'G-QX3WCTWR03'
 
@@ -97,7 +110,7 @@ export default function RootLayout({
     // element. Without this, every returning visitor sees a hydration error.
     <html
       lang="en"
-      className={`${barlow.variable} ${kameron.variable} ${gloock.variable}`}
+      className={`${barlow.variable} ${kameron.variable} ${gloock.variable} ${geistMono.variable}`}
       suppressHydrationWarning
     >
       <head>

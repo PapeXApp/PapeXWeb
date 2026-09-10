@@ -4,9 +4,10 @@
 // never shows the fork, and scrolling back up never restores it; only the logo
 // or nav "Home" go back (they clear the stored choice).
 //
-// The hero MUST open on flat #F5F5F5, the same colour as the fork's bottom
-// half, for the same continuity reason as /customers. Section content is owned
-// by components/paths/business.
+// The hero MUST open on flat #00121D, the same colour as the fork's top half
+// (which leads here), for the same continuity reason as /customers. The first
+// paint comes from FlowGround's `initial="navy"` in components/paths/business,
+// which owns the section content.
 
 import type { Metadata } from 'next'
 import { SiteShell } from '@/components/brand/site-shell'

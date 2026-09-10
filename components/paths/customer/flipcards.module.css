@@ -1,0 +1,647 @@
+/* ==========================================================================
+ * Problem — three tap-to-flip cards (components/paths/customer/FlipCards.tsx).
+ *
+ * Structure: .card (button — owns hover lift + perspective)
+ *              └ .inner (owns rotateY — never give it a second transform)
+ *                  ├ .face        front: label row, illustration plate, question, footer
+ *                  └ .face.faceBack  back: label row, scene stage, stat/caption/source
+ *
+ * Pointer light: FlipCards sets --mx / --my (and mirrored --mxf for the back)
+ * on .card from pointermove; the faces' ::before/::after read them. No rAF.
+ *
+ * Front-face descendants deliberately carry no CSS transforms: a transformed
+ * child can escape its parent's backface-visibility in WebKit.
+ * ========================================================================== */
+
+.grid {
+  /* --font-label (Geist Mono) is the redesign's label face. --font-mono stays
+     Courier on purpose — the receipt demo's 32-column layout is sized on it. */
+  --fc-mono: var(--font-label, ui-monospace, "SFMono-Regular", Menlo, monospace);
+  --fc-navy: var(--navy, #00121d);
+  --fc-orange: var(--orange, #eb7100);
+  --fc-line: rgba(0, 18, 29, 0.1);
+  --fc-line-soft: rgba(0, 18, 29, 0.07);
+  --fc-muted: rgba(0, 18, 29, 0.5);
+  --fc-pad: 22px;
+  --fc-height: 424px;
+  --fc-radius: 16px;
+  --fc-shadow: 0 1px 1px rgba(0, 18, 29, 0.04), 0 2px 5px -1px rgba(0, 18, 29, 0.05),
+    0 14px 28px -10px rgba(0, 18, 29, 0.1), 0 36px 64px -28px rgba(0, 18, 29, 0.18);
+  --fc-shadow-hover: 0 1px 1px rgba(0, 18, 29, 0.04), 0 4px 10px -2px rgba(0, 18, 29, 0.06),
+    0 22px 40px -12px rgba(0, 18, 29, 0.14), 0 52px 90px -30px rgba(0, 18, 29, 0.24);
+
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(16px, 2vw, 28px);
+  margin-top: clamp(50px, 6vw, 90px);
+}
+@media (max-width: 899px) {
+  .grid {
+    --fc-height: 408px;
+    grid-template-columns: minmax(0, 480px);
+    gap: 18px;
+  }
+}
+
+/* ---- the object ------------------------------------------------------------ */
+
+.card {
+  --mx: 50%;
+  --mxf: 50%;
+  --my: 0%;
+  display: block;
+  width: 100%;
+  height: var(--fc-height);
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  perspective: 1600px;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.45s var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1));
+}
+.inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.cardFlipped .inner {
+  transform: rotateY(180deg);
+}
+
+.face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: var(--fc-pad);
+  border-radius: var(--fc-radius);
+  border: 1px solid var(--fc-line);
+  background: linear-gradient(180deg, #ffffff 0%, #fcfcfb 60%, #fafaf9 100%);
+  box-shadow: var(--fc-shadow), inset 0 1px 0 #ffffff, inset 0 -1px 0 rgba(0, 18, 29, 0.025);
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transition: box-shadow 0.45s ease, border-color 0.45s ease;
+}
+.faceBack {
+  transform: rotateY(180deg);
+}
+
+/* warm light pooled under the cursor */
+.face::before,
+.face::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.face::before {
+  background: radial-gradient(380px circle at var(--mx) var(--my), rgba(235, 113, 0, 0.055), transparent 62%);
+}
+/* the border catching that light: a 1px ring masked out of a radial gradient */
+.face::after {
+  inset: -1px;
+  padding: 1px;
+  background: radial-gradient(200px circle at var(--mx) var(--my), rgba(235, 113, 0, 0.6), transparent 72%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+.faceBack::before {
+  background: radial-gradient(380px circle at var(--mxf) var(--my), rgba(235, 113, 0, 0.055), transparent 62%);
+}
+.faceBack::after {
+  background: radial-gradient(200px circle at var(--mxf) var(--my), rgba(235, 113, 0, 0.6), transparent 72%);
+}
+.face > * {
+  position: relative;
+  z-index: 1;
+}
+
+@media (hover: hover) {
+  .card:hover {
+    transform: translateY(-4px);
+  }
+  .card:hover .face {
+    box-shadow: var(--fc-shadow-hover), inset 0 1px 0 #ffffff, inset 0 -1px 0 rgba(0, 18, 29, 0.025);
+  }
+  .card:hover .face::before,
+  .card:hover .face::after {
+    opacity: 1;
+  }
+  .card:hover .glyph {
+    color: var(--fc-orange);
+    border-color: rgba(235, 113, 0, 0.35);
+  }
+  .card:hover .foot {
+    color: var(--fc-navy);
+  }
+  .card:hover .footArrow {
+    stroke: var(--fc-orange);
+  }
+}
+.card:focus-visible .face {
+  border-color: var(--fc-orange);
+  box-shadow: 0 0 0 3px rgba(235, 113, 0, 0.28), var(--fc-shadow);
+}
+
+/* ---- shared rows --------------------------------------------------------- */
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 26px;
+  flex: none;
+}
+.label {
+  font-family: var(--fc-mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fc-navy);
+}
+.labelIndex {
+  color: var(--fc-muted);
+}
+.glyph {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1px solid var(--fc-line);
+  color: rgba(0, 18, 29, 0.55);
+  transition: color 0.3s ease, border-color 0.3s ease;
+}
+.glyph svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* the illustration plate — a faint dot grid, like a spec-sheet figure */
+.plate {
+  flex: none;
+  height: 168px;
+  margin-top: 16px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  border: 1px solid var(--fc-line-soft);
+  background-color: #f8f8f7;
+  background-image: radial-gradient(rgba(0, 18, 29, 0.1) 0.8px, transparent 1.1px);
+  background-size: 14px 14px;
+  background-position: 7px 7px;
+  box-shadow: inset 0 1px 2px rgba(0, 18, 29, 0.03);
+}
+.artSvg {
+  width: 88%;
+  max-height: 88%;
+}
+
+.question {
+  margin: 20px 0 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 1.14;
+  letter-spacing: -0.012em;
+  color: var(--fc-navy);
+  max-width: 17ch;
+  text-wrap: balance;
+}
+
+.foot {
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--fc-line-soft);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--fc-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fc-muted);
+  transition: color 0.3s ease;
+}
+.footArrow {
+  width: 16px;
+  height: 10px;
+  fill: none;
+  stroke: rgba(0, 18, 29, 0.45);
+  stroke-width: 1.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke 0.3s ease;
+}
+
+/* ---- back: scene stage --------------------------------------------------- */
+
+.stage {
+  position: absolute;
+  z-index: 2;
+  top: calc(var(--fc-pad) + 26px + 16px);
+  left: var(--fc-pad);
+  right: var(--fc-pad);
+  bottom: var(--fc-pad);
+  height: auto;
+  margin: 0;
+  overflow: hidden;
+  transition: opacity 0.4s ease;
+}
+.stageOut {
+  opacity: 0;
+}
+.sceneSvg {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ---- back: result -------------------------------------------------------- */
+
+/* .result fills the space below .head (fixed height, like .face itself), so its
+   children sit at a deterministic offset regardless of caption length: .resultTop
+   (stat/rule/caption) sits at a fixed top offset — the same margin-top as .plate,
+   directly under .head, so the stat lands where the front's illustration plate
+   begins — and .source is pushed to the true bottom by margin-top: auto, same as
+   .foot on the front face. */
+.result {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.resultTop {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.resultTop > * {
+  opacity: 0;
+}
+.result > .source {
+  margin-top: auto;
+  opacity: 0;
+}
+.resultOn .resultTop > *,
+.resultOn > .source {
+  /* literal easing: CSS Modules won't hash a keyframe name in a shorthand that contains var() */
+  animation: fcRise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.resultOn .resultTop > :nth-child(2) {
+  animation-name: fcRule;
+  animation-delay: 0.12s;
+}
+.resultOn .resultTop > :nth-child(3) {
+  animation-delay: 0.18s;
+}
+.resultOn > .source {
+  animation-delay: 0.28s;
+}
+@keyframes fcRise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fcRule {
+  from {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+.stat {
+  display: inline-flex;
+  align-items: baseline;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(54px, 5.2vw, 70px);
+  line-height: 0.92;
+  letter-spacing: -0.035em;
+  color: var(--fc-orange);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  white-space: nowrap;
+}
+.statPrefix {
+  align-self: flex-start;
+  font-size: 0.5em;
+  line-height: 1;
+  margin: 0.14em 0.06em 0 0;
+  letter-spacing: 0;
+}
+/* sizer + live number share one grid cell, so counting never moves the layout */
+.statNum {
+  display: inline-grid;
+}
+.statSizer,
+.statLive {
+  grid-area: 1 / 1;
+  text-align: right;
+}
+.statSizer {
+  visibility: hidden;
+}
+.statUnit {
+  margin-left: 0.28em;
+  font-family: var(--fc-mono);
+  font-weight: 400;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fc-navy);
+}
+.rule {
+  display: block;
+  width: 32px;
+  height: 1px;
+  margin: 22px 0 16px;
+  background: rgba(0, 18, 29, 0.22);
+  transform-origin: left center;
+}
+.caption {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 15.5px;
+  line-height: 1.45;
+  color: var(--body-on-light, #4a4a4a);
+  max-width: 30ch;
+}
+.source {
+  align-self: stretch;
+  margin: 24px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--fc-line-soft);
+  font-family: var(--fc-mono);
+  font-size: 10.5px;
+  line-height: 1.5;
+  /* Always reserve two lines (3em at line-height 1.5, + padding + border) so the
+     rule above the source sits at the same height on every card, whether its
+     citation wraps or not. */
+  min-height: calc(3em + 15px);
+  letter-spacing: 0.04em;
+  color: rgba(0, 18, 29, 0.58);
+}
+
+/* ---- SVG line language (front art + scenes) ----------------------------- */
+
+.artSvg,
+.sceneSvg {
+  fill: none;
+  stroke: var(--fc-navy);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.artSvg *,
+.sceneSvg * {
+  vector-effect: non-scaling-stroke;
+}
+.paper {
+  fill: #ffffff;
+}
+.ink {
+  stroke: var(--fc-navy);
+}
+.inkSoft {
+  stroke: rgba(0, 18, 29, 0.32);
+}
+.accent {
+  stroke: var(--fc-orange);
+}
+.accentStroke {
+  stroke: var(--fc-orange);
+}
+.shadow {
+  fill: rgba(0, 18, 29, 0.07);
+  stroke: none;
+}
+.slot {
+  fill: var(--fc-navy);
+  stroke: none;
+}
+.coin {
+  fill: var(--fc-orange);
+  stroke: none;
+  font-family: var(--fc-mono);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* print: slips extrude from the slot, then drop and scatter */
+.slip {
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+  opacity: 0;
+  animation: fcEject 1s cubic-bezier(0.45, 0, 0.8, 0.5) both;
+}
+@keyframes fcEject {
+  0% {
+    opacity: 1;
+    transform: translate(0, -46px) rotate(0);
+  }
+  22% {
+    opacity: 1;
+    transform: translate(0, 2px) rotate(0);
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), 250px) rotate(var(--rot));
+  }
+}
+.led {
+  animation: fcLed 0.9s linear both;
+}
+@keyframes fcLed {
+  0%,
+  8% {
+    fill: #ffffff;
+    stroke: var(--fc-navy);
+  }
+  9%,
+  30%,
+  55%,
+  100% {
+    fill: var(--fc-orange);
+    stroke: var(--fc-orange);
+  }
+  20%,
+  44% {
+    fill: #ffffff;
+    stroke: var(--fc-orange);
+  }
+}
+.paperOut {
+  fill: var(--fc-orange);
+  stroke: none;
+  font-family: var(--fc-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  opacity: 0;
+  animation: fcFade 0.3s ease-out both;
+}
+@keyframes fcFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* forest: grow in → cut sweeps → fall → stumps remain */
+.treeGrow,
+.treeFell {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+.treeGrow {
+  opacity: 0;
+  animation: fcGrow 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes fcGrow {
+  from {
+    opacity: 0;
+    transform: scale(0.15);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.treeFell {
+  animation: fcFell 0.6s cubic-bezier(0.55, 0, 0.75, 0.4) both;
+  animation-play-state: running;
+}
+@keyframes fcFell {
+  0% {
+    opacity: 1;
+    transform: rotate(0);
+  }
+  80% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(86deg);
+  }
+}
+.stump {
+  opacity: 0;
+  animation: fcFade 0.2s ease-out both;
+}
+.sweep {
+  stroke-width: 2;
+  opacity: 0;
+  animation: fcSweep linear both;
+}
+@keyframes fcSweep {
+  0% {
+    opacity: 0;
+    transform: translateX(0);
+  }
+  8%,
+  88% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(360px);
+  }
+}
+
+/* cost: the strip feeds out (accelerating), the roll thins, the till climbs */
+.feed {
+  animation: fcFeed cubic-bezier(0.5, 0, 0.8, 0.4) both;
+}
+@keyframes fcFeed {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(300px);
+  }
+}
+.roll {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: fcRoll ease-in both;
+}
+@keyframes fcRoll {
+  from {
+    transform: scale(1, 1);
+  }
+  to {
+    transform: scale(1, 0.7);
+  }
+}
+.tillLabel {
+  fill: rgba(0, 18, 29, 0.5);
+  stroke: none;
+  font-family: var(--fc-mono);
+  font-size: 8px;
+  letter-spacing: 0.16em;
+}
+.tillTotal {
+  fill: var(--fc-orange);
+  stroke: none;
+  font-family: var(--fc-mono);
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.key {
+  fill: #ffffff;
+  stroke: rgba(0, 18, 29, 0.28);
+}
+
+/* ---- reduced motion: JS already skips the scene and the count; CSS makes the flip and reveal instant */
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .inner,
+  .face,
+  .face::before,
+  .face::after,
+  .stage {
+    transition: none;
+  }
+  .card:hover {
+    transform: none;
+  }
+  .resultOn > * {
+    animation: none;
+    opacity: 1;
+  }
+}

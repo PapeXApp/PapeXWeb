@@ -6,6 +6,8 @@ import { db } from "@/firebase/firebaseConfig"
 import { Reveal, Ripple } from "@/components/motion"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { FlowSection } from "../shared/FlowSection"
+import { SectionLabel } from "../shared/SectionLabel"
 import { demo } from "./content"
 
 interface DemoFormState {
@@ -31,6 +33,8 @@ const INITIAL_STATE: DemoFormState = {
   posSystem: "",
 }
 
+// Inputs are white fields with their own ink, so they read the same on either
+// ground — they're elevated surfaces, not text on the page.
 const inputStyle = {
   padding: "14px 16px",
   borderRadius: "12px",
@@ -122,33 +126,28 @@ export function DemoForm() {
   }
 
   return (
-    <section
+    <FlowSection
       id="demo"
-      data-nav-theme="light"
-      className="px-[clamp(20px,5vw,56px)] py-[clamp(90px,11vw,160px)] scroll-mt-[100px]"
-      style={{ background: "var(--offwhite)", color: "var(--ink)" }}
+      ground="light"
+      index="06"
+      className="scroll-mt-[100px] px-[clamp(20px,5vw,56px)] py-[clamp(90px,11vw,160px)]"
     >
       <Reveal
         as="div"
         className="mx-auto grid max-w-[960px] grid-cols-1 items-start gap-[clamp(30px,5vw,70px)] min-[821px]:grid-cols-2"
       >
         <div>
-          <div
-            className="mb-4 text-[13px] font-semibold uppercase tracking-[.24em]"
-            style={{ color: "var(--orange)" }}
-          >
-            {demo.eyebrow}
-          </div>
+          <SectionLabel index="06">{demo.eyebrow}</SectionLabel>
           <h2
             className="text-[clamp(30px,4vw,54px)] font-bold leading-[1.03] tracking-[-.02em]"
             style={{ fontFamily: "var(--font-display)" }}
           >
             {demo.heading}
           </h2>
-          <p className="mt-[18px] max-w-[34ch] text-[17px] leading-[1.55]" style={{ color: "#5a5a5a" }}>
+          <p className="mt-[18px] max-w-[34ch] text-[17px] leading-[1.55]" style={{ color: "var(--flow-fg-2)" }}>
             {demo.body}
           </p>
-          <p className="mt-6 text-[16px] font-semibold" style={{ color: "var(--ink)" }}>
+          <p className="mt-6 text-[16px] font-semibold" style={{ color: "var(--flow-fg)" }}>
             {demo.phonePrefix} <span style={{ color: "var(--orange)" }}>{demo.phone}</span>
           </p>
         </div>
@@ -321,6 +320,6 @@ export function DemoForm() {
           </form>
         )}
       </Reveal>
-    </section>
+    </FlowSection>
   )
 }

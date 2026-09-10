@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { useInView, useReducedMotion } from "motion/react"
+import { useInView } from "motion/react"
+import { useSafeReducedMotion } from "./useSafeReducedMotion"
 import type { CSSProperties } from "react"
 
 export type HeadingLevel = "h1" | "h2" | "h3" | "h4" | "h5" | "h6"
@@ -50,7 +51,7 @@ const WORD_SPACE = " "
  * reduce`.
  */
 export function WordReveal({ text, children, as = "h2", delay = 0, className, style, wordClassName }: WordRevealProps) {
-  const prefersReduced = useReducedMotion()
+  const prefersReduced = useSafeReducedMotion()
   const ref = useRef<HTMLHeadingElement>(null)
   const inView = useInView(ref, VIEWPORT)
   const [settled, setSettled] = useState(false)

@@ -1,37 +1,23 @@
 import { Reveal, WordReveal } from "@/components/motion";
-import styles from "./customer.module.css";
-import { Atmosphere, AtmosphereContent } from "./Atmosphere";
+import { FlowSection } from "../shared/FlowSection";
+import { PointerLitGroup } from "../shared/PointerLit";
+import { SectionLabel } from "../shared/SectionLabel";
 import { ReceiptListShot, ShareSheetShot } from "./FeatureScreens";
 import { featuresContent } from "./content";
 
-/** 2.5 Features — dark. Two mirrored rows revealed with the clip-path mask wipe. */
+/**
+ * 2.5 Features — navy ground. Two mirrored rows; the app shots come in with
+ * the clip-path mask wipe and are pointer-lit (`data-lit` on FeatureScreens'
+ * `.featShot`, inside the mask Reveal, so the reveal never fights it).
+ */
 export function Features() {
   return (
-    <section
-      data-nav-theme="dark"
-      className={styles.atmosHost}
-      style={{
-        background: "var(--navy)",
-        color: "var(--offwhite)",
-        padding: "clamp(90px,11vw,160px) clamp(20px,5vw,56px)",
-      }}
-    >
-      <Atmosphere tone="dark" seam="top" />
-      <AtmosphereContent>
-      <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+    <FlowSection ground="navy" index="04" style={{ padding: "clamp(90px,11vw,160px) clamp(20px,5vw,56px)" }}>
+      {/* Same 1150 column as the rows below, so the label, headline and the
+          first row share one left edge. */}
+      <div style={{ maxWidth: 1150, margin: "0 auto" }}>
         <Reveal variant="up">
-          <div
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              letterSpacing: ".24em",
-              textTransform: "uppercase",
-              color: "var(--orange)",
-              marginBottom: 18,
-            }}
-          >
-            {featuresContent.eyebrow}
-          </div>
+          <SectionLabel index="04">{featuresContent.eyebrow}</SectionLabel>
           <WordReveal
             as="h2"
             className="max-w-[20ch] [font-family:var(--font-display)] font-bold text-[clamp(30px,4.4vw,58px)] leading-[1.03] tracking-[-.02em]"
@@ -40,7 +26,10 @@ export function Features() {
           </WordReveal>
         </Reveal>
       </div>
-      <div className="grid" style={{ maxWidth: 1150, margin: "clamp(46px,5vw,72px) auto 0", gap: "clamp(70px,9vw,130px)" }}>
+      <PointerLitGroup
+        className="grid"
+        style={{ maxWidth: 1150, margin: "clamp(46px,5vw,72px) auto 0", gap: "clamp(70px,9vw,130px)" }}
+      >
         {featuresContent.rows.map((row, index) => {
           const mirrored = index % 2 === 1;
           return (
@@ -49,27 +38,17 @@ export function Features() {
               key={row.eyebrow}
               className="grid items-center"
               style={{
-                // Was a hard "1fr 1fr", so even a 390px phone got two squeezed
-                // columns (the app shot rendered 160px wide). auto-fit with a
-                // floor collapses to one column when two can't breathe; the
-                // min(100%, …) stops the floor itself overflowing tiny screens.
+                // auto-fit with a floor collapses to one column when two can't
+                // breathe; the min(100%, …) stops the floor itself overflowing
+                // tiny screens.
                 gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))",
                 gap: "clamp(30px,5vw,80px)",
               }}
             >
               <div style={{ order: mirrored ? 2 : 1 }}>
-                <div
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 600,
-                    letterSpacing: ".24em",
-                    textTransform: "uppercase",
-                    color: "var(--orange)",
-                    marginBottom: 16,
-                  }}
-                >
+                <SectionLabel index={`04.${index + 1}`} style={{ marginBottom: 16 }}>
                   {row.eyebrow}
-                </div>
+                </SectionLabel>
                 <h3
                   style={{
                     fontFamily: "var(--font-display)",
@@ -86,28 +65,21 @@ export function Features() {
                     marginTop: 18,
                     fontSize: 17,
                     lineHeight: 1.55,
-                    color: "var(--muted-on-dark)",
+                    color: "var(--flow-fg-2)",
                     maxWidth: "42ch",
                   }}
                 >
                   {row.body}
                 </p>
               </div>
-              <Reveal
-                variant="mask"
-                className="flex items-center justify-center"
-                style={{ order: mirrored ? 1 : 2 }}
-              >
-                {/* Real app screens, built from PapeXV2's own tokens — these
-                    were striped "[ app screen: … ]" TODO boxes waiting on
-                    simulator captures that never arrived. See FeatureScreens.tsx. */}
+              <Reveal variant="mask" className="flex items-center justify-center" style={{ order: mirrored ? 1 : 2 }}>
+                {/* Real app screens, built from PapeXV2's own tokens — see FeatureScreens.tsx. */}
                 {index === 0 ? <ReceiptListShot /> : <ShareSheetShot />}
               </Reveal>
             </Reveal>
           );
         })}
-      </div>
-      </AtmosphereContent>
-    </section>
+      </PointerLitGroup>
+    </FlowSection>
   );
 }

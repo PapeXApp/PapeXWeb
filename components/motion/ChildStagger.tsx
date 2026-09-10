@@ -1,7 +1,8 @@
 "use client"
 
 import { Children, cloneElement, isValidElement, useEffect, useRef, useState } from "react"
-import { useInView, useReducedMotion } from "motion/react"
+import { useInView } from "motion/react"
+import { useSafeReducedMotion } from "./useSafeReducedMotion"
 import type { CSSProperties, ElementType, ReactElement, ReactNode } from "react"
 
 type StyleableProps = { style?: CSSProperties }
@@ -17,16 +18,17 @@ type ChildStaggerProps = {
   delay?: number
 }
 
+// Same entrance vocabulary as Reveal: opacity + blur + a small rise.
 const EASE = "cubic-bezier(.16,1,.3,1)"
-const DURATION = 0.75
+const DURATION = 0.7
 const STAGGER = 0.08
 
 const VIEWPORT = { once: true, amount: 0.12, margin: "0px 0px -6% 0px" } as const
 
 /**
- * Staggers its direct children in from `translateY(30px)`/`opacity:0`, 750ms
- * with an 80ms per-child stagger, triggered once the container enters view.
- * Used on hero copy columns / step lists.
+ * Staggers its direct children in from `translateY(14px)` / `blur(8px)` /
+ * `opacity:0`, 700ms with an 80ms per-child stagger, triggered once the
+ * container enters view. Used on hero copy columns / step lists.
  *
  * Applies the animated style directly to each child element (no extra wrapper
  * nodes) via `cloneElement`, so children must accept a `style` prop.
@@ -35,7 +37,7 @@ const VIEWPORT = { once: true, amount: 0.12, margin: "0px 0px -6% 0px" } as cons
  * `prefers-reduced-motion: reduce`.
  */
 export function ChildStagger({ children, as = "div", className, style, delay = 0 }: ChildStaggerProps) {
-  const prefersReduced = useReducedMotion()
+  const prefersReduced = useSafeReducedMotion()
   const ref = useRef<HTMLDivElement>(null)
   const inView = useInView(ref, VIEWPORT)
   const [settled, setSettled] = useState(false)
@@ -45,7 +47,7 @@ export function ChildStagger({ children, as = "div", className, style, delay = 0
   useEffect(() => {
     if (!inView || prefersReduced) return
     const total = delay + Math.max(0, items.length - 1) * STAGGER + DURATION
-    const timer = window.setTimeout(() => setSettled(true), total * 1000)
+    const timer = window.setTimeout(() => setSettled(true), total * 1000 + 60)
     return () => window.clearTimeout(timer)
   }, [inView, prefersReduced, delay, items.length])
 
@@ -66,9 +68,11 @@ export function ChildStagger({ children, as = "div", className, style, delay = 0
         const style: CSSProperties = {
           ...el.props.style,
           opacity: inView ? 1 : 0,
-          transform: inView ? "translateY(0)" : "translateY(30px)",
-          transition: `opacity ${DURATION}s ${EASE} ${childDelay}s, transform ${DURATION}s ${EASE} ${childDelay}s`,
-          willChange: settled ? undefined : "opacity, transform",
+          transform: inView ? "none" : "translateY(14px)",
+          // Dropped once settled — a lingering blur(0) still costs a layer.
+          filter: settled ? undefined : inView ? "blur(0px)" : "blur(8px)",
+          transition: `opacity ${DURATION}s ${EASE} ${childDelay}s, transform ${DURATION}s ${EASE} ${childDelay}s, filter ${DURATION}s ${EASE} ${childDelay}s`,
+          willChange: settled ? undefined : "opacity, transform, filter",
         }
         return cloneElement(el, { style })
       })}

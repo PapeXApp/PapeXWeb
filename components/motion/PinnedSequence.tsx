@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { useReducedMotion } from "motion/react"
+import { useSafeReducedMotion } from "./useSafeReducedMotion"
 import type { CSSProperties, ReactNode } from "react"
 
 export type PinnedSequenceState = {
@@ -65,7 +65,7 @@ export function PinnedSequence({
   stageClassName,
   mobileClassName,
 }: PinnedSequenceProps) {
-  const prefersReduced = useReducedMotion()
+  const prefersReduced = useSafeReducedMotion()
   const [mobile, setMobile] = useState(false)
   const sectionRef = useRef<HTMLElement>(null)
   const rafRef = useRef<number | null>(null)

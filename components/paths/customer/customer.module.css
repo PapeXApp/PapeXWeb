@@ -90,6 +90,15 @@
   animation: arrowBob 1.9s ease-in-out infinite;
 }
 
+/* The hero's scroll cue only makes sense while the hero is exactly one screen
+   tall. On a phone the stacked copy + demo run past the fold, and the
+   absolutely positioned cue landed on top of the demo's hint row. */
+@media (max-width: 767px) {
+  .heroCue {
+    display: none;
+  }
+}
+
 /* Hover treatments — kept as CSS-module classes since inline styles can't express :hover. */
 
 .ctaButton {
@@ -196,8 +205,10 @@
   background: linear-gradient(160deg, #2a2d36, #15171d);
   border: 2px solid rgba(255, 255, 255, 0.12);
   /* Two shadows, not one: a tight contact shadow keeps the bezel edge crisp
-     while the long one grounds the phone on the section. */
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5), 0 44px 90px rgba(0, 0, 0, 0.55);
+     while the long one grounds the phone on the section. Navy-tinted, not
+     black: the hero is light now, and a pure-black shadow on #F5F5F5 reads
+     as a grey smudge. */
+  box-shadow: 0 2px 6px rgba(0, 18, 29, 0.3), 0 40px 80px rgba(0, 18, 29, 0.28);
   padding: calc(var(--phone-w) * 0.031);
 }
 
@@ -239,7 +250,8 @@
   transform: translateX(clamp(26px, 8.4vw, 108px));
   width: clamp(212px, 21.5vw, 286px);
   line-height: 0;
-  filter: drop-shadow(0 24px 44px rgba(0, 0, 0, 0.55));
+  /* Navy-tinted for the light hero (see .demoShell). */
+  filter: drop-shadow(0 22px 36px rgba(0, 18, 29, 0.3));
 }
 .demoRdh svg {
   width: 100%;
@@ -262,7 +274,8 @@
   align-items: center;
   gap: 12px;
   font-size: 13.5px;
-  color: rgba(245, 245, 245, 0.55);
+  /* Follows the page ground's faint ink (the hero is light since 2026-09-10). */
+  color: var(--flow-fg-3, rgba(0, 18, 29, 0.5));
 }
 .demoResetLink {
   cursor: pointer;
@@ -647,334 +660,6 @@
 }
 
 /* ==========================================================================
- * Problem — three tap-to-flip cards, each with a scripted scene on its back.
- * ========================================================================== */
-
-.flipCard {
-  perspective: 1400px;
-  cursor: pointer;
-  outline: none;
-  height: 340px;
-}
-.flipCardInner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  transform-style: preserve-3d;
-  transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.flipCardFlipped .flipCardInner {
-  transform: rotateY(180deg);
-}
-/* The card face. Was a flat white rectangle with one soft drop shadow, which
-   is what made these read as unfinished. Now: a faint top-lit gradient instead
-   of flat fill, a three-part shadow (hairline contact + close ambient + broad
-   ambient) which is what actually makes a card sit ON something, and an inset
-   highlight along the top edge so the surface has a lit lip. */
-.flipFace {
-  position: absolute;
-  inset: 0;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  border-radius: var(--r-card);
-  background: linear-gradient(168deg, #ffffff 0%, #fdfdfc 46%, #f7f7f5 100%);
-  border: 1px solid var(--hairline-1);
-  box-shadow: 0 1px 1px rgba(0, 18, 29, 0.04), 0 8px 18px rgba(0, 18, 29, 0.05),
-    0 24px 48px rgba(0, 18, 29, 0.07), inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 30px 24px;
-  overflow: hidden;
-  text-align: center;
-}
-/* A hairline of brand colour across the very top of the face — the detail that
-   most cheaply separates "a div with a shadow" from "a designed card". */
-.flipFace::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 12%;
-  right: 12%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(235, 113, 0, 0.5), transparent);
-}
-.flipFaceBack {
-  transform: rotateY(180deg);
-}
-/* The lift goes on .flipCard, NOT .flipCardInner — the inner element owns the
-   rotateY and a second transform there would fight the flip. */
-.flipCard {
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.flipCard:hover {
-  transform: translateY(-5px);
-}
-.flipCard:hover .flipFace {
-  border-color: rgba(235, 113, 0, 0.28);
-  box-shadow: 0 1px 1px rgba(0, 18, 29, 0.04), 0 14px 26px rgba(0, 18, 29, 0.08),
-    0 36px 64px rgba(0, 18, 29, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.9);
-}
-.flipCard:focus-visible {
-  outline: none;
-}
-.flipCard:focus-visible .flipFace {
-  border-color: var(--orange);
-  box-shadow: 0 0 0 3px rgba(235, 113, 0, 0.35), 0 24px 48px rgba(0, 18, 29, 0.1);
-}
-/* Was bare orange caps floating at the bottom edge. Given a tinted pill it
-   reads as an affordance rather than stray small print. */
-.flipHint {
-  position: absolute;
-  bottom: 16px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--orange);
-  background: rgba(235, 113, 0, 0.09);
-  border: 1px solid rgba(235, 113, 0, 0.18);
-  border-radius: 999px;
-  padding: 5px 11px;
-  transition: background 0.3s ease, border-color 0.3s ease;
-}
-.flipCard:hover .flipHint {
-  background: rgba(235, 113, 0, 0.16);
-  border-color: rgba(235, 113, 0, 0.34);
-}
-.flipStage {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  border-radius: var(--r-card);
-}
-.flipNum {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: clamp(44px, 5.4vw, 68px);
-  color: var(--orange);
-  line-height: 1;
-  letter-spacing: -0.02em;
-  /* A soft bloom under the figure so the number sits in the card's light
-     rather than on top of it. */
-  text-shadow: 0 8px 26px rgba(235, 113, 0, 0.22);
-}
-/* Short rule under the statistic — anchors it to the caption below. */
-.flipNum::after {
-  content: "";
-  display: block;
-  width: 34px;
-  height: 2px;
-  margin: 14px auto 0;
-  border-radius: 2px;
-  background: linear-gradient(90deg, transparent, rgba(235, 113, 0, 0.75), transparent);
-}
-.flipCap {
-  margin-top: 12px;
-  font-size: 15px;
-  color: var(--body-on-light);
-  line-height: 1.45;
-  max-width: 26ch;
-}
-.flipResult {
-  position: relative;
-  z-index: 3;
-  opacity: 0;
-}
-.flipReveal {
-  animation: flipPop 0.62s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-@keyframes flipPop {
-  0% {
-    opacity: 0;
-    transform: scale(0.62);
-  }
-  64% {
-    opacity: 1;
-    transform: scale(1.07);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* card A — 256B: receipts shooting out of a printer, 240ms -> 40ms ramp */
-.scenePrinter {
-  position: absolute;
-  top: 26px;
-  left: 50%;
-  margin-left: -52px;
-  width: 104px;
-  height: 26px;
-  border-radius: 6px 6px 3px 3px;
-  background: linear-gradient(160deg, var(--navy-raised), var(--navy-deep));
-  box-shadow: 0 6px 14px rgba(0, 18, 29, 0.28);
-}
-.scenePrinter::after {
-  content: "";
-  position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: 4px;
-  height: 3px;
-  border-radius: 2px;
-  background: rgba(245, 245, 245, 0.28);
-}
-.sceneSlip {
-  position: absolute;
-  top: 48px;
-  left: 50%;
-  width: 34px;
-  height: 46px;
-  margin-left: -17px;
-  background: #fff;
-  border: 1px solid var(--hairline-3);
-  border-radius: 2px;
-  opacity: 0;
-  box-shadow: 0 3px 8px rgba(0, 18, 29, 0.14);
-  animation: sceneEject 1.15s ease-in forwards;
-}
-.sceneSlipLine {
-  position: absolute;
-  left: 5px;
-  right: 5px;
-  height: 1.5px;
-  background: var(--hairline-3);
-  display: block;
-}
-@keyframes sceneEject {
-  0% {
-    opacity: 0;
-    transform: translate(0, -14px) rotate(0);
-  }
-  10% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translate(var(--dx), 190px) rotate(var(--rot));
-  }
-}
-
-/* card B — 10M: a forest grows in, then one axe swing takes it down */
-.sceneGround {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 34px;
-  height: 2px;
-  background: rgba(0, 18, 29, 0.14);
-}
-.sceneTree {
-  position: absolute;
-  bottom: 36px;
-  transform-origin: bottom center;
-  opacity: 0;
-  animation: sceneGrow 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-.sceneTreeFelled {
-  animation: sceneFell 0.5s cubic-bezier(0.6, 0, 0.4, 1) forwards;
-}
-.sceneTreeCanopy {
-  display: block;
-  width: 0;
-  height: 0;
-  border-left: 9px solid transparent;
-  border-right: 9px solid transparent;
-  border-bottom: 26px solid #2f7d4f;
-}
-.sceneTreeTrunk {
-  display: block;
-  width: 4px;
-  height: 10px;
-  margin: 0 auto;
-  background: #6b4a2f;
-}
-@keyframes sceneGrow {
-  0% {
-    opacity: 0;
-    transform: scale(0.2);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-@keyframes sceneFell {
-  0% {
-    transform: rotate(0);
-  }
-  100% {
-    transform: rotate(82deg);
-    opacity: 0.12;
-  }
-}
-.sceneAxe {
-  position: absolute;
-  top: 44%;
-  left: -30%;
-  width: 64px;
-  height: 5px;
-  background: linear-gradient(90deg, #6b4a2f 60%, #9aa3a8 60%);
-  border-radius: 2px;
-  opacity: 0;
-  transform-origin: left center;
-}
-.sceneAxeSwing {
-  animation: sceneSwing 0.62s cubic-bezier(0.5, 0, 0.3, 1) forwards;
-}
-@keyframes sceneSwing {
-  0% {
-    opacity: 0;
-    left: -30%;
-    transform: rotate(-38deg);
-  }
-  20% {
-    opacity: 1;
-  }
-  70% {
-    opacity: 1;
-    left: 108%;
-    transform: rotate(26deg);
-  }
-  100% {
-    opacity: 0;
-    left: 130%;
-    transform: rotate(26deg);
-  }
-}
-
-/* card C — $0: one receipt feeds out with nothing on it */
-.sceneZero {
-  position: absolute;
-  top: 16px;
-  left: 50%;
-  margin-left: -52px;
-  width: 104px;
-  padding: 14px 10px 16px;
-  background: #fff;
-  border: 1px solid var(--hairline-3);
-  border-radius: 3px;
-  box-shadow: 0 8px 20px rgba(0, 18, 29, 0.12);
-  opacity: 0;
-}
-.sceneZeroFeed {
-  animation: sceneFeed 0.85s cubic-bezier(0.16, 1, 0.3, 1) 120ms forwards;
-}
-@keyframes sceneFeed {
-  0% {
-    opacity: 0;
-    transform: translateY(-104%);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* ==========================================================================
  * Personas — three-question quiz (12 options, keeper/casual/non scoring).
  * ========================================================================== */
 
@@ -1093,7 +778,7 @@
   transform: none;
 }
 .quizResultEyebrow {
-  font-family: var(--font-mono);
+  font-family: var(--font-label);
   font-size: 11.5px;
   letter-spacing: 0.1em;
   color: var(--orange);
@@ -1180,19 +865,13 @@
   .arrowBob,
   .demoTilt,
   .walkTilt,
-  .flipCardInner,
   .acIdle,
   .acLive,
   .acIdleRing span,
   .rdhLed,
   .quizCard,
   .quizResult,
-  .quizTag,
-  .sceneSlip,
-  .sceneTree,
-  .sceneAxe,
-  .sceneZero,
-  .flipReveal {
+  .quizTag {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
@@ -1439,97 +1118,6 @@
   font-size: calc(16 * var(--app-u));
   color: rgba(255, 255, 255, 0.9);
   flex: 0 0 auto;
-}
-
-/* ==========================================================================
- * ATMOSPHERE — the shared depth layer (components/paths/customer/Atmosphere.tsx)
- *
- * The customer path was built as a stack of flat, hard-edged colour bands. Every
- * section change was a straight cut, and inside each band there was nothing
- * behind the content at all. This gives every section the same four tools, so
- * "more depth" is consistent rather than re-invented per section:
- *
- *   seams       a gradient bleed of the NEIGHBOURING section's colour across
- *               the boundary, so bands melt instead of cutting
- *   orbs        large, heavily blurred colour pools — the light in the room
- *   lines       thin skewed rules that catch the eye and imply perspective
- *   watermark   the plane mark, oversized and nearly invisible
- *
- * Everything here is decorative, pointer-events:none, and painted UNDER the
- * content (z-index 0 against the content's 1). Nothing animates on scroll: these
- * are static layers, so they cost one paint and never re-run.
- * ========================================================================== */
-
-.atmos {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-  z-index: 0;
-}
-/* Sections opt in by going relative; their content is lifted above the layer. */
-.atmosHost {
-  position: relative;
-  overflow: hidden;
-}
-.atmosContent {
-  position: relative;
-  z-index: 1;
-}
-
-/* --- Seams ---------------------------------------------------------------
-   Height is generous on purpose: a 40px fade still reads as an edge, a ~160px
-   one reads as one surface becoming another. */
-.atmosSeamTop,
-.atmosSeamBottom {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: clamp(90px, 12vw, 170px);
-}
-.atmosSeamTop {
-  top: 0;
-}
-.atmosSeamBottom {
-  bottom: 0;
-}
-
-/* --- Orbs: the blurred light pools --------------------------------------- */
-.atmosOrb {
-  position: absolute;
-  border-radius: 50%;
-  will-change: auto;
-}
-
-/* --- Skewed hairlines ----------------------------------------------------
-   Brightest in the middle, gone at both ends, so they never terminate in a
-   hard dot against the background. */
-.atmosLine {
-  position: absolute;
-  height: 1px;
-  transform-origin: 50% 50%;
-}
-
-/* --- Watermark ----------------------------------------------------------- */
-.atmosMark {
-  position: absolute;
-  line-height: 0;
-}
-
-/* A hairline that runs the full width of a section edge — the quietest of the
-   four, used where a full seam would be too much. */
-.atmosRule {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 1px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .atmos {
-    /* nothing here animates, but keep the escape hatch explicit */
-    animation: none !important;
-  }
 }
 
 /* ==========================================================================
@@ -1883,28 +1471,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .wpScene { transition: none; }
-}
-
-/* --- Film grain over a whole section --------------------------------------
-   The single most-cited depth technique in current practice: an feTurbulence
-   noise tile at low opacity, which stops large flat fills and wide gradients
-   looking like plastic and kills gradient banding on the orbs underneath.
-
-   Two deliberate differences from the fork's grain (components/brand/fork.module.css):
-     - NO mix-blend-mode. The fork blends because it sits on a saturated brand
-       field; here it would force a full-section backdrop re-read on a layer
-       that is already stacked over blurred orbs, and on these near-neutral
-       surfaces plain alpha is visually indistinguishable.
-     - A larger tile (180px) so the repeat is never legible as a pattern.
-   Opacity stays low: at the 15-30% the trend pieces suggest, this reads as a
-   dirty screen rather than as texture. */
-.atmosGrain {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-  background-size: 180px 180px;
 }
 
 /* ==========================================================================

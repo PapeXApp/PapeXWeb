@@ -18,6 +18,7 @@ import { usePathname } from 'next/navigation'
 import { FullLogo } from './full-logo'
 import { useGlassTheme, type GlassTheme } from './use-glass-theme'
 import { clearPathChoice, type PathChoice } from '@/lib/pathChoice'
+import { useFlowGround } from '@/components/paths/shared/flowSignal'
 import { APP_STORE_URL } from './links'
 
 // 'page' is a neutral fourth value for standalone subpages (contact, blog,
@@ -47,11 +48,19 @@ const CTA: Record<SitePath, { label: string; href: string; external?: boolean }>
 }
 
 export function SiteNav({ path }: { path: SitePath }) {
-  // Business hero opens on #F5F5F5, and standalone pages are light content
-  // pages too, so start light there and avoid a one-frame dark-bubble flash
-  // before the probe runs.
-  const initialGlass: GlassTheme = path === 'business' || path === 'page' ? 'light' : 'dark'
-  const glass = useGlassTheme(initialGlass)
+  // The customer hero opens on #F5F5F5 (it continues the fork's light bottom
+  // half), and standalone pages are light content pages too, so start light
+  // there; the business hero and the fork's top half are navy, so start dark.
+  // Getting this right avoids a one-frame wrong-glass flash before the probe
+  // in use-glass-theme runs.
+  const initialGlass: GlassTheme = path === 'customer' || path === 'page' ? 'light' : 'dark'
+  const probed = useGlassTheme(initialGlass)
+  // On the path homes the sections are transparent and the real backdrop is
+  // FlowGround's page ground, which swaps at mid-viewport — follow it
+  // directly (see components/paths/shared/flowSignal.ts). Everywhere else
+  // it's null and the probe decides.
+  const flowGround = useFlowGround()
+  const glass: GlassTheme = flowGround ? (flowGround === 'navy' ? 'dark' : 'light') : probed
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
 

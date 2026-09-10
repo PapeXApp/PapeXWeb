@@ -1,6 +1,6 @@
 "use client"
 
-import { useReducedMotion } from "motion/react"
+import { useSafeReducedMotion } from "./useSafeReducedMotion"
 import type { CSSProperties, ReactNode } from "react"
 import "./motion.css"
 
@@ -26,7 +26,7 @@ type MarqueeProps = {
  * `prefers-reduced-motion: reduce`.
  */
 export function Marquee({ children, duration, durationSeconds, className, style }: MarqueeProps) {
-  const prefersReduced = useReducedMotion()
+  const prefersReduced = useSafeReducedMotion()
   const resolvedDuration = duration ?? durationSeconds ?? 30
 
   if (prefersReduced) {

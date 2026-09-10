@@ -16,7 +16,7 @@
 
 .rd {
   /* --- Core palette ---------------------------------------------------- */
-  --navy: #00121d;              /* primary bg, customer path, text on light  */
+  --navy: #00121d;              /* primary bg, business hero, text on light  */
   --navy-raised: #0a2431;       /* phone chassis, placeholder stripes        */
   --navy-deep: #04161f;         /* chassis gradient end, notch               */
   --navy-alt: #0c2937;          /* placeholder stripe alternate              */
@@ -67,6 +67,10 @@
   --font-display: var(--font-kameron), Georgia, serif;
   --font-ui: var(--font-barlow), "Helvetica Neue", Arial, sans-serif;
   --font-mono: "Courier New", Courier, monospace;
+  /* Section labels + ribbon on the path homes (Geist Mono, loaded in
+     app/layout.tsx). Separate from --font-mono on purpose: the /customers
+     receipt demo sizes its 32-column body on Courier's advance. */
+  --font-label: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
   --fs-h1-customer: clamp(40px, 6vw, 84px);
   --fs-h1-merchant: clamp(38px, 5.6vw, 80px);
@@ -691,6 +695,43 @@ html[data-fork-skip] .rd-fork {
 }
 .rd-marquee-run {
   animation: rd-marquee 30s linear infinite;
+}
+
+/* --- Flow ground tokens ----------------------------------------------------
+   Registered so they interpolate as colours: the path homes' page ground and
+   its ink crossfade together when components/paths/shared/FlowGround.tsx
+   swaps `data-ground` (values per ground live in flow.module.css). @property
+   is global by nature; nothing outside the path homes reads these names, and
+   the initial values are only a fallback. */
+@property --flow-ground {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #00121d;
+}
+@property --flow-fg {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #f5f5f5;
+}
+@property --flow-fg-2 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: rgba(245, 245, 245, 0.66);
+}
+@property --flow-fg-3 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: rgba(245, 245, 245, 0.46);
+}
+@property --flow-hair {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: rgba(245, 245, 245, 0.09);
+}
+@property --flow-tick {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: rgba(245, 245, 245, 0.32);
 }
 
 /* --- Reduced motion ------------------------------------------------------- */

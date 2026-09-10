@@ -17,3 +17,30 @@
   animation-iteration-count: infinite;
   will-change: transform;
 }
+
+/* ScrollLit — words light up across a staggered slice of the paragraph's own
+   view timeline. `cover 12%` is roughly "the paragraph has just cleared the
+   bottom of the viewport"; the last word is lit by ~cover 54%, i.e. about
+   when the paragraph reaches the middle. The dim state lives ONLY inside this
+   block, so unsupported browsers and reduced motion get fully lit text. */
+.papex-lit {
+  view-timeline-name: --papex-lit;
+  view-timeline-axis: block;
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .papex-lit-word {
+      opacity: 0.22;
+      animation: papex-lit-word linear both;
+      animation-timeline: --papex-lit;
+      animation-range:
+        cover calc(12% + 36% * var(--i) / var(--n))
+        cover calc(18% + 36% * var(--i) / var(--n));
+    }
+  }
+}
+@keyframes papex-lit-word {
+  to {
+    opacity: 1;
+  }
+}

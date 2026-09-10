@@ -4,10 +4,11 @@
 // never shows the fork, and scrolling back up never restores it; only the logo
 // or nav "Home" go back (they clear the stored choice).
 //
-// The hero MUST open on flat #00121D, the same colour as the fork's top half:
-// that colour continuity is what makes the 620ms commit read as one surface
-// growing rather than a page swap. Section content is owned by
-// components/paths/customer.
+// The hero MUST open on flat #F5F5F5, the same colour as the fork's bottom
+// half (which leads here): that colour continuity is what makes the 620ms
+// commit read as one surface growing rather than a page swap. The first paint
+// comes from FlowGround's `initial="light"` in components/paths/customer,
+// which owns the section content.
 
 import type { Metadata } from 'next'
 import { SiteShell } from '@/components/brand/site-shell'
