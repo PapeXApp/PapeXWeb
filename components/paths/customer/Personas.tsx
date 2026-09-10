@@ -45,7 +45,7 @@ export function Personas() {
     <FlowSection
       ground="light"
       index="03"
-      style={{ padding: "clamp(64px,7vw,110px) clamp(20px,5vw,56px) clamp(90px,11vw,160px)" }}
+      style={{ padding: "clamp(64px,7vw,110px) clamp(20px,5vw,56px) clamp(60px,6.2vw,100px)" }}
     >
       <div style={{ maxWidth: 1150, margin: "0 auto" }}>
         <Reveal variant="up" style={{ textAlign: "center" }}>

@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import { useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { Reveal, WordReveal } from "@/components/motion";
 import { FlowSection } from "../shared/FlowSection";
 import { SectionLabel } from "../shared/SectionLabel";
+import { RDH_VIEWS, RdhDevice } from "./RdhDevice";
 import { WalkPhone } from "./WalkPhone";
 import { howItWorksContent } from "./content";
 import styles from "./customer.module.css";
@@ -13,25 +15,155 @@ import styles from "./customer.module.css";
 /** How long the phone stays lifted onto the reader before the receipt lands (mirrors NfcPhone's bow). */
 const BOW_MS = 380;
 
+/** When the stage pins. MUST match the media query on .walkRunway/.walkStage
+ *  in customer.module.css — the CSS owns the layout, this only picks the
+ *  behaviour. */
+const PIN_QUERY = "(prefers-reduced-motion: no-preference) and (min-width: 821px) and (min-height: 600px)";
+
+/** Seats the phone under the "front" RDH view (see .walkRdhSeat). The phone's
+ *  top edge sits 9 viewBox units below the top face's nearest corner, so a
+ *  strip of the plain front face shows — that strip is what makes the art read
+ *  as a box behind the phone rather than a tilted card. */
+const RDH = RDH_VIEWS.front;
+const RDH_SEAT = {
+  ["--walk-rdh-seat" as string]: ((RDH.frontEdgeY + 9) / RDH.width).toFixed(4),
+  ["--walk-rdh-cx" as string]: (RDH.boxCentreX / RDH.width).toFixed(4),
+} as CSSProperties;
+
 /**
- * 2.6 How it works — light. A tap-driven walkthrough (replaces the 300vh pinned
- * scroll): tap once to lift the phone onto the reader and land the receipt, tap
- * again to file it into the saved list, tap a third time to replay.
- * `components/motion/PinnedSequence.tsx` stays in the repo — just unused here.
+ * 2.6 How it works — light. Two ways through the same three steps:
  *
- * DELIBERATELY NOT SCROLL-DRIVEN. A scroll-progress version was tried on
- * 2026-09-09 and reverted: advancing the steps as the section travels past
- * changes the phone under the reader while they are still reading it, and it
- * fights a tap. The page scrolls; the phone is tapped. Keep them separate.
+ *   TAP  — tap/click/Enter/swipe/arrows on the phone, or click a step in the
+ *          list. Tap-only mode (reduced motion, narrow or short screens) is
+ *          exactly the old walkthrough, replay wrap included.
+ *   SCROLL — on desktop the stage pins inside a runway (see .walkRunway) and
+ *          keeping on scrolling walks 1 -> 2 -> 3, then releases into the next
+ *          section. Crossing into step 2 plays the tap (bow + LED pulse).
+ *
+ * WHY THIS IS NOT THE 2026-09-09 SCROLL VERSION THAT WAS REVERTED: that one
+ * advanced the steps while the section was still travelling past (nothing
+ * held the phone still), and scroll and taps each kept their own step, so a
+ * tap was undone by the next wheel tick. Here the stage is pinned while it
+ * steps, and in pinned mode the SCROLL POSITION IS THE ONLY SOURCE OF TRUTH:
+ * a tap never sets the step — it smooth-scrolls to that step's spot in the
+ * runway and the scroll listener lands it. They cannot disagree.
+ *
+ * No rAF loop: a passive scroll listener, attached only while an
+ * IntersectionObserver says the runway is on screen, with one rAF-throttled
+ * read per frame. The list highlight follows via a CSS variable (--walk-s),
+ * so scrolling re-renders React only when the whole step changes.
  */
 export function HowItWorks() {
   const stepCount = howItWorksContent.steps.length;
+  const last = stepCount - 1;
   const [step, setStep] = useState(0);
   const [bowing, setBowing] = useState(false);
+  const [pinned, setPinned] = useState(false);
   const prefersReduced = useReducedMotion();
   const bowTimer = useRef<number | undefined>(undefined);
+  const runwayRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  /** The step most recently asked for. Equal to `step` except during a bow,
+   *  which lands on whatever this is when it finishes. */
+  const target = useRef(0);
 
   useEffect(() => () => window.clearTimeout(bowTimer.current), []);
+
+  useEffect(() => {
+    const mq = window.matchMedia(PIN_QUERY);
+    const apply = () => setPinned(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+
+  /** Show step `next`. Leaving step 0 forwards plays the bow first. */
+  const land = useCallback((next: number, animate: boolean) => {
+    const from = target.current;
+    if (next === from) return;
+    target.current = next;
+    if (bowTimer.current !== undefined) {
+      if (next !== 0) return; // the bow in flight lands on target.current
+      window.clearTimeout(bowTimer.current);
+      bowTimer.current = undefined;
+      setBowing(false);
+      setStep(0);
+      return;
+    }
+    if (animate && from === 0 && next > 0) {
+      setBowing(true);
+      bowTimer.current = window.setTimeout(() => {
+        bowTimer.current = undefined;
+        setBowing(false);
+        setStep(target.current);
+      }, BOW_MS);
+      return;
+    }
+    setStep(next);
+  }, []);
+
+  /* Pinned mode: scroll position -> step. */
+  useEffect(() => {
+    if (!pinned) return;
+    const runway = runwayRef.current;
+    const stage = stageRef.current;
+    if (!runway || !stage) return;
+
+    let raf = 0;
+    let listening = false;
+    const read = (animate = true) => {
+      raf = 0;
+      const rect = runway.getBoundingClientRect();
+      const travel = rect.height - window.innerHeight;
+      const progress = travel > 0 ? Math.min(1, Math.max(0, -rect.top / travel)) : 0;
+      const s = progress * (stepCount - 1);
+      stage.style.setProperty("--walk-s", s.toFixed(4));
+      land(Math.round(s), animate);
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(() => read());
+    };
+    const listen = (on: boolean) => {
+      if (on === listening) return;
+      listening = on;
+      const method = on ? "addEventListener" : "removeEventListener";
+      window[method]("scroll", onScroll, { passive: true } as AddEventListenerOptions);
+      window[method]("resize", onScroll, { passive: true } as AddEventListenerOptions);
+    };
+    const io = new IntersectionObserver(([entry]) => {
+      listen(entry.isIntersecting);
+      onScroll(); // settle the final position on the way in AND out
+    });
+    io.observe(runway);
+    // First read without the bow: a page restored below this section should
+    // just show the last step, not replay the tap off-screen.
+    read(false);
+    return () => {
+      io.disconnect();
+      listen(false);
+      if (raf) cancelAnimationFrame(raf);
+      stage.style.removeProperty("--walk-s");
+    };
+  }, [pinned, stepCount, land]);
+
+  /** Pinned mode's only way to change step: scroll to its spot in the runway.
+   *  `index === stepCount` means past the runway, i.e. on to the next section. */
+  function scrollToStep(index: number) {
+    const runway = runwayRef.current;
+    if (!runway) return;
+    const rect = runway.getBoundingClientRect();
+    const travel = rect.height - window.innerHeight;
+    const y =
+      index >= stepCount
+        ? rect.bottom + window.scrollY
+        : rect.top + window.scrollY + (travel * Math.max(0, index)) / (stepCount - 1);
+    window.scrollTo({ top: Math.round(y), behavior: "smooth" });
+  }
+
+  function goToStep(index: number) {
+    if (pinned) scrollToStep(index);
+    else land(index, !prefersReduced);
+  }
 
   /** Where a drag started. Null when no drag is in flight. */
   const dragFrom = useRef<{ x: number; y: number } | null>(null);
@@ -49,27 +181,21 @@ export function HowItWorks() {
      guarded function, which immediately swallowed its own call and made swiping
      forward do nothing at all. */
   function stepForward() {
-    if (bowing) return;
-    if (step === 0) {
-      if (prefersReduced) {
-        setStep(1);
-        return;
-      }
-      setBowing(true);
-      bowTimer.current = window.setTimeout(() => {
-        setBowing(false);
-        setStep(1);
-      }, BOW_MS);
+    if (pinned) {
+      // Off the last step = on to the next section, never a wrap back to 1.
+      scrollToStep(target.current + 1);
       return;
     }
-    setStep(step === 1 ? 2 : 0);
+    if (bowing) return;
+    land(step === last ? 0 : step + 1, !prefersReduced);
   }
 
   function stepBack() {
-    if (bowing) return;
-    window.clearTimeout(bowTimer.current);
-    setBowing(false);
-    setStep(step === 0 ? stepCount - 1 : step - 1);
+    if (pinned) {
+      if (target.current > 0) scrollToStep(target.current - 1);
+      return;
+    }
+    land(step === 0 ? last : step - 1, false);
   }
 
   function advance() {
@@ -103,7 +229,7 @@ export function HowItWorks() {
     else stepBack();
   }
 
-  const cue = howItWorksContent.cues[step];
+  const cue = (pinned ? howItWorksContent.scrollCues : howItWorksContent.cues)[step];
   // The optional-copy fields are typed loosely in content.ts; fall back rather
   // than widen WalkPhone's props to allow undefined.
   const tapCopy = {
@@ -112,180 +238,156 @@ export function HowItWorks() {
     caption: howItWorksContent.steps[1].phoneCaption ?? "Saved to your receipts",
   };
 
+  // Pinned: the scroll listener writes --walk-s straight onto the stage every
+  // frame, so React must not own it. Tap-only: it is simply the step.
+  const stageStyle = pinned ? undefined : ({ ["--walk-s" as string]: step } as CSSProperties);
+
   return (
-    <FlowSection ground="light" index="05" style={{ padding: "clamp(80px,10vw,140px) clamp(20px,5vw,56px)" }}>
+    <FlowSection ground="light" index="05">
       <div
-        className="grid items-center"
-        style={{
-          maxWidth: 1150,
-          margin: "0 auto",
-          gridTemplateColumns: "repeat(auto-fit,minmax(310px,1fr))",
-          gap: "clamp(34px,6vw,80px)",
-        }}
+        ref={runwayRef}
+        className={styles.walkRunway}
+        style={{ ["--walk-steps" as string]: stepCount } as CSSProperties}
       >
-        <Reveal variant="up">
-          <SectionLabel index="05">{howItWorksContent.eyebrow}</SectionLabel>
-          <WordReveal
-            as="h2"
-            className="max-w-[16ch] [font-family:var(--font-display)] font-bold text-[clamp(34px,4.4vw,60px)] leading-[1.02] tracking-[-.02em]"
+        <div ref={stageRef} className={styles.walkStage} style={stageStyle}>
+          <div
+            className="grid w-full items-center"
+            style={{
+              maxWidth: 1150,
+              margin: "0 auto",
+              gridTemplateColumns: "repeat(auto-fit,minmax(310px,1fr))",
+              gap: "clamp(34px,6vw,80px)",
+            }}
           >
-            {howItWorksContent.headline}
-          </WordReveal>
-          <div className="grid" style={{ marginTop: "clamp(28px,3.6vw,44px)", gap: 8 }}>
-            {howItWorksContent.steps.map((s, index) => {
-              const isActive = index === step;
-              const isDone = index < step;
-              return (
-                <div
-                  key={s.number}
-                  className="flex"
-                  style={{
-                    gap: 22,
-                    opacity: isActive ? 1 : 0.32,
-                    transform: isActive ? "translateX(0)" : "translateX(-8px)",
-                    transition: "opacity .45s ease, transform .45s ease",
-                  }}
-                >
+            <Reveal variant="up">
+              <SectionLabel index="05">{howItWorksContent.eyebrow}</SectionLabel>
+              <WordReveal
+                as="h2"
+                className="max-w-[16ch] [font-family:var(--font-display)] font-bold text-[clamp(34px,4.4vw,60px)] leading-[1.02] tracking-[-.02em]"
+              >
+                {howItWorksContent.headline}
+              </WordReveal>
+              <div
+                className={cn("grid", !pinned && styles.walkStepsEased)}
+                style={{ marginTop: "clamp(28px,3.6vw,44px)", gap: 8 }}
+              >
+                {howItWorksContent.steps.map((s, index) => (
+                  // The row is the click target; the <button> inside is what
+                  // keyboard and screen-reader users reach (its click bubbles
+                  // here, so there is exactly one handler).
                   <div
-                    className="relative self-stretch"
-                    style={{ width: 2, borderRadius: 2, background: "var(--flow-hair)", flex: "0 0 2px" }}
+                    key={s.number}
+                    className={styles.walkStep}
+                    style={{ ["--walk-i" as string]: index } as CSSProperties}
+                    onClick={() => goToStep(index)}
                   >
-                    <div
-                      className="absolute left-0 top-0"
-                      style={{
-                        width: "100%",
-                        height: isActive || isDone ? "100%" : "0%",
-                        background: "var(--orange)",
-                        borderRadius: 2,
-                        transition: "height .55s cubic-bezier(.16,1,.3,1)",
-                      }}
-                    />
-                  </div>
-                  <div style={{ paddingBottom: index < stepCount - 1 ? 22 : 0 }}>
-                    <div
-                      style={{
-                        fontFamily: "var(--font-label)",
-                        fontWeight: 500,
-                        fontSize: 12,
-                        color: "var(--orange)",
-                        letterSpacing: ".08em",
-                      }}
-                    >
-                      {s.number}
+                    <div className={styles.walkStepRail}>
+                      <div className={styles.walkStepFill} />
                     </div>
-                    <h4
-                      style={{
-                        fontFamily: "var(--font-display)",
-                        fontWeight: 600,
-                        fontSize: "clamp(21px,2.4vw,28px)",
-                        marginTop: 3,
-                      }}
-                    >
-                      {s.title}
-                    </h4>
-                    <p style={{ marginTop: 7, fontSize: 15, color: "var(--flow-fg-2)", lineHeight: 1.5, maxWidth: "34ch" }}>
-                      {s.body}
-                    </p>
+                    <div style={{ paddingBottom: index < stepCount - 1 ? 22 : 0 }}>
+                      <div
+                        style={{
+                          fontFamily: "var(--font-label)",
+                          fontWeight: 500,
+                          fontSize: 12,
+                          color: "var(--orange)",
+                          letterSpacing: ".08em",
+                        }}
+                      >
+                        {s.number}
+                      </div>
+                      <h4
+                        style={{
+                          fontFamily: "var(--font-display)",
+                          fontWeight: 600,
+                          fontSize: "clamp(21px,2.4vw,28px)",
+                          marginTop: 3,
+                        }}
+                      >
+                        <button
+                          type="button"
+                          className={styles.walkStepBtn}
+                          aria-current={index === step ? "step" : undefined}
+                        >
+                          {s.title}
+                        </button>
+                      </h4>
+                      <p style={{ marginTop: 7, fontSize: 15, color: "var(--flow-fg-2)", lineHeight: 1.5, maxWidth: "34ch" }}>
+                        {s.body}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Reveal>
+
+            <Reveal variant="up" className="flex flex-col items-center" style={{ gap: 18 }}>
+              <div className={cn("relative flex items-end justify-center", styles.walkRdhSeat)} style={RDH_SEAT}>
+                {/* The reader: the SAME generated box as the hero, from its
+                    sticker end. It sits behind the phone; the bow lifts the
+                    phone onto its sticker and the LED pulses. */}
+                <div className={styles.walkRdh}>
+                  <RdhDevice view="front" pulsing={bowing} />
+                </div>
+
+                {/* Tap OR swipe. Swipe matters more than tap: most visitors will
+                    never think to tap a picture of a phone, so without a drag the
+                    walkthrough is invisible to them. Pointer Events cover mouse,
+                    trackpad and touch in one path. */}
+                <div
+                  role="button"
+                  tabIndex={0}
+                  aria-label={howItWorksContent.phoneAriaLabel}
+                  onClick={advance}
+                  onKeyDown={(event) => {
+                    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+                      event.preventDefault();
+                      advance();
+                      return;
+                    }
+                    if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+                      event.preventDefault();
+                      stepBack();
+                      return;
+                    }
+                    if (event.key !== "Enter" && event.key !== " ") return;
+                    event.preventDefault();
+                    advance();
+                  }}
+                  onPointerDown={onPointerDown}
+                  onPointerUp={onPointerUp}
+                  onPointerCancel={() => {
+                    dragFrom.current = null;
+                  }}
+                  className={cn(styles.walkPhone, bowing && styles.walkPhoneBowing)}
+                  style={{ touchAction: "pan-y", cursor: "grab" }}
+                >
+                  <div className={styles.walkTilt}>
+                    <WalkPhone step={step} tapCopy={tapCopy} />
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        </Reveal>
-
-        <Reveal variant="up" className="flex flex-col items-center" style={{ gap: 18 }}>
-          <div className="relative flex items-end justify-center" style={{ paddingTop: 64 }}>
-            {/* reader sits behind the phone, only its head showing */}
-            <div
-              aria-hidden="true"
-              className="absolute flex flex-col items-center"
-              style={{
-                zIndex: 1,
-                top: 0,
-                left: "50%",
-                marginLeft: -92,
-                width: 184,
-                borderRadius: 16,
-                background: "linear-gradient(160deg,#F58A1B,#C75F00)",
-                border: "1px solid rgba(255,255,255,.18)",
-                boxShadow: "0 20px 44px rgba(0,18,29,.24)",
-                padding: "12px 12px 30px",
-                gap: 7,
-              }}
-            >
-              <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 12.5, color: "#fff" }}>
-                {howItWorksContent.readerLabel}
-              </span>
-              <div className="relative flex items-center justify-center" style={{ width: 44, height: 44 }}>
-                <span
-                  aria-hidden="true"
-                  className={styles.nfcRing}
-                  style={{ position: "absolute", top: "50%", left: "50%", width: 44, height: 44, borderRadius: "50%", border: "2px solid rgba(255,255,255,.85)" }}
-                />
-                <span
-                  aria-hidden="true"
-                  className="relative"
-                  style={{ width: 18, height: 18, borderRadius: "50%", background: "#fff", boxShadow: "0 0 0 6px rgba(255,255,255,.22)" }}
-                />
               </div>
-            </div>
 
-            {/* Tap OR swipe. Swipe matters more than tap: most visitors will
-                never think to tap a picture of a phone, so without a drag the
-                walkthrough is invisible to them. Pointer Events cover mouse,
-                trackpad and touch in one path. */}
-            <div
-              role="button"
-              tabIndex={0}
-              aria-label={howItWorksContent.phoneAriaLabel}
-              onClick={advance}
-              onKeyDown={(event) => {
-                if (event.key === "ArrowRight" || event.key === "ArrowDown") {
-                  event.preventDefault();
-                  advance();
-                  return;
-                }
-                if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
-                  event.preventDefault();
-                  stepBack();
-                  return;
-                }
-                if (event.key !== "Enter" && event.key !== " ") return;
-                event.preventDefault();
-                advance();
-              }}
-              onPointerDown={onPointerDown}
-              onPointerUp={onPointerUp}
-              onPointerCancel={() => {
-                dragFrom.current = null;
-              }}
-              className={cn(styles.walkPhone, bowing && styles.walkPhoneBowing)}
-              style={{ touchAction: "pan-y", cursor: "grab" }}
-            >
-              <div className={styles.walkTilt}>
-                <WalkPhone step={step} tapCopy={tapCopy} />
+              {/* Page dots: the affordance that says "there are three of these and
+                  you can move between them". */}
+              <div className={styles.wpDots} aria-hidden="true">
+                {howItWorksContent.steps.map((s, i) => (
+                  <span key={s.number} className={cn(styles.wpDot, i === step && styles.wpDotOn)} />
+                ))}
               </div>
-            </div>
-          </div>
 
-          {/* Page dots: the affordance that says "there are three of these and
-              you can move between them". */}
-          <div className={styles.wpDots} aria-hidden="true">
-            {howItWorksContent.steps.map((s, i) => (
-              <span key={s.number} className={cn(styles.wpDot, i === step && styles.wpDotOn)} />
-            ))}
+              <div className={styles.walkCue} aria-live="polite">
+                {step === last ? (
+                  <>
+                    {cue} <b>{pinned ? howItWorksContent.continueLabel : howItWorksContent.replayLabel}</b>
+                  </>
+                ) : (
+                  cue
+                )}
+              </div>
+            </Reveal>
           </div>
-
-          <div className={styles.walkCue} aria-live="polite">
-            {step === 2 ? (
-              <>
-                {cue} <b>{howItWorksContent.replayLabel}</b>
-              </>
-            ) : (
-              cue
-            )}
-          </div>
-        </Reveal>
+        </div>
       </div>
     </FlowSection>
   );

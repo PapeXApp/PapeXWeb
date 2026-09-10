@@ -13,9 +13,9 @@ import { Vision } from "./Vision";
  *
  * Sections no longer paint their own bands. Each declares a ground and
  * FlowGround crossfades ONE page-level ground between them (see
- * components/paths/shared/flow.module.css):
- *   Hero light · Problem light · ribbon · Personas light · Features navy ·
- *   HowItWorks light · Proof navy · Vision light → (footer navy)
+ * components/paths/shared/flow.module.css). One swap, not five (2026-09-10):
+ *   Hero light · Problem light · ribbon · Personas light · Features light ·
+ *   HowItWorks light · Proof navy · Vision navy → (footer navy)
  * `initial="light"` is the hero's colour and MUST match the fork's bottom half.
  * Footer is owned by another agent and rendered by the caller.
  */

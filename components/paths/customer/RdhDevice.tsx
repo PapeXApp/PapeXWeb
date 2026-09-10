@@ -2,6 +2,21 @@
 import { FullLogo } from "@/components/brand/full-logo";
 import styles from "./customer.module.css";
 
+/** Camera angles the generator emits. "iso" is the hero / static-file view. */
+export type RdhView = "iso" | "front";
+
+/**
+ * Landmarks in each view's viewBox, for callers that seat other art against
+ * the box (section 5 tucks the phone under the "front" view): the box's
+ * horizontal centre (the viewBox also holds the trailing cable, so its centre
+ * is NOT the box's), and the y of the top face's nearest corner — everything
+ * above it is top face, sticker and LED. Regenerated with the art.
+ */
+export const RDH_VIEWS = {
+  iso: { width: 169.5, height: 138, boxCentreX: 87.03, frontEdgeY: 81.8 },
+  front: { width: 120, height: 106.5, boxCentreX: 40.95, frontEdgeY: 79.04 },
+} as const satisfies Record<RdhView, { width: number; height: number; boxCentreX: number; frontEdgeY: number }>;
+
 /**
  * The PapeX RDH, as the pilot unit actually ships: a matte-black FDM-printed
  * box (68 x 100 x 42 mm, separate lid, print layer lines), a white PapeX
@@ -21,8 +36,14 @@ import styles from "./customer.module.css";
  * public/product/rdh-device.svg is the same artwork for /business; both files
  * come from scripts/generate-rdh-device.mjs, so regenerate rather than edit.
  * The cool rim light is deliberate: without it the box vanishes on navy.
+ *
+ * `view` picks another camera on the SAME model ("front"). Each view
+ * keeps the LED glow at local (29,59) inside its own top-face matrix, so
+ * `.rdhLed`'s pivot is right in every view, and suffixes its gradient/clip
+ * ids so two views can share a page.
  */
-export function RdhDevice({ pulsing = false }: { pulsing?: boolean }) {
+export function RdhDevice({ pulsing = false, view = "iso" }: { pulsing?: boolean; view?: RdhView }) {
+  if (view === "front") return <RdhDeviceFront pulsing={pulsing} />;
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -174,6 +195,162 @@ export function RdhDevice({ pulsing = false }: { pulsing?: boolean }) {
         <path d="M152.5 72.8 C160.29 82.43 161.85 92.6 157.18 102.5" stroke="#C9CAC4" strokeWidth="1.1" strokeOpacity="0.55" transform="translate(0,0.95)" />
         <path d="M152.5 72.8 C160.29 82.43 161.85 92.6 157.18 102.5" stroke="#FFFFFF" strokeWidth="0.7" strokeOpacity="0.95" transform="translate(0,-0.8)" />
       </g>
+    </svg>
+  );
+}
+
+/** `view="front"` — same model, another camera (see camera() in the generator). */
+function RdhDeviceFront({ pulsing }: { pulsing: boolean }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 120 106.5"
+      role="img"
+      aria-label="The PapeX RDH: a small matte-black box with a white PapeX label on its top, a green status light, and a white USB-C cable plugged into one end."
+    >
+      <defs>
+        <linearGradient id="rdhTopFillFront" x1="0" y1="1" x2="1" y2="0">
+          <stop offset="0" stopColor="#3A3D42" />
+          <stop offset="0.5" stopColor="#2A2D31" />
+          <stop offset="1" stopColor="#1F2124" />
+        </linearGradient>
+        <linearGradient id="rdhSideFillFront" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#2B2E33" />
+          <stop offset="0.55" stopColor="#1E2023" />
+          <stop offset="1" stopColor="#151618" />
+        </linearGradient>
+        <linearGradient id="rdhSideSweepFront" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#FFFFFF" stopOpacity="0.04" />
+          <stop offset="0.6" stopColor="#FFFFFF" stopOpacity="0" />
+          <stop offset="1" stopColor="#000000" stopOpacity="0.12" />
+        </linearGradient>
+        <linearGradient id="rdhEndFillFront" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#1D1F22" />
+          <stop offset="0.6" stopColor="#141517" />
+          <stop offset="1" stopColor="#0D0E0F" />
+        </linearGradient>
+        <linearGradient id="rdhEdgeDownFront" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#B9CCDF" stopOpacity="0.2" />
+          <stop offset="1" stopColor="#B9CCDF" stopOpacity="0" />
+        </linearGradient>
+        <linearGradient id="rdhEdgeUpFront" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0" stopColor="#B9CCDF" stopOpacity="0.14" />
+          <stop offset="1" stopColor="#B9CCDF" stopOpacity="0" />
+        </linearGradient>
+        <linearGradient id="rdhEdgeLeftFront" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#B9CCDF" stopOpacity="0.13" />
+          <stop offset="1" stopColor="#B9CCDF" stopOpacity="0" />
+        </linearGradient>
+        <linearGradient id="rdhEdgeRightFront" x1="1" y1="0" x2="0" y2="0">
+          <stop offset="0" stopColor="#B9CCDF" stopOpacity="0.14" />
+          <stop offset="1" stopColor="#B9CCDF" stopOpacity="0" />
+        </linearGradient>
+        <pattern id="rdhLayersFront" width="8" height="1.3" patternUnits="userSpaceOnUse">
+          <rect width="8" height="0.3" fill="#FFFFFF" fillOpacity="0.03" />
+          <rect y="0.66" width="8" height="0.24" fill="#000000" fillOpacity="0.1" />
+        </pattern>
+        <pattern id="rdhHatchFront" width="1.25" height="1.25" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <rect width="0.3" height="1.25" fill="#FFFFFF" fillOpacity="0.02" />
+        </pattern>
+        <linearGradient id="rdhStickerFront" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#F8F8F5" />
+          <stop offset="0.6" stopColor="#F3F3F0" />
+          <stop offset="1" stopColor="#E8E8E4" />
+        </linearGradient>
+        <radialGradient id="rdhLedHaloFront">
+          <stop offset="0" stopColor="#3EE584" stopOpacity="0.7" />
+          <stop offset="0.35" stopColor="#3EE584" stopOpacity="0.28" />
+          <stop offset="1" stopColor="#3EE584" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id="rdhLedGlowFront">
+          <stop offset="0" stopColor="#3EE584" stopOpacity="0.5" />
+          <stop offset="1" stopColor="#3EE584" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id="rdhLedDomeFront" cx="0.4" cy="0.36" r="0.7">
+          <stop offset="0" stopColor="#F4FFF8" />
+          <stop offset="0.28" stopColor="#B4F9D1" />
+          <stop offset="0.62" stopColor="#3EE584" />
+          <stop offset="1" stopColor="#16924D" />
+        </radialGradient>
+        <linearGradient id="rdhCableFadeFront" x1="68.26" y1="33.13" x2="116.64" y2="22.33" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#FFFFFF" />
+          <stop offset="0.8" stopColor="#FFFFFF" />
+          <stop offset="1" stopColor="#000000" />
+        </linearGradient>
+        <mask id="rdhCableMaskFront" maskUnits="userSpaceOnUse" x="0" y="0" width="120" height="106.5">
+          <rect width="120" height="106.5" fill="url(#rdhCableFadeFront)" />
+        </mask>
+        <clipPath id="rdhBodyClipFront">
+          <path d="M18.29 4.46 Q18.63 3 20.11 3.2 L77.41 10.94 Q78.9 11.14 78.9 12.64 L78.9 33.94 Q78.9 35.44 78.56 36.9 L63.61 101.87 Q63.27 103.33 61.78 103.13 L4.49 95.39 Q3 95.19 3 93.69 L3 72.4 Q3 70.9 3.34 69.43 Z" />
+        </clipPath>
+      </defs>
+      {/* White braided cable, emerging from behind the box, dropping onto the */}
+      {/* desk and fading in/out at both ends. A faint contact shadow grounds it. */}
+      <g mask="url(#rdhCableMaskFront)" fill="none" strokeLinecap="round">
+        <path d="M68.26 33.13 C76.92 28.17 98.19 31.04 116.64 22.33" stroke="#000000" strokeWidth="4.6" strokeOpacity="0.1" transform="translate(0,1.6)" />
+        <path d="M68.26 33.13 C76.92 28.17 98.19 31.04 116.64 22.33" stroke="#9D9E99" strokeWidth="3.5" transform="translate(0,0.35)" />
+        <path d="M68.26 33.13 C76.92 28.17 98.19 31.04 116.64 22.33" stroke="#ECECE8" strokeWidth="3.1" />
+        <path d="M68.26 33.13 C76.92 28.17 98.19 31.04 116.64 22.33" stroke="#B5B6B0" strokeWidth="2.9" strokeDasharray="0.42 0.5" strokeOpacity="0.55" />
+        <path d="M68.26 33.13 C76.92 28.17 98.19 31.04 116.64 22.33" stroke="#FFFFFF" strokeWidth="2" strokeDasharray="0.25 0.67" strokeDashoffset="0.45" strokeOpacity="0.6" />
+        <path d="M68.26 33.13 C76.92 28.17 98.19 31.04 116.64 22.33" stroke="#C9CAC4" strokeWidth="1.1" strokeOpacity="0.55" transform="translate(0,0.95)" />
+        <path d="M68.26 33.13 C76.92 28.17 98.19 31.04 116.64 22.33" stroke="#FFFFFF" strokeWidth="0.7" strokeOpacity="0.95" transform="translate(0,-0.8)" />
+      </g>
+      <g clipPath="url(#rdhBodyClipFront)">
+        <path d="M18.63 3 L78.9 11.14 L78.9 35.44 L63.27 103.33 L3 95.19 L3 70.9 Z" fill="#121315" />
+        {/* Right long side: the lit face. Print layer lines + lid seam. */}
+        <g transform="matrix(0.1563,-0.679,0,0.5785,63.2702,79.0375)">
+          <rect width="100" height="42" fill="url(#rdhSideFillFront)" />
+          <rect width="100" height="42" fill="url(#rdhSideSweepFront)" />
+          <rect width="100" height="42" fill="url(#rdhLayersFront)" />
+          <rect width="100" height="2.6" fill="url(#rdhEdgeDownFront)" />
+          <rect width="2.2" height="42" fill="url(#rdhEdgeLeftFront)" />
+          <path d="M0 4.2 H100" stroke="#040505" strokeWidth="0.55" strokeOpacity="0.9" />
+          <path d="M0 4.75 H100" stroke="#FFFFFF" strokeWidth="0.35" strokeOpacity="0.09" />
+        </g>
+        {/* Front end: plain enclosure — the ports live on the hidden back end. */}
+        <g transform="matrix(0.8863,0.1197,0,0.5785,3,70.8966)">
+          <rect width="68" height="42" fill="url(#rdhEndFillFront)" />
+          <rect width="68" height="42" fill="url(#rdhLayersFront)" />
+          <rect width="68" height="2.6" fill="url(#rdhEdgeDownFront)" />
+          <rect x="66" width="2" height="42" fill="url(#rdhEdgeRightFront)" />
+          <path d="M0 4.2 H68" stroke="#040505" strokeWidth="0.55" strokeOpacity="0.9" />
+          <path d="M0 4.75 H68" stroke="#FFFFFF" strokeWidth="0.35" strokeOpacity="0.07" />
+        </g>
+        {/* Top face: fine diagonal top-layer infill, eased edges. */}
+        <g transform="matrix(-0.1563,0.679,-0.8863,-0.1197,78.8986,11.141)">
+          <rect width="100" height="68" fill="url(#rdhTopFillFront)" />
+          <rect width="100" height="68" fill="url(#rdhHatchFront)" />
+          <rect x="97.6" width="2.4" height="68" fill="url(#rdhEdgeRightFront)" />
+          <rect width="100" height="2.4" fill="url(#rdhEdgeDownFront)" />
+          <rect width="2" height="68" fill="url(#rdhEdgeLeftFront)" />
+          <rect y="66" width="100" height="2" fill="url(#rdhEdgeUpFront)" />
+        </g>
+        {/* Cool rim light on the top edges (keeps the black box off a navy page). */}
+        <path d="M3 70.9 L18.63 3 L78.9 11.14" fill="none" stroke="#B9CCDF" strokeOpacity="0.55" strokeWidth="0.7" strokeLinejoin="round" />
+        <path d="M3 70.9 L63.27 79.04 L78.9 11.14" fill="none" stroke="#B9CCDF" strokeOpacity="0.5" strokeWidth="0.5" strokeLinejoin="round" />
+        <path d="M63.27 79.04 L63.27 103.33" fill="none" stroke="#B9CCDF" strokeOpacity="0.16" strokeWidth="0.5" strokeLinejoin="round" />
+        <path d="M3 71.13 L3 95.19" fill="none" stroke="#B9CCDF" strokeOpacity="0.2" strokeWidth="0.6" strokeLinejoin="round" />
+        <path d="M78.9 11.37 L78.9 35.44" fill="none" stroke="#B9CCDF" strokeOpacity="0.2" strokeWidth="0.6" strokeLinejoin="round" />
+      </g>
+      <g transform="matrix(-0.1563,0.679,-0.8863,-0.1197,78.8986,11.141) matrix(0,-1,1,0,57.1,65.3)">
+        <rect x="-0.35" y="-0.2" width="63.3" height="41.25" rx="1.9" fill="#000000" fillOpacity="0.45" />
+        <rect width="62.6" height="40.5" rx="1.5" fill="url(#rdhStickerFront)" />
+        <rect width="62.6" height="40.5" rx="1.5" fill="none" stroke="#000000" strokeOpacity="0.12" strokeWidth="0.3" />
+        <g transform="translate(5.3,9.88)">
+          <FullLogo size={52} letters="#00121D" body="#EB7100" lines="#FFFFFF" />
+        </g>
+      </g>
+      <g transform="matrix(-0.1563,0.679,-0.8863,-0.1197,78.8986,11.141)">
+        {/* The glow is the element the tap pulses. customer.module.css scales it
+            about 29px 59px, so it stays at (29,59) and the wrapper moves it. */}
+        <g transform="translate(-9,-44)">
+          <circle className={`${styles.rdhLed} ${pulsing ? styles.rdhLedPulsing : ""}`} cx="29" cy="59" r="9" fill="url(#rdhLedHaloFront)" />
+          <circle cx="29" cy="59" r="3.1" fill="#08090A" stroke="#FFFFFF" strokeOpacity="0.1" strokeWidth="0.35" />
+        </g>
+      </g>
+      <circle cx="62.48" cy="22.58" r="4.2" fill="url(#rdhLedGlowFront)" />
+      <ellipse cx="62.48" cy="22.58" rx="2.15" ry="1.65" fill="url(#rdhLedDomeFront)" />
+      <ellipse cx="61.93" cy="22.13" rx="0.6" ry="0.46" fill="#FFFFFF" fillOpacity="0.9" />
     </svg>
   );
 }

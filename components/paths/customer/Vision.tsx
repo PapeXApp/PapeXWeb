@@ -6,15 +6,16 @@ import { visionContent } from "./content";
 import styles from "./customer.module.css";
 
 /**
- * 2.8 Vision + CTA — light. Closing section of the customer path.
- * The statement is the path's one ScrollLit line: its words light up as it
- * scrolls through the viewport. The secondary button cross-navigates to the
- * business path — an intentional bridge between the two homes (README §2.8).
+ * 2.8 Vision + CTA — navy, the flow's one finale swap (flows straight into
+ * Proof and the navy footer). The statement is the path's one ScrollLit
+ * line: its words light up as it scrolls through the viewport. The secondary
+ * button cross-navigates to the business path — an intentional bridge
+ * between the two homes (README §2.8).
  */
 export function Vision() {
   return (
     <FlowSection
-      ground="light"
+      ground="navy"
       index="07"
       style={{ padding: "clamp(64px,7vw,110px) clamp(20px,5vw,56px) clamp(90px,11vw,160px)" }}
     >
@@ -65,7 +66,7 @@ export function Vision() {
           </Magnetic>
           <Link
             href="/business"
-            className={styles.secondaryButton}
+            className={`${styles.secondaryButton} ${styles.visionSecondaryCta}`}
             style={{
               cursor: "pointer",
               padding: "16px 34px",

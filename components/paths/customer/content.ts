@@ -232,7 +232,6 @@ export const howItWorksContent = {
   eyebrow: "How it works",
   headline: "Get started in three taps.",
   mobileHeadline: "Get started in three taps.",
-  readerLabel: "PapeX RDH",
   phoneAriaLabel: "Step through how PapeX works",
   /** Cue line under the phone, one per step — index 2's "Replay" is bold in the design. */
   cues: [
@@ -241,6 +240,15 @@ export const howItWorksContent = {
     "That's it — saved, searchable, yours.",
   ],
   replayLabel: "Replay",
+  /** The same cues when the section is scroll-pinned (desktop): scrolling is
+   *  the other way through, and a tap on the last step moves on to the next
+   *  section instead of replaying — hence "Continue". */
+  scrollCues: [
+    "Scroll, or tap the phone on the reader",
+    "Keep scrolling, or tap to put it away",
+    "That's it — saved, searchable, yours.",
+  ],
+  continueLabel: "Continue",
   steps: [
     {
       number: "01",

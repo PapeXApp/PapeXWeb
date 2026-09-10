@@ -6,13 +6,18 @@ import { ReceiptListShot, ShareSheetShot } from "./FeatureScreens";
 import { featuresContent } from "./content";
 
 /**
- * 2.5 Features — navy ground. Two mirrored rows; the app shots come in with
- * the clip-path mask wipe and are pointer-lit (`data-lit` on FeatureScreens'
- * `.featShot`, inside the mask Reveal, so the reveal never fights it).
+ * 2.5 Features — light ground (one navy swap now, saved for Proof/Vision).
+ * Two mirrored rows; the app shots come in with the clip-path mask wipe and
+ * are pointer-lit (`data-lit` on FeatureScreens' `.featShot`, inside the mask
+ * Reveal, so the reveal never fights it).
  */
 export function Features() {
   return (
-    <FlowSection ground="navy" index="04" style={{ padding: "clamp(90px,11vw,160px) clamp(20px,5vw,56px)" }}>
+    <FlowSection
+      ground="light"
+      index="04"
+      style={{ padding: "clamp(60px,6.2vw,100px) clamp(20px,5vw,56px) clamp(40px,4vw,58px)" }}
+    >
       {/* Same 1150 column as the rows below, so the label, headline and the
           first row share one left edge. */}
       <div style={{ maxWidth: 1150, margin: "0 auto" }}>
@@ -28,7 +33,7 @@ export function Features() {
       </div>
       <PointerLitGroup
         className="grid"
-        style={{ maxWidth: 1150, margin: "clamp(46px,5vw,72px) auto 0", gap: "clamp(70px,9vw,130px)" }}
+        style={{ maxWidth: 1150, margin: "clamp(36px,4vw,56px) auto 0", gap: "clamp(56px,7vw,96px)" }}
       >
         {featuresContent.rows.map((row, index) => {
           const mirrored = index % 2 === 1;
