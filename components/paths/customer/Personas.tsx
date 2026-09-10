@@ -22,10 +22,19 @@ export function Personas() {
   const [step, setStep] = useState(0); // 0..questionCount-1 = questions, questionCount = result
   const [score, setScore] = useState<Record<PersonaId, number>>(emptyScore);
   const [winner, setWinner] = useState<PersonaId | null>(null);
+  /** Which option index was tapped per question — lets the just-answered
+   *  option hold its selected (orange fill + check) state while the card
+   *  fades out, instead of the click reading as a no-op. */
+  const [picked, setPicked] = useState<(number | null)[]>(() => Array(questionCount).fill(null));
 
-  function answer(persona: PersonaId) {
+  function answer(persona: PersonaId, questionIndex: number, optionIndex: number) {
     const next = { ...score, [persona]: score[persona] + 1 };
     setScore(next);
+    setPicked((prev) => {
+      const copy = [...prev];
+      copy[questionIndex] = optionIndex;
+      return copy;
+    });
     if (step < questionCount - 1) {
       setStep(step + 1);
       return;
@@ -39,13 +48,14 @@ export function Personas() {
     setScore(emptyScore());
     setWinner(null);
     setStep(0);
+    setPicked(Array(questionCount).fill(null));
   }
 
   return (
     <FlowSection
       ground="light"
       index="03"
-      style={{ padding: "clamp(64px,7vw,110px) clamp(20px,5vw,56px) clamp(60px,6.2vw,100px)" }}
+      style={{ padding: "var(--section-pad) clamp(20px,5vw,56px)" }}
     >
       <div style={{ maxWidth: 1150, margin: "0 auto" }}>
         <Reveal variant="up" style={{ textAlign: "center" }}>
@@ -65,7 +75,7 @@ export function Personas() {
           <PointerLitGroup
             className={styles.quiz}
             role="group"
-            aria-label="Which one are you? — three question quiz"
+            aria-label="Which one are you? Three question quiz"
             aria-live="polite"
           >
             {personasContent.questions.map((question, i) => (
@@ -74,20 +84,29 @@ export function Personas() {
                 className={cn(styles.quizCard, step === i && styles.quizCardOn)}
                 aria-hidden={step !== i}
               >
+                <div className={styles.quizNumber}>
+                  Question {i + 1} of {questionCount}
+                </div>
                 <div className={styles.quizPrompt}>{question.prompt}</div>
+                <div className={styles.quizHint}>{personasContent.tapHint}</div>
                 <div className={styles.quizOpts}>
-                  {question.options.map((option) => (
-                    <button
-                      key={option.label}
-                      type="button"
-                      data-lit=""
-                      className={styles.quizOpt}
-                      onClick={() => answer(option.persona)}
-                      disabled={step !== i}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
+                  {question.options.map((option, oi) => {
+                    const selected = picked[i] === oi;
+                    return (
+                      <button
+                        key={option.label}
+                        type="button"
+                        data-lit=""
+                        className={cn(styles.quizOpt, selected && styles.quizOptSelected)}
+                        onClick={() => answer(option.persona, i, oi)}
+                        disabled={step !== i}
+                        aria-pressed={selected}
+                      >
+                        <span className={styles.quizOptDot} aria-hidden="true" />
+                        <span className={styles.quizOptLabel}>{option.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             ))}

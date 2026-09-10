@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect } from "react";
 import { FlowGround } from "../shared/FlowGround";
 import { Hero } from "./Hero";
 import { Problem } from "./Problem";
@@ -20,6 +23,22 @@ import { Vision } from "./Vision";
  * Footer is owned by another agent and rendered by the caller.
  */
 export function CustomerPath() {
+  // The fork's commit already scrolls to 0 before it pushes here (fork.tsx —
+  // not ours to edit), and a fresh load has nowhere else to start. This is
+  // the belt-and-braces half: `history.scrollRestoration` defaults to
+  // "auto", so a plain reload of a scrolled `/customers` (or any scroll
+  // restoration Next itself attempts on the App Router) can otherwise land
+  // mid-page — Nico: "the phone scrolls in the wrong place... should start
+  // at top." A hash means someone linked to a spot on the page on purpose;
+  // leave that alone.
+  useEffect(() => {
+    if (typeof window === "undefined" || window.location.hash) return;
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <FlowGround initial="light">
       <Hero />

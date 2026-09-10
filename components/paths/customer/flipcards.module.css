@@ -33,7 +33,7 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: clamp(16px, 2vw, 28px);
-  margin-top: clamp(50px, 6vw, 90px);
+  margin-top: clamp(32px, 4vw, 56px);
 }
 @media (max-width: 899px) {
   .grid {
@@ -63,6 +63,9 @@
   outline: none;
   -webkit-tap-highlight-color: transparent;
   transition: transform 0.45s var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1));
+}
+.card:active {
+  transform: scale(0.985);
 }
 .inner {
   position: relative;
@@ -281,12 +284,16 @@
 
 /* ---- back: result -------------------------------------------------------- */
 
-/* .result fills the space below .head (fixed height, like .face itself), so its
-   children sit at a deterministic offset regardless of caption length: .resultTop
-   (stat/rule/caption) sits at a fixed top offset — the same margin-top as .plate,
-   directly under .head, so the stat lands where the front's illustration plate
-   begins — and .source is pushed to the true bottom by margin-top: auto, same as
-   .foot on the front face. */
+/* .result fills the space below .head (fixed height, like .face itself). Round
+   2 fix (Nico: dead space after the reveal): .resultTop used to sit at a fixed
+   top offset and .source was pinned to the bottom by margin-top: auto, which
+   left a 100-130px gap between the caption and the source on a 424px-tall
+   card. Now .resultTop is a flex item that GROWS to fill all the space above
+   .source and centres its own content (stat/rule/caption) inside that grown
+   box — so the back reads as intentionally composed at any card height,
+   instead of front-loaded with empty air below it. .source still lands at
+   the true bottom, now simply because .resultTop has already claimed
+   everything above it. */
 .result {
   flex: 1 1 auto;
   min-height: 0;
@@ -295,16 +302,17 @@
   align-items: flex-start;
 }
 .resultTop {
-  margin-top: 16px;
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  justify-content: center;
 }
 .resultTop > * {
   opacity: 0;
 }
 .result > .source {
-  margin-top: auto;
   opacity: 0;
 }
 .resultOn .resultTop > *,
@@ -348,7 +356,7 @@
   align-items: baseline;
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: clamp(54px, 5.2vw, 70px);
+  font-size: clamp(64px, 6.4vw, 92px);
   line-height: 0.92;
   letter-spacing: -0.035em;
   color: var(--fc-orange);
@@ -395,7 +403,7 @@
 .caption {
   margin: 0;
   font-family: var(--font-ui);
-  font-size: 15.5px;
+  font-size: 17.5px;
   line-height: 1.45;
   color: var(--body-on-light, #4a4a4a);
   max-width: 30ch;

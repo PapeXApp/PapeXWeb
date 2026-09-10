@@ -21,9 +21,9 @@ export function Proof() {
     <FlowSection
       ground="navy"
       index="06"
-      style={{ padding: "clamp(90px,11vw,160px) clamp(20px,5vw,56px) clamp(64px,7vw,110px)" }}
+      style={{ padding: "var(--section-pad) clamp(20px,5vw,56px)" }}
     >
-      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+      <div style={{ maxWidth: 1150, margin: "0 auto" }}>
         <Reveal variant="up">
           <SectionLabel index="06">{LABEL}</SectionLabel>
         </Reveal>

@@ -46,7 +46,7 @@ export const whyMerchants = {
     {
       value: "1 tap",
       title: "Customers love it",
-      body: "Faster at the counter than waiting on a printer — and the receipt can't fade, tear, or end up in the trash.",
+      body: "Faster at the counter than waiting on a printer, and the receipt can't fade, tear, or end up in the trash.",
       isLead: false,
     },
     {
@@ -73,7 +73,7 @@ export const marquee = {
 export const howItWorks = {
   eyebrow: "Getting set up",
   heading: "Up and running the same afternoon.",
-  lead: "Four steps, one visit. Follow the line — nothing about your existing setup has to change.",
+  lead: "Four steps, one visit. Follow the line: nothing about your existing setup has to change.",
   steps: [
     {
       number: "01",
@@ -83,7 +83,7 @@ export const howItWorks = {
     {
       number: "02",
       title: "It connects to your POS",
-      body: "Through a standard port — no terminal modification.",
+      body: "Through a standard port, no terminal modification.",
     },
     {
       number: "03",
@@ -103,10 +103,10 @@ export const rdhDevice = {
   heading: "Small device. Standard ports. PCI compliant.",
   deviceAlt: "The PapeX RDH: a small matte-black device with a green status light and a PapeX label on top.",
   points: [
-    "Plugs into standard POS ports — USB, serial or Ethernet. No terminal modification.",
+    "Plugs into standard POS ports: USB, serial or Ethernet. No terminal modification.",
     "Two installation modes: printer replacement or parallel install.",
   ],
-  complianceText: "PCI DSS compliant out of the box —",
+  complianceText: "PCI DSS compliant out of the box:",
   complianceLinkLabel: "see documentation",
 } as const
 
@@ -144,11 +144,11 @@ export const dashboard = {
 export const demo = {
   eyebrow: "Get started",
   heading: "Request a demo.",
-  body: "See the RDH in action and get set up — free for qualified merchants.",
+  body: "See the RDH in action and get set up, free for qualified merchants.",
   phonePrefix: "Or call us:",
   phone: "415-261-8675",
   submitLabel: "Request Demo",
   submitLabelPending: "Sending…",
-  successMessage: "Thanks — we've got your request. We'll be in touch shortly to set up your demo.",
+  successMessage: "Thanks, we've got your request. We'll be in touch shortly to set up your demo.",
   errorMessage: "Something went wrong sending your request. Please try again, or call us directly.",
 } as const

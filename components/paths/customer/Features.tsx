@@ -16,7 +16,7 @@ export function Features() {
     <FlowSection
       ground="light"
       index="04"
-      style={{ padding: "clamp(60px,6.2vw,100px) clamp(20px,5vw,56px) clamp(40px,4vw,58px)" }}
+      style={{ padding: "var(--section-pad) clamp(20px,5vw,56px)" }}
     >
       {/* Same 1150 column as the rows below, so the label, headline and the
           first row share one left edge. */}
@@ -33,7 +33,7 @@ export function Features() {
       </div>
       <PointerLitGroup
         className="grid"
-        style={{ maxWidth: 1150, margin: "clamp(36px,4vw,56px) auto 0", gap: "clamp(56px,7vw,96px)" }}
+        style={{ maxWidth: 1150, margin: "clamp(28px,3vw,44px) auto 0", gap: "clamp(44px,5vw,72px)" }}
       >
         {featuresContent.rows.map((row, index) => {
           const mirrored = index % 2 === 1;

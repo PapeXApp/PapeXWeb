@@ -17,7 +17,7 @@ export function Vision() {
     <FlowSection
       ground="navy"
       index="07"
-      style={{ padding: "clamp(64px,7vw,110px) clamp(20px,5vw,56px) clamp(90px,11vw,160px)" }}
+      style={{ padding: "var(--section-pad) clamp(20px,5vw,56px)" }}
     >
       <div style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
         <Reveal variant="up">
@@ -43,8 +43,9 @@ export function Vision() {
         </Reveal>
 
         <Reveal variant="up" className="flex flex-wrap justify-center" style={{ marginTop: 48, gap: 16 }}>
-          <Magnetic>
-            <Ripple variant="navy">
+          <Magnetic className={styles.ctaMagnetic}>
+            {/* rounded-full on Ripple: see .ctaMagnetic in customer.module.css. */}
+            <Ripple variant="navy" className="overflow-hidden rounded-full">
               <button
                 type="button"
                 className={styles.ctaButton}

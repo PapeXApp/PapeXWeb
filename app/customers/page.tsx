@@ -17,14 +17,14 @@ import { CustomerPath } from '@/components/paths/customer'
 export const metadata: Metadata = {
   title: 'PapeX for Customers | The last receipt you’ll ever lose',
   description:
-    'Tap your phone at checkout and your receipt is saved forever — searchable, shareable and organized. No paper, no app required to receive it.',
+    'Tap your phone at checkout and your receipt is saved forever: searchable, shareable and organized. No paper, no app required to receive it.',
   alternates: { canonical: 'https://papex.app/customers' },
   openGraph: {
     type: 'website',
     url: 'https://papex.app/customers',
     title: 'PapeX for Customers | The last receipt you’ll ever lose',
     description:
-      'Tap your phone at checkout and your receipt is saved forever — searchable, shareable and organized.',
+      'Tap your phone at checkout and your receipt is saved forever: searchable, shareable and organized.',
   },
 }
 

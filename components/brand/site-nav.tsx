@@ -113,7 +113,7 @@ export function SiteNav({ path }: { path: SitePath }) {
         onClick={onLogoClick}
         className="rd-glass rd-logo-bubble rd-nav-ink"
         data-glass={glass}
-        aria-label="PapeX — back to the start"
+        aria-label="PapeX, back to the start"
       >
         {/* The real lockup (plane + letterforms), not the plane alone and not
             "PapeX" set in the display face — see components/brand/full-logo.tsx.

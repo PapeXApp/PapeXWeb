@@ -43,14 +43,16 @@ export function Hero() {
         />
       </Spotlight>
 
-      {/* justify-CENTER, not justify-between. The phone lost ~78px of width when
-          it was corrected to a real iPhone ratio, and `justify-between` spent
-          every one of those pixels on the gap — 318px of dead space between the
-          headline and the device. The pair is now sized to its content and
-          centred as one composition. */}
+      {/* justify-START, not justify-between or justify-center. `justify-between`
+          once spent the phone's ~78px of width-correction as a 318px gap
+          instead of shrinking; centring the pair as a block pushed the
+          headline's left edge past where every other section's headline
+          starts (2026-09-10 — Nico: "text too far right"). This 1150 column
+          is the same one Problem/Features/HowItWorks/Proof use, so hugging
+          it to the left edge lines every left-aligned headline up. */}
       <div
-        className="relative flex w-full flex-wrap items-center justify-center"
-        style={{ maxWidth: 1080, gap: "clamp(28px,4.5vw,64px)", zIndex: 1 }}
+        className="relative flex w-full flex-wrap items-center justify-start"
+        style={{ maxWidth: 1150, gap: "clamp(28px,4.5vw,64px)", zIndex: 1 }}
       >
         <div style={{ maxWidth: 560, flex: "1 1 420px" }}>
           <ChildStagger>
@@ -74,10 +76,13 @@ export function Hero() {
               {heroContent.lead}
             </p>
             <div className="flex flex-wrap items-center" style={{ marginTop: 36, gap: 14 }}>
-              <Magnetic>
+              <Magnetic className={styles.ctaMagnetic}>
                 {/* Navy ripple: it's the press feedback ON the orange button,
-                    so it's right on either ground. */}
-                <Ripple variant="navy">
+                    so it's right on either ground. rounded-full on Ripple
+                    clips both the ripple splash AND the button's own hover
+                    glow to the pill shape — see .ctaMagnetic in
+                    customer.module.css for why the glow moved out here. */}
+                <Ripple variant="navy" className="overflow-hidden rounded-full">
                   <button
                     type="button"
                     className={styles.ctaButton}

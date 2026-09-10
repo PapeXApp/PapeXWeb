@@ -152,7 +152,11 @@ export function WalkPhone({
           <TabBar active="home" />
         </div>
 
-        {/* --- 1: the receipt lands --------------------------------------- */}
+        {/* --- 1: the receipt lands --------------------------------------- *
+         * A single open receipt is a pushed detail screen, not the tab-bar
+         * level list — no TabBar here. It used to render one anyway, and its
+         * translucent capsule glowed as a faded oval through the empty space
+         * below the card. */}
         <div className={cn(styles.wpScene, step === 1 && styles.wpSceneOn)}>
           <div className={styles.wpBody}>
             <div className={styles.wpTitle}>Receipt</div>
@@ -161,7 +165,6 @@ export function WalkPhone({
               {tapCopy.caption}
             </div>
           </div>
-          <TabBar active="receipts" />
         </div>
 
         {/* --- 2: filed into the list ------------------------------------- */}

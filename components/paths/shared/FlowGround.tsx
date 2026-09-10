@@ -81,6 +81,7 @@ export function FlowGround({ initial, children }: { initial: Ground; children: R
           </div>
           <div className={styles.grain} />
         </div>
+        {/* TEMPORARY (Nico, 2026-09-10): guide rails stay for now — remove later. */}
         <div className={styles.rails}>
           <i className={`${styles.rail} ${styles.railL}`} />
           <i className={`${styles.rail} ${styles.railR}`} />

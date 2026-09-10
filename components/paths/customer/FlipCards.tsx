@@ -1140,7 +1140,7 @@ export function FlipCard({ card, index }: { card: Card; index: number }) {
               <span className={styles.rule} aria-hidden="true" />
               <p className={styles.caption}>{caption}</p>
             </div>
-            <p className={styles.source}>Source — {source}</p>
+            <p className={styles.source}>Source: {source}</p>
           </div>
         </div>
       </div>

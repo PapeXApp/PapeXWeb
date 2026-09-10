@@ -11,13 +11,10 @@ export function Problem() {
       ground="light"
       index="02"
       style={{
-        // Bottom padding is shorter than the top: the ribbon follows, and
-        // the ribbon + the next section's own top padding already make the
-        // breath. Full padding on both sides of it read as a gap.
-        padding: "clamp(90px,11vw,170px) clamp(20px,5vw,56px) clamp(64px,7vw,110px)",
+        padding: "var(--section-pad) clamp(20px,5vw,56px) var(--section-pad)",
       }}
     >
-      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+      <div style={{ maxWidth: 1150, margin: "0 auto" }}>
         <Reveal variant="up">
           <SectionLabel index="02">{problemContent.eyebrow}</SectionLabel>
           <WordReveal

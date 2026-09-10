@@ -39,7 +39,7 @@ export function DashboardNotifyForm() {
     } catch (err) {
       console.error("Error adding dashboard notify signup: ", err)
       setStatus("error")
-      setError("Couldn't send that — please try again.")
+      setError("Couldn't send that, please try again.")
     }
   }
 
@@ -50,7 +50,7 @@ export function DashboardNotifyForm() {
         className="mx-auto mt-9 max-w-[440px] text-[15px]"
         style={{ color: "var(--muted-on-dark)" }}
       >
-        You&apos;re on the list — we&apos;ll email you when the dashboard is ready.
+        You&apos;re on the list. We&apos;ll email you when the dashboard is ready.
       </p>
     )
   }

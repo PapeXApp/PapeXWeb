@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { MouseEvent as ReactMouseEvent } from "react";
 import { useReducedMotion } from "motion/react";
 import { parseEscPos } from "@/lib/escpos";
 import { summarizeReceipt } from "@/lib/receiptSummary";
@@ -26,12 +27,18 @@ const DEMO_BOW_MS = 460;
  * (`summarizeReceipt`) — computed once via useMemo, never re-implemented or
  * ported from the design prototype's standalone decoder script.
  */
+/** How long the "Save to PapeX" button holds its "Saved" confirmation. */
+const SAVED_MS = 1800;
+
 export function NfcPhone() {
   const [demo, setDemo] = useState<DemoState>("idle");
+  const [saved, setSaved] = useState(false);
   const prefersReduced = useReducedMotion();
   const bowTimer = useRef<number | undefined>(undefined);
+  const savedTimer = useRef<number | undefined>(undefined);
 
   useEffect(() => () => window.clearTimeout(bowTimer.current), []);
+  useEffect(() => () => window.clearTimeout(savedTimer.current), []);
 
   const summary = useMemo(() => {
     const receipt = parseEscPos(demoReceiptBytes());
@@ -57,6 +64,17 @@ export function NfcPhone() {
     if (demo !== "done") return;
     window.clearTimeout(bowTimer.current);
     setDemo("idle");
+  }
+
+  /** The demo's own "Save to PapeX" — it has nowhere real to save to (no
+   *  account, no app), so a brief confirmation is the honest affordance:
+   *  it reacts, without pretending to actually save anything. Stops
+   *  propagation so it never also toggles the phone's replay. */
+  function save(event: ReactMouseEvent<HTMLButtonElement>) {
+    event.stopPropagation();
+    window.clearTimeout(savedTimer.current);
+    setSaved(true);
+    savedTimer.current = window.setTimeout(() => setSaved(false), SAVED_MS);
   }
 
   return (
@@ -101,8 +119,13 @@ export function NfcPhone() {
                   <DemoReceiptView summary={summary} />
                 </div>
                 <div className={styles.acFoot}>
-                  <button type="button" className={styles.acBtn}>
-                    {demoContent.saveLabel}
+                  <button
+                    type="button"
+                    className={cn(styles.acBtn, saved && styles.acBtnSaved)}
+                    onClick={save}
+                    aria-live="polite"
+                  >
+                    {saved ? demoContent.savedLabel : demoContent.saveLabel}
                   </button>
                 </div>
               </div>

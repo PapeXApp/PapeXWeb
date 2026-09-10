@@ -5,6 +5,22 @@
  * Values match docs/design/forked-landing/README.md → "Motion System" / "Loops".
  */
 
+/* Section rhythm, unified 2026-09-10 (Nico: the top/bottom padding across
+ * sections was all over — Problem 90-170/64-110, Personas 64-110/60-100,
+ * Features 60-100/40-58, Proof 90-160/64-110, Vision 64-110/90-160. One
+ * value now, referenced by every standard section (Problem, Personas,
+ * Features, Proof, Vision, HowItWorks' unpinned .walkStage) below. Hero
+ * (vh-based) and the marquee ribbon are exempt. Scoped to :global(.rd) so it
+ * cascades to every section without a shared wrapper class to hang it on.
+ *
+ * Round 2 (2026-09-10, Nico: "still too much between ALL sections"): the
+ * clamp(72,7vw,110) above gave 205-232px section-to-section content gaps at
+ * 1440. This is the top/bottom padding on each side of a boundary, so it is
+ * roughly HALF the visible gap — clamp(44,4.5vw,68) targets ~110-140px. */
+:global(.rd) {
+  --section-pad: clamp(44px, 4.5vw, 68px);
+}
+
 @keyframes floaty {
   0%,
   100% {
@@ -104,18 +120,39 @@
 .ctaButton {
   transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s;
 }
-
-.ctaButton:hover {
-  box-shadow: 0 12px 34px rgba(235, 113, 0, 0.5);
+.ctaButton:active {
+  transform: scale(0.97);
 }
 
+/* The glow moved to .ctaMagnetic (see Hero.tsx/Vision.tsx) so it clips to the
+   pill shape rather than the rectangular Ripple wrapper — see that class. */
+
 .secondaryButton {
-  transition: border-color 0.2s, background 0.2s;
+  transition: border-color 0.2s, background 0.2s, transform 0.2s;
 }
 
 .secondaryButton:hover {
   border-color: var(--navy);
   background: rgba(0, 18, 29, 0.04);
+}
+.secondaryButton:active {
+  transform: scale(0.97);
+}
+
+/* Wraps the Magnetic span around an orange CTA's Ripple. Round 2 fix: the
+   hover glow used to live on .ctaButton itself, but Ripple's rectangular
+   overflow:hidden clipped it to the pill's bounding box, so only the four
+   corner triangles (where the box is bigger than the pill) showed a sliver
+   of orange. Ripple is now rounded-full too (clips flush to the pill, no
+   corners left to leak through), and the glow lives here, one layer further
+   out, where nothing clips it — so hover shows exactly the pill's own glow. */
+.ctaMagnetic {
+  display: inline-block;
+  border-radius: 999px;
+  transition: box-shadow 0.25s ease;
+}
+.ctaMagnetic:hover {
+  box-shadow: 0 12px 34px rgba(235, 113, 0, 0.5);
 }
 
 .personaCard {
@@ -574,10 +611,19 @@
   border-radius: 14px;
   background: #fb8500;
   color: #fff;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s, transform 0.15s, background 0.2s;
 }
 .acBtn:hover {
   opacity: 0.82;
+}
+.acBtn:active {
+  transform: scale(0.97);
+}
+/* Brief confirmation state — the demo has nowhere real to save to, so this
+   is the honest version of "does something": it reacts, it doesn't pretend
+   to persist anything. */
+.acBtnSaved {
+  background: #16a34a;
 }
 
 .acIdle {
@@ -665,7 +711,7 @@
 
 .quiz {
   max-width: 760px;
-  margin: clamp(40px, 5vw, 64px) auto 0;
+  margin: clamp(30px, 3.6vw, 48px) auto 0;
   position: relative;
   min-height: 330px;
 }
@@ -683,6 +729,16 @@
   transform: none;
   position: relative;
 }
+.quizNumber {
+  font-family: var(--font-label);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--orange);
+  text-align: center;
+  margin-bottom: 10px;
+}
 .quizPrompt {
   font-family: var(--font-display);
   font-weight: 700;
@@ -691,7 +747,18 @@
   color: var(--navy);
   text-align: center;
   max-width: 24ch;
-  margin: 0 auto 26px;
+  margin: 0 auto;
+}
+/* The game's own hint line — read even by people who skip the intro copy. */
+.quizHint {
+  margin: 8px auto 22px;
+  font-family: var(--font-label);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--flow-fg-3, rgba(0, 18, 29, 0.46));
 }
 .quizOpts {
   display: grid;
@@ -699,6 +766,10 @@
   gap: 12px;
 }
 .quizOpt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
   text-align: left;
   cursor: pointer;
   font: inherit;
@@ -709,12 +780,68 @@
   border: 1.5px solid var(--hairline-3);
   border-radius: 14px;
   padding: 16px 18px;
-  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s, background 0.2s;
 }
 .quizOpt:hover {
   border-color: var(--orange);
   transform: translateY(-2px);
   box-shadow: 0 14px 30px rgba(235, 113, 0, 0.14);
+}
+.quizOpt:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: none;
+}
+.quizOpt:disabled {
+  cursor: default;
+  pointer-events: none;
+}
+.quizOpt:focus-visible {
+  outline: none;
+  border-color: var(--orange);
+  box-shadow: 0 0 0 3px rgba(235, 113, 0, 0.28);
+}
+.quizOptLabel {
+  flex: 1;
+}
+/* A radio dot at rest; fills orange with a check the instant it's the
+   answer that was tapped, so the click reads as a choice, not a no-op. */
+.quizOptDot {
+  position: relative;
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--hairline-3);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.quizOpt:hover .quizOptDot {
+  border-color: var(--orange);
+}
+.quizOptDot::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 6px;
+  width: 8px;
+  height: 4px;
+  border-left: 1.5px solid #fff;
+  border-bottom: 1.5px solid #fff;
+  transform: rotate(-45deg);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.quizOptSelected,
+.quizOptSelected:hover {
+  border-color: var(--orange);
+  background: rgba(235, 113, 0, 0.08);
+  box-shadow: 0 14px 30px rgba(235, 113, 0, 0.18);
+}
+.quizOptSelected .quizOptDot {
+  border-color: var(--orange);
+  background: var(--orange);
+}
+.quizOptSelected .quizOptDot::after {
+  opacity: 1;
 }
 .quizSteps {
   display: flex;
@@ -756,6 +883,21 @@
   transform: translateY(-12px) scale(1.045);
   box-shadow: 0 28px 58px rgba(235, 113, 0, 0.22);
   z-index: 2;
+  /* The payoff: the winning card doesn't just sit there emphasized, it lands. */
+  animation: quizWin 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes quizWin {
+  0% {
+    opacity: 0.4;
+    transform: translateY(-4px) scale(0.94);
+  }
+  65% {
+    transform: translateY(-14px) scale(1.06);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(-12px) scale(1.045);
+  }
 }
 .quizTag {
   position: absolute;
@@ -876,7 +1018,7 @@
   --walk-per-step: 70vh;
 }
 .walkStage {
-  padding: clamp(80px, 10vw, 140px) clamp(20px, 5vw, 56px);
+  padding: var(--section-pad) clamp(20px, 5vw, 56px);
 }
 @media (prefers-reduced-motion: no-preference) and (min-width: 821px) and (min-height: 600px) {
   .walkRunway {
@@ -906,6 +1048,15 @@
   cursor: pointer;
   opacity: calc(0.32 + 0.68 * var(--walk-near));
   transform: translateX(calc(-8px * (1 - var(--walk-near))));
+}
+/* Row hover/press — the row is the click target (see HowItWorks.tsx), so it
+   needs its own affordance independent of the scroll-driven --walk-near
+   emphasis above. */
+.walkStep:hover {
+  opacity: 1;
+}
+.walkStep:active {
+  transform: scale(0.99);
 }
 .walkStepRail {
   position: relative;
@@ -997,6 +1148,7 @@
   .rdhLed,
   .quizCard,
   .quizResult,
+  .quizResultYou,
   .quizTag {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;

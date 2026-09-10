@@ -31,7 +31,7 @@ export const receipt: ReceiptData = {
 export const heroContent = {
   eyebrow: "Digital receipts, one tap away",
   headline: "The last receipt you'll ever lose.",
-  lead: "Tap your phone at checkout. Your receipt appears instantly — saved, searchable, and yours forever. No paper, no app required to start.",
+  lead: "Tap your phone at checkout. Your receipt appears instantly: saved, searchable, and yours forever. No paper, no app required to start.",
   ctaLabel: "Download the free app",
   ctaSubtext: "Free on the App Store",
   scrollCue: "Scroll",
@@ -42,7 +42,7 @@ export const heroContent = {
 export const demoContent = {
   phoneLabel: "Tap the phone on the PapeX reader to receive a receipt",
   idleTitle: "Tap to receive",
-  idleSubtitle: "Tap the phone on the reader below — no app needed to get it.",
+  idleSubtitle: "Tap the phone on the reader below. No app needed to get it.",
   hint: {
     idle: "Tap the phone to receive the receipt",
     bowing: "Tapping…",
@@ -50,6 +50,7 @@ export const demoContent = {
   },
   resetLabel: "Reset",
   saveLabel: "Save to PapeX",
+  savedLabel: "Saved",
   barLabel: "Receipt",
   sectionTitles: {
     items: "Items",
@@ -76,7 +77,6 @@ export interface ProblemCard {
 export const problemContent = {
   eyebrow: "The problem",
   headline: "Paper receipts fade. So does the money you could get back.",
-  flipHint: "Tap to flip",
   // SOURCED 2026-09-10. Every figure traces to a named source, shown on the card.
   // Rejected on purpose: "256B receipts" (a garbled 256,300-TONS figure, not a
   // count — no traceable receipt count exists), "10M trees" (2013 blog, no
@@ -150,16 +150,17 @@ export interface PersonaResult {
  * Personas.tsx so it wins ties by design (the middle ground / safest read).
  */
 export const personasContent = {
-  eyebrow: "Which one are you?",
-  headline: "Three kinds of receipt people. PapeX works for all of them.",
-  intro: "Three questions. We'll tell you which one you are.",
+  eyebrow: "Quick quiz",
+  headline: "Answer 3 questions.",
+  intro: "Tap an answer for each and we'll tell you which kind of receipt person you are.",
+  tapHint: "Tap an answer",
   restartLabel: "Take it again",
   questions: [
     {
       prompt: "Someone asks you for a receipt from three months ago.",
       options: [
         { label: "I pull it up in seconds. It's filed.", persona: "keeper" },
-        { label: "I'd find it — give me a drawer and a minute.", persona: "keeper" },
+        { label: "I'd find it, give me a drawer and a minute.", persona: "keeper" },
         { label: "I'd search my email and hope.", persona: "casual" },
         { label: "It's gone. It was gone that day.", persona: "non" },
       ],
@@ -167,7 +168,7 @@ export const personasContent = {
     {
       prompt: "At the register, they ask if you want the receipt.",
       options: [
-        { label: "Always yes — it goes straight in the folder.", persona: "keeper" },
+        { label: "Always yes, it goes straight in the folder.", persona: "keeper" },
         { label: "Yes, then it lives in my bag for a month.", persona: "casual" },
         { label: "Only for the expensive stuff.", persona: "casual" },
         { label: "No thanks. Every single time.", persona: "non" },
@@ -189,7 +190,7 @@ export const personasContent = {
       tag: "That's you",
       eyebrow: "The Keeper",
       title: "You already do the work.",
-      body: "You keep everything, and it still takes effort. PapeX files it the moment you tap — searchable, exportable, no shoebox.",
+      body: "You keep everything, and it still takes effort. PapeX files it the moment you tap: searchable, exportable, no shoebox.",
     },
     {
       id: "casual",
@@ -223,7 +224,7 @@ export const featuresContent = {
     {
       eyebrow: "Share in a tap",
       title: "Text, email or AirDrop any receipt in seconds.",
-      body: "Split an expense, submit a reimbursement, or send proof of purchase — no photos of crumpled paper, no scanning.",
+      body: "Split an expense, submit a reimbursement, or send proof of purchase, no photos of crumpled paper, no scanning.",
     },
   ],
 };
@@ -237,7 +238,7 @@ export const howItWorksContent = {
   cues: [
     "Tap the phone on the reader",
     "Tap again to put it away",
-    "That's it — saved, searchable, yours.",
+    "That's it: saved, searchable, yours.",
   ],
   replayLabel: "Replay",
   /** The same cues when the section is scroll-pinned (desktop): scrolling is
@@ -246,7 +247,7 @@ export const howItWorksContent = {
   scrollCues: [
     "Scroll, or tap the phone on the reader",
     "Keep scrolling, or tap to put it away",
-    "That's it — saved, searchable, yours.",
+    "That's it: saved, searchable, yours.",
   ],
   continueLabel: "Continue",
   steps: [
@@ -307,7 +308,7 @@ export const proofContent = {
 
 export const visionContent = {
   eyebrow: "The vision",
-  headline: "A world where every receipt is useful — and none of them are wasted.",
+  headline: "A world where every receipt is useful, and none of them are wasted.",
   body: "We're modernizing the most ignored moment of every purchase. Less paper, less waste, and receipts that finally work for you.",
   primaryCta: "Download the App",
   secondaryCta: "Get the RDH for Business",
