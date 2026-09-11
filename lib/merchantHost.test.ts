@@ -97,6 +97,26 @@ test("links host (a different subdomain, not merchant), /rdh -> untouched", () =
   assert.deepEqual(d, { action: "none" });
 });
 
+// ---- the demo receipt routes (app/r/demo, app/demo/r) ------------------------
+//
+// These are the URLs written to the Tech Week NFC tags. middleware.ts's
+// matcher does NOT exclude them (no file extension, not /api, /_next or
+// /.well-known), so this function really does run for every tap — it must be
+// a no-op on the public host or the tag 404s.
+
+test("main host, /r/demo -> untouched", () => {
+  assert.deepEqual(resolveMerchantRewrite("papex.app", "/r/demo"), { action: "none" });
+});
+
+test("main host, /demo/r -> untouched", () => {
+  assert.deepEqual(resolveMerchantRewrite("papex.app", "/demo/r"), { action: "none" });
+});
+
+test("main host, /demo/r with a bare /demo parent -> untouched", () => {
+  // /demo is not /merchant; nothing in this module has any business with it.
+  assert.deepEqual(resolveMerchantRewrite("papex.app", "/demo"), { action: "none" });
+});
+
 // ---- Summary -----------------------------------------------------------------
 
 
@@ -139,6 +159,28 @@ test("demo mode OFF by default: papex.app/merchant still 404-rewrites", () => {
     action: "rewrite",
     pathname: "/__merchant_not_found__",
   });
+});
+
+test("demo mode would SWALLOW the demo receipt routes — never set it on the tag-serving deployment", () => {
+  // Not a wish, a warning, pinned as an assertion so nobody has to rediscover
+  // it at a booth. NEXT_PUBLIC_MERCHANT_DEMO_HOST_ANY=1 makes EVERY host the
+  // merchant host, so the URLs on the Tech Week NFC tags get rewritten into
+  // the merchant dashboard's route tree, where they match nothing and 404.
+  //
+  // Nothing about "demo" in this flag's name has anything to do with demo
+  // RECEIPTS — it is the merchant-dashboard preview escape hatch. The two
+  // meanings collide in the name only, and that collision is exactly how this
+  // gets set on the wrong deployment.
+  process.env[DEMO_FLAG] = "1";
+  assert.deepEqual(resolveMerchantRewrite("papex.app", "/r/demo"), {
+    action: "rewrite",
+    pathname: "/merchant/r/demo",
+  });
+  assert.deepEqual(resolveMerchantRewrite("papex.app", "/demo/r"), {
+    action: "rewrite",
+    pathname: "/merchant/demo/r",
+  });
+  delete process.env[DEMO_FLAG];
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);
