@@ -39,12 +39,21 @@ export function CtaRow({
    * routes do.
    *
    * A dedicated prop rather than folding it into `isSample`: `isSample`
-   * means "this content is fabricated" and drives copy that says so
-   * ("Nothing to save — this is a sample receipt"). A demo receipt is REAL
-   * seeded data from a real provisioned merchant, so that caption would be
-   * untrue — and the marking machinery `isSample` also controls (the pinned
-   * banner, the dashed frame, the watermark) exists to flag made-up data and
-   * must not be applied to a real one.
+   * drives the SampleFrame/DemoBanner machinery (the pinned banner, the
+   * dashed frame, the watermark) built for lib/receiptState.ts's `/r?demo=1`
+   * fallback, where a customer might mistake fabricated content for their
+   * own real purchase. Some demo receipts ARE fabricated (Hartwell's
+   * Market, Ellsworth Market — see lib/demoReceipts.ts's `fabricated`
+   * field) and some are real seeded data from a real provisioned merchant
+   * (Sunset Leaf), but neither belongs behind `isSample`: that treatment's
+   * visual weight is calibrated for "might be mistaken for yours", not for
+   * a booth visitor who already knows they tapped a demo tag. This path
+   * stays production honesty rules and shows no disclosure of any kind —
+   * a fabricated demo's disclosure (DemoDisclosure, app/r/ui.tsx) is scoped
+   * to the demo routes themselves (app/r/demo, app/demo/r), the same as
+   * every other piece of the value layer. Regardless of which kind a given
+   * sid is, claiming stays single-owner-per-sid, so the Save button this
+   * prop suppresses is unsafe either way.
    */
   isDemo?: boolean;
   platform: Platform;

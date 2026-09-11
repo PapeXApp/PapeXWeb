@@ -771,10 +771,15 @@ export function AppCta({ platform }: { platform: Platform }) {
  *
  * Deliberately NOT a disabled "Save to PapeX" button. The disabled variant
  * SaveToPapex renders for `isSample` is captioned "Nothing to save — this is
- * a sample receipt", which is about FABRICATED data; a demo receipt is real
- * seeded data from a real provisioned merchant, so that caption would be a
- * lie. And at a booth the action we actually want is "install PapeX", not
- * "sign into an account you don't have to save a receipt you didn't buy."
+ * a sample receipt", which is the SampleFrame/DemoBanner voice — full-strength
+ * marking built for lib/receiptState.ts's `/r?demo=1` fallback, where a
+ * customer might mistake fabricated content for their own purchase. A demo
+ * tag is a different risk (see DemoDisclosure below), and regardless of
+ * whether a given demo's data is invented or real-seeded, claiming is
+ * single-owner per sid — so the Save button here is an action that can fail
+ * in front of an audience either way, and at a booth the action we actually
+ * want is "install PapeX", not "sign into an account you don't have to save
+ * a receipt you didn't buy."
  *
  * Lives here, in the island-free half of this segment, so a demo route can
  * render a CTA without pulling SaveToPapex (and the Firebase auth SDK behind
@@ -785,5 +790,38 @@ export function DemoCtaRow({ platform }: { platform: Platform }) {
     <div className="mt-2 flex flex-col items-center gap-4">
       <AppCta platform={platform} />
     </div>
+  );
+}
+
+// ---- Demo-data disclosure ------------------------------------------------------
+//
+// One quiet caption for a receipt whose store, prices, and promotions were
+// INVENTED for this demo — Hartwell's Market and Ellsworth Market, driven by
+// `DemoReceiptEnrichment.fabricated` (lib/demoReceipts.ts) via
+// `formatDemoDisclosure`. The Sunset Leaf bench tag sets neither and renders
+// nothing here, because it really is real seeded data from a real
+// provisioned merchant.
+//
+// DELIBERATELY NOT SampleFrame / DemoBanner (above in this file). Those exist
+// to protect a customer from mistaking fabricated content for THEIR OWN real
+// purchase (lib/receiptState.ts's `/r?demo=1` sample) — a repeating
+// watermark, a dashed border and a pinned banner are proportionate to that
+// risk. Nobody tapping a demo tag at a booth thinks Hartwell's Market printed
+// for their own purchase; the risk here is an investor, reporter, or grocer
+// assuming Hartwell's is a real chain, and one calm sentence answers that
+// completely. The full-strength treatment's visual weight would read as the
+// company hedging on its own demo, which is the opposite of the point.
+//
+// PLACEMENT (app/r/demo/page.tsx): directly under the receipt, above the
+// value layer — after the structured card a screenshot at a loud booth is
+// most likely to already include, before the pitch resumes below. That is
+// what keeps this reading as a footnote rather than a disclaimer up front.
+// Sits on the page background with no card, same treatment as AppCta below.
+
+export function DemoDisclosure({ text }: { text: string }) {
+  return (
+    <p className="px-1 text-center text-xs" style={{ color: S.textMuted }}>
+      {text}
+    </p>
   );
 }

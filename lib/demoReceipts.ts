@@ -300,6 +300,35 @@ export interface DemoReceiptEnrichment {
   insight?: DemoInsight;
   offer?: DemoOffer;
   emailOptIn?: DemoEmailOptIn;
+  /**
+   * True when the STORE, its prices, and its promotions were invented for
+   * this demo — as opposed to real seeded data from a real provisioned
+   * merchant (the Sunset Leaf bench tag, `5371e4f000000001`, is the latter
+   * and carries no `fabricated` flag). Drives a single discreet disclosure
+   * line on the demo routes only (`formatDemoDisclosure` below, rendered by
+   * `DemoDisclosure` in app/r/ui.tsx) — never on `/r`, and never for a
+   * receipt that doesn't set this, so a future demo built from a real
+   * provisioned merchant's real seeded data can simply omit it.
+   *
+   * WHY A FLAG PLUS ONE CANONICAL SENTENCE, NOT FREE TEXT PER RECEIPT
+   *   Every other field in this payload is unique to what actually happened
+   *   on that basket — that specificity is the whole pitch. This is the
+   *   opposite kind of content: boilerplate a careful company keeps worded
+   *   identically everywhere it appears, the way a stock-photo caption does.
+   *   So the wording lives once, in `formatDemoDisclosure`, and a receipt
+   *   author only ever decides yes/no — which is also what keeps Hartwell's
+   *   and Ellsworth's disclosures from drifting apart one word at a time.
+   *
+   * WHY PER-RECEIPT, NOT KEYED OFF `isDemoSid`
+   *   The premise is about the DATA, not the ROUTE: Sunset Leaf really did
+   *   come off a real till, Hartwell's and Ellsworth did not, and both reach
+   *   the visitor through the same demo routes. A blanket "every demo sid
+   *   gets a disclosure" rule would mislabel Sunset Leaf as invented; a
+   *   blanket "no demo sid gets one" rule is the bug this field exists to
+   *   fix. Keying it to the payload — reusing the same registry that already
+   *   decides what a sid may show — is what makes both true at once.
+   */
+  fabricated?: boolean;
 }
 
 /**
@@ -363,6 +392,10 @@ export const DEMO_RECEIPTS: ReadonlyMap<string, DemoReceiptEnrichment> = new Map
     {
       merchantName: "Hartwell's Market",
       receiptDate: "2026-09-30",
+      // Hartwell's Market is invented, and so are every price and promotion
+      // below — see DemoReceiptEnrichment.fabricated. Unlike Sunset Leaf,
+      // this is not a real provisioned merchant's till.
+      fabricated: true,
 
       savings: {
         total: 11.49,
@@ -443,6 +476,10 @@ export const DEMO_RECEIPTS: ReadonlyMap<string, DemoReceiptEnrichment> = new Map
     {
       merchantName: "Ellsworth Market",
       receiptDate: "2026-09-29",
+      // Ellsworth Market is invented, and so are every price and promotion
+      // below — see DemoReceiptEnrichment.fabricated. Unlike Sunset Leaf,
+      // this is not a real provisioned merchant's till.
+      fabricated: true,
 
       savings: {
         total: 4.0,
@@ -614,6 +651,32 @@ const NUMBER_WORDS = [
  */
 export function formatCountWord(n: number): string {
   return Number.isInteger(n) && n >= 0 && n < NUMBER_WORDS.length ? NUMBER_WORDS[n] : String(n);
+}
+
+// ---- Demo-data disclosure ----------------------------------------------------
+
+/**
+ * The one sentence a `fabricated` receipt discloses on the demo routes, or
+ * `undefined` for anything that isn't marked one — an un-fabricated demo
+ * (Sunset Leaf), an enrichment with nothing set (`{}`), or `undefined`
+ * itself (a non-demo sid; `getDemoEnrichment` already returns `undefined`
+ * for that case, so this composes with it directly and a caller never has to
+ * check `isDemoSid` separately before calling this).
+ *
+ * Names the store when the payload has one, because naming it is what makes
+ * the line read as a considered footnote rather than a hedge — "Hartwell's
+ * Market is a store created for this demo" is a specific, checkable
+ * statement; a sentence with no subject reads more defensively for the same
+ * number of words. The fallback exists only so a future `fabricated: true`
+ * entry that forgets a `merchantName` still renders a complete sentence
+ * instead of a blank.
+ */
+export function formatDemoDisclosure(enrichment: DemoReceiptEnrichment | undefined): string | undefined {
+  if (!enrichment?.fabricated) return undefined;
+  const subject = enrichment.merchantName
+    ? `${enrichment.merchantName} is a store`
+    : "This receipt is from a store";
+  return `${subject} created for this demo; its prices and promotions are invented.`;
 }
 
 // ---- Loyalty ----------------------------------------------------------------
