@@ -30,7 +30,13 @@
 //   below).
 //
 // WHAT IT RENDERS
-//   The real receipt, undecorated, with "Get PapeX" as the only CTA.
+//   The real receipt, undecorated, with "Get PapeX" as the only CTA — and,
+//   below it, the PapeX value layer for this sid (savings, rewards, the price
+//   insight, the merchant's voucher, the email opt-in). That layer comes
+//   entirely from lib/demoReceipts.ts's enrichment map and is rendered by
+//   ../enrichment.tsx, which is server-only for the same island reasons as
+//   ui.tsx. A demo sid with no enrichment renders exactly the page that
+//   shipped before the layer existed.
 //   Deliberately NOT the DemoBanner / SampleFrame / watermark treatment `/r`
 //   uses for its `?demo=1` sample: those exist to mark FABRICATED data (see
 //   lib/receiptState.ts — a real defect fix, don't undo it), and these
@@ -57,7 +63,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { fetchReceiptBytes } from "@/lib/rdh";
-import { resolveDemoRoute } from "@/lib/demoReceipts";
+import { getDemoEnrichment, offerDaysRemaining, resolveDemoRoute } from "@/lib/demoReceipts";
 import { platformFromUserAgent } from "@/lib/storeLinks";
 import { parseEscPos } from "@/lib/escpos";
 import { summarizeReceipt, hasStructure as computeHasStructure } from "@/lib/receiptSummary";
@@ -70,6 +76,7 @@ import {
   DemoCtaRow,
   AppCta,
 } from "../ui";
+import { EnrichmentSections } from "../enrichment";
 import RetryButton from "../RetryButton";
 
 export const metadata: Metadata = {
@@ -114,6 +121,25 @@ export default async function DemoReceiptPage({
   // Only ever decides which store link leads — never what the page shows.
   const platform = platformFromUserAgent(uaHeader);
 
+  // The PapeX value layer for this sid: savings, loyalty, the price insight,
+  // the merchant's offer, the email opt-in. `undefined` for a sid with no
+  // enrichment and an empty object for a demo sid that simply doesn't carry
+  // one (the Sunset Leaf bench tag) — either way EnrichmentSections renders
+  // nothing and the page falls back to the bare receipt.
+  const enrichment = getDemoEnrichment(sid);
+
+  // The page owns the clock so every function under it stays pure and can be
+  // tested at simulated dates. `new Date()` is read exactly once, here.
+  //
+  // It feeds ONE thing: the offer's "N days left" chip. The voucher's own
+  // validity line is a duration ("Valid for 14 days from purchase") and is
+  // true on every date there will ever be, and once the window closes the
+  // chip disappears rather than turning into "Expired" — because these
+  // stickers are permanent and a demo advertising a dead coupon reads as
+  // broken software rather than as an old receipt. See DemoOffer in
+  // lib/demoReceipts.ts for the full argument.
+  const daysRemaining = offerDaysRemaining(enrichment, new Date());
+
   const result = await fetchReceiptBytes(sid);
   const receipt = result.status === "ok" ? parseEscPos(result.bytes) : undefined;
   const summary = receipt ? summarizeReceipt(receipt.lines) : undefined;
@@ -143,6 +169,12 @@ export default async function DemoReceiptPage({
           logo={receipt?.logo}
           rasterPage={rasterPage}
         />
+        {/* The value layer, below the paper — savings, rewards, PapeX's own
+            observation, the merchant's voucher, the opt-in. Deliberately
+            below: the receipt is the thing the visitor tapped for and has to
+            arrive first and intact. Everything here is additive, and a sid
+            with no enrichment renders exactly the page that shipped. */}
+        <EnrichmentSections enrichment={enrichment} daysRemaining={daysRemaining} />
         <DemoCtaRow platform={platform} />
       </Shell>
     );
