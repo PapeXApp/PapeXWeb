@@ -70,6 +70,7 @@ import { parseEscPos } from "@/lib/escpos";
 import { summarizeReceipt, hasStructure as computeHasStructure } from "@/lib/receiptSummary";
 import { hasVisibleContent, resolveReceiptState } from "@/lib/receiptState";
 import { sampleReceiptLines } from "@/lib/sampleReceipt";
+import { isDemoSid } from "@/lib/demoReceipts";
 import {
   Shell,
   StateCard,
@@ -77,9 +78,9 @@ import {
   SampleFrame,
   ReceiptNotAvailable,
   ReceiptView,
-  CtaRow,
   AppCta,
 } from "./ui";
+import { CtaRow } from "./CtaRow";
 import RetryButton from "./RetryButton";
 import ReceiptUpgrade from "./ReceiptUpgrade";
 
@@ -217,7 +218,18 @@ export default async function ReceiptPage({
             logo={receipt?.logo}
           />
         )}
-        <CtaRow sid={rawSid} isSample={false} platform={platform} />
+        {/* `isDemo` — a demo sid can arrive here and not only at /r/demo: a
+            tag written before the demo route existed, a link someone shared,
+            a URL retyped from a screenshot. Claiming is single-owner per sid,
+            so the Save button on a demo receipt is an action that can fail in
+            front of an audience; suppress it wherever the sid shows up. A
+            separate prop from `isSample` on purpose — see CtaRow.tsx. */}
+        <CtaRow
+          sid={rawSid}
+          isSample={false}
+          isDemo={isDemoSid(rawSid)}
+          platform={platform}
+        />
       </Shell>
     );
   }

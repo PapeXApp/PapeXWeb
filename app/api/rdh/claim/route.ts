@@ -40,6 +40,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { isValidSid } from "@/lib/rdh";
+import { isDemoSid } from "@/lib/demoReceipts";
 
 const DEFAULT_ADAPTER_HOST = "https://adapter.api.papex.app";
 
@@ -71,6 +72,27 @@ export async function POST(request: NextRequest) {
   const sid = (body as { sid?: unknown } | null)?.sid;
   if (typeof sid !== "string" || !isValidSid(sid)) {
     return NextResponse.json({ error: "invalid_sid" }, { status: 400 });
+  }
+
+  // Demo receipts are never claimable. Defence in depth: the UI already
+  // declines to render a Save button for these sids on every route that can
+  // reach one (app/r/page.tsx, app/r/demo, app/demo/r), so nothing this app
+  // ships ever posts here with a demo sid. This catches what the UI cannot —
+  // a hand-crafted request, a stale cached page from before the sid was
+  // listed, a retry fired from a tab left open.
+  //
+  // Before any adapter call, on purpose: a claim is permanent and pre-empts
+  // re-minting (papex-adapter-backend reads `scanned_receipts/rdh_<sid>`
+  // before its own backend fetch, so rewriting the S3 blob under the same sid
+  // does NOT clear it). The only reliable moment to stop it is here.
+  //
+  // 400, not 409: the request is malformed in the sense that matters — this
+  // sid is not a claimable object — and it is not a fact about who owns it.
+  // The client's status switch has no branch for `demo_receipt` and will show
+  // its generic failure message, which is correct for a path no real user
+  // reaches.
+  if (isDemoSid(sid)) {
+    return NextResponse.json({ error: "demo_receipt" }, { status: 400 });
   }
 
   const controller = new AbortController();
