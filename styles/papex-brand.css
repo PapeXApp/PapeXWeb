@@ -91,6 +91,10 @@
   /* --- Spacing ---------------------------------------------------------- */
   --section-pad-y: clamp(90px, 11vw, 160px);
   --section-pad-x: clamp(20px, 5vw, 56px);
+  /* Customer-path section rhythm (see components/paths/customer/customer.module.css
+   * header). Lives here because a CSS module can't declare a bare :global(.rd)
+   * rule: `next build` rejects it as "Selector is not pure". */
+  --section-pad: clamp(44px, 4.5vw, 68px);
   --section-max: 1150px;
   --gap-cards: clamp(16px, 2vw, 26px);
   --gap-columns: clamp(30px, 5vw, 90px);

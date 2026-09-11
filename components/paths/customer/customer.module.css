@@ -16,10 +16,10 @@
  * Round 2 (2026-09-10, Nico: "still too much between ALL sections"): the
  * clamp(72,7vw,110) above gave 205-232px section-to-section content gaps at
  * 1440. This is the top/bottom padding on each side of a boundary, so it is
- * roughly HALF the visible gap — clamp(44,4.5vw,68) targets ~110-140px. */
-:global(.rd) {
-  --section-pad: clamp(44px, 4.5vw, 68px);
-}
+ * roughly HALF the visible gap — clamp(44,4.5vw,68) targets ~110-140px.
+ *
+ * The --section-pad declaration itself now lives in styles/papex-brand.css:
+ * a bare :global(.rd) rule here fails `next build` ("Selector is not pure"). */
 
 @keyframes floaty {
   0%,
