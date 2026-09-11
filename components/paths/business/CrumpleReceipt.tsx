@@ -9,38 +9,36 @@ import styles from "./business.module.css"
 /**
  * 3.2's four reasons, delivered the way a merchant gets them today: printed.
  *
- * A thermal printer feeds out a receipt whose line items ARE the four claims
- * ($0 / 1 port / 1 tap / 0 rolls — the amount column of a receipt is exactly
- * the shape of those numbers). The visitor crumples the paper by dragging it,
- * throws it in the bin, and the same four reasons re-form as digital cards.
+ * A thermal printer feeds out a full-height receipt whose line items ARE the
+ * four claims ($0 / 1 port / 1 tap / 0 rolls — the amount column of a receipt
+ * is exactly the shape of those numbers). It prints a point at a time, then
+ * the visitor drags it into a ball and flicks it at the bin.
  *
- * The metaphor is deliberately "the paper was the delivery, not the message":
- * binning the reasons to switch would argue the opposite of the section. What
- * gets thrown away is the paper; the four reasons survive it.
- *
- * The cards are real DOM the whole time — `hidden` until the throw lands, but
- * present for reduced motion, for keyboard, and for anyone who never plays.
- * Nothing here is the only route to the content.
- *
- * The printer is drawn locally rather than lifted from the customer path's
- * FlipCards.tsx `Printer`, which is welded to that scene's gradient ids and
- * print choreography. Same light direction (top-left) and same palette, so the
- * two read as one family; unifying them is a refactor for another day.
+ * The receipt IS the section's content — there is no card grid under it. That
+ * has one consequence worth stating: the claims have to be in the server HTML,
+ * and they have to survive a visitor who never plays. So the slip renders
+ * complete on the server (every block visible) and the client rewinds it to an
+ * empty slot on mount before starting the feed. Reduced motion never rewinds
+ * it: it gets the finished slip, no printer, no prompt, nothing to drag.
  */
 
-const PRINT_MS = 2300
+/** The slip prints in beats, not as one reveal: head, the four claims, foot. */
+const PRINT_BLOCKS = 6
+const BLOCK_MS = 430
 /** Accumulated pointer travel, in px, that takes the sheet from flat to balled. */
-const CRUMPLE_TRAVEL = 560
-const BUTTON_CRUMPLE_MS = 850
+const CRUMPLE_TRAVEL = 620
+const BUTTON_CRUMPLE_MS = 900
 /** Pointer travel, in px, that separates a deliberate flick from a let-go. */
 const CARRY_TO_THROW = 34
-const THROW_MS = 720
+const THROW_MS = 760
 
 type Phase = "idle" | "printing" | "ready" | "crumpled" | "throwing" | "done"
 
 export function CrumpleReceipt() {
   const reduced = useReducedMotion()
   const [phase, setPhase] = useState<Phase>("idle")
+  // Starts complete so the server renders every claim; the client rewinds it.
+  const [blocks, setBlocks] = useState(PRINT_BLOCKS)
   const [crumple, setCrumple] = useState(0)
   const [drag, setDrag] = useState<{ x: number; y: number } | null>(null)
 
@@ -53,9 +51,14 @@ export function CrumpleReceipt() {
   const last = useRef<{ x: number; y: number } | null>(null)
   const throwTo = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
 
-  // Reduced motion gets the end state outright: no print, no paper, no throw.
+  // Rewind to an empty slot so the feed has something to do. Reduced motion
+  // keeps the finished slip exactly as the server sent it.
   useEffect(() => {
-    if (reduced) setPhase("done")
+    if (reduced) {
+      setPhase("ready")
+      return
+    }
+    setBlocks(0)
   }, [reduced])
 
   // Print on arrival, not on mount — the feed should happen where it's seen.
@@ -70,17 +73,23 @@ export function CrumpleReceipt() {
           io.disconnect()
         }
       },
-      { threshold: 0.35 },
+      { threshold: 0.25 },
     )
     io.observe(el)
     return () => io.disconnect()
   }, [phase, reduced])
 
+  // One block per beat. The slip's own height is what grows, so the paper
+  // genuinely feeds out of the slot instead of being unmasked in place.
   useEffect(() => {
     if (phase !== "printing") return
-    const t = window.setTimeout(() => setPhase("ready"), PRINT_MS)
+    if (blocks >= PRINT_BLOCKS) {
+      const t = window.setTimeout(() => setPhase("ready"), 420)
+      return () => window.clearTimeout(t)
+    }
+    const t = window.setTimeout(() => setBlocks((n) => n + 1), BLOCK_MS)
     return () => window.clearTimeout(t)
-  }, [phase])
+  }, [phase, blocks])
 
   /** Where the balled paper has to land, measured rather than guessed. */
   const aimAtBin = useCallback(() => {
@@ -90,7 +99,7 @@ export function CrumpleReceipt() {
     throwTo.current = {
       x: bin.left + bin.width / 2 - (paper.left + paper.width / 2),
       // into the mouth, not the middle of the can
-      y: bin.top + bin.height * 0.3 - (paper.top + paper.height / 2),
+      y: bin.top + bin.height * 0.26 - (paper.top + paper.height / 2),
     }
   }, [])
 
@@ -168,31 +177,23 @@ export function CrumpleReceipt() {
     }
   }
 
-  const showPaper = phase === "printing" || phase === "ready" || phase === "crumpled" || phase === "throwing"
-  const grabbable = phase === "ready" || phase === "crumpled"
+  const showPaper = phase !== "done"
+  const grabbable = !reduced && (phase === "ready" || phase === "crumpled")
   const level = Math.min(4, Math.round(crumple * 4))
+  const shown = (i: number) => i < blocks
 
   return (
     <div className={styles.crStage} ref={stageRef}>
       <CrumpleFilters />
 
-      {/* ---- the scene: decorative, the cards below carry the content ---- */}
-      <div
-        className={cn(styles.crScene, phase === "done" && styles.crSceneOut)}
-        aria-hidden={phase === "done" ? "true" : undefined}
-      >
+      <div className={cn(styles.crScene, phase === "done" && styles.crSceneDone)}>
         <span aria-hidden="true" className={styles.crGround} />
         <Printer printing={phase === "printing"} />
 
         {showPaper && (
           <div
             ref={paperRef}
-            className={cn(
-              styles.crPaper,
-              phase === "printing" && styles.crPaperPrinting,
-              phase === "throwing" && styles.crPaperThrown,
-              grabbable && styles.crPaperGrab,
-            )}
+            className={cn(styles.crPaper, phase === "throwing" && styles.crPaperThrown, grabbable && styles.crPaperGrab)}
             data-level={level}
             style={
               {
@@ -201,36 +202,45 @@ export function CrumpleReceipt() {
                 "--dy": `${drag?.y ?? 0}px`,
                 "--tx": `${throwTo.current.x}px`,
                 "--ty": `${throwTo.current.y}px`,
-                "--print-ms": `${PRINT_MS}ms`,
                 "--throw-ms": `${THROW_MS}ms`,
               } as CSSProperties
             }
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerCancel={onPointerUp}
+            onPointerDown={grabbable ? onPointerDown : undefined}
+            onPointerMove={grabbable ? onPointerMove : undefined}
+            onPointerUp={grabbable ? onPointerUp : undefined}
+            onPointerCancel={grabbable ? onPointerUp : undefined}
           >
             <div className={styles.crSheet}>
-              <div className={styles.crSlipHead}>PAPEX</div>
-              <div className={styles.crRule} />
-              <div className={styles.crSlipSub}>REASONS TO SWITCH</div>
-              <div className={styles.crItems}>
-                {whyMerchants.cards.map((card) => (
-                  <div key={card.value} className={styles.crItem}>
-                    <span>{card.title}</span>
+              {shown(0) && (
+                <div className={styles.crBlock}>
+                  <div className={styles.crSlipHead}>PAPEX</div>
+                  <div className={styles.crRule} />
+                  <div className={styles.crSlipSub}>REASONS TO SWITCH</div>
+                </div>
+              )}
+
+              {whyMerchants.cards.map((card, i) =>
+                shown(i + 1) ? (
+                  <div key={card.value} className={cn(styles.crBlock, styles.crItem)}>
+                    <span className={styles.crItemLabel}>{card.title}</span>
                     <span className={styles.crItemValue}>{card.value}</span>
                   </div>
-                ))}
-              </div>
-              <div className={styles.crRule} />
-              <div className={cn(styles.crItem, styles.crTotal)}>
-                <span>TOTAL</span>
-                <span>4</span>
-              </div>
-              <div className={styles.crSlipFoot}>NONE TO SAY NO</div>
-              <div aria-hidden="true" className={styles.crBarcode} />
+                ) : null,
+              )}
+
+              {shown(5) && (
+                <div className={styles.crBlock}>
+                  <div className={styles.crRule} />
+                  <div className={cn(styles.crItem, styles.crTotal)}>
+                    <span>TOTAL</span>
+                    <span>4</span>
+                  </div>
+                  <div className={styles.crSlipFoot}>NONE TO SAY NO</div>
+                  <div aria-hidden="true" className={styles.crBarcode} />
+                </div>
+              )}
             </div>
-            {/* folds only exist once it starts balling up */}
+            {/* creases only exist once it starts balling up */}
             <span aria-hidden="true" className={styles.crFolds} />
           </div>
         )}
@@ -238,35 +248,25 @@ export function CrumpleReceipt() {
         <Bin ref={binRef} landed={phase === "done"} />
       </div>
 
-      {/* ---- the affordance ---- */}
-      {!reduced && phase !== "done" && (
+      {!reduced && (
         <div className={styles.crPrompt}>
-          <button type="button" className={styles.crButton} onClick={pressAction} disabled={!grabbable}>
+          <button
+            type="button"
+            className={styles.crButton}
+            onClick={pressAction}
+            disabled={!grabbable}
+            hidden={phase === "done"}
+          >
             {phase === "crumpled" || phase === "throwing" ? "Throw it away" : "Crumple it"}
           </button>
           <span className={styles.crHint}>
             {phase === "printing" && "Printing your reasons…"}
             {phase === "ready" && "Drag the receipt to crumple it"}
             {phase === "crumpled" && "Now flick it at the bin"}
-            {phase === "throwing" && " "}
+            {phase === "done" && "That is the switch. No more paper."}
           </span>
         </div>
       )}
-
-      {/* ---- the payoff: the same four reasons, no paper ---- */}
-      <div className={cn(styles.crCards, phase === "done" && styles.crCardsIn)} hidden={phase !== "done"}>
-        <p className={styles.crCardsLead}>Same four reasons. No paper.</p>
-        <div className={styles.crCardGrid}>
-          {whyMerchants.cards.map((card) => (
-            <div key={card.value} className={cn(styles.crCard, card.isLead && styles.crCardLead)}>
-              <div className={styles.crCardValue}>{card.value}</div>
-              <div className={styles.crCardRule} />
-              <div className={styles.crCardTitle}>{card.title}</div>
-              <p className={styles.crCardBody}>{card.body}</p>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   )
 }
@@ -285,12 +285,12 @@ function CrumpleFilters() {
           <filter key={i} id={`cr-crumple-${i}`} x="-18%" y="-18%" width="136%" height="136%">
             <feTurbulence
               type="fractalNoise"
-              baseFrequency={0.012 + i * 0.008}
+              baseFrequency={0.01 + i * 0.007}
               numOctaves={3}
               seed={7 + i * 13}
               result="noise"
             />
-            <feDisplacementMap in="SourceGraphic" in2="noise" scale={i * 5.5} xChannelSelector="R" yChannelSelector="G" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale={i * 7} xChannelSelector="R" yChannelSelector="G" />
           </filter>
         ))}
       </defs>
@@ -312,7 +312,6 @@ function Printer({ printing }: { printing: boolean }) {
             <stop offset="1" stopColor="#2C3742" />
           </linearGradient>
         </defs>
-        {/* cast shadow on the ground plane */}
         <ellipse cx="130" cy="132" rx="106" ry="9" fill="#00121D" opacity="0.14" />
         {/* paper roll hump on top, then the body, then the front bezel */}
         <rect x="48" y="6" width="164" height="34" rx="17" fill="url(#cr-lid)" />
@@ -335,7 +334,6 @@ function Bin({ ref, landed }: { ref: React.Ref<HTMLDivElement>; landed: boolean 
     <div className={cn(styles.crBin, landed && styles.crBinLanded)} ref={ref}>
       <svg viewBox="0 0 140 170" className={styles.crBinSvg} aria-hidden="true">
         <ellipse cx="70" cy="162" rx="52" ry="7" fill="#00121D" opacity="0.16" />
-        {/* lid lifts when something lands in it */}
         <g className={styles.crBinLid}>
           <rect x="12" y="26" width="116" height="14" rx="7" fill="#37424E" />
           <rect x="56" y="16" width="28" height="10" rx="5" fill="#37424E" />
