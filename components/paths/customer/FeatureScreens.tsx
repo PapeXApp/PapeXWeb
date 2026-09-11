@@ -18,14 +18,24 @@ import styles from "./customer.module.css";
  * blurred material, document header, the AirDrop/app row, then the action list.
  */
 
-/** Wraps a screen in the device and crops it against the cell's bottom edge. */
-function Shot({ children }: { children: React.ReactNode }) {
+/**
+ * Wraps a screen in the device and crops it against the cell's bottom edge.
+ *
+ * `sheetLift` is only for screens whose content is anchored to the bottom of
+ * the device (the share sheet). The crop takes roughly 40cqh off the bottom,
+ * so anything pinned there is off-frame; lifting it by that much puts it back
+ * on the visible edge. Top-anchored screens (the receipt list) leave it unset.
+ */
+function Shot({ children, sheetLift }: { children: React.ReactNode; sheetLift?: string }) {
   return (
     // "dark" was for the navy panel this cell used to sit on; the card is
     // light now (2026-09-10), so the default (lighter) pointer-glow variant
     // matches — same as the light-ground quiz options in Personas.tsx.
     <div className={styles.featShot} data-lit="" style={{ aspectRatio: "4 / 3" }}>
-      <div className={styles.featShotPhone}>
+      <div
+        className={styles.featShotPhone}
+        style={sheetLift ? ({ "--wp-sheet-lift": sheetLift } as React.CSSProperties) : undefined}
+      >
         <PhoneChrome tab="receipts">{children}</PhoneChrome>
       </div>
     </div>
@@ -88,7 +98,7 @@ const SHARE_ACTIONS = ["Copy", "Save to Files", "Print"];
 
 export function ShareSheetShot() {
   return (
-    <Shot>
+    <Shot sheetLift="40cqh">
       {/* The receipt list stays visible behind the sheet — that's what makes it
           read as a sheet presented over the app rather than its own screen. */}
       <div className={styles.wpBody} aria-hidden="true">
