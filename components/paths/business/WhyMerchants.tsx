@@ -2,13 +2,14 @@ import { Reveal, ScrollLit } from "@/components/motion"
 import { FlowSection } from "../shared/FlowSection"
 import { SectionLabel } from "../shared/SectionLabel"
 import { whyMerchants } from "./content"
-import { CrumpleReceipt } from "./CrumpleReceipt"
+import { FoldReceipt } from "./FoldReceipt"
 
 // 3.2 "Why merchants love PapeX" — the four numeric claims ($0 / 1 port /
 // 1 tap / 0 rolls) used to sit in a static 2x2 `wcard` grid. They are now the
-// line items on a receipt that prints, gets crumpled, and gets binned, after
-// which the same four re-form as cards (CrumpleReceipt.tsx owns all of it,
-// including the cards, so the claims have exactly one source in content.ts).
+// line items on a receipt that prints, then folds into the PapeX plane and
+// flies into the bin (FoldReceipt.tsx owns all of it, so the claims have
+// exactly one source in content.ts). There is nothing under it: the receipt
+// is the section.
 //
 // The heading is still this path's one ScrollLit statement: its words light up
 // as it scrolls through.
@@ -29,7 +30,7 @@ export function WhyMerchants() {
           />
         </Reveal>
 
-        <CrumpleReceipt />
+        <FoldReceipt />
       </div>
     </FlowSection>
   )
