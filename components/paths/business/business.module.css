@@ -47,3 +47,435 @@
     display: none;
   }
 }
+
+/* ==========================================================================
+   3.2 Crumple receipt — the four reasons print, get balled up, and re-form
+   digitally. Component: CrumpleReceipt.tsx.
+
+   Sizing is container-relative twice over: the scene's furniture is sized in
+   cqw of .crStage, and the slip's type is sized in cqw of .crPaper (which is
+   its own inline-size container), so the receipt's internals stay in
+   proportion at any paper size without a second set of breakpoints.
+
+   NOTE: every animation here sets `animation-name` on its own line. The
+   `animation` shorthand does NOT get its keyframe renamed by CSS Modules when
+   the declaration also contains a var() — a documented trap in this repo.
+   ========================================================================== */
+.crStage {
+  container-type: inline-size;
+  position: relative;
+  max-width: 900px;
+  margin: clamp(36px, 4.4vw, 62px) auto 0;
+}
+.crDefs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+.crScene {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 5 / 3;
+  overflow: hidden;
+}
+/* A surface for the printer and bin to stand on. Without it both objects float
+   and the runway between them reads as nothing rather than as a desk. */
+.crGround {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 36%;
+  pointer-events: none;
+  background: radial-gradient(130% 100% at 50% 100%, rgba(0, 18, 29, 0.07), transparent 72%);
+}
+/* Once the paper lands the scene has said everything it has to say; collapsing
+   it gives the room to the cards. */
+.crSceneOut {
+  animation-name: crSceneOut;
+  animation-duration: 0.55s;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  animation-fill-mode: forwards;
+}
+@keyframes crSceneOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    height: 0;
+    margin-bottom: 0;
+  }
+}
+
+/* --- printer ------------------------------------------------------------- */
+.crPrinter {
+  position: absolute;
+  top: 0;
+  left: 2cqw;
+  width: 44cqw;
+}
+.crPrinterSvg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.crLed {
+  fill: #2FBF5B;
+}
+.crPrinterBusy .crLed {
+  animation-name: crBlink;
+  animation-duration: 0.6s;
+  animation-iteration-count: infinite;
+}
+@keyframes crBlink {
+  0%,
+  100% {
+    fill: #2fbf5b;
+  }
+  50% {
+    fill: var(--orange);
+  }
+}
+
+/* --- the slip ------------------------------------------------------------ */
+.crPaper {
+  container-type: inline-size;
+  position: absolute;
+  top: 19.5cqw;
+  left: 7cqw;
+  width: 34cqw;
+  z-index: 3;
+  transform-origin: 50% 12%;
+  /* --c drives the whole ball-up: shrink toward a wad, tilt, and drift a
+     little off the slot's centre line as it stops being a hanging sheet. */
+  transform: translate(var(--dx, 0px), var(--dy, 0px)) translateY(calc(var(--c, 0) * 6cqw))
+    scale(calc(1 - var(--c, 0) * 0.56)) rotate(calc(var(--c, 0) * -14deg));
+  will-change: transform;
+}
+.crPaperGrab {
+  cursor: grab;
+  touch-action: none;
+}
+.crPaperGrab:active {
+  cursor: grabbing;
+}
+.crSheet {
+  position: relative;
+  padding: 7cqw 6cqw 5cqw;
+  background: #fdfdfb;
+  color: #1b242e;
+  font-family: var(--font-mono);
+  font-size: 5.2cqw;
+  line-height: 1.5;
+  /* a hanging sheet casts a soft shadow; a wad casts a tight one */
+  box-shadow: 0 calc(6px - var(--c, 0) * 4px) calc(24px - var(--c, 0) * 14px) rgba(0, 18, 29, calc(0.16 + var(--c, 0) * 0.12));
+  border-radius: calc(var(--c, 0) * 14cqw);
+  /* the torn bottom edge of a thermal tear-off */
+  clip-path: polygon(
+    0 0, 100% 0, 100% 97%, 94% 100%, 88% 97%, 82% 100%, 76% 97%, 70% 100%, 64% 97%, 58% 100%,
+    52% 97%, 46% 100%, 40% 97%, 34% 100%, 28% 97%, 22% 100%, 16% 97%, 10% 100%, 4% 97%, 0 100%
+  );
+}
+.crSlipHead {
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: 0.26em;
+  font-size: 8cqw;
+}
+.crSlipSub {
+  text-align: center;
+  letter-spacing: 0.14em;
+  font-size: 5cqw;
+  opacity: 0.65;
+  margin-bottom: 4cqw;
+}
+.crRule {
+  border-top: 1px dashed rgba(27, 36, 46, 0.4);
+  margin: 3.5cqw 0;
+}
+.crItems {
+  display: grid;
+  gap: 2.4cqw;
+}
+.crItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 3cqw;
+}
+.crItem > span:first-child {
+  min-width: 0;
+}
+.crItemValue {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.crTotal {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.crSlipFoot {
+  text-align: center;
+  letter-spacing: 0.16em;
+  font-size: 5cqw;
+  margin-top: 3cqw;
+}
+.crBarcode {
+  display: block;
+  height: 9cqw;
+  margin-top: 4cqw;
+  background-image: repeating-linear-gradient(
+    90deg,
+    #1b242e 0 1.2cqw,
+    transparent 1.2cqw 2cqw,
+    #1b242e 2cqw 2.6cqw,
+    transparent 2.6cqw 4cqw
+  );
+  opacity: 0.85;
+}
+/* creases: only real once it starts balling */
+.crFolds {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: var(--c, 0);
+  border-radius: inherit;
+  background:
+    linear-gradient(118deg, rgba(0, 18, 29, 0.22) 0 12%, transparent 12.5% 30%, rgba(255, 255, 255, 0.5) 30.5% 42%, transparent 42.5%),
+    linear-gradient(24deg, transparent 0 40%, rgba(0, 18, 29, 0.18) 40.5% 52%, transparent 52.5%),
+    radial-gradient(70% 60% at 32% 30%, rgba(255, 255, 255, 0.55), transparent 70%),
+    radial-gradient(60% 70% at 74% 72%, rgba(0, 18, 29, 0.2), transparent 72%);
+}
+
+/* five creased states; see CrumpleFilters() for why this is stepped */
+.crPaper[data-level="1"] .crSheet {
+  filter: url(#cr-crumple-1);
+}
+.crPaper[data-level="2"] .crSheet {
+  filter: url(#cr-crumple-2);
+}
+.crPaper[data-level="3"] .crSheet {
+  filter: url(#cr-crumple-3);
+}
+.crPaper[data-level="4"] .crSheet {
+  filter: url(#cr-crumple-4);
+}
+
+/* --- printing ------------------------------------------------------------ */
+.crPaperPrinting {
+  animation-name: crFeed;
+  animation-duration: var(--print-ms, 2300ms);
+  animation-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
+  animation-fill-mode: both;
+}
+@keyframes crFeed {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* --- the throw ----------------------------------------------------------- */
+.crPaperThrown {
+  animation-name: crThrow;
+  animation-duration: var(--throw-ms, 720ms);
+  animation-timing-function: cubic-bezier(0.3, 0.1, 0.5, 1);
+  animation-fill-mode: forwards;
+}
+@keyframes crThrow {
+  0% {
+    transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(0.44) rotate(-14deg);
+    opacity: 1;
+  }
+  /* apex: a toss arcs, it doesn't slide */
+  55% {
+    transform: translate(calc(var(--tx) * 0.58), calc(var(--ty) * 0.3 - 4.5cqw)) scale(0.36) rotate(180deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--tx), var(--ty)) scale(0.2) rotate(420deg);
+    opacity: 0;
+  }
+}
+
+/* --- bin ----------------------------------------------------------------- */
+.crBin {
+  position: absolute;
+  right: 4cqw;
+  bottom: 0;
+  width: 26cqw;
+  z-index: 2;
+}
+.crBinSvg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.crBinLid {
+  transform-origin: 18% 100%;
+}
+.crBinLanded .crBinLid {
+  animation-name: crLid;
+  animation-duration: 0.6s;
+  animation-timing-function: cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+@keyframes crLid {
+  0% {
+    transform: rotate(0deg) translateY(0);
+  }
+  35% {
+    transform: rotate(-15deg) translateY(-6%);
+  }
+  100% {
+    transform: rotate(0deg) translateY(0);
+  }
+}
+
+/* --- affordance ---------------------------------------------------------- */
+.crPrompt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: clamp(12px, 1.6vw, 22px);
+  min-height: 44px;
+  flex-wrap: wrap;
+}
+.crButton {
+  border-radius: 999px;
+  border: 1px solid var(--orange);
+  background: var(--orange);
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  padding: 11px 22px;
+  cursor: pointer;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
+}
+.crButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(235, 113, 0, 0.3);
+}
+.crButton:active:not(:disabled) {
+  transform: translateY(1px) scale(0.98);
+}
+.crButton:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+.crHint {
+  font-family: var(--font-label);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  color: var(--flow-fg-3);
+}
+
+/* --- payoff cards -------------------------------------------------------- */
+.crCards {
+  margin-top: clamp(28px, 3vw, 44px);
+}
+.crCardsIn {
+  animation-name: crCardsIn;
+  animation-duration: 0.6s;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-fill-mode: both;
+}
+@keyframes crCardsIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.crCardsLead {
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(22px, 2.4vw, 32px);
+  letter-spacing: -0.01em;
+  color: var(--flow-fg);
+  margin-bottom: clamp(22px, 2.6vw, 36px);
+}
+.crCardGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: clamp(16px, 1.8vw, 22px);
+}
+.crCard {
+  border-radius: 20px;
+  border: 1px solid var(--on-light-border);
+  background: var(--white);
+  padding: clamp(28px, 3.2vw, 42px);
+  box-shadow: 0 1px 2px rgba(0, 18, 29, 0.04), 0 10px 26px rgba(0, 18, 29, 0.04);
+}
+.crCardLead {
+  background: var(--navy);
+  border-color: rgba(245, 245, 245, 0.08);
+  box-shadow: 0 18px 44px rgba(0, 18, 29, 0.16);
+}
+.crCardValue {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(44px, 5.6vw, 76px);
+  line-height: 0.92;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--orange);
+  white-space: nowrap;
+}
+.crCardRule {
+  width: 46px;
+  height: 1px;
+  background: var(--orange);
+  margin: 20px 0;
+}
+.crCardTitle {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(20px, 2vw, 26px);
+  line-height: 1.15;
+  color: var(--navy);
+}
+.crCardLead .crCardTitle {
+  color: var(--offwhite);
+}
+.crCardBody {
+  margin-top: 12px;
+  max-width: 34ch;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--on-light-text);
+}
+.crCardLead .crCardBody {
+  color: rgba(245, 245, 245, 0.64);
+}
+
+/* --- small screens: the furniture has to grow, not the breakpoint count --- */
+@container (max-width: 640px) {
+  .crScene {
+    aspect-ratio: 5 / 6;
+  }
+  .crPrinter {
+    width: 62cqw;
+    left: 3cqw;
+  }
+  .crPaper {
+    top: 28cqw;
+    left: 11cqw;
+    width: 46cqw;
+  }
+  .crBin {
+    right: 3cqw;
+    width: 32cqw;
+  }
+}
+@media (max-width: 820px) {
+  .crCardGrid {
+    grid-template-columns: 1fr;
+  }
+}
