@@ -35,13 +35,29 @@ interface MerchantAuthState {
   signOut: () => Promise<void>;
 }
 
+// DEMO BRANCH ONLY (preview/merchant-profile-demo, never merged): on a Vercel
+// preview of this branch, skip the dashboard sign-in and stand in a demo
+// merchant. The preview itself sits behind Vercel's own login, and the server
+// only accepts this on VERCEL_ENV=preview (lib/server/merchantData/index.ts).
+const PREVIEW_DEMO_AUTH =
+  process.env.NEXT_PUBLIC_MERCHANT_PREVIEW_DEMO === "1" &&
+  process.env.NEXT_PUBLIC_VERCEL_ENV !== "production";
+
+const DEMO_USER = {
+  uid: "mock-merchant",
+  email: "demo@doobienights.com",
+  displayName: "Demo (Doobie Nights)",
+  emailVerified: true,
+} as unknown as User;
+
 const MerchantAuthContext = createContext<MerchantAuthState | null>(null);
 
 export function MerchantAuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(PREVIEW_DEMO_AUTH ? DEMO_USER : null);
+  const [loading, setLoading] = useState(!PREVIEW_DEMO_AUTH);
 
   useEffect(() => {
+    if (PREVIEW_DEMO_AUTH) return;
     const unsubscribe = onAuthStateChanged((u) => {
       setUser(u);
       setLoading(false);
@@ -65,8 +81,14 @@ export function MerchantAuthProvider({ children }: { children: ReactNode }) {
   // Neither function closes over anything, so both are stable for the life of
   // the provider and the value only changes when `user` or `loading` actually
   // does.
-  const getIdToken = useCallback(() => fetchIdToken(), []);
-  const signOut = useCallback(() => firebaseSignOut(), []);
+  const getIdToken = useCallback(
+    () => (PREVIEW_DEMO_AUTH ? Promise.resolve<string | null>("mock-id-token") : fetchIdToken()),
+    []
+  );
+  const signOut = useCallback(async () => {
+    if (PREVIEW_DEMO_AUTH) return;
+    await firebaseSignOut();
+  }, []);
 
   const value: MerchantAuthState = useMemo(
     () => ({ user, loading, getIdToken, signOut }),
