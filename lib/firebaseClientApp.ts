@@ -23,6 +23,8 @@
 
 import { getApps, getApp, initializeApp, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
+// Type-only: erased at build, so it adds nothing to any bundle (see getPapexV2Firestore).
+import type { Firestore } from "firebase/firestore";
 
 const PAPEXV2_CLIENT_APP_NAME = "papexv2-client";
 
@@ -54,4 +56,23 @@ export function getPapexV2Auth(): Auth {
   if (cachedAuth) return cachedAuth;
   cachedAuth = getAuth(getPapexV2App());
   return cachedAuth;
+}
+
+// Firestore on the same papexv2 app, for the merchant dashboard's live
+// profile view (lib/merchantProfilesClient.ts subscribes to the PUBLIC-READ
+// `merchants/{merchantId}` doc; no sign-in on this app is needed for that).
+//
+// Async + dynamic import on purpose: a static `import "firebase/firestore"`
+// here would register the Firestore component (the package is marked
+// side-effectful, so it can't be tree-shaken) and ship ~100KB of Firestore
+// into every bundle that imports this module, including the /r receipt
+// fallback's Save-to-PapeX sheet, which never touches Firestore. Same
+// "nothing happens until a browser caller asks" rule as the rest of the file.
+let cachedDb: Firestore | null = null;
+
+export async function getPapexV2Firestore(): Promise<Firestore> {
+  if (cachedDb) return cachedDb;
+  const { getFirestore } = await import("firebase/firestore");
+  cachedDb = getFirestore(getPapexV2App());
+  return cachedDb;
 }

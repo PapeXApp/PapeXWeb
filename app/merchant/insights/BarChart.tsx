@@ -99,10 +99,15 @@ export function BarChart({
                 onFocus={() => setHovered(i)}
                 onBlur={() => setHovered((h) => (h === i ? null : h))}
                 aria-label={`${d.label}: ${formatValue(d.value)}${d.sub ? `, ${d.sub}` : ""}${interactive ? " — view these transactions" : ""}`}
-                className={`absolute inset-x-0 bottom-0 top-0 rounded-t-[4px] outline-none transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+                // The orange must live in the focus-visible state only.
+                // Tailwind's outline-none is a 2px *solid transparent*
+                // outline, so an unconditional inline outlineColor turns it
+                // into an always-on orange box around every bar's full-height
+                // hit target (the "every bar is the same height" bug).
+                className={`absolute inset-x-0 bottom-0 top-0 rounded-t-[4px] outline-none transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--bar-focus)] ${
                   interactive ? "cursor-pointer hover:bg-white/[0.04]" : "cursor-default"
                 }`}
-                style={{ outlineColor: T.orange }}
+                style={{ "--bar-focus": T.orange } as React.CSSProperties}
               />
               <div
                 className="pointer-events-none mx-auto rounded-t-[4px] transition-[height,opacity] duration-150"

@@ -5,8 +5,8 @@
  * Perfect for blog images!
  */
 
-import { put } from '@vercel/blob'
 import imageCompression from 'browser-image-compression'
+import { auth } from '@/firebase/firebaseConfig'
 
 /**
  * Compresses an image file before upload
@@ -52,20 +52,26 @@ export async function uploadImageToVercelBlob(
 
     console.log('Uploading image to Vercel Blob Storage...', fileName)
     
-    // Upload to Vercel Blob
-    // Note: This requires a server-side API route or server action
-    // We'll create an API route for this
+    // The route only accepts signed-in blog admins (lib/blogUploadAuth.ts)
+    const user = auth.currentUser
+    if (!user) {
+      throw new Error('Sign in as a blog admin to upload images')
+    }
+    const idToken = await user.getIdToken()
+
     const formData = new FormData()
     formData.append('file', compressedFile)
     formData.append('filename', fileName)
 
     const response = await fetch('/api/upload-image', {
       method: 'POST',
+      headers: { Authorization: `Bearer ${idToken}` },
       body: formData,
     })
 
     if (!response.ok) {
-      throw new Error(`Upload failed: ${response.statusText}`)
+      const body = await response.json().catch(() => null)
+      throw new Error(`Upload failed: ${body?.error ?? response.statusText}`)
     }
 
     const data = await response.json()

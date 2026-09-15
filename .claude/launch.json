@@ -5,7 +5,8 @@
       "name": "papex-web",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--", "-p", "3001"],
-      "port": 3001
+      "port": 3001,
+      "url": "http://merchant.localhost:3001"
     }
   ]
 }

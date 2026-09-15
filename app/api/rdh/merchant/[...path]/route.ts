@@ -51,6 +51,9 @@ const ALLOWED_FIRST_SEGMENT = new Set([
   "tap-rate",
   "export.csv",
   "receipt",
+  // GET /merchant/forensics — AttentionSection's findings. Its caller
+  // swallows errors by design, so a missing entry here fails silently.
+  "forensics",
   // Covers BOTH /merchant/market/cross-shopping and
   // /merchant/market/traffic-index (docs/goals/competitor-insights/
   // plan.md §3) — the allowlist keys on the first path segment only.

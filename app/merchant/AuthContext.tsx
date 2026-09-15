@@ -25,6 +25,7 @@ import {
   signOut as firebaseSignOut,
   type User,
 } from "@/lib/firebaseMerchantAuth";
+import { MERCHANT_MOCK } from "@/lib/merchantApi";
 
 interface MerchantAuthState {
   user: User | null;
@@ -35,13 +36,57 @@ interface MerchantAuthState {
   signOut: () => Promise<void>;
 }
 
+// ---------------------------------------------------------------------------
+// Mock-mode auth bypass (LOCAL DESIGN WORK ONLY)
+// ---------------------------------------------------------------------------
+//
+// NEXT_PUBLIC_MERCHANT_MOCK=1 makes every lib/merchantApi.ts call return
+// seeded fixtures, but it does NOT make you signed in — so the whole
+// dashboard still bounced to /merchant/login and none of it could be looked
+// at without real Firebase credentials. That made mock mode useless for the
+// thing it exists for: iterating on the design with no backend.
+//
+// This stands in a fake signed-in merchant so the gate in layout.tsx opens.
+// It is deliberately double-gated:
+//   - MERCHANT_MOCK          — the fixtures flag, only ever set in .env.local
+//   - NODE_ENV !== production — dead on any `next build`, so a Vercel
+//                               deployment cannot enable it even if the mock
+//                               env var were set on it by mistake.
+// Both must hold. Real Firebase auth is completely untouched otherwise.
+const MOCK_AUTH =
+  MERCHANT_MOCK && process.env.NODE_ENV !== "production";
+
+/**
+ * Minimum shape the dashboard actually reads off `user` (layout.tsx uses
+ * `displayName` / `email` for the nav identity label; nothing else touches
+ * it). Cast rather than constructed in full because Firebase's `User` is a
+ * ~20-member interface of methods no mock-mode code path ever calls.
+ */
+const MOCK_USER = {
+  uid: "mock-merchant-uid",
+  email: "design@papex.app",
+  displayName: "Mock Merchant",
+  emailVerified: true,
+} as unknown as User;
+
+/**
+ * Non-empty on purpose: every page guards its fetch with `if (!token) return`,
+ * so a null token would leave mock mode showing empty screens. The value is
+ * never sent anywhere — lib/merchantApi.ts short-circuits to fixtures before
+ * any fetch when MERCHANT_MOCK is on.
+ */
+const MOCK_ID_TOKEN = "mock-id-token";
+
 const MerchantAuthContext = createContext<MerchantAuthState | null>(null);
 
 export function MerchantAuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(MOCK_AUTH ? MOCK_USER : null);
+  const [loading, setLoading] = useState(!MOCK_AUTH);
 
   useEffect(() => {
+    // Never attach the real listener under the mock bypass — Firebase would
+    // report "signed out" and immediately undo the stand-in user.
+    if (MOCK_AUTH) return;
     const unsubscribe = onAuthStateChanged((u) => {
       setUser(u);
       setLoading(false);
@@ -65,8 +110,19 @@ export function MerchantAuthProvider({ children }: { children: ReactNode }) {
   // Neither function closes over anything, so both are stable for the life of
   // the provider and the value only changes when `user` or `loading` actually
   // does.
-  const getIdToken = useCallback(() => fetchIdToken(), []);
-  const signOut = useCallback(() => firebaseSignOut(), []);
+  const getIdToken = useCallback(
+    () => (MOCK_AUTH ? Promise.resolve<string | null>(MOCK_ID_TOKEN) : fetchIdToken()),
+    []
+  );
+  const signOut = useCallback(async () => {
+    if (MOCK_AUTH) {
+      // Let "Sign out" still do something visible locally (drops you at the
+      // login page) without touching Firebase.
+      setUser(null);
+      return;
+    }
+    await firebaseSignOut();
+  }, []);
 
   const value: MerchantAuthState = useMemo(
     () => ({ user, loading, getIdToken, signOut }),

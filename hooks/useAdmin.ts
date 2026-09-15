@@ -3,6 +3,7 @@
 import { useState, useEffect, createContext, useContext } from 'react'
 import { auth } from '@/firebase/firebaseConfig'
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, User } from 'firebase/auth'
+import { BLOG_ADMIN_EMAILS, LEGACY_PLACEHOLDER_ADMIN_EMAILS } from '@/lib/adminEmails'
 
 interface AdminContextType {
   user: User | null
@@ -11,6 +12,10 @@ interface AdminContextType {
   login: (email: string, password: string) => Promise<boolean>
   logout: () => Promise<void>
 }
+
+// Admin emails live in lib/adminEmails.ts (shared with the server-side
+// upload check). This client gate is cosmetic; the server re-checks.
+const adminEmails: readonly string[] = [...BLOG_ADMIN_EMAILS, ...LEGACY_PLACEHOLDER_ADMIN_EMAILS]
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined)
 
@@ -26,23 +31,6 @@ export function useAdminAuth() {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
-
-  // Admin emails - you can add more here
-  const adminEmails = [
-    'admin@papex.app',
-    'nicolas@papex.app',
-    'michael@papex.app',
-    'raasinr@gmail.com', // Your admin email
-    'nico.courbage@gmail.com', // Nico's admin email
-    'mike@series-zero.com', // Mike's admin email
-    'michael_khoury@icloud.com', // Michael Khoury's admin email
-    'krutartha2002@gmail.com', // Kru's admin email
-    // Add your Firebase auth email here
-    'test@papex.app',
-    'admin@gmail.com',
-    'nicolas@gmail.com',
-    'michael@gmail.com'
-  ]
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {

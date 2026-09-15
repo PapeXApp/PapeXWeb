@@ -6,7 +6,10 @@
 // after middleware.ts's host rewrite — see lib/merchantHost.ts). Owns:
 //   - the Firebase auth provider for the whole route tree
 //   - the auth *gate*: signed-out visitors get bounced to /merchant/login
-//   - the nav chrome (Transactions / Insights / Devices, merchant identity, sign out)
+//   - the nav chrome (Transactions / Insights / Intelligence / Devices /
+//     Profile, plus Admin for PapeX staff only; merchant identity, sign out)
+//   - the shared profile fetch (profile/ProfileContext.tsx), which is what
+//     tells the nav whether this login is an admin
 //
 // /merchant/login is a child route of this same layout (Next.js App Router
 // has no way to opt a route out of an ancestor layout without a route
@@ -17,8 +20,9 @@
 import { useEffect, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { LogOut, Receipt, BarChart3, Sparkles, Radio } from "lucide-react";
+import { LogOut, Receipt, BarChart3, Sparkles, Radio, Store, ShieldCheck } from "lucide-react";
 import { MerchantAuthProvider, useMerchantAuth } from "./AuthContext";
+import { MerchantProfileProvider, useMerchantProfile } from "./profile/ProfileContext";
 import { LoadingBlock } from "./ui/primitives";
 import { T } from "./ui/tokens";
 
@@ -29,12 +33,18 @@ const NAV_ITEMS = [
   { href: "/merchant/insights", label: "Insights", icon: BarChart3, exact: false },
   { href: "/merchant/intelligence", label: "Intelligence", icon: Sparkles, exact: false },
   { href: "/merchant/devices", label: "Devices", icon: Radio, exact: false },
+  { href: "/merchant/profile", label: "Profile", icon: Store, exact: false },
 ];
 
-function NavLinks({ pathname }: { pathname: string }) {
+// Only rendered when the profile response says isAdmin. Sidebar + mobile top
+// bar only: five items already fill the mobile bottom bar at 390px.
+const ADMIN_ITEM = { href: "/merchant/admin", label: "Admin", icon: ShieldCheck, exact: false };
+
+function NavLinks({ pathname, isAdmin }: { pathname: string; isAdmin: boolean }) {
+  const items = isAdmin ? [...NAV_ITEMS, ADMIN_ITEM] : NAV_ITEMS;
   return (
     <>
-      {NAV_ITEMS.map(({ href, label, icon: Icon, exact }) => {
+      {items.map(({ href, label, icon: Icon, exact }) => {
         const active = exact ? pathname === href : pathname.startsWith(href);
         return (
           <Link
@@ -57,6 +67,8 @@ function NavLinks({ pathname }: { pathname: string }) {
 
 function AuthedShell({ children, pathname }: { children: ReactNode; pathname: string }) {
   const { user, signOut } = useMerchantAuth();
+  const { isAdmin } = useMerchantProfile();
+  const adminActive = pathname.startsWith(ADMIN_ITEM.href);
   // Registry-backed merchant display name is a real-backend concern (M2) —
   // for now, whatever Firebase Auth has on the admin-provisioned account.
   const merchantLabel = user?.displayName || user?.email || "Merchant";
@@ -78,7 +90,7 @@ function AuthedShell({ children, pathname }: { children: ReactNode; pathname: st
           </span>
         </div>
         <nav className="flex flex-1 flex-col gap-1">
-          <NavLinks pathname={pathname} />
+          <NavLinks pathname={pathname} isAdmin={isAdmin} />
         </nav>
         <div className="mt-auto flex flex-col gap-3 border-t pt-4" style={{ borderColor: T.glassBorder }}>
           <div className="flex items-center gap-2.5 px-2">
@@ -114,9 +126,22 @@ function AuthedShell({ children, pathname }: { children: ReactNode; pathname: st
           </span>
           <span className="h-[6px] w-[6px] rounded-sm" style={{ background: T.orange }} aria-hidden />
         </div>
-        <button onClick={() => signOut()} style={{ color: T.textSecondary }} aria-label="Sign out">
-          <LogOut className="h-4 w-4" strokeWidth={2} />
-        </button>
+        <div className="flex items-center gap-1">
+          {isAdmin && (
+            <Link
+              href={ADMIN_ITEM.href}
+              aria-label="Admin"
+              className="flex h-8 items-center gap-1.5 rounded-full px-2.5 text-xs font-medium transition hover:bg-white/5"
+              style={{ color: adminActive ? T.orange : T.textSecondary, background: adminActive ? T.orangeDim : undefined }}
+            >
+              <ShieldCheck className="h-4 w-4" strokeWidth={2} />
+              Admin
+            </Link>
+          )}
+          <button onClick={() => signOut()} className="flex h-8 w-8 items-center justify-center rounded-full transition hover:bg-white/5" style={{ color: T.textSecondary }} aria-label="Sign out">
+            <LogOut className="h-4 w-4" strokeWidth={2} />
+          </button>
+        </div>
       </header>
 
       <main className="flex-1 px-4 pb-24 pt-20 md:ml-60 md:px-8 md:pb-10 md:pt-8">{children}</main>
@@ -132,11 +157,11 @@ function AuthedShell({ children, pathname }: { children: ReactNode; pathname: st
             <Link
               key={href}
               href={href}
-              className="flex flex-1 flex-col items-center gap-1 rounded-xl py-1.5 text-[11px] font-medium"
+              className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl py-1.5 text-[11px] font-medium"
               style={{ color: active ? T.orange : T.textMuted }}
             >
               <Icon className="h-5 w-5" strokeWidth={2} />
-              {label}
+              <span className="max-w-full truncate">{label}</span>
             </Link>
           );
         })}
@@ -158,7 +183,11 @@ function Gate({ children, pathname }: { children: ReactNode; pathname: string })
   if (loading) return <LoadingBlock label="Signing you in…" />;
   if (!user) return <LoadingBlock label="Redirecting to sign in…" />;
 
-  return <AuthedShell pathname={pathname}>{children}</AuthedShell>;
+  return (
+    <MerchantProfileProvider>
+      <AuthedShell pathname={pathname}>{children}</AuthedShell>
+    </MerchantProfileProvider>
+  );
 }
 
 export default function MerchantLayout({ children }: { children: ReactNode }) {
