@@ -401,7 +401,7 @@ test("offer validity states a DURATION and never a date", () => {
   const consumer = getDemoEnrichment(CONSUMER_SID)!.offer!;
   const merchant = getDemoEnrichment(MERCHANT_SID)!.offer!;
   assert.equal(formatOfferValidity(consumer), "Valid for 60 days from purchase");
-  assert.equal(formatOfferValidity(merchant), "Valid for 14 days from purchase");
+  assert.equal(formatOfferValidity(merchant), "Valid for 42 days from purchase");
   for (const [sid, e] of DEMO_RECEIPTS) {
     if (!e.offer) continue;
     const line = formatOfferValidity(e.offer);
@@ -428,12 +428,14 @@ test("offer window: the consumer coupon counts down from its own receipt date", 
 });
 
 test("offer window: the merchant coupon counts down from its own receipt date", () => {
-  // Receipt printed 2026-09-08, 14-day window -> the last day is 2026-09-22.
+  // Receipt printed 2026-09-08, 42-day window -> the last day is 2026-10-20.
+  // 42 is a Tech Week measure over the designed 14 — see the offer block in
+  // lib/demoReceipts.ts for why 14 cannot reach the event from honest paper.
   const e = getDemoEnrichment(MERCHANT_SID);
-  assert.equal(offerDaysRemaining(e, at("2026-09-08")), 14);
-  assert.equal(offerDaysRemaining(e, at("2026-09-17")), 5);
-  assert.equal(offerDaysRemaining(e, at("2026-09-21")), 1);
-  assert.equal(offerDaysRemaining(e, at("2026-09-22")), 0); // the last day
+  assert.equal(offerDaysRemaining(e, at("2026-09-08")), 42); // the day of purchase
+  assert.equal(offerDaysRemaining(e, at("2026-09-17")), 33);
+  assert.equal(offerDaysRemaining(e, at("2026-10-19")), 1);
+  assert.equal(offerDaysRemaining(e, at("2026-10-20")), 0); // the last day
 });
 
 test("offer window: what each voucher shows during SF and LA Tech Week", () => {
@@ -441,25 +443,27 @@ test("offer window: what each voucher shows during SF and LA Tech Week", () => {
   // so it cannot be a surprise at a booth. SF Tech Week is Oct 5-11 2026 and
   // LA Tech Week is Oct 12-18 2026.
   //
-  // The consumer voucher's 60 days carry it through both. The MERCHANT
-  // voucher's 14 days, anchored to the 2026-09-08 on its paper, closed on
-  // 2026-09-22 — so at Tech Week it renders with no urgency chip at all.
-  // That is the designed degradation, not a bug (the chip vanishes rather
-  // than saying "Expired", and "Valid for 14 days from purchase" stays true),
-  // but it is a content decision and not one this file can make: no 14-day
-  // window anchored to a date already printed before SF opens can reach LA's
-  // close. The registry's own pre-correction 2026-09-29 would have closed on
-  // 2026-10-13, the second day of LA.
+  // Both vouchers keep a live chip across both weeks, from printed dates that
+  // are honestly in the past. That is the whole point of the pairing, and it
+  // is the assertion that fails if anyone moves a date or a term without
+  // checking the event against it.
+  //
+  // The merchant voucher only clears LA because its window was widened from
+  // the designed 14 days to 42 — 14 from the printed 2026-09-08 closed on
+  // 2026-09-22, before SF. The bare minimum for an anchor already in the past
+  // is 18 days to reach SF's open and 31 to reach LA's close, so this is not
+  // something a smaller bump would have fixed. See the offer block in
+  // lib/demoReceipts.ts, and the 1.6.9 plan to make 14 possible again.
   const consumer = getDemoEnrichment(CONSUMER_SID);
   const merchant = getDemoEnrichment(MERCHANT_SID);
-  for (const [label, day, expected] of [
-    ["SF opens", "2026-10-05", 27],
-    ["SF closes", "2026-10-11", 21],
-    ["LA opens", "2026-10-12", 20],
-    ["LA closes", "2026-10-18", 14],
+  for (const [label, day, consumerDays, merchantDays] of [
+    ["SF opens", "2026-10-05", 27, 15],
+    ["SF closes", "2026-10-11", 21, 9],
+    ["LA opens", "2026-10-12", 20, 8],
+    ["LA closes", "2026-10-18", 14, 2],
   ] as const) {
-    assert.equal(offerDaysRemaining(consumer, at(day)), expected, `consumer chip on ${label}`);
-    assert.equal(offerDaysRemaining(merchant, at(day)), null, `merchant chip on ${label}`);
+    assert.equal(offerDaysRemaining(consumer, at(day)), consumerDays, `consumer chip on ${label}`);
+    assert.equal(offerDaysRemaining(merchant, at(day)), merchantDays, `merchant chip on ${label}`);
   }
 });
 
@@ -473,7 +477,7 @@ test("offer window: PAST the window the chip vanishes — it never says Expired"
   for (const day of ["2026-11-02", "2026-12-25", "2027-03-14", "2028-01-01", "2031-07-04"]) {
     assert.equal(offerDaysRemaining(consumer, at(day)), null, `consumer chip still shown on ${day}`);
   }
-  for (const day of ["2026-09-23", "2026-12-25", "2027-06-01", "2030-01-01"]) {
+  for (const day of ["2026-10-21", "2026-12-25", "2027-06-01", "2030-01-01"]) {
     assert.equal(offerDaysRemaining(merchant, at(day)), null, `merchant chip still shown on ${day}`);
   }
 });

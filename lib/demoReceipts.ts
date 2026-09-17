@@ -545,28 +545,37 @@ export const DEMO_RECEIPTS: ReadonlyMap<string, DemoReceiptEnrichment> = new Map
 
       // The visible number is friendly; the fine print is where the merchant
       // wins. $75 sits ~5% above this shopper's own $71.42 total — a floor
-      // set against her demonstrated basket, not a store average — and 14
-      // days catches the next two trips of a 5-7 day grocery cycle.
+      // set against her demonstrated basket, not a store average.
       //
-      // OPEN DECISION — 14 days from the printed 2026-09-08 ran out on
-      // 2026-09-22, so at Tech Week this voucher renders with NO urgency
-      // chip. That degrades the way it was designed to (the chip vanishes;
-      // "Valid for 14 days from purchase" is still true and nothing says
-      // "Expired"), but the merchant pitch loses its countdown.
+      // `validForDays: 42` IS A TECH WEEK MEASURE AND IS MEANT TO BE REVERTED.
+      // The designed term is 14 days, chosen because it catches the next two
+      // trips of a 5-7 day grocery cycle — a return-visit mechanic, which is
+      // the entire merchant pitch. Six weeks is a discount, not a mechanic.
       //
-      // It cannot be fixed from this file without changing the terms: a
-      // 14-day window anchored to any date already printed before SF opens
-      // cannot reach LA's close on Oct 18. The registry's own pre-correction
-      // date, 2026-09-29, would not have reached it either — that window
-      // closed 2026-10-13, the second day of LA. The two real options are a
-      // longer `validForDays` (which changes what the merchant is being
-      // pitched: 14 days is the deliberate "next two trips of a 5-7 day
-      // grocery cycle" number) or re-seeding this sid's blob with a later
-      // printed date, which is a write against a live demo sid.
+      // The reason it cannot stay at 14 right now is structural, not
+      // editorial. The countdown is anchored to `receiptDate` — the date
+      // PRINTED on a fixed blob — and 2026-09-08 + 14 closed on 2026-09-22,
+      // before SF opens. No 14-day window anchored to any date already
+      // printed before Oct 5 can reach LA's close on Oct 18; for a past-dated
+      // anchor the minimum is 18 days to reach SF and 31 to reach LA. The
+      // registry's own pre-correction 2026-09-29 would not have reached it
+      // either — that window closed 2026-10-13, the second day of LA.
+      //
+      // 42 days runs to 2026-10-20: 15 left at SF's open, 2 at LA's close,
+      // on paper that is honestly past-dated and needs no write to a live
+      // demo sid. Noah took that trade knowingly on 2026-09-17.
+      //
+      // THE REAL FIX, planned for 1.6.9: derive the anchor from the fetched
+      // receipt's own dateline on both surfaces and leave `validForDays` as
+      // the only term that lives here. Then a re-mint moves the countdown
+      // with the paper, no app release is needed to keep them in step, and
+      // 14 days comes back. Until that ships, the anchor is compiled into the
+      // App Clip binary via DemoEnrichmentRegistry.generated.swift, which is
+      // why the cheap-looking fix (re-mint closer to the event) is not cheap.
       offer: {
         discount: 10,
         minimumBasket: 75,
-        validForDays: 14,
+        validForDays: 42,
         limit: "Limit one per customer",
         exclusions: "Excludes alcohol, tobacco, pharmacy, gift cards, lottery, CRV and bag fees.",
         ctaLabel: "Save this offer",
@@ -908,11 +917,11 @@ export function formatOfferValidity(offer: DemoOffer): string {
  *   - there is no offer or no anchor date to measure from, or
  *   - the window has already closed.
  *
- * The second case is the whole design. Once the 14 or 60 days are up, the
- * urgency chip simply vanishes; it never becomes "Expired", because the
- * voucher's own validity line ("Valid for 14 days from purchase") is still
- * true and an "Expired" stamp on a permanent demo tag is the exact failure
- * this function exists to prevent.
+ * The second case is the whole design. Once the window is up, the urgency
+ * chip simply vanishes; it never becomes "Expired", because the voucher's own
+ * validity line ("Valid for 42 days from purchase") is still true and an
+ * "Expired" stamp on a permanent demo tag is the exact failure this function
+ * exists to prevent.
  *
  * `0` means today is the last day and is a real answer, not an absence —
  * hence `null` rather than `-1` for the closed case.
