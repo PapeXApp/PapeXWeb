@@ -23,6 +23,7 @@
 
 import type { PaymentNetwork } from "./receiptSummary";
 import * as mock from "./merchantMock";
+import { demoOverridesAllowed } from "./deployEnv";
 
 export type { PaymentNetwork };
 
@@ -45,7 +46,14 @@ export const RDH_API_BASE =
  */
 export const MERCHANT_API_BASE = "/api/rdh";
 
-export const MERCHANT_MOCK = process.env.NEXT_PUBLIC_MERCHANT_MOCK === "1";
+// Gated by demoOverridesAllowed() (lib/deployEnv.ts) — same fail-closed
+// production guard as lib/merchantHost.ts's demo-host-any flag. Read here
+// (this module is imported into client components, so this const is
+// evaluated in the browser bundle too) rather than trusting that the flag
+// was never set on a production build: a real merchant seeing invented
+// transactions is exactly the failure this exists to prevent, whatever
+// vercel.json says.
+export const MERCHANT_MOCK = process.env.NEXT_PUBLIC_MERCHANT_MOCK === "1" && demoOverridesAllowed();
 
 // ---------------------------------------------------------------------------
 // Shared domain types
