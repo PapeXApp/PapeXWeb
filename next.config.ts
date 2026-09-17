@@ -33,6 +33,31 @@ const nextConfig: NextConfig = {
   trailingSlash: false,
   async headers() {
     return [
+      // Android App Links (assetlinks.json) and iOS Universal Links (AASA) are
+      // DIFFERENT mechanisms that happen to share the /.well-known/ prefix.
+      // Android needs this file to name com.app.papex plus the SHA-256 of the
+      // signing cert; the paths it applies to are declared in the APP’s intent
+      // filters, not here — the mirror image of the AASA below, which declares
+      // the paths server-side and names only the team + bundle id.
+      //
+      // Content-Type is set explicitly for the same reason as the AASA: Google’s
+      // verifier requires application/json and follows no redirects. Next already
+      // infers it from the .json extension, so this is belt-and-braces plus a
+      // place to hang the explanation. middleware.ts’s matcher excludes
+      // /.well-known/ so nothing rewrites it.
+      {
+        source: '/.well-known/assetlinks.json',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/json',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=300',
+          },
+        ],
+      },
       {
         source: '/.well-known/apple-app-site-association',
         headers: [
