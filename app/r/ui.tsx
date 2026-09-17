@@ -218,16 +218,22 @@ export function StateCard({
 // URI, so there's no network fetch to optimize away either way, and
 // next/image's remote-loader machinery doesn't apply to embedded data.
 
+// Renders `headerDataUri` (ink-bounds-trimmed), not `dataUri` (the raw,
+// untrimmed decode) — real captures showed the mark's ink is often
+// asymmetrically off-center within its own declared canvas on both axes,
+// which read as "the logo is off-center" even though this card's own flex
+// container centers the box around it perfectly. See lib/escpos.ts's
+// DecodedLogo.headerDataUri doc comment for the numbers.
 function LogoBlock({ logo }: { logo: DecodedLogo }) {
   return (
     <div className="flex justify-center">
       <GlassCard emphasis="none" className="flex max-w-[240px] items-center justify-center px-6 py-5" radius={20}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={logo.dataUri}
+          src={logo.headerDataUri}
           alt="Merchant logo"
-          width={logo.widthPx}
-          height={logo.heightPx}
+          width={logo.headerWidthPx}
+          height={logo.headerHeightPx}
           className="h-auto w-full max-h-[120px]"
           style={{ imageRendering: "pixelated" }}
         />
@@ -332,21 +338,43 @@ function monogram(name?: string): string {
 export function MerchantHeaderCard({
   summary,
   isSample = false,
+  logo,
 }: {
   summary: ReceiptSummary;
   isSample?: boolean;
+  /**
+   * Decoded merchant logo, if any — see lib/escpos.ts. When present, its
+   * `avatarDataUri` (trimmed to the mark's own ink bounds, recolored dark
+   * for this circle's white fill) replaces the letter monogram. Falls back
+   * to the monogram whenever there's no inline logo: no raster in the
+   * stream, an NV/stored-logo reference (bitmap bytes not in this capture),
+   * or a decode failure — all collapse to `logo` being undefined upstream
+   * (app/r/page.tsx), so this component only needs one check. Never set on
+   * the sample/demo path, so the sample keeps today's monogram unconditionally.
+   */
+  logo?: DecodedLogo;
 }) {
   const { merchantName, addressLines, dateline } = summary;
   return (
     <GlassCard emphasis="standard" className="p-6">
       <div className="flex items-center gap-4">
         <div
-          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white"
+          className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white"
           style={{ border: `2px solid ${T.orange}` }}
         >
-          <span className="text-xl font-medium" style={{ color: T.navy }}>
-            {monogram(merchantName)}
-          </span>
+          {logo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={logo.avatarDataUri}
+              alt=""
+              className="h-full w-full object-contain p-1.5"
+              style={{ imageRendering: "pixelated" }}
+            />
+          ) : (
+            <span className="text-xl font-medium" style={{ color: T.navy }}>
+              {monogram(merchantName)}
+            </span>
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <h1 className="font-barlow truncate text-2xl font-medium" style={{ color: T.text }}>
@@ -704,7 +732,7 @@ export function ReceiptView({
         </div>
       )}
       {logo && <LogoBlock logo={logo} />}
-      {hasStructure && <MerchantHeaderCard summary={summary} isSample={isSample} />}
+      {hasStructure && <MerchantHeaderCard summary={summary} isSample={isSample} logo={logo} />}
       {hasStructure && <ItemsCard summary={summary} />}
       {hasStructure && <TotalsCard summary={summary} isSample={isSample} />}
       {/* Skipped when there is no text at all — an empty, permanently-open
