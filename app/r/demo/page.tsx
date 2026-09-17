@@ -38,11 +38,20 @@
 //   ui.tsx. A demo sid with no enrichment renders exactly the page that
 //   shipped before the layer existed.
 //   Deliberately NOT the DemoBanner / SampleFrame / watermark treatment `/r`
-//   uses for its `?demo=1` sample: those exist to mark FABRICATED data (see
-//   lib/receiptState.ts — a real defect fix, don't undo it), and these
-//   receipts are real seeded data from a real provisioned merchant. Stamping
-//   "Made-up data, not a real purchase" across the pitch would be both untrue
-//   and self-defeating.
+//   uses for its `?demo=1` sample: those exist to mark FABRICATED data in a
+//   context where a visitor might mistake it for THEIR OWN real purchase
+//   (see lib/receiptState.ts — a real defect fix, don't undo it). That is
+//   not the risk here — nobody tapping a demo tag at a booth thinks
+//   Hartwell's Market printed for their own purchase — and that treatment's
+//   visual weight would read as the company hedging on its own demo.
+//
+//   Some of these receipts ARE invented (Hartwell's Market, Ellsworth
+//   Market — the store, prices and promotions were made up for the pitch);
+//   Sunset Leaf is real seeded data from a real provisioned merchant, and
+//   is not. Rather than a blanket banner across every demo sid, this is
+//   disclosed per-receipt: lib/demoReceipts.ts's `fabricated` field on the
+//   enrichment payload drives one calm sentence, `DemoDisclosure` below,
+//   that appears only for a receipt actually marked that way.
 //
 //   No SaveToPapex, and no import of it anywhere in this module's graph —
 //   see CtaRow.tsx. Claiming is single-owner per sid, so a demo tag offering
@@ -63,7 +72,12 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { fetchReceiptBytes } from "@/lib/rdh";
-import { getDemoEnrichment, offerDaysRemaining, resolveDemoRoute } from "@/lib/demoReceipts";
+import {
+  formatDemoDisclosure,
+  getDemoEnrichment,
+  offerDaysRemaining,
+  resolveDemoRoute,
+} from "@/lib/demoReceipts";
 import { platformFromUserAgent } from "@/lib/storeLinks";
 import { parseEscPos } from "@/lib/escpos";
 import { summarizeReceipt, hasStructure as computeHasStructure } from "@/lib/receiptSummary";
@@ -74,6 +88,7 @@ import {
   ReceiptNotAvailable,
   ReceiptView,
   DemoCtaRow,
+  DemoDisclosure,
   AppCta,
 } from "../ui";
 import { EnrichmentSections } from "../enrichment";
@@ -128,6 +143,14 @@ export default async function DemoReceiptPage({
   // nothing and the page falls back to the bare receipt.
   const enrichment = getDemoEnrichment(sid);
 
+  // The disclosure line for a receipt whose store, prices and promotions
+  // were invented for this demo (Hartwell's Market, Ellsworth Market) —
+  // `undefined` for one that isn't marked `fabricated` (Sunset Leaf, or a
+  // sid with no enrichment at all), in which case nothing renders. See
+  // DemoReceiptEnrichment.fabricated and DemoDisclosure for the full
+  // argument for why this is per-receipt rather than a blanket banner.
+  const disclosure = formatDemoDisclosure(enrichment);
+
   // The page owns the clock so every function under it stays pure and can be
   // tested at simulated dates. `new Date()` is read exactly once, here.
   //
@@ -169,6 +192,13 @@ export default async function DemoReceiptPage({
           logo={receipt?.logo}
           rasterPage={rasterPage}
         />
+        {/* The demo-data disclosure, directly under the receipt: after the
+            structured card a screenshot at a loud booth is most likely to
+            already include, before the value layer resumes the pitch below.
+            Absent entirely for a non-`fabricated` receipt (Sunset Leaf) — see
+            DemoDisclosure in ../ui.tsx for why this isn't the SampleFrame /
+            watermark treatment. */}
+        {disclosure && <DemoDisclosure text={disclosure} />}
         {/* The value layer, below the paper — savings, rewards, PapeX's own
             observation, the merchant's voucher, the opt-in. Deliberately
             below: the receipt is the thing the visitor tapped for and has to

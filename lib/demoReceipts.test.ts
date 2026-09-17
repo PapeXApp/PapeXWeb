@@ -19,6 +19,7 @@ import {
   LOYALTY_DISCLOSURE,
   formatCountWord,
   formatDaysRemaining,
+  formatDemoDisclosure,
   formatMoney,
   formatMoneyCompact,
   formatOfferQualifier,
@@ -550,6 +551,67 @@ test("the loyalty disclosure never implies PapeX redeems or holds value", () => 
   // The guardrail that keeps this clear of stored-value territory and of a
   // promise we cannot keep at somebody else's register. Do not cut it.
   assert.equal(LOYALTY_DISCLOSURE, "PapeX tracks your points. Redeem them at the register like always.");
+});
+
+// ---- Demo-data disclosure -----------------------------------------------------
+//
+// Hartwell's Market and Ellsworth Market are invented — a fictional store,
+// fictional prices, fictional promotions — unlike the Sunset Leaf bench tag,
+// which is real seeded data from a real provisioned merchant. The assertions
+// below guard both directions of that split: a fabricated receipt must
+// disclose itself, and a receipt that isn't marked `fabricated` — Sunset
+// Leaf, an empty enrichment, or no enrichment at all — must render nothing.
+
+test("formatDemoDisclosure: both Tech Week demos are marked fabricated and disclose themselves", () => {
+  assert.equal(getDemoEnrichment(CONSUMER_SID)?.fabricated, true);
+  assert.equal(getDemoEnrichment(MERCHANT_SID)?.fabricated, true);
+  assert.equal(
+    formatDemoDisclosure(getDemoEnrichment(CONSUMER_SID)),
+    "Hartwell's Market is a store created for this demo; its prices and promotions are invented.",
+  );
+  assert.equal(
+    formatDemoDisclosure(getDemoEnrichment(MERCHANT_SID)),
+    "Ellsworth Market is a store created for this demo; its prices and promotions are invented.",
+  );
+});
+
+test("formatDemoDisclosure: Sunset Leaf is real seeded data and discloses nothing", () => {
+  // The bench tag predates the Tech Week story and really did come off a
+  // real provisioned merchant's till — the one demo sid this must stay
+  // silent for.
+  assert.equal(getDemoEnrichment(DEMO_SID)?.fabricated, undefined);
+  assert.equal(formatDemoDisclosure(getDemoEnrichment(DEMO_SID)), undefined);
+});
+
+test("formatDemoDisclosure: absent enrichment and a non-fabricated payload render nothing", () => {
+  assert.equal(formatDemoDisclosure(undefined), undefined);
+  assert.equal(formatDemoDisclosure({}), undefined);
+  assert.equal(formatDemoDisclosure({ fabricated: false }), undefined);
+  assert.equal(formatDemoDisclosure({ merchantName: "Some Store" }), undefined);
+});
+
+test("formatDemoDisclosure: a fabricated payload with no merchant name still yields a whole sentence", () => {
+  // Defensive only — every seeded `fabricated` entry does carry a name (see
+  // the registry test below) — but a future entry that forgets one must
+  // still render a complete sentence rather than a dangling subject.
+  assert.equal(
+    formatDemoDisclosure({ fabricated: true }),
+    "This receipt is from a store created for this demo; its prices and promotions are invented.",
+  );
+});
+
+test("every fabricated entry in the registry names its store", () => {
+  for (const [sid, e] of DEMO_RECEIPTS) {
+    if (!e.fabricated) continue;
+    assert.ok(e.merchantName, `${sid}: marked fabricated but has no merchantName`);
+  }
+});
+
+test("the demo-data disclosure never appears for a real-seeded (non-fabricated) receipt", () => {
+  for (const [sid, e] of DEMO_RECEIPTS) {
+    if (e.fabricated) continue;
+    assert.equal(formatDemoDisclosure(e), undefined, `${sid}: not fabricated but discloses something`);
+  }
 });
 
 // ---- Formatters --------------------------------------------------------------
