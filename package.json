@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "dev:clean": "rm -rf .next && next dev --turbopack",
+    "tunnel:merchant": "./scripts/merchant-tunnel.sh",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -16,11 +17,12 @@
     "test:png": "tsx lib/png.test.ts",
     "test:summary": "tsx lib/receiptSummary.test.ts",
     "test:merchantHost": "tsx lib/merchantHost.test.ts",
+    "test:deployEnv": "tsx lib/deployEnv.test.ts",
     "test:demo": "tsx lib/demoReceipts.test.ts",
     "test:demoBlobs": "tsx lib/demoBlobParity.test.ts",
     "test:raster": "tsx lib/starRaster.test.ts",
     "test:mockRaster": "tsx lib/mockStarRaster.test.ts",
-    "test": "npm run test:png && npm run test:escpos && npm run test:raster && npm run test:mockRaster && npm run test:summary && npm run test:state && npm run test:parsed && npm run test:merchantHost && npm run test:demo && npm run test:demoBlobs && npm run test:decoded",
+    "test": "npm run test:png && npm run test:escpos && npm run test:raster && npm run test:mockRaster && npm run test:summary && npm run test:state && npm run test:parsed && npm run test:merchantHost && npm run test:deployEnv && npm run test:demo && npm run test:demoBlobs && npm run test:decoded",
     "test:state": "tsx lib/receiptState.test.ts",
     "test:parsed": "tsx lib/rdhParsed.test.ts",
     "test:decoded": "tsx --tsconfig tsconfig.test.json components/DecodedText.test.tsx"
