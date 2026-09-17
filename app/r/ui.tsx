@@ -20,8 +20,15 @@
 // properties can't cleanly express a mask-composite recipe as inline
 // style, so that one piece is a real stylesheet rather than inline props.
 //
-// All server components except where noted — SaveToPapex.tsx and
-// RetryButton.tsx are their own "use client" islands, imported here.
+// Every component in this file is a server component, and nothing here may
+// import a client island — same rule as chrome.tsx, for the same reason.
+// `CtaRow`, the one piece that renders SaveToPapex (a "use client" island
+// pulling in the Firebase auth SDK), lives in ./CtaRow.tsx; Next includes
+// every client entry point reachable from a page's module graph whether it
+// renders or not, so keeping it out of here is what lets the demo routes,
+// app/rdh and app/merchant/tx/[sid] import these cards without shipping
+// sign-in JS they never run. The island-free CTA (`DemoCtaRow`, below) is
+// therefore safe to keep here.
 
 import type { ReactNode } from "react";
 import { AlertTriangle, Clock, FlaskConical, SearchX } from "lucide-react";
@@ -32,7 +39,6 @@ import {
   extractLastFour,
   PAYMENT_METHOD_STYLES,
 } from "@/lib/receiptSummary";
-import SaveToPapex from "./SaveToPapex";
 import styles from "./glass.module.css";
 import { GlassCard, S, Shell, T } from "./chrome";
 import { DecodedText } from "@/components/DecodedText";
@@ -755,18 +761,28 @@ export function AppCta({ platform }: { platform: Platform }) {
   );
 }
 
-export function CtaRow({
-  sid,
-  isSample,
-  platform,
-}: {
-  sid?: string;
-  isSample: boolean;
-  platform: Platform;
-}) {
+/**
+ * The CTA row for a receipt that must not offer a claim: "Get PapeX" and
+ * nothing else.
+ *
+ * Used by the demo routes (app/r/demo, app/demo/r) and by CtaRow's `isDemo`
+ * branch, so both URLs that can surface a demo receipt render the identical
+ * footer.
+ *
+ * Deliberately NOT a disabled "Save to PapeX" button. The disabled variant
+ * SaveToPapex renders for `isSample` is captioned "Nothing to save — this is
+ * a sample receipt", which is about FABRICATED data; a demo receipt is real
+ * seeded data from a real provisioned merchant, so that caption would be a
+ * lie. And at a booth the action we actually want is "install PapeX", not
+ * "sign into an account you don't have to save a receipt you didn't buy."
+ *
+ * Lives here, in the island-free half of this segment, so a demo route can
+ * render a CTA without pulling SaveToPapex (and the Firebase auth SDK behind
+ * it) into its module graph at all — see the note at the top of CtaRow.tsx.
+ */
+export function DemoCtaRow({ platform }: { platform: Platform }) {
   return (
     <div className="mt-2 flex flex-col items-center gap-4">
-      <SaveToPapex sid={sid} isSample={isSample} isIOS={platform === "ios"} />
       <AppCta platform={platform} />
     </div>
   );
