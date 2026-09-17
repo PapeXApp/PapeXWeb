@@ -293,6 +293,13 @@ export interface DemoReceiptEnrichment {
    * This one absolute date is fine — it is the purchase date, it is printed
    * on the paper, and it does not change. It is the ANCHOR the relative offer
    * window is measured from. The expiry is what must never be absolute.
+   *
+   * THE PAPER IS CANONICAL, NOT THIS FIELD. The blob seeded in S3 is what a
+   * phone renders and what the person in the room is holding; this is a
+   * transcription of its dateline. When they disagree, this is the side that
+   * is wrong — correcting the blob means writing to a live demo sid that
+   * physical tags may already point at. `lib/demoBlobParity.test.ts` holds a
+   * committed copy of each seeded blob and asserts the two agree.
    */
   receiptDate?: string;
   savings?: DemoSavings;
@@ -356,10 +363,16 @@ export const LOYALTY_DISCLOSURE = "PapeX tracks your points. Redeem them at the 
  *     meant to showcase away.
  *   - Deploy the sid here BEFORE writing it to a tag.
  *   - Every figure below must agree with the figures printed in the blob.
- *     The tests check the arithmetic that is checkable from here alone
- *     (components sum to the savings total, the balance floor-divides to the
- *     stated worth, the next rung is the next rung); they cannot check the
- *     blob, so that half is a review responsibility.
+ *     `lib/demoReceipts.test.ts` checks the arithmetic that is checkable from
+ *     here alone (components sum to the savings total, the balance
+ *     floor-divides to the stated worth, the next rung is the next rung).
+ *     `lib/demoBlobParity.test.ts` checks this map against a committed copy of
+ *     the seeded ESC/POS itself — dateline, merchant, totals, the savings
+ *     line, the loyalty rungs and every discounted price.
+ *     That second half used to be a review responsibility, and it was wrong
+ *     for six days: the blobs were re-minted on 2026-09-11 onto new printed
+ *     dates and this map kept the drafting-era ones, which anchored the
+ *     voucher countdown to a date that is not on the paper.
  */
 export const DEMO_RECEIPTS: ReadonlyMap<string, DemoReceiptEnrichment> = new Map<
   string,
@@ -378,7 +391,7 @@ export const DEMO_RECEIPTS: ReadonlyMap<string, DemoReceiptEnrichment> = new Map
 
   // ---------------------------------------------------------------------------
   // DEMO 1 — THE CONSUMER PITCH.  Hartwell's Market #218, San Mateo, CA.
-  // Receipt printed WED 09/30/26 18:42. Subtotal $96.30, tax $3.41, total
+  // Receipt printed WED 09/02/26 18:42. Subtotal $96.30, tax $3.41, total
   // $99.71 (CA exempts unprepared food; the tax is on the paper towels, the
   // sparkling water, the dish soap and their CRV).
   //
@@ -391,7 +404,7 @@ export const DEMO_RECEIPTS: ReadonlyMap<string, DemoReceiptEnrichment> = new Map
     "5ca1e00000000001",
     {
       merchantName: "Hartwell's Market",
-      receiptDate: "2026-09-30",
+      receiptDate: "2026-09-02",
       // Hartwell's Market is invented, and so are every price and promotion
       // below — see DemoReceiptEnrichment.fabricated. Unlike Sunset Leaf,
       // this is not a real provisioned merchant's till.
@@ -448,6 +461,10 @@ export const DEMO_RECEIPTS: ReadonlyMap<string, DemoReceiptEnrichment> = new Map
       // Consumer-generous: no basket minimum (the term a shopper notices
       // first), a long window, no exclusion list. It still carries a limit,
       // so it does not read as fake.
+      //
+      // 60 days from the printed 2026-09-02 runs to 2026-11-01, so the
+      // urgency chip is still up through SF (Oct 5-11) and LA (Oct 12-18)
+      // Tech Week — 27 days left at SF's open, 14 at LA's close.
       offer: {
         discount: 4,
         appliesTo: "Bounty Select-A-Size 12=24",
@@ -460,7 +477,7 @@ export const DEMO_RECEIPTS: ReadonlyMap<string, DemoReceiptEnrichment> = new Map
 
   // ---------------------------------------------------------------------------
   // DEMO 2 — THE MERCHANT PITCH.  Ellsworth Market #47, Pasadena, CA.
-  // Receipt printed TUE 09/29/26 17:58. Subtotal $68.18, tax $3.24, total
+  // Receipt printed TUE 09/08/26 17:58. Subtotal $68.18, tax $3.24, total
   // $71.42 — a mid-week fill-in shop, not a weekly stock-up, which is what
   // makes the $75 floor read as reachable rather than punitive.
   //
@@ -475,7 +492,7 @@ export const DEMO_RECEIPTS: ReadonlyMap<string, DemoReceiptEnrichment> = new Map
     "b0de9a0000000001",
     {
       merchantName: "Ellsworth Market",
-      receiptDate: "2026-09-29",
+      receiptDate: "2026-09-08",
       // Ellsworth Market is invented, and so are every price and promotion
       // below — see DemoReceiptEnrichment.fabricated. Unlike Sunset Leaf,
       // this is not a real provisioned merchant's till.
@@ -530,6 +547,22 @@ export const DEMO_RECEIPTS: ReadonlyMap<string, DemoReceiptEnrichment> = new Map
       // wins. $75 sits ~5% above this shopper's own $71.42 total — a floor
       // set against her demonstrated basket, not a store average — and 14
       // days catches the next two trips of a 5-7 day grocery cycle.
+      //
+      // OPEN DECISION — 14 days from the printed 2026-09-08 ran out on
+      // 2026-09-22, so at Tech Week this voucher renders with NO urgency
+      // chip. That degrades the way it was designed to (the chip vanishes;
+      // "Valid for 14 days from purchase" is still true and nothing says
+      // "Expired"), but the merchant pitch loses its countdown.
+      //
+      // It cannot be fixed from this file without changing the terms: a
+      // 14-day window anchored to any date already printed before SF opens
+      // cannot reach LA's close on Oct 18. The registry's own pre-correction
+      // date, 2026-09-29, would not have reached it either — that window
+      // closed 2026-10-13, the second day of LA. The two real options are a
+      // longer `validForDays` (which changes what the merchant is being
+      // pitched: 14 days is the deliberate "next two trips of a 5-7 day
+      // grocery cycle" number) or re-seeding this sid's blob with a later
+      // printed date, which is a write against a live demo sid.
       offer: {
         discount: 10,
         minimumBasket: 75,

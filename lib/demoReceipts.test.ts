@@ -416,22 +416,51 @@ test("offer validity states a DURATION and never a date", () => {
 });
 
 test("offer window: the consumer coupon counts down from its own receipt date", () => {
-  // Receipt printed 2026-09-30, 60-day window -> the last day is 2026-11-29.
+  // Receipt printed 2026-09-02, 60-day window -> the last day is 2026-11-01.
+  // The date is the one PRINTED ON THE BLOB — see lib/demoBlobParity.test.ts,
+  // which is what stops this drifting from the paper again.
   const e = getDemoEnrichment(CONSUMER_SID);
-  assert.equal(offerDaysRemaining(e, at("2026-09-30")), 60); // the day of purchase
-  assert.equal(offerDaysRemaining(e, at("2026-10-05")), 55); // SF Tech Week opens
-  assert.equal(offerDaysRemaining(e, at("2026-10-18")), 42); // LA Tech Week closes
-  assert.equal(offerDaysRemaining(e, at("2026-11-28")), 1);
-  assert.equal(offerDaysRemaining(e, at("2026-11-29")), 0); // the last day
+  assert.equal(offerDaysRemaining(e, at("2026-09-02")), 60); // the day of purchase
+  assert.equal(offerDaysRemaining(e, at("2026-10-05")), 27); // SF Tech Week opens
+  assert.equal(offerDaysRemaining(e, at("2026-10-18")), 14); // LA Tech Week closes
+  assert.equal(offerDaysRemaining(e, at("2026-10-31")), 1);
+  assert.equal(offerDaysRemaining(e, at("2026-11-01")), 0); // the last day
 });
 
 test("offer window: the merchant coupon counts down from its own receipt date", () => {
-  // Receipt printed 2026-09-29, 14-day window -> the last day is 2026-10-13.
+  // Receipt printed 2026-09-08, 14-day window -> the last day is 2026-09-22.
   const e = getDemoEnrichment(MERCHANT_SID);
-  assert.equal(offerDaysRemaining(e, at("2026-09-29")), 14);
-  assert.equal(offerDaysRemaining(e, at("2026-10-08")), 5);
-  assert.equal(offerDaysRemaining(e, at("2026-10-12")), 1);
-  assert.equal(offerDaysRemaining(e, at("2026-10-13")), 0);
+  assert.equal(offerDaysRemaining(e, at("2026-09-08")), 14);
+  assert.equal(offerDaysRemaining(e, at("2026-09-17")), 5);
+  assert.equal(offerDaysRemaining(e, at("2026-09-21")), 1);
+  assert.equal(offerDaysRemaining(e, at("2026-09-22")), 0); // the last day
+});
+
+test("offer window: what each voucher shows during SF and LA Tech Week", () => {
+  // The demo-facing consequence of the two printed dates, asserted out loud
+  // so it cannot be a surprise at a booth. SF Tech Week is Oct 5-11 2026 and
+  // LA Tech Week is Oct 12-18 2026.
+  //
+  // The consumer voucher's 60 days carry it through both. The MERCHANT
+  // voucher's 14 days, anchored to the 2026-09-08 on its paper, closed on
+  // 2026-09-22 — so at Tech Week it renders with no urgency chip at all.
+  // That is the designed degradation, not a bug (the chip vanishes rather
+  // than saying "Expired", and "Valid for 14 days from purchase" stays true),
+  // but it is a content decision and not one this file can make: no 14-day
+  // window anchored to a date already printed before SF opens can reach LA's
+  // close. The registry's own pre-correction 2026-09-29 would have closed on
+  // 2026-10-13, the second day of LA.
+  const consumer = getDemoEnrichment(CONSUMER_SID);
+  const merchant = getDemoEnrichment(MERCHANT_SID);
+  for (const [label, day, expected] of [
+    ["SF opens", "2026-10-05", 27],
+    ["SF closes", "2026-10-11", 21],
+    ["LA opens", "2026-10-12", 20],
+    ["LA closes", "2026-10-18", 14],
+  ] as const) {
+    assert.equal(offerDaysRemaining(consumer, at(day)), expected, `consumer chip on ${label}`);
+    assert.equal(offerDaysRemaining(merchant, at(day)), null, `merchant chip on ${label}`);
+  }
 });
 
 test("offer window: PAST the window the chip vanishes — it never says Expired", () => {
@@ -441,10 +470,10 @@ test("offer window: PAST the window the chip vanishes — it never says Expired"
   // dead date — an old receipt, not broken software.
   const consumer = getDemoEnrichment(CONSUMER_SID);
   const merchant = getDemoEnrichment(MERCHANT_SID);
-  for (const day of ["2026-11-30", "2026-12-25", "2027-03-14", "2028-01-01", "2031-07-04"]) {
+  for (const day of ["2026-11-02", "2026-12-25", "2027-03-14", "2028-01-01", "2031-07-04"]) {
     assert.equal(offerDaysRemaining(consumer, at(day)), null, `consumer chip still shown on ${day}`);
   }
-  for (const day of ["2026-10-14", "2026-12-25", "2027-06-01", "2030-01-01"]) {
+  for (const day of ["2026-09-23", "2026-12-25", "2027-06-01", "2030-01-01"]) {
     assert.equal(offerDaysRemaining(merchant, at(day)), null, `merchant chip still shown on ${day}`);
   }
 });
@@ -452,20 +481,22 @@ test("offer window: PAST the window the chip vanishes — it never says Expired"
 test("offer window: the day boundary is UTC on both sides, DST-proof", () => {
   // (a - b) / 86_400_000 across a DST change is not an integer in local time,
   // and the countdown would flip a day early or late depending on where the
-  // render happened to run. US DST ended 2026-11-01, inside the 60-day
-  // window; these assertions straddle it and the last-day boundary.
+  // render happened to run. US DST ends 2026-11-01, which from the printed
+  // 2026-09-02 is exactly the 60-day window's LAST DAY — so the DST change
+  // and the boundary land on the same date and these assertions straddle
+  // both at once.
   const e = getDemoEnrichment(CONSUMER_SID);
-  assert.equal(offerDaysRemaining(e, new Date("2026-11-01T00:00:00Z")), 28);
-  assert.equal(offerDaysRemaining(e, new Date("2026-11-01T23:59:59Z")), 28);
-  assert.equal(offerDaysRemaining(e, new Date("2026-11-29T00:00:00Z")), 0);
-  assert.equal(offerDaysRemaining(e, new Date("2026-11-29T23:59:59Z")), 0);
-  assert.equal(offerDaysRemaining(e, new Date("2026-11-30T00:00:01Z")), null);
+  assert.equal(offerDaysRemaining(e, new Date("2026-10-31T00:00:00Z")), 1);
+  assert.equal(offerDaysRemaining(e, new Date("2026-10-31T23:59:59Z")), 1);
+  assert.equal(offerDaysRemaining(e, new Date("2026-11-01T00:00:00Z")), 0);
+  assert.equal(offerDaysRemaining(e, new Date("2026-11-01T23:59:59Z")), 0);
+  assert.equal(offerDaysRemaining(e, new Date("2026-11-02T00:00:01Z")), null);
 });
 
 test("offer window: a clock set before the receipt shows the full window", () => {
   // A wrong device date must not produce a countdown longer than the offer.
   const e = getDemoEnrichment(CONSUMER_SID);
-  assert.equal(offerDaysRemaining(e, at("2026-09-29")), 60);
+  assert.equal(offerDaysRemaining(e, at("2026-09-01")), 60);
   assert.equal(offerDaysRemaining(e, at("2001-01-01")), 60);
 });
 
