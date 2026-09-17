@@ -155,7 +155,7 @@ export default async function DemoReceiptPage({
   // tested at simulated dates. `new Date()` is read exactly once, here.
   //
   // It feeds ONE thing: the offer's "N days left" chip. The voucher's own
-  // validity line is a duration ("Valid for 14 days from purchase") and is
+  // validity line is a duration ("Valid for 42 days from purchase") and is
   // true on every date there will ever be, and once the window closes the
   // chip disappears rather than turning into "Expired" — because these
   // stickers are permanent and a demo advertising a dead coupon reads as
