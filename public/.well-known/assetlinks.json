@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.app.papex",
+      "sha256_cert_fingerprints": [
+        "6D:51:25:3F:99:D5:D4:62:73:31:33:B5:FA:81:13:6D:07:EE:54:42:66:34:3C:7F:EE:DE:82:92:C9:74:C6:C2"
+      ]
+    }
+  }
+]
