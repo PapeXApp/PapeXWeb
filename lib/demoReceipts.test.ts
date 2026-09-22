@@ -17,6 +17,7 @@ import {
   DEMO_RECEIPTS,
   DEMO_SIDS,
   LOYALTY_DISCLOSURE,
+  anchorDayFromDateline,
   formatCountWord,
   formatDaysRemaining,
   formatDemoDisclosure,
@@ -671,6 +672,99 @@ test("the payload is plain JSON — an HTTP response could carry it unchanged", 
   // also why the insight copy is a template string and not a closure.
   for (const [sid, e] of DEMO_RECEIPTS) {
     assert.deepEqual(JSON.parse(JSON.stringify(e)), e, `${sid}: payload does not survive a JSON round-trip`);
+  }
+});
+
+// ---- The dateline-anchor fix: derive the countdown's anchor from the ---------
+// ---- receipt's OWN printed dateline, falling back to receiptDate -------------
+//
+// 1.6.9. See the block comment on `anchorDayFromDateline` in demoReceipts.ts
+// for the full parsing rule. These vectors are SHARED, by hand, with the
+// Swift twin — `DemoEnrichmentContentTests.testDatelineAnchorVectors` in
+// PapeXV2's ios/PapeXClip/Tests/AppClipTests — the same inputs, the same
+// expected outputs, on both surfaces. Keep the two lists identical when
+// either changes.
+
+/** `[dateline text, expected anchor as YYYY-MM-DD, or null if parsing must fail]`. */
+const DATELINE_ANCHOR_VECTORS: readonly [string, string | null][] = [
+  // The two real Tech Week blobs' own printed datelines, exactly as
+  // lib/receiptSummary.ts's extractDateline (and its Swift twin) produce
+  // them — see lib/demoBlobParity.test.ts for where these come from.
+  ["09/02/26 • 18:42", "2026-09-02"], // Hartwell's: WED 09/02/26 18:42
+  ["09/08/26 • 17:58", "2026-09-08"], // Ellsworth: TUE 09/08/26 17:58
+  // A bare date, no time joined on.
+  ["2026-09-02", "2026-09-02"],
+  // Single-digit month/day, and a 4-digit year, both accepted.
+  ["9/2/26", "2026-09-02"],
+  ["09/02/2026 • 18:42", "2026-09-02"],
+  // Leap day, valid (2024 is a leap year).
+  ["02/29/24 • 10:00", "2024-02-29"],
+  // Leap day, INVALID — 2026 is not a leap year. Must fail, not roll over
+  // into March the way `Date.UTC`/naive civil-date math would.
+  ["02/29/26", null],
+  // Out-of-range month/day.
+  ["13/40/26", null],
+  ["02/30/26", null],
+  // A month-name dateline is a format `extractDateline` can also produce,
+  // but this parser deliberately does not read it — see the parsing rule.
+  // Failing here is correct: it exercises the fallback, not a bug.
+  ["Sep 2, 2026", null],
+  // Garbage and absence.
+  ["not a date", null],
+  ["", null],
+];
+
+/** Independent of the module's internals — the same UTC-days-since-epoch math. */
+function isoDayForTest(iso: string): number {
+  const [y, mo, d] = iso.split("-").map(Number);
+  return Math.floor(Date.UTC(y, mo - 1, d) / 86_400_000);
+}
+
+test("anchorDayFromDateline: the shared dateline->anchor parsing rule", () => {
+  for (const [input, expectedIso] of DATELINE_ANCHOR_VECTORS) {
+    const got = anchorDayFromDateline(input);
+    const expected = expectedIso == null ? null : isoDayForTest(expectedIso);
+    assert.equal(got, expected, `anchorDayFromDateline(${JSON.stringify(input)})`);
+  }
+});
+
+test("offerDaysRemaining: the receipt's own dateline overrides receiptDate when it parses", () => {
+  const consumer = getDemoEnrichment(CONSUMER_SID);
+  // The registry says 2026-09-02. Feed a dateline for a DIFFERENT printed
+  // date and confirm the paper, not the registry, decides the anchor.
+  assert.equal(offerDaysRemaining(consumer, at("2026-09-02"), "09/01/26 • 08:00"), 59);
+  assert.equal(offerDaysRemaining(consumer, at("2026-09-01"), "09/01/26 • 08:00"), 60);
+});
+
+test("offerDaysRemaining: falls back to receiptDate with no dateline, or one that doesn't parse", () => {
+  const consumer = getDemoEnrichment(CONSUMER_SID);
+  const merchant = getDemoEnrichment(MERCHANT_SID);
+  for (const bad of [undefined, null, "", "not a date", "Sep 2, 2026"] as const) {
+    assert.equal(offerDaysRemaining(consumer, at("2026-10-05"), bad), 27, `fallback for ${JSON.stringify(bad)}`);
+  }
+  assert.equal(offerDaysRemaining(merchant, at("2026-10-05"), "garbage"), 15);
+});
+
+test("offerDaysRemaining: unchanged from the pre-1.6.9 behaviour when the dateline agrees with receiptDate", () => {
+  // The real printed datelines off both seeded Tech Week blobs, fed through
+  // the new third argument, must produce EXACTLY what the two-argument call
+  // produced before this fix — the whole point is that nothing visible
+  // changes today, only how the anchor is derived.
+  const consumer = getDemoEnrichment(CONSUMER_SID);
+  const merchant = getDemoEnrichment(MERCHANT_SID);
+  for (const day of ["2026-09-02", "2026-10-05", "2026-10-18", "2026-10-31", "2026-11-01", "2026-11-02"]) {
+    assert.equal(
+      offerDaysRemaining(consumer, at(day), "09/02/26 • 18:42"),
+      offerDaysRemaining(consumer, at(day)),
+      `consumer countdown on ${day}`,
+    );
+  }
+  for (const day of ["2026-09-08", "2026-09-17", "2026-10-19", "2026-10-20", "2026-10-21"]) {
+    assert.equal(
+      offerDaysRemaining(merchant, at(day), "09/08/26 • 17:58"),
+      offerDaysRemaining(merchant, at(day)),
+      `merchant countdown on ${day}`,
+    );
   }
 });
 
