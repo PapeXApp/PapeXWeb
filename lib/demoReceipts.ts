@@ -890,8 +890,108 @@ function parseIsoDay(iso: string | undefined): number | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
   if (!m) return null;
   const [, y, mo, d] = m;
-  const ms = Date.UTC(Number(y), Number(mo) - 1, Number(d));
+  return civilDay(Number(y), Number(mo), Number(d));
+}
+
+const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+function isLeapYear(year: number): boolean {
+  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+}
+
+function daysInMonth(year: number, month: number): number {
+  return month === 2 && isLeapYear(year) ? 29 : DAYS_IN_MONTH[month - 1];
+}
+
+/**
+ * A validated `year`/`month`/`day` triple -> UTC day number, or null.
+ *
+ * Calendar-validated BEFORE handing anything to `Date.UTC`, which rolls an
+ * out-of-range day into the next month instead of refusing it (`Date.UTC`
+ * would turn Feb 30 into Mar 2). A date that does not exist must be refused,
+ * not silently reinterpreted, the same rule `parseIsoDay`'s ISO regex and
+ * `DemoCalendar.utcDayNumber(isoDay:)` on the Swift side both enforce.
+ */
+function civilDay(year: number, month: number, day: number): number | null {
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return null;
+  if (month < 1 || month > 12) return null;
+  if (day < 1 || day > daysInMonth(year, month)) return null;
+  const ms = Date.UTC(year, month - 1, day);
   return Number.isFinite(ms) ? Math.floor(ms / DAY_MS) : null;
+}
+
+// ---- Deriving the anchor from the receipt's OWN printed dateline ------------
+//
+// 1.6.9's fix for the compiled-in-anchor problem described on `DemoOffer`
+// above: rather than trusting only the registry's `receiptDate` (which
+// silently desyncs from a re-minted blob unless a matching app release
+// ships), derive the voucher's anchor day from the dateline actually printed
+// on THIS fetched receipt, and fall back to `receiptDate` only when that
+// fails. The paper is canonical; the registry field becomes a fallback for
+// a blob that predates this fix, or a parse the dateline defeats.
+//
+// ---------------------------------------------------------------------------
+// THE SHARED PARSING RULE — kept in lockstep with DemoEnrichment.swift's
+// `DemoCalendar.utcDayNumber(dateline:)`. Read this block before changing
+// either side; the two must accept and reject the exact same inputs.
+// ---------------------------------------------------------------------------
+// Input is the `dateline` field `lib/receiptSummary.ts`'s `extractDateline`
+// (and its Swift twin, `ReceiptSummary.swift`'s `extractDateline`) already
+// produced — either "<date>" or "<date> • <time>". Steps:
+//
+//   1. Take the substring before " • " (or the whole string if there is no
+//      bullet); trim it. Empty -> fail.
+//   2. If it matches `^\d{4}-\d{2}-\d{2}$` (ISO), parse year/month/day
+//      directly.
+//   3. Else if it matches `^\d{1,2}[/-]\d{1,2}[/-]\d{2,4}$` (US order
+//      MM/DD/Y(Y)(YY), matching how every printer ESC/POS text seen so far
+//      dates its receipts, including both Tech Week demo blobs), parse
+//      month/day/year. A 2-digit year YY means 20YY — every demo blob this
+//      product will ever print is in the 2000s.
+//   4. Otherwise, fail — INCLUDING a month-name dateline ("Jun 8, 2026"),
+//      a format `Patterns.date` / `DATE_RE` can also extract but that no
+//      seeded demo blob currently uses. Failing safely here just means the
+//      registry's `receiptDate` fallback fires; it is not a bug to fix
+//      later so much as a deliberately unimplemented case, done to keep
+//      both parsers small and exactly comparable rather than to imply the
+//      format cannot occur.
+//   5. Every month/day/year candidate is calendar-validated (`civilDay`)
+//      before being accepted — 13/40/26 and 02/30/26 both fail rather than
+//      rolling over.
+//
+// On success: a UTC calendar day number, comparable with `parseIsoDay`'s
+// result. On failure: null, and the caller falls back to `receiptDate`.
+
+/** The DATE portion of an `extractDateline`-shaped string, before any " • time" suffix. */
+function datePartOf(dateline: string): string {
+  const bullet = dateline.indexOf(" • ");
+  return (bullet === -1 ? dateline : dateline.slice(0, bullet)).trim();
+}
+
+/** Step 3 above: `M/D/Y`, `M-D-Y`, 1-2 digit month/day, 2 or 4 digit year. */
+const SLASH_DATE_RE = /^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/;
+
+/**
+ * The receipt's own printed dateline -> a UTC calendar day number, or null.
+ * See the shared parsing rule above. Mirrors
+ * `DemoEnrichment.swift`'s `DemoCalendar.utcDayNumber(dateline:)`.
+ */
+export function anchorDayFromDateline(dateline: string | null | undefined): number | null {
+  if (!dateline) return null;
+  const datePart = datePartOf(dateline);
+  if (!datePart) return null;
+
+  const isoDay = parseIsoDay(datePart);
+  if (isoDay != null) return isoDay;
+
+  const slash = SLASH_DATE_RE.exec(datePart);
+  if (slash) {
+    const [, moStr, dStr, yStr] = slash;
+    const year = yStr.length === 2 ? 2000 + Number(yStr) : Number(yStr);
+    return civilDay(year, Number(moStr), Number(dStr));
+  }
+
+  return null;
 }
 
 /**
@@ -913,8 +1013,19 @@ export function formatOfferValidity(offer: DemoOffer): string {
  * testable at simulated dates, and it is the only way to be sure the
  * permanent-sticker case is handled rather than hoped for.
  *
+ * `receiptDatelineText` is `ReceiptSummary.dateline` off the ACTUAL fetched
+ * blob (e.g. "09/02/26 • 18:42") — optional so every existing call site and
+ * test keeps working unchanged. When it parses (see `anchorDayFromDateline`),
+ * IT is the anchor: the paper is canonical, and a re-minted blob's countdown
+ * then moves with the new printed date without a registry edit or an app
+ * release. `enrichment.receiptDate` is the fallback, used only when no
+ * dateline text was supplied or the printed dateline didn't parse — the exact
+ * behaviour this function had before 1.6.9, preserved for a blob whose
+ * dateline this parser doesn't recognise.
+ *
  * Returns `null` — meaning "show nothing" — when:
- *   - there is no offer or no anchor date to measure from, or
+ *   - there is no offer or no anchor date to measure from (neither the
+ *     dateline nor the registry produced one), or
  *   - the window has already closed.
  *
  * The second case is the whole design. Once the window is up, the urgency
@@ -929,10 +1040,11 @@ export function formatOfferValidity(offer: DemoOffer): string {
 export function offerDaysRemaining(
   enrichment: DemoReceiptEnrichment | undefined,
   today: Date,
+  receiptDatelineText?: string | null,
 ): number | null {
   const offer = enrichment?.offer;
   if (!offer) return null;
-  const anchor = parseIsoDay(enrichment?.receiptDate);
+  const anchor = anchorDayFromDateline(receiptDatelineText) ?? parseIsoDay(enrichment?.receiptDate);
   if (anchor == null) return null;
 
   const todayDay = utcDayNumber(today);

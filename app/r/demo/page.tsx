@@ -151,6 +151,11 @@ export default async function DemoReceiptPage({
   // argument for why this is per-receipt rather than a blanket banner.
   const disclosure = formatDemoDisclosure(enrichment);
 
+  const result = await fetchReceiptBytes(sid);
+  const receipt = result.status === "ok" ? parseEscPos(result.bytes) : undefined;
+  const summary = receipt ? summarizeReceipt(receipt.lines) : undefined;
+  const rasterPage = receipt?.rasterPage?.fullPage ? receipt.rasterPage : undefined;
+
   // The page owns the clock so every function under it stays pure and can be
   // tested at simulated dates. `new Date()` is read exactly once, here.
   //
@@ -161,12 +166,15 @@ export default async function DemoReceiptPage({
   // stickers are permanent and a demo advertising a dead coupon reads as
   // broken software rather than as an old receipt. See DemoOffer in
   // lib/demoReceipts.ts for the full argument.
-  const daysRemaining = offerDaysRemaining(enrichment, new Date());
-
-  const result = await fetchReceiptBytes(sid);
-  const receipt = result.status === "ok" ? parseEscPos(result.bytes) : undefined;
-  const summary = receipt ? summarizeReceipt(receipt.lines) : undefined;
-  const rasterPage = receipt?.rasterPage?.fullPage ? receipt.rasterPage : undefined;
+  //
+  // `summary?.dateline` is the date ACTUALLY PRINTED on this fetched blob
+  // (e.g. "09/02/26 • 18:42") — the 1.6.9 fix. It anchors the countdown ahead
+  // of the registry's own `receiptDate`, which `offerDaysRemaining` falls
+  // back to only when the dateline is missing or didn't parse. That is what
+  // lets a re-minted demo blob move the countdown with the new printed date
+  // instead of silently drifting from it — see the offer block in
+  // lib/demoReceipts.ts.
+  const daysRemaining = offerDaysRemaining(enrichment, new Date(), summary?.dateline);
 
   // A demo tag whose blob has expired or was never seeded. Says so plainly
   // rather than inventing content — the honesty rules `/r` follows apply here
