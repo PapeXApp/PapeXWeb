@@ -163,19 +163,17 @@ export function assertRequestLinkable(req: StoredChangeRequest | null, merchantI
 
 // ── Item labels ──────────────────────────────────────────────────────────
 
-type LabelSource = "deals" | "menu" | "coupons" | "whatsNew";
+type LabelSource = "deals" | "menu" | "whatsNew";
 
 function labelMaps(record: MerchantRecord | null): Record<LabelSource, Map<string, string>> {
   const maps: Record<LabelSource, Map<string, string>> = {
     deals: new Map(),
     menu: new Map(),
-    coupons: new Map(),
     whatsNew: new Map(),
   };
   if (!record) return maps;
   for (const d of record.deals ?? []) if (d?.id) maps.deals.set(d.id, d.title);
   for (const cat of record.menu ?? []) for (const it of cat?.items ?? []) if (it?.id) maps.menu.set(it.id, it.name);
-  for (const c of record.coupons ?? []) if (c?.id) maps.coupons.set(c.id, c.title);
   for (const u of record.whatsNew ?? []) if (u?.id) maps.whatsNew.set(u.id, u.title);
   return maps;
 }
@@ -187,7 +185,7 @@ function labelMaps(record: MerchantRecord | null): Record<LabelSource, Map<strin
  */
 export function resolveItemLabels(record: MerchantRecord | null, section: ChangeRequestSection, itemIds: string[]): string[] {
   const maps = labelMaps(record);
-  const order: LabelSource[] = ["deals", "menu", "coupons", "whatsNew"];
+  const order: LabelSource[] = ["deals", "menu", "whatsNew"];
   const first = (order as string[]).includes(section) ? (section as LabelSource) : null;
   const searchOrder = first ? [first, ...order.filter((s) => s !== first)] : order;
   return itemIds.map((id) => {

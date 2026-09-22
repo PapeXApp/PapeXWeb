@@ -7,7 +7,7 @@
 // mobile (primitives' Sheet: focus trap, Esc closes).
 //
 //   - action chips: Update / Add / Remove
-//   - list sections (menu, deals, coupons, whatsNew): a checklist of that
+//   - list sections (menu, deals, whatsNew): a checklist of that
 //     section's items, so "remove these three deals" is 3 ticks + Remove
 //   - Brand: two color pickers + an optional logo, with a LIVE mini preview
 //     of their app header (the "design it yourself" taste). Only colors that
@@ -50,7 +50,6 @@ const SECTION_ORDER: ChangeRequestSection[] = [
   "contact",
   "menu",
   "deals",
-  "coupons",
   "whatsNew",
   "loyalty",
   "other",
@@ -63,7 +62,6 @@ const PLACEHOLDER: Record<ChangeRequestSection, string> = {
   contact: "For example: our new phone number is (555) 123 4567.",
   menu: "For example: add the Blue Dream pre-roll, $12.",
   deals: "For example: Taco Tuesday, 2 for $5, every Tuesday 4 to 7 PM.",
-  coupons: "For example: 15% off your first order, expires end of month.",
   whatsNew: "For example: we now carry oat milk.",
   loyalty: "For example: 1 point per dollar, free drink at 100 points.",
   other: "Tell us what to change.",

@@ -6,14 +6,13 @@
 //
 // `store-template` is the merchant-facing blank: every section Doobie Nights
 // has, with placeholder copy and no images. Its `whatsNew` entries are
-// placeholder demo data. Coupon `expiresAt` values are catalog.ts's
-// calendarDeadline(2027, 12, 31) frozen as 23:59 America/Los_Angeles (PST).
-// `loyaltyProgram` is the merchant-side part of SAMPLE_LOYALTY (the sample
-// points balance is per-user data and is dropped).
+// placeholder demo data. No `coupons` field: the shared type carries none
+// (see types.ts header) — a coupon is per-shopper wallet state the app keeps
+// on-device, never merchant-authored, so the template has nothing to show
+// there either. `loyaltyProgram` is the merchant-side part of SAMPLE_LOYALTY
+// (the sample points balance is per-user data and is dropped).
 
 import type { MerchantRecord } from "../types";
-
-const TEMPLATE_EXPIRY = "2028-01-01T07:59:00.000Z"; // 2027-12-31 23:59 PST
 
 export const STORE_TEMPLATE: MerchantRecord = {
   id: "store-template",
@@ -86,51 +85,6 @@ export const STORE_TEMPLATE: MerchantRecord = {
       appliesTo: "Category two",
       category: "Category two",
       percentOff: 15,
-    },
-  ],
-  coupons: [
-    {
-      id: "coupon-template-bogo",
-      storeId: "store-template",
-      kind: "bogo",
-      title: "Your coupon: Buy one, get one",
-      subtitle: "Describe the offer in one line",
-      code: "TEMPLATE1",
-      expiresAt: TEMPLATE_EXPIRY,
-      badge: "Your badge",
-      terms: "Your fine print: limits, exclusions and how to redeem.",
-    },
-    {
-      id: "coupon-template-percent",
-      storeId: "store-template",
-      kind: "percent",
-      title: "Your coupon: 20% off",
-      subtitle: "Describe the offer in one line",
-      expiresAt: TEMPLATE_EXPIRY,
-      badge: "Your badge",
-      terms: "Your fine print: limits, exclusions and how to redeem.",
-    },
-    {
-      id: "coupon-template-dollar",
-      storeId: "store-template",
-      kind: "dollar",
-      title: "Your coupon: $5 off",
-      subtitle: "Describe the offer in one line",
-      minSpend: 25,
-      expiresAt: TEMPLATE_EXPIRY,
-      badge: "Your badge",
-      terms: "Your fine print: limits, exclusions and how to redeem.",
-    },
-    {
-      id: "coupon-template-freebie",
-      storeId: "store-template",
-      kind: "freebie",
-      title: "Your coupon: Free item with purchase",
-      subtitle: "Describe the offer in one line",
-      barcode: "000000000000",
-      expiresAt: TEMPLATE_EXPIRY,
-      badge: "Your badge",
-      terms: "Your fine print: limits, exclusions and how to redeem.",
     },
   ],
   loyaltyProgram: {

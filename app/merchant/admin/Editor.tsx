@@ -18,7 +18,6 @@ import { ArrowLeft, Check, History, Mail, RefreshCw, Trash2, X } from "lucide-re
 import type {
   AdminMerchantResponse,
   AdminMerchantUpdate,
-  Coupon,
   MerchantRecord,
   StoreDeal,
   StoreMenuCategory,
@@ -55,7 +54,6 @@ import {
 } from "../profile/shared";
 import {
   AddButton,
-  CouponForm,
   DealForm,
   EmailChips,
   FOCUS_RING,
@@ -71,7 +69,7 @@ import {
 
 type Editable = Omit<MerchantRecord, "version" | "updatedAt" | "updatedBy">;
 
-type EditorTab = "brand" | "about" | "hours" | "menu" | "deals" | "coupons" | "whatsNew" | "loyalty" | "account" | "json";
+type EditorTab = "brand" | "about" | "hours" | "menu" | "deals" | "whatsNew" | "loyalty" | "account" | "json";
 
 const TABS: { id: EditorTab; label: string }[] = [
   { id: "brand", label: "Brand" },
@@ -79,7 +77,6 @@ const TABS: { id: EditorTab; label: string }[] = [
   { id: "hours", label: "Hours" },
   { id: "menu", label: "Menu" },
   { id: "deals", label: "Deals" },
-  { id: "coupons", label: "Coupons" },
   { id: "whatsNew", label: "What's new" },
   { id: "loyalty", label: "Loyalty" },
   { id: "account", label: "Account" },
@@ -94,7 +91,6 @@ const TAB_FOR_SECTION: Record<string, EditorTab> = {
   hours: "hours",
   menu: "menu",
   deals: "deals",
-  coupons: "coupons",
   whatsNew: "whatsNew",
   loyalty: "loyalty",
   other: "brand",
@@ -124,7 +120,7 @@ function clean(value: unknown): unknown {
 
 function cleanRecord(d: Editable): Editable {
   const out = clean(d) as Editable & Record<string, unknown>;
-  for (const k of ["menu", "deals", "coupons", "whatsNew", "menuCategories"] as const) {
+  for (const k of ["menu", "deals", "whatsNew", "menuCategories"] as const) {
     if (Array.isArray(out[k]) && (out[k] as unknown[]).length === 0) delete out[k];
   }
   if (out.hours && (out.hours.intervals?.length ?? 0) === 0 && !out.hours.timezone) delete out.hours;
@@ -170,10 +166,8 @@ function validate(d: Editable): string[] {
     }
   };
   (d.deals ?? []).forEach((x, i) => !x.title?.trim() && errs.push(`Deals: deal ${i + 1} needs a title.`));
-  (d.coupons ?? []).forEach((x, i) => !x.title?.trim() && errs.push(`Coupons: coupon ${i + 1} needs a title.`));
   (d.whatsNew ?? []).forEach((x, i) => !x.title?.trim() && errs.push(`What's new: update ${i + 1} needs a title.`));
   dupes("Deals", (d.deals ?? []).map((x) => x.id));
-  dupes("Coupons", (d.coupons ?? []).map((x) => x.id));
   dupes("What's new", (d.whatsNew ?? []).map((x) => x.id));
   return errs;
 }
@@ -206,13 +200,12 @@ function accountFrom(res: AdminMerchantResponse): AccountDraft {
 const REMOVE_NOUN: Partial<Record<ChangeRequest["section"], readonly [string, string]>> = {
   deals: ["deal", "deals"],
   menu: ["menu item", "menu items"],
-  coupons: ["coupon", "coupons"],
   whatsNew: ["update", "updates"],
 };
 
 /**
- * What removing a request's items would do to `d`. Deals / coupons / updates
- * match on id. Menu items match on id, or, for items without one, on the
+ * What removing a request's items would do to `d`. Deals / updates match on
+ * id. Menu items match on id, or, for items without one, on the
  * "Name (Category)" key the composer sends instead (menuItemKey).
  */
 function planRemoval(d: Editable, req: ChangeRequest): { removed: number; missing: number; next: Partial<Editable> } | null {
@@ -229,7 +222,6 @@ function planRemoval(d: Editable, req: ChangeRequest): { removed: number; missin
   const byId = <X extends { id: string }>(list: X[] | undefined) => (list ?? []).filter((x) => !match(x.id));
   let next: Partial<Editable>;
   if (req.section === "deals") next = { deals: byId(d.deals) };
-  else if (req.section === "coupons") next = { coupons: byId(d.coupons) };
   else if (req.section === "whatsNew") next = { whatsNew: byId(d.whatsNew) };
   else
     next = {
@@ -279,7 +271,7 @@ function countChanges(base: Editable, next: Editable): number {
   let n = 0;
   for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) {
     if (JSON.stringify(a[k]) === JSON.stringify(b[k])) continue;
-    if (k === "deals" || k === "coupons" || k === "whatsNew") n += listDiff(a[k], b[k], (x, i) => String(x.id ?? `#${i}`));
+    if (k === "deals" || k === "whatsNew") n += listDiff(a[k], b[k], (x, i) => String(x.id ?? `#${i}`));
     else if (k === "menu") n += listDiff(flatMenu(a[k]), flatMenu(b[k]), (x) => String(x._key));
     else n += 1;
   }
@@ -820,26 +812,6 @@ export function Editor({
               emptyLabel="No deals yet."
               summary={(d) => <SummaryLine title={d.title} sub={d.schedule} />}
               render={(d, update) => <DealForm deal={d} update={update} ctx={ctx} />}
-            />
-          )}
-
-          {tab === "coupons" && (
-            <ListEditor<Coupon>
-              items={draft.coupons ?? []}
-              onChange={(next) => patch({ coupons: next })}
-              newItem={() => ({ id: newId("coupon"), storeId: merchantId, kind: "percent", title: "" })}
-              itemNoun="coupon"
-              addLabel="Add coupon"
-              emptyLabel="No coupons yet."
-              summary={(c) => (
-                <SummaryLine
-                  title={c.title}
-                  sub={[[c.valueLabel, c.valueSuffix].filter(Boolean).join(" "), c.expiresAt ? `expires ${formatDateTime(c.expiresAt)}` : ""]
-                    .filter(Boolean)
-                    .join(" · ")}
-                />
-              )}
-              render={(c, update) => <CouponForm coupon={c} update={update} />}
             />
           )}
 

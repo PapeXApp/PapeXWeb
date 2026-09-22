@@ -40,7 +40,6 @@ export const CHANGE_REQUEST_SECTIONS: readonly ChangeRequestSection[] = [
   "contact",
   "menu",
   "deals",
-  "coupons",
   "whatsNew",
   "loyalty",
   "other",
@@ -261,7 +260,7 @@ const SERVER_OWNED_KEYS = ["version", "updatedAt", "updatedBy"] as const;
 const RECORD_KEYS = new Set([
   "id", "name", "logoUrl", "heroImageUrl", "brandColor", "brandColorSecondary", "category",
   "blurb", "website", "address", "phone", "hours", "description", "menuCategories", "menuUrl",
-  "menu", "deals", "whatsNew", "coupons", "loyaltyProgram",
+  "menu", "deals", "whatsNew", "loyaltyProgram",
 ]);
 
 export interface RecordUpdateOptions {
@@ -332,7 +331,7 @@ export function validateMerchantRecordUpdate(
     if (err) return fail("invalid_url", err);
   }
 
-  for (const key of ["menuCategories", "menu", "deals", "whatsNew", "coupons"]) {
+  for (const key of ["menuCategories", "menu", "deals", "whatsNew"]) {
     if (record[key] !== undefined && !Array.isArray(record[key])) return fail("invalid_record", `${key} must be a list.`);
   }
   if (Array.isArray(record.menuCategories) && !record.menuCategories.every((c) => typeof c === "string")) {
@@ -352,7 +351,7 @@ export function validateMerchantRecordUpdate(
       }
     }
   }
-  for (const key of ["deals", "whatsNew", "coupons"] as const) {
+  for (const key of ["deals", "whatsNew"] as const) {
     const list = record[key];
     if (!Array.isArray(list)) continue;
     for (const entry of list) {

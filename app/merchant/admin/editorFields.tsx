@@ -10,8 +10,6 @@
 import { useId, useRef, useState, type ReactNode } from "react";
 import { ArrowDown, ArrowUp, ChevronDown, Plus, Trash2, Upload, X } from "lucide-react";
 import type {
-  Coupon,
-  CouponKind,
   StoreDeal,
   StoreHours,
   StoreHoursInterval,
@@ -668,64 +666,6 @@ export function DealForm({ deal, update, ctx }: { deal: StoreDeal; update: (p: P
         </p>
       )}
       <IdNote id={deal.id} />
-    </div>
-  );
-}
-
-const COUPON_KINDS: { value: CouponKind; label: string }[] = [
-  { value: "percent", label: "Percent off" },
-  { value: "dollar", label: "Dollars off" },
-  { value: "bogo", label: "Buy one, get one" },
-  { value: "freebie", label: "Freebie" },
-];
-
-/** ISO -> YYYY-MM-DD in the browser's zone (for a date input). */
-function isoToYmd(iso: string | undefined): string | undefined {
-  if (!iso) return undefined;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return undefined;
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-}
-
-/** YYYY-MM-DD -> ISO at the end of that local day. */
-function ymdToIso(ymd: string | undefined): string | undefined {
-  const m = ymd ? /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd) : null;
-  if (!m) return undefined;
-  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 23, 59, 59).toISOString();
-}
-
-export function CouponForm({ coupon, update }: { coupon: Coupon; update: (p: Partial<Coupon>) => void }) {
-  return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      <TextField label="Title" required value={coupon.title} onChange={(v) => update({ title: v ?? "" })} />
-      <SelectField label="Kind" value={coupon.kind} onChange={(v) => update({ kind: v })} options={COUPON_KINDS} />
-      <TextField label="Value label" value={coupon.valueLabel} onChange={(v) => update({ valueLabel: v })} placeholder="20%" />
-      <TextField label="Value suffix" value={coupon.valueSuffix} onChange={(v) => update({ valueSuffix: v })} placeholder="OFF" />
-      <TextField label="Subtitle" value={coupon.subtitle} onChange={(v) => update({ subtitle: v })} />
-      <TextField label="Badge" value={coupon.badge} onChange={(v) => update({ badge: v })} placeholder="New" />
-      <TextField label="Body" multiline rows={2} value={coupon.body} onChange={(v) => update({ body: v })} className="sm:col-span-2" />
-      <TextField label="Terms" multiline rows={2} value={coupon.terms} onChange={(v) => update({ terms: v })} className="sm:col-span-2" />
-      <TextField label="Code" value={coupon.code} onChange={(v) => update({ code: v })} mono />
-      <TextField label="Barcode" value={coupon.barcode} onChange={(v) => update({ barcode: v })} mono />
-      <TextField
-        label="Expires on"
-        type="date"
-        value={isoToYmd(coupon.expiresAt)}
-        onChange={(v) => update({ expiresAt: ymdToIso(v) })}
-        hint="Ends at 11:59 PM that day."
-      />
-      <NumberField label="Minimum spend" value={coupon.minSpend} onChange={(v) => update({ minSpend: v })} min={0} suffix="USD" />
-      <label className="flex cursor-pointer items-center gap-2.5 text-sm sm:col-span-2" style={{ color: T.text }}>
-        <input
-          type="checkbox"
-          checked={!!coupon.inStoreOnly}
-          onChange={(e) => update({ inStoreOnly: e.target.checked || undefined })}
-          className="h-4 w-4 cursor-pointer accent-[#FB8500]"
-        />
-        In store only
-      </label>
-      <IdNote id={coupon.id} />
     </div>
   );
 }

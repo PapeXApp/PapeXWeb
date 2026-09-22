@@ -14,7 +14,6 @@ export type ChangeRequestSection =
   | "contact"
   | "menu"
   | "deals"
-  | "coupons"
   | "whatsNew"
   | "loyalty"
   | "other";
@@ -40,7 +39,7 @@ export const CHANGE_REQUEST_LIMITS = {
 export interface ChangeRequestInput {
   section: ChangeRequestSection;
   action: ChangeRequestAction;
-  /** Ids of the deals / menu items / coupons / updates the request is about. */
+  /** Ids of the deals / menu items / updates the request is about. */
   itemIds: string[];
   message: string;
   /** Brand requests: hex "#RRGGBB". */

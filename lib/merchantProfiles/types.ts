@@ -7,10 +7,18 @@
 // server routes (firebase-admin); the papexv2 rules already deny every
 // client write (PapeXV2/firestore.rules, `match /merchants/{merchantId}`).
 //
-// The `Store*` / `Coupon` shapes below are a MIRROR of
-// PapeXV2/services/coupons/types.ts as of 2026-09-11. That file is the app's
-// contract; keep these field names identical so the app can read a document
-// straight into its own `Store` type. If the app adds a field, add it here.
+// The `Store*` shapes below are a MIRROR of PapeXV2/services/coupons/types.ts
+// (as of 2026-09-18). That file is the app's contract; keep these field names
+// identical so the app can read a document straight into its own `Store`
+// type. If the app adds a field, add it here.
+//
+// NO `Coupon` HERE ON PURPOSE (2026-09-18, matching the app's standing rule:
+// nothing invented ships, and a coupon appears on a profile only once a
+// shopper EARNS or SCANS it — the merchant never authors one). A merchant's
+// own public promotion is a `StoreDeal`; a coupon is per-shopper wallet state
+// the app keeps on-device (PapeXV2 services/coupons/earned.ts), never part of
+// this shared merchant record. So the dashboard editor offers Deals, not
+// Coupons, and `MerchantRecord` carries no `coupons` field.
 //
 // `merchants/{id}` is PUBLIC READ. Anything private (who can log in, the RDH
 // merchant id) lives in `merchantAccounts/{id}` instead, which clients
@@ -74,27 +82,6 @@ export interface StoreDeal {
   percentOff?: number;
 }
 
-export type CouponKind = "bogo" | "percent" | "dollar" | "freebie";
-
-export interface Coupon {
-  id: string;
-  storeId: string;
-  kind: CouponKind;
-  title: string;
-  subtitle?: string;
-  body?: string;
-  code?: string;
-  barcode?: string;
-  /** ISO 8601. */
-  expiresAt?: string;
-  inStoreOnly?: boolean;
-  minSpend?: number;
-  terms?: string;
-  valueLabel?: string;
-  valueSuffix?: string;
-  badge?: string;
-}
-
 /** Mirror of the app's `Store`. Everything below `name` is optional. */
 export interface Store {
   id: string;
@@ -128,7 +115,6 @@ export interface LoyaltyProgram {
 /** `merchants/{merchantId}`. `id` === the document id === the app's store id
  *  (e.g. "store-doobie-nights"). */
 export interface MerchantRecord extends Store {
-  coupons?: Coupon[];
   loyaltyProgram?: LoyaltyProgram;
   /** Bumped by 1 on every write. */
   version: number;

@@ -23,7 +23,7 @@ const FORCE = args.has("--force");
 function describeRecord(id: string): string {
   const r = SEED_MERCHANTS.find((m) => m.id === id)!;
   const menuItems = (r.menu ?? []).reduce((n, c) => n + c.items.length, 0);
-  return `"${r.name}": ${r.deals?.length ?? 0} deals, ${menuItems} menu items, ${r.coupons?.length ?? 0} coupons, ${r.whatsNew?.length ?? 0} updates, version ${r.version}`;
+  return `"${r.name}": ${r.deals?.length ?? 0} deals, ${menuItems} menu items, ${r.whatsNew?.length ?? 0} updates, version ${r.version}`;
 }
 
 async function main(): Promise<void> {

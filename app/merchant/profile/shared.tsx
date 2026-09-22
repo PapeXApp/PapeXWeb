@@ -25,7 +25,6 @@ import {
   Palette,
   Phone,
   Tag,
-  Ticket,
   UtensilsCrossed,
   X,
   type LucideIcon,
@@ -45,7 +44,6 @@ export const SECTION_META: Record<ChangeRequestSection, { label: string; icon: L
   contact: { label: "Contact", icon: Phone, noun: "contact details" },
   menu: { label: "Menu", icon: UtensilsCrossed, noun: "menu items" },
   deals: { label: "Deals", icon: Tag, noun: "deals" },
-  coupons: { label: "Coupons", icon: Ticket, noun: "coupons" },
   whatsNew: { label: "What's new", icon: Megaphone, noun: "updates" },
   loyalty: { label: "Loyalty program", icon: Gift, noun: "loyalty program" },
   other: { label: "Something else", icon: MessageSquare, noun: "anything" },
@@ -57,7 +55,7 @@ export const ACTION_LABEL: Record<ChangeRequestAction, string> = {
   remove: "Remove",
 };
 
-export const LIST_SECTIONS: ReadonlySet<ChangeRequestSection> = new Set(["menu", "deals", "coupons", "whatsNew"]);
+export const LIST_SECTIONS: ReadonlySet<ChangeRequestSection> = new Set(["menu", "deals", "whatsNew"]);
 
 export interface SectionItem {
   id: string;
@@ -95,12 +93,6 @@ export function sectionItems(record: MerchantRecord | null, section: ChangeReque
       );
     case "deals":
       return (record.deals ?? []).map((d) => ({ id: d.id, label: d.title || "Untitled deal", sub: d.schedule }));
-    case "coupons":
-      return (record.coupons ?? []).map((c) => ({
-        id: c.id,
-        label: c.title || "Untitled coupon",
-        sub: [c.valueLabel, c.valueSuffix].filter(Boolean).join(" ") || undefined,
-      }));
     case "whatsNew":
       return (record.whatsNew ?? []).map((u) => ({
         id: u.id,

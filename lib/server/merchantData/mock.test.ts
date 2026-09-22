@@ -92,25 +92,25 @@ async function main() {
     assert.equal("path" in req.attachments[0], false, "storage path must not leak");
   });
 
-  await test("itemLabels: menu items, coupons and whatsNew resolve too; section searched first", async () => {
+  await test("itemLabels: menu items, deals and whatsNew resolve too; section searched first", async () => {
     const menu = await data.createRequest(merchant, DOOBIE, { section: "menu", action: "update", itemIds: ["5880918"], message: "price" }, []);
     assert.deepEqual(menu.itemLabels, ["Pineapple Sorbet Lolli (1.2g)"]);
     const other = await data.createRequest(
       merchant,
       DOOBIE,
-      { section: "other", action: "update", itemIds: ["dn-news-1"], message: "x" },
+      { section: "other", action: "update", itemIds: ["235455"], message: "x" },
       []
     );
-    assert.deepEqual(other.itemLabels, ["Order ahead, skip the line"]);
-    // Doobie Nights has no seeded coupons (theirs come from BLAZE), so the
-    // coupon lookup is exercised on the template.
-    const coupon = await data.createRequest(
+    assert.deepEqual(other.itemLabels, ["Goldrop BOGO"]);
+    // Doobie Nights publishes no "what's new" feed (nothing invented ships,
+    // 2026-09-17), so the whatsNew lookup is exercised on the template.
+    const update = await data.createRequest(
       merchant,
       "store-template",
-      { section: "other", action: "update", itemIds: ["coupon-template-bogo"], message: "x" },
+      { section: "other", action: "update", itemIds: ["template-news-1"], message: "x" },
       []
     );
-    assert.deepEqual(coupon.itemLabels, ["Your coupon: Buy one, get one"]);
+    assert.deepEqual(update.itemLabels, ["Your announcement"]);
     const unlinked = await data.createRequest(merchant, null, { section: "deals", action: "remove", itemIds: ["188910"], message: "x" }, []);
     assert.equal(unlinked.merchantId, null);
     assert.equal(unlinked.merchantName, undefined);
@@ -130,7 +130,7 @@ async function main() {
     const list = await data.listSummaries();
     const doobie = list.find((m) => m.id === DOOBIE);
     assert.equal(doobie?.openRequests, 4); // the unlinked one counts for nobody
-    assert.equal(list.find((m) => m.id === "store-template")?.openRequests, 1); // the coupon-label one
+    assert.equal(list.find((m) => m.id === "store-template")?.openRequests, 1); // the what's-new-label one
   });
 
   await test("admin updateRequestStatus: status + note, filterable, note clears with an empty string", async () => {

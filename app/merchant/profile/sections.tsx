@@ -9,7 +9,7 @@
 
 import { useState, type ReactNode } from "react";
 import { Clock, ExternalLink, Globe, Link2, MapPin, PencilLine, Phone, Plus } from "lucide-react";
-import type { MerchantRecord, StoreDeal, Coupon, StoreHoursInterval, Weekday } from "@/lib/merchantProfiles/types";
+import type { MerchantRecord, StoreDeal, StoreHoursInterval, Weekday } from "@/lib/merchantProfiles/types";
 import type { ChangeRequestAction, ChangeRequestSection } from "@/lib/changeRequests/types";
 import { safeHttpUrl } from "@/lib/merchantProfilesClient";
 import { Card } from "../ui/primitives";
@@ -23,7 +23,6 @@ import {
   WEEK_ORDER,
   dealImageRatio,
   formatClock,
-  formatDate,
   formatDay,
   formatPrice,
   todayIn,
@@ -460,61 +459,6 @@ function DealCard({ deal }: { deal: StoreDeal }) {
   );
 }
 
-// ---- Coupons ----------------------------------------------------------------------------
-
-const KIND_VALUE: Record<Coupon["kind"], string> = { bogo: "BOGO", percent: "% OFF", dollar: "$ OFF", freebie: "FREE" };
-
-function CouponCard({ coupon }: { coupon: Coupon }) {
-  const meta = [
-    coupon.expiresAt ? `Expires ${formatDate(coupon.expiresAt)}` : "No expiry",
-    coupon.inStoreOnly ? "In store only" : null,
-    typeof coupon.minSpend === "number" ? `Min spend ${formatPrice(coupon.minSpend)}` : null,
-    coupon.code ? `Code ${coupon.code}` : null,
-  ].filter(Boolean);
-  return (
-    <article className="flex min-w-0 overflow-hidden rounded-2xl border" style={{ borderColor: T.divider, background: "rgba(255,255,255,0.02)" }}>
-      <div
-        className="flex w-24 shrink-0 flex-col items-center justify-center border-r border-dashed px-2 py-3 text-center"
-        style={{ borderColor: "rgba(255,255,255,0.16)", background: "rgba(251,133,0,0.07)" }}
-      >
-        <span className="font-barlow text-2xl font-medium leading-none" style={{ color: T.text }}>
-          {coupon.valueLabel || KIND_VALUE[coupon.kind] || "Deal"}
-        </span>
-        {coupon.valueSuffix && (
-          <span className="mt-1 text-[11px] font-semibold uppercase tracking-wide" style={{ color: T.orange }}>
-            {coupon.valueSuffix}
-          </span>
-        )}
-      </div>
-      <div className="flex min-w-0 flex-1 flex-col gap-1 p-3.5">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="font-barlow text-sm font-medium leading-snug" style={{ color: T.text }}>
-            {coupon.title}
-          </h3>
-          {coupon.badge && (
-            <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide" style={{ background: "rgba(255,255,255,0.08)", color: T.textSecondary }}>
-              {coupon.badge}
-            </span>
-          )}
-        </div>
-        {coupon.subtitle && (
-          <p className="text-xs" style={{ color: T.textSecondary }}>
-            {coupon.subtitle}
-          </p>
-        )}
-        {coupon.terms && (
-          <p className="line-clamp-2 text-xs leading-snug" style={{ color: T.textMuted }}>
-            {coupon.terms}
-          </p>
-        )}
-        <p className="mt-auto pt-1 text-[11px]" style={{ color: T.textMuted }}>
-          {meta.join(" · ")}
-        </p>
-      </div>
-    </article>
-  );
-}
-
 // ---- The whole grid ------------------------------------------------------------------------
 
 export function ProfileSections({ record, onRequest }: { record: MerchantRecord; onRequest: RequestHandler }) {
@@ -522,7 +466,6 @@ export function ProfileSections({ record, onRequest }: { record: MerchantRecord;
   const hasContact = !!(record.website || record.address || record.phone || record.menuUrl);
   const menuCount = (record.menu ?? []).reduce((n, c) => n + (c.items?.length ?? 0), 0);
   const deals = record.deals ?? [];
-  const coupons = record.coupons ?? [];
   const updates = [...(record.whatsNew ?? [])].sort((a, b) => (b.postedOn ?? "").localeCompare(a.postedOn ?? ""));
   const loyalty = record.loyaltyProgram;
   const hasLoyalty = !!(loyalty && (loyalty.programName || loyalty.nextRewardAt || loyalty.nextRewardLabel));
@@ -593,18 +536,6 @@ export function ProfileSections({ record, onRequest }: { record: MerchantRecord;
           </div>
         ) : (
           <NotYet section="deals" onRequest={onRequest} message="Recurring deals, like a happy hour, show up here." addLabel="Add a deal" />
-        )}
-      </SectionCard>
-
-      <SectionCard section="coupons" onRequest={onRequest} count={coupons.length} className="lg:col-span-2">
-        {coupons.length > 0 ? (
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {coupons.map((c) => (
-              <CouponCard key={c.id} coupon={c} />
-            ))}
-          </div>
-        ) : (
-          <NotYet section="coupons" onRequest={onRequest} message="Coupons customers can save and use in the app." addLabel="Add a coupon" />
         )}
       </SectionCard>
 

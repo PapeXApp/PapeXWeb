@@ -5,11 +5,13 @@
 // source of truth; do not hand-sync this file.
 //
 // Notes on the copy:
-// - The `whatsNew` entries are FAKE demo data (catalog.ts: "FAKE for the
-//   2026-09-11 demo: Doobie Nights publishes no 'new' feed"). The products
-//   they point at are real menu items; the posts are invented.
-// - No coupons (removed 2026-09-11, same as catalog.ts): Noah is connecting
-//   their BLAZE account, so their real coupons will come from there.
+// - No `whatsNew` (catalog.ts, 2026-09-17: "Doobie Nights publishes no 'new'
+//   feed... a post here must be the merchant's own"). This copy carried five
+//   INVENTED posts from the 2026-09-11 demo; they are dropped here to match.
+// - No `coupons` field at all: the shared type carries none (see types.ts
+//   header) — a coupon is per-shopper wallet state the app keeps on-device,
+//   never merchant-authored. Doobie's real coupons, if any, come from BLAZE
+//   directly to the app's earned-coupon flow, not through this record.
 // - `loyaltyProgram` is the merchant-side part of SAMPLE_LOYALTY; the sample
 //   points balance (375) is per-user data and is dropped on purpose.
 // - All image URLs are Doobie Nights' own art, hotlinked as sample data (see
@@ -56,26 +58,6 @@ export const DOOBIE_NIGHTS: MerchantRecord = {
       { day: 6, opensAt: "09:00", closesAt: "21:00" },
     ],
   },
-  // FAKE demo data (see header).
-  whatsNew: [
-    { id: "dn-new-1", kind: "new-product", title: "Just landed", menuItemId: "5880918", postedOn: "2026-09-09" },
-    {
-      id: "dn-news-1",
-      kind: "announcement",
-      title: "Order ahead, skip the line",
-      body: "Place your order online and pick it up at the express counter.",
-      postedOn: "2026-09-08",
-    },
-    { id: "dn-new-2", kind: "new-product", title: "New flavor", menuItemId: "5880724", postedOn: "2026-09-05" },
-    {
-      id: "dn-news-2",
-      kind: "announcement",
-      title: "Vendor day this Saturday",
-      body: "Meet the Puff team in store, ask questions and try what’s new.",
-      postedOn: "2026-09-03",
-    },
-    { id: "dn-new-3", kind: "new-product", title: "Back in stock", menuItemId: "5880659", postedOn: "2026-09-01" },
-  ],
   menu: [
     {
       category: "Flower",
@@ -307,11 +289,10 @@ export const DOOBIE_NIGHTS: MerchantRecord = {
       imageUrl: "https://tymber-s3.imgix.net/doobie-nights-2227/deals/d91e9bd2-a14e-4ccc-a4ca-c9f7ee958098.png?s=0db50929fc3f5a23430a57dda2664942",
     },
   ],
-  coupons: [],
   loyaltyProgram: {
     programName: "Doobie Dividends",
-    nextRewardAt: 625,
-    nextRewardLabel: "$25 off",
+    nextRewardAt: 125, // first real rung (PapeXV2 catalog.ts, 2026-09-17: balance is 0, nothing invented)
+    nextRewardLabel: "$5 off",
   },
   version: 1,
   updatedAt: "2026-09-11T00:00:00.000Z",
