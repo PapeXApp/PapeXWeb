@@ -1,0 +1,1059 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://papex.app/contracts/cards/v1/resolved-cards.schema.json",
+  "title": "PapeX receipt cards: resolved response, format v1",
+  "description": "What GET /receipt/{sid}/cards returns: the finished, fully templated card list for one receipt. Clients only render it. Client rules (unknown type skipped, fail closed, length counting, countdown) are in contracts/cards/v1/README.md. Frozen 2026-09-22: additive changes only; removing or renaming anything, or changing a meaning, is schemaVersion 2.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "sid",
+    "status",
+    "merchant",
+    "cards"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "sid": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{16}$"
+    },
+    "status": {
+      "enum": [
+        "ok",
+        "pending",
+        "none",
+        "degraded"
+      ]
+    },
+    "retryAfterMs": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 60000
+    },
+    "configRef": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._-]{1,64}$"
+    },
+    "merchant": {
+      "description": "Eligibility facts about the merchant. Never its id.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "partner",
+        "ageRestricted"
+      ],
+      "properties": {
+        "partner": {
+          "type": "boolean",
+          "description": "A PapeX partner. Email capture exists only when this is true."
+        },
+        "ageRestricted": {
+          "type": "boolean",
+          "description": "Sells age-restricted goods: email capture must carry an age affirmation."
+        }
+      }
+    },
+    "cards": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "$ref": "#/definitions/card"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "description": "none and degraded carry no cards.",
+      "if": {
+        "properties": {
+          "status": {
+            "enum": [
+              "none",
+              "degraded"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "cards": {
+            "maxItems": 0
+          }
+        }
+      }
+    },
+    {
+      "description": "retryAfterMs only accompanies pending.",
+      "if": {
+        "required": [
+          "retryAfterMs"
+        ]
+      },
+      "then": {
+        "properties": {
+          "status": {
+            "const": "pending"
+          }
+        }
+      }
+    },
+    {
+      "description": "PARTNER-ONLY: an emailCapture card may appear only when merchant.partner is true.",
+      "if": {
+        "properties": {
+          "cards": {
+            "contains": {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "properties": {
+                "type": {
+                  "const": "emailCapture"
+                }
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "merchant": {
+            "properties": {
+              "partner": {
+                "const": true
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "description": "An age-restricted merchant's emailCapture cards must carry ageAffirmationLabel.",
+      "if": {
+        "properties": {
+          "merchant": {
+            "properties": {
+              "ageRestricted": {
+                "const": true
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "cards": {
+            "items": {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "emailCapture"
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "ageAffirmationLabel"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "definitions": {
+    "plainText": {
+      "description": "Display text, already rendered by the resolver. Plain text: never HTML, never Markdown. At least one non-whitespace character; no C0/C1 controls, no U+2028/U+2029, no bidi embeddings, overrides or isolates (U+202A-U+202E, U+2066-U+2069). Lengths are counted in Unicode code points (Swift: unicodeScalars.count, not String.count).",
+      "type": "string",
+      "minLength": 1,
+      "allOf": [
+        {
+          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029\\u202A-\\u202E\\u2066-\\u2069]*$"
+        },
+        {
+          "pattern": "\\S"
+        }
+      ]
+    },
+    "text12": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/plainText"
+        }
+      ],
+      "maxLength": 12
+    },
+    "text16": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/plainText"
+        }
+      ],
+      "maxLength": 16
+    },
+    "text24": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/plainText"
+        }
+      ],
+      "maxLength": 24
+    },
+    "text40": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/plainText"
+        }
+      ],
+      "maxLength": 40
+    },
+    "text60": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/plainText"
+        }
+      ],
+      "maxLength": 60
+    },
+    "text80": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/plainText"
+        }
+      ],
+      "maxLength": 80
+    },
+    "text120": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/plainText"
+        }
+      ],
+      "maxLength": 120
+    },
+    "text160": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/plainText"
+        }
+      ],
+      "maxLength": 160
+    },
+    "text200": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/plainText"
+        }
+      ],
+      "maxLength": 200
+    },
+    "text280": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/plainText"
+        }
+      ],
+      "maxLength": 280
+    },
+    "text300": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/plainText"
+        }
+      ],
+      "maxLength": 300
+    },
+    "text500": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/plainText"
+        }
+      ],
+      "maxLength": 500
+    },
+    "cardId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,47}$"
+    },
+    "httpsUrl": {
+      "description": "An absolute https URL with an ASCII (punycode) dotted host, no userinfo and no port. Clients re-check before rendering a link and drop the card if the check fails.",
+      "type": "string",
+      "maxLength": 2048,
+      "pattern": "^https://[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+([/?#][A-Za-z0-9\\-._~:/?#\\[\\]@!$&'()*+,;=%]*)?$"
+    },
+    "expiresAt": {
+      "description": "UTC instant, second precision, exactly YYYY-MM-DDTHH:MM:SSZ.",
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]Z$"
+    },
+    "saveAction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "label"
+      ],
+      "properties": {
+        "type": {
+          "const": "save"
+        },
+        "label": {
+          "$ref": "#/definitions/text80"
+        }
+      }
+    },
+    "redemption": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "code",
+            "barcode"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "code"
+              }
+            }
+          },
+          "then": {
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "code"
+            ],
+            "properties": {
+              "type": {
+                "const": "code"
+              },
+              "code": {
+                "type": "string",
+                "pattern": "^[\\x21-\\x7E]{1,32}$"
+              },
+              "caption": {
+                "$ref": "#/definitions/text80"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "barcode"
+              }
+            }
+          },
+          "then": {
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "symbology",
+              "value"
+            ],
+            "properties": {
+              "type": {
+                "const": "barcode"
+              },
+              "symbology": {
+                "enum": [
+                  "code128",
+                  "ean13",
+                  "upca"
+                ]
+              },
+              "value": {
+                "type": "string"
+              },
+              "text": {
+                "$ref": "#/definitions/text80"
+              },
+              "caption": {
+                "$ref": "#/definitions/text80"
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "symbology": {
+                      "const": "code128"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "value": {
+                      "pattern": "^[\\x20-\\x7E]{1,24}$"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "symbology": {
+                      "const": "ean13"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "value": {
+                      "pattern": "^[0-9]{13}$"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "symbology": {
+                      "const": "upca"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "value": {
+                      "pattern": "^[0-9]{12}$"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "textCard": {
+      "description": "A banner or message. `voice` picks the substrate: merchant speech is opaque warm paint, PapeX speech is dark glass.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "mode",
+        "voice",
+        "body"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/cardId"
+        },
+        "mode": {
+          "enum": [
+            "live",
+            "preview"
+          ]
+        },
+        "heading": {
+          "$ref": "#/definitions/text60"
+        },
+        "type": {
+          "const": "text"
+        },
+        "voice": {
+          "enum": [
+            "merchant",
+            "papex"
+          ]
+        },
+        "icon": {
+          "enum": [
+            "tag",
+            "gift",
+            "star",
+            "mail",
+            "info",
+            "sparkle",
+            "clock",
+            "bag"
+          ]
+        },
+        "title": {
+          "$ref": "#/definitions/text120"
+        },
+        "body": {
+          "$ref": "#/definitions/text500"
+        }
+      }
+    },
+    "offerCard": {
+      "description": "A coupon or voucher: the merchant's speech, drawn as a paper voucher.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "mode",
+        "valueLabel",
+        "title"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/cardId"
+        },
+        "mode": {
+          "enum": [
+            "live",
+            "preview"
+          ]
+        },
+        "heading": {
+          "$ref": "#/definitions/text60"
+        },
+        "type": {
+          "const": "offer"
+        },
+        "kicker": {
+          "$ref": "#/definitions/text40"
+        },
+        "valueLabel": {
+          "$ref": "#/definitions/text12"
+        },
+        "valueSuffix": {
+          "$ref": "#/definitions/text12"
+        },
+        "qualifier": {
+          "$ref": "#/definitions/text40"
+        },
+        "title": {
+          "$ref": "#/definitions/text160"
+        },
+        "terms": {
+          "$ref": "#/definitions/text500"
+        },
+        "validity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "expiresAt",
+            "countdown"
+          ],
+          "properties": {
+            "expiresAt": {
+              "$ref": "#/definitions/expiresAt"
+            },
+            "countdown": {
+              "type": "boolean"
+            }
+          }
+        },
+        "redemption": {
+          "$ref": "#/definitions/redemption"
+        },
+        "actions": {
+          "type": "array",
+          "maxItems": 2,
+          "items": {
+            "$ref": "#/definitions/saveAction"
+          }
+        }
+      }
+    },
+    "ctaCard": {
+      "description": "A link out (menu, order online, review). The URL comes from merchant config, never from receipt facts.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "mode",
+        "voice",
+        "label",
+        "url",
+        "style"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/cardId"
+        },
+        "mode": {
+          "enum": [
+            "live",
+            "preview"
+          ]
+        },
+        "heading": {
+          "$ref": "#/definitions/text60"
+        },
+        "type": {
+          "const": "cta"
+        },
+        "voice": {
+          "enum": [
+            "merchant",
+            "papex"
+          ]
+        },
+        "title": {
+          "$ref": "#/definitions/text120"
+        },
+        "body": {
+          "$ref": "#/definitions/text500"
+        },
+        "label": {
+          "$ref": "#/definitions/text40"
+        },
+        "url": {
+          "$ref": "#/definitions/httpsUrl"
+        },
+        "style": {
+          "enum": [
+            "primary",
+            "secondary"
+          ]
+        }
+      }
+    },
+    "savingsCard": {
+      "description": "What this basket saved, as a ledger.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "mode",
+        "total",
+        "totalLabel"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/cardId"
+        },
+        "mode": {
+          "enum": [
+            "live",
+            "preview"
+          ]
+        },
+        "heading": {
+          "$ref": "#/definitions/text60"
+        },
+        "type": {
+          "const": "savings"
+        },
+        "total": {
+          "$ref": "#/definitions/text16"
+        },
+        "totalLabel": {
+          "$ref": "#/definitions/text40"
+        },
+        "components": {
+          "type": "array",
+          "maxItems": 10,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "label",
+              "amount"
+            ],
+            "properties": {
+              "label": {
+                "$ref": "#/definitions/text80"
+              },
+              "amount": {
+                "$ref": "#/definitions/text16"
+              }
+            }
+          }
+        }
+      }
+    },
+    "loyaltyCard": {
+      "description": "The merchant's points programme, display-only. `note` (the guardrail line) is required.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "mode",
+        "programName",
+        "note"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/cardId"
+        },
+        "mode": {
+          "enum": [
+            "live",
+            "preview"
+          ]
+        },
+        "heading": {
+          "$ref": "#/definitions/text60"
+        },
+        "type": {
+          "const": "loyalty"
+        },
+        "programName": {
+          "$ref": "#/definitions/text60"
+        },
+        "earned": {
+          "$ref": "#/definitions/text24"
+        },
+        "balance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "value",
+            "label"
+          ],
+          "properties": {
+            "value": {
+              "$ref": "#/definitions/text24"
+            },
+            "label": {
+              "$ref": "#/definitions/text24"
+            }
+          }
+        },
+        "balanceWorth": {
+          "$ref": "#/definitions/text40"
+        },
+        "progress": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "fraction",
+            "text"
+          ],
+          "properties": {
+            "fraction": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "text": {
+              "$ref": "#/definitions/text160"
+            }
+          }
+        },
+        "note": {
+          "$ref": "#/definitions/text200"
+        }
+      }
+    },
+    "insightCard": {
+      "description": "PapeX's own observation about the basket, with the evidence behind it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "mode",
+        "headline",
+        "body",
+        "evidence"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/cardId"
+        },
+        "mode": {
+          "enum": [
+            "live",
+            "preview"
+          ]
+        },
+        "heading": {
+          "$ref": "#/definitions/text60"
+        },
+        "type": {
+          "const": "insight"
+        },
+        "kicker": {
+          "$ref": "#/definitions/text40"
+        },
+        "headline": {
+          "$ref": "#/definitions/text160"
+        },
+        "body": {
+          "$ref": "#/definitions/text500"
+        },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "label",
+              "value"
+            ],
+            "properties": {
+              "label": {
+                "$ref": "#/definitions/text40"
+              },
+              "value": {
+                "$ref": "#/definitions/text60"
+              }
+            }
+          }
+        },
+        "footnote": {
+          "$ref": "#/definitions/text200"
+        }
+      }
+    },
+    "emailCaptureCard": {
+      "description": "Share my email with the merchant. PARTNER-ONLY (see the envelope rule) and never pre-checked: the format has no field that could pre-check it. Inert until the legal review (D4) and the P2 endpoint exist.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "mode",
+        "consentLabel",
+        "consent"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/cardId"
+        },
+        "mode": {
+          "enum": [
+            "live",
+            "preview"
+          ]
+        },
+        "heading": {
+          "$ref": "#/definitions/text60"
+        },
+        "type": {
+          "const": "emailCapture"
+        },
+        "kicker": {
+          "$ref": "#/definitions/text40"
+        },
+        "title": {
+          "$ref": "#/definitions/text120"
+        },
+        "consentLabel": {
+          "$ref": "#/definitions/text300"
+        },
+        "consentNote": {
+          "$ref": "#/definitions/text200"
+        },
+        "consent": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "textId",
+            "textVersion"
+          ],
+          "properties": {
+            "textId": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9-]{0,47}$"
+            },
+            "textVersion": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "input": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "placeholder",
+            "submitLabel"
+          ],
+          "properties": {
+            "placeholder": {
+              "$ref": "#/definitions/text60"
+            },
+            "submitLabel": {
+              "$ref": "#/definitions/text40"
+            }
+          }
+        },
+        "ageAffirmationLabel": {
+          "$ref": "#/definitions/text200"
+        },
+        "privacyUrl": {
+          "$ref": "#/definitions/httpsUrl"
+        }
+      },
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "live"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "input"
+        ]
+      }
+    },
+    "disclosureCard": {
+      "description": "A plain, muted disclosure line.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "mode",
+        "text"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/cardId"
+        },
+        "mode": {
+          "enum": [
+            "live",
+            "preview"
+          ]
+        },
+        "heading": {
+          "$ref": "#/definitions/text60"
+        },
+        "type": {
+          "const": "disclosure"
+        },
+        "text": {
+          "$ref": "#/definitions/text280"
+        }
+      }
+    },
+    "card": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "text",
+            "offer",
+            "cta",
+            "savings",
+            "loyalty",
+            "insight",
+            "emailCapture",
+            "disclosure"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "text"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/definitions/textCard"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "offer"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/definitions/offerCard"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "cta"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/definitions/ctaCard"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "savings"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/definitions/savingsCard"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "loyalty"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/definitions/loyaltyCard"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "insight"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/definitions/insightCard"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "emailCapture"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/definitions/emailCaptureCard"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "disclosure"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/definitions/disclosureCard"
+          }
+        }
+      ]
+    }
+  }
+}

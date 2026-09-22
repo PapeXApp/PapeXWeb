@@ -1,0 +1,102 @@
+{
+  "description": "At most 8 cards render, counted after invalid and unknown cards are removed.",
+  "requestSid": "c0ffee0000000100",
+  "response": {
+    "schemaVersion": 1,
+    "sid": "c0ffee0000000100",
+    "status": "ok",
+    "merchant": {
+      "partner": false,
+      "ageRestricted": false
+    },
+    "cards": [
+      {
+        "id": "u",
+        "type": "poll",
+        "mode": "live"
+      },
+      {
+        "id": "c0",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Card c0."
+      },
+      {
+        "id": "c1",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Card c1."
+      },
+      {
+        "id": "c2",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Card c2."
+      },
+      {
+        "id": "c3",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Card c3."
+      },
+      {
+        "id": "c4",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Card c4."
+      },
+      {
+        "id": "c5",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Card c5."
+      },
+      {
+        "id": "c6",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Card c6."
+      },
+      {
+        "id": "c7",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Card c7."
+      },
+      {
+        "id": "c8",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Card c8."
+      },
+      {
+        "id": "c9",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Card c9."
+      }
+    ]
+  },
+  "expect": {
+    "cardIds": [
+      "c0",
+      "c1",
+      "c2",
+      "c3",
+      "c4",
+      "c5",
+      "c6",
+      "c7"
+    ]
+  }
+}

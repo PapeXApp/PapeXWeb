@@ -1,0 +1,42 @@
+{
+  "description": "A card repeating the id of an earlier accepted card is dropped.",
+  "requestSid": "c0ffee0000000100",
+  "response": {
+    "schemaVersion": 1,
+    "sid": "c0ffee0000000100",
+    "status": "ok",
+    "merchant": {
+      "partner": false,
+      "ageRestricted": false
+    },
+    "cards": [
+      {
+        "id": "a",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Card a."
+      },
+      {
+        "id": "b",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Card b."
+      },
+      {
+        "id": "a",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Second a."
+      }
+    ]
+  },
+  "expect": {
+    "cardIds": [
+      "a",
+      "b"
+    ]
+  }
+}

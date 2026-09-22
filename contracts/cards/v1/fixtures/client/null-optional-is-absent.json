@@ -1,0 +1,37 @@
+{
+  "description": "An optional field sent as null is treated as absent; a required field sent as null drops the card.",
+  "requestSid": "c0ffee0000000100",
+  "response": {
+    "schemaVersion": 1,
+    "sid": "c0ffee0000000100",
+    "status": "ok",
+    "merchant": {
+      "partner": false,
+      "ageRestricted": false
+    },
+    "cards": [
+      {
+        "id": "a",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Card a.",
+        "title": null,
+        "icon": null,
+        "heading": null
+      },
+      {
+        "id": "b",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": null
+      }
+    ]
+  },
+  "expect": {
+    "cardIds": [
+      "a"
+    ]
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "description": "FAIL CLOSED: cards that is not an array renders nothing.",
+  "requestSid": "c0ffee0000000100",
+  "response": {
+    "schemaVersion": 1,
+    "sid": "c0ffee0000000100",
+    "status": "ok",
+    "merchant": {
+      "partner": false,
+      "ageRestricted": false
+    },
+    "cards": {
+      "a": {
+        "id": "a",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Card a."
+      }
+    }
+  },
+  "expect": {
+    "cardIds": []
+  }
+}

@@ -845,6 +845,10 @@ export function DemoCtaRow({ platform }: { platform: Platform }) {
 // most likely to already include, before the pitch resumes below. That is
 // what keeps this reading as a footnote rather than a disclaimer up front.
 // Sits on the page background with no card, same treatment as AppCta below.
+//
+// Since cards P0 the demo routes draw this line as the first receipt card (a
+// `disclosure` card, app/r/cards/DisclosureCard.tsx, identical markup), and
+// this component is the reference app/r/cards/cards.test.tsx checks it against.
 
 export function DemoDisclosure({ text }: { text: string }) {
   return (

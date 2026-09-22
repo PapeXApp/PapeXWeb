@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "sid": "c0ffee0000000006",
+  "status": "ok",
+  "merchant": {
+    "partner": false,
+    "ageRestricted": false
+  },
+  "cards": [
+    {
+      "id": "you-saved",
+      "type": "savings",
+      "mode": "live",
+      "heading": "Savings",
+      "total": "$6.50",
+      "totalLabel": "saved today",
+      "components": [
+        {
+          "label": "Store brand olive oil 500ml",
+          "amount": "$4.00"
+        },
+        {
+          "label": "Sourdough loaf",
+          "amount": "$2.50"
+        }
+      ]
+    }
+  ]
+}

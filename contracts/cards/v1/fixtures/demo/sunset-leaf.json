@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "sid": "5371e4f000000001",
+  "status": "none",
+  "configRef": "demo-registry",
+  "merchant": {
+    "partner": false,
+    "ageRestricted": false
+  },
+  "cards": []
+}

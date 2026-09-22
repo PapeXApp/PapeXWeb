@@ -1,0 +1,47 @@
+/* app/r/cards/cards.module.css
+ *
+ * The few surfaces the card renderer needs beyond glass.module.css (PapeX's
+ * glass) and ../voucher.module.css (the merchant's voucher ticket).
+ *
+ * `.merchantPanel` is the voucher's paint without the voucher's silhouette:
+ * the same opaque warm ramp and navy ink, for merchant-voice text and CTA
+ * cards. Merchant speech never sits on PapeX glass, and PapeX speech never
+ * sits on this — see app/r/enrichment.tsx, TWO VOICES.
+ */
+
+.merchantPanel {
+  border-radius: 20px;
+  background-image: linear-gradient(135deg, #ff9a3c 0%, #eb7100 55%, #c85e00 100%);
+  background-color: #eb7100;
+  filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.28));
+}
+
+/* Barcodes are drawn dark-on-white whatever the theme: scanners need the
+   contrast and the quiet zone, and the voucher's orange is neither. */
+.barcodePlate {
+  background: #ffffff;
+  border-radius: 12px;
+}
+
+.codeBox {
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(0, 18, 29, 0.22);
+  border-radius: 12px;
+}
+
+/* An inert (P0) email field: visibly a field, visibly not usable. */
+.inertField {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.45);
+  cursor: not-allowed;
+  color-scheme: dark;
+}
+
+.inertButton {
+  border-radius: 12px;
+  background: rgba(235, 113, 0, 0.35);
+  color: rgba(255, 255, 255, 0.6);
+  cursor: not-allowed;
+}

@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "sid": "c0ffee0000000002",
+  "status": "ok",
+  "merchant": {
+    "partner": false,
+    "ageRestricted": false
+  },
+  "cards": [
+    {
+      "id": "spend-100-get-15",
+      "type": "offer",
+      "mode": "live",
+      "heading": "An offer from Example Market",
+      "kicker": "Next visit",
+      "valueLabel": "$15",
+      "valueSuffix": "off",
+      "qualifier": "On $100+",
+      "title": "$15 off your next purchase of $100 or more at Example Market.",
+      "terms": "Valid for 14 days from purchase. Limit one per customer. Excludes alcohol, tobacco and gift cards.",
+      "validity": {
+        "expiresAt": "2026-10-06T06:59:59Z",
+        "countdown": true
+      },
+      "redemption": {
+        "type": "code",
+        "code": "EXM15OFF100",
+        "caption": "Give this code at the register"
+      },
+      "actions": [
+        {
+          "type": "save",
+          "label": "Save this offer to PapeX"
+        }
+      ]
+    }
+  ]
+}

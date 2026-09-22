@@ -1,0 +1,25 @@
+{
+  "description": "FAIL CLOSED: an unknown status renders nothing.",
+  "requestSid": "c0ffee0000000100",
+  "response": {
+    "schemaVersion": 1,
+    "sid": "c0ffee0000000100",
+    "status": "partial",
+    "merchant": {
+      "partner": false,
+      "ageRestricted": false
+    },
+    "cards": [
+      {
+        "id": "a",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Card a."
+      }
+    ]
+  },
+  "expect": {
+    "cardIds": []
+  }
+}

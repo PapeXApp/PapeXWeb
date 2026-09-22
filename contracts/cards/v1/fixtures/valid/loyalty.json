@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "sid": "c0ffee0000000007",
+  "status": "ok",
+  "merchant": {
+    "partner": false,
+    "ageRestricted": false
+  },
+  "cards": [
+    {
+      "id": "example-rewards",
+      "type": "loyalty",
+      "mode": "preview",
+      "heading": "Rewards",
+      "programName": "Example Rewards",
+      "earned": "+42 pts",
+      "balance": {
+        "value": "842",
+        "label": "points"
+      },
+      "balanceWorth": "worth $8",
+      "progress": {
+        "fraction": 0.42,
+        "text": "58 points from your next $1 reward (900 pts)."
+      },
+      "note": "PapeX tracks your points. Redeem them at the register like always."
+    },
+    {
+      "id": "minimal-rewards",
+      "type": "loyalty",
+      "mode": "preview",
+      "programName": "Members earn points on every visit",
+      "note": "PapeX tracks your points. Redeem them at the register like always."
+    }
+  ]
+}
