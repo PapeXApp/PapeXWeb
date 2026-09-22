@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "sid": "5ca1e00000000001",
+  "status": "ok",
+  "configRef": "demo-registry",
+  "merchant": {
+    "partner": false,
+    "ageRestricted": false
+  },
+  "cards": [
+    {
+      "id": "demo-disclosure",
+      "type": "disclosure",
+      "mode": "preview",
+      "text": "Hartwell's Market is a store created for this demo; its prices and promotions are invented."
+    },
+    {
+      "id": "demo-savings",
+      "type": "savings",
+      "mode": "preview",
+      "heading": "Savings",
+      "total": "$11.49",
+      "totalLabel": "saved today",
+      "components": [
+        {
+          "label": "Bounty Select-A-Size 12=24",
+          "amount": "$7.00"
+        },
+        {
+          "label": "Dave's Killer Bread 21 Whole Grains",
+          "amount": "$1.50"
+        },
+        {
+          "label": "La Croix Grapefruit 12pk ×2",
+          "amount": "$2.99"
+        }
+      ]
+    },
+    {
+      "id": "demo-loyalty",
+      "type": "loyalty",
+      "mode": "preview",
+      "heading": "Rewards",
+      "programName": "Hartwell's Rewards",
+      "earned": "+96 pts",
+      "balance": {
+        "value": "1,240",
+        "label": "points"
+      },
+      "balanceWorth": "worth $24",
+      "progress": {
+        "fraction": 0.4,
+        "text": "60 points from your next $2 reward (1,300 pts)."
+      },
+      "note": "PapeX tracks your points. Redeem them at the register like always."
+    },
+    {
+      "id": "demo-insight",
+      "type": "insight",
+      "mode": "preview",
+      "heading": "A message from PapeX",
+      "kicker": "From your own receipts",
+      "headline": "You just paid your lowest price yet on Bounty.",
+      "body": "You've bought Bounty Select-A-Size 12=24 six times in the past year. You usually pay about $24.49. Today, here, it was $20.99 — the lowest you've paid for it. PapeX only ever compares the identical pack, so this is a real price difference, not a smaller roll.",
+      "evidence": [
+        {
+          "label": "Purchases",
+          "value": "6 in the last 12 months"
+        },
+        {
+          "label": "You usually pay",
+          "value": "$24.49"
+        },
+        {
+          "label": "Your previous best",
+          "value": "$23.49"
+        },
+        {
+          "label": "Today, here",
+          "value": "$20.99"
+        }
+      ],
+      "footnote": "Compared against the identical pack only, from receipts you captured."
+    },
+    {
+      "id": "demo-offer",
+      "type": "offer",
+      "mode": "preview",
+      "heading": "An offer from Hartwell's Market",
+      "kicker": "Next visit",
+      "valueLabel": "$4",
+      "valueSuffix": "off",
+      "qualifier": "No minimum",
+      "title": "$4 off Bounty Select-A-Size 12=24 at Hartwell's Market.",
+      "terms": "Valid for 60 days from purchase. Limit one per household.",
+      "validity": {
+        "expiresAt": "2026-11-01T23:59:59Z",
+        "countdown": true
+      },
+      "actions": [
+        {
+          "type": "save",
+          "label": "Save this coupon to PapeX"
+        }
+      ]
+    }
+  ]
+}

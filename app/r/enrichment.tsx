@@ -1,5 +1,14 @@
 // app/r/enrichment.tsx
 //
+// RETIRED FROM THE PAGE (cards P0, 2026-09-22). The demo routes now draw this
+// layer as receipt cards: lib/cards/demoSource.ts projects the same registry
+// into format v1 and app/r/cards/ renders it. This file stays ONLY as the
+// reference app/r/cards/cards.test.tsx compares against, byte for byte, to
+// prove the switch changed nothing on screen. Delete it together with
+// lib/cards/demoSource.ts once the P1 cards service serves the demo sids.
+// Its design notes (two voices, the inert opt-in, no figure typed twice)
+// carry over to app/r/cards/ and still apply there.
+//
 // The PapeX value layer: what gets rendered BELOW the receipt on the demo
 // routes. Savings, loyalty, the price insight, the merchant's offer, and the
 // email opt-in — each drawn only when lib/demoReceipts.ts has one for the sid.

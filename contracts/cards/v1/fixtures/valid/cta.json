@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "sid": "c0ffee0000000005",
+  "status": "ok",
+  "merchant": {
+    "partner": false,
+    "ageRestricted": false
+  },
+  "cards": [
+    {
+      "id": "order-online",
+      "type": "cta",
+      "mode": "live",
+      "voice": "merchant",
+      "title": "Skip the line next time",
+      "body": "Order ahead and pick up at the counter.",
+      "label": "Order online",
+      "url": "https://order.example.com/example-market?src=papex",
+      "style": "primary"
+    },
+    {
+      "id": "papex-install",
+      "type": "cta",
+      "mode": "live",
+      "voice": "papex",
+      "label": "Get PapeX",
+      "url": "https://papex.app/",
+      "style": "secondary"
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "sid": "c0ffee000000000a",
+  "status": "ok",
+  "merchant": {
+    "partner": true,
+    "ageRestricted": true
+  },
+  "cards": [
+    {
+      "id": "join-list",
+      "type": "emailCapture",
+      "mode": "live",
+      "kicker": "Stay in touch",
+      "title": "Get Example Dispensary's weekly drops",
+      "consentLabel": "Share my email with Example Dispensary so they can email me offers.",
+      "consentNote": "Unsubscribe any time from any email.",
+      "consent": {
+        "textId": "example-dispensary-share-email",
+        "textVersion": 3
+      },
+      "input": {
+        "placeholder": "you@example.com",
+        "submitLabel": "Join"
+      },
+      "ageAffirmationLabel": "I am 21 or older.",
+      "privacyUrl": "https://papex.app/privacy"
+    }
+  ]
+}

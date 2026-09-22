@@ -32,11 +32,17 @@
 // WHAT IT RENDERS
 //   The real receipt, undecorated, with "Get PapeX" as the only CTA — and,
 //   below it, the PapeX value layer for this sid (savings, rewards, the price
-//   insight, the merchant's voucher, the email opt-in). That layer comes
-//   entirely from lib/demoReceipts.ts's enrichment map and is rendered by
-//   ../enrichment.tsx, which is server-only for the same island reasons as
-//   ui.tsx. A demo sid with no enrichment renders exactly the page that
-//   shipped before the layer existed.
+//   insight, the merchant's voucher, the email opt-in) AS CARDS: receipt
+//   cards format v1 (lib/cards/types.ts, contracts/cards/v1/). The content
+//   still comes entirely from lib/demoReceipts.ts's enrichment map;
+//   lib/cards/demoSource.ts projects it into the resolved-cards JSON the P1
+//   cards service will serve, lib/cards/normalize.ts validates it exactly as
+//   it will validate a fetched response, and ../cards/CardList.tsx renders
+//   it — server-only, for the same island reasons as ui.tsx. A demo sid with
+//   no enrichment gets no cards and renders exactly the page that shipped
+//   before the layer existed. (../enrichment.tsx, the renderer this
+//   replaced, is kept only as the reference the markup-parity test in
+//   app/r/cards/cards.test.tsx compares against.)
 //   Deliberately NOT the DemoBanner / SampleFrame / watermark treatment `/r`
 //   uses for its `?demo=1` sample: those exist to mark FABRICATED data in a
 //   context where a visitor might mistake it for THEIR OWN real purchase
@@ -50,7 +56,8 @@
 //   Sunset Leaf is real seeded data from a real provisioned merchant, and
 //   is not. Rather than a blanket banner across every demo sid, this is
 //   disclosed per-receipt: lib/demoReceipts.ts's `fabricated` field on the
-//   enrichment payload drives one calm sentence, `DemoDisclosure` below,
+//   enrichment payload drives one calm sentence (a `disclosure` card, the
+//   first card in the list, drawn exactly like ui.tsx's DemoDisclosure),
 //   that appears only for a receipt actually marked that way.
 //
 //   No SaveToPapex, and no import of it anywhere in this module's graph —
@@ -72,12 +79,9 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { fetchReceiptBytes } from "@/lib/rdh";
-import {
-  formatDemoDisclosure,
-  getDemoEnrichment,
-  offerDaysRemaining,
-  resolveDemoRoute,
-} from "@/lib/demoReceipts";
+import { getDemoEnrichment, offerDaysRemaining, resolveDemoRoute } from "@/lib/demoReceipts";
+import { demoResolvedCards } from "@/lib/cards/demoSource";
+import { normalizeResolvedCards } from "@/lib/cards/normalize";
 import { platformFromUserAgent } from "@/lib/storeLinks";
 import { parseEscPos } from "@/lib/escpos";
 import { summarizeReceipt, hasStructure as computeHasStructure } from "@/lib/receiptSummary";
@@ -88,10 +92,9 @@ import {
   ReceiptNotAvailable,
   ReceiptView,
   DemoCtaRow,
-  DemoDisclosure,
   AppCta,
 } from "../ui";
-import { EnrichmentSections } from "../enrichment";
+import { CardList } from "../cards/CardList";
 import RetryButton from "../RetryButton";
 
 export const metadata: Metadata = {
@@ -137,19 +140,10 @@ export default async function DemoReceiptPage({
   const platform = platformFromUserAgent(uaHeader);
 
   // The PapeX value layer for this sid: savings, loyalty, the price insight,
-  // the merchant's offer, the email opt-in. `undefined` for a sid with no
-  // enrichment and an empty object for a demo sid that simply doesn't carry
-  // one (the Sunset Leaf bench tag) — either way EnrichmentSections renders
-  // nothing and the page falls back to the bare receipt.
+  // the merchant's offer, the email opt-in. An empty object for a demo sid
+  // that simply doesn't carry one (the Sunset Leaf bench tag), which projects
+  // to no cards, and the page falls back to the bare receipt.
   const enrichment = getDemoEnrichment(sid);
-
-  // The disclosure line for a receipt whose store, prices and promotions
-  // were invented for this demo (Hartwell's Market, Ellsworth Market) —
-  // `undefined` for one that isn't marked `fabricated` (Sunset Leaf, or a
-  // sid with no enrichment at all), in which case nothing renders. See
-  // DemoReceiptEnrichment.fabricated and DemoDisclosure for the full
-  // argument for why this is per-receipt rather than a blanket banner.
-  const disclosure = formatDemoDisclosure(enrichment);
 
   const result = await fetchReceiptBytes(sid);
   const receipt = result.status === "ok" ? parseEscPos(result.bytes) : undefined;
@@ -174,7 +168,19 @@ export default async function DemoReceiptPage({
   // lets a re-minted demo blob move the countdown with the new printed date
   // instead of silently drifting from it — see the offer block in
   // lib/demoReceipts.ts.
-  const daysRemaining = offerDaysRemaining(enrichment, new Date(), summary?.dateline);
+  const now = new Date();
+  const daysRemaining = offerDaysRemaining(enrichment, now, summary?.dateline);
+
+  // The value layer as resolved cards (format v1). demoResolvedCards stands
+  // in for the P1 cards service; its output goes through the same total
+  // normalizer a fetched response will, so a bad card fails closed here
+  // exactly as it will in production. The countdown anchor is NOT decided
+  // here or in lib/cards: it is `daysRemaining` above, from
+  // lib/demoReceipts.ts (dateline-anchored, registry as fallback), turned
+  // into the card's `expiresAt`. The disclosure line for a `fabricated`
+  // receipt (Hartwell's, Ellsworth) is the first card; see
+  // DemoReceiptEnrichment.fabricated for why it is per-receipt.
+  const cards = normalizeResolvedCards(demoResolvedCards(sid, { now, offerDaysRemaining: daysRemaining }), sid);
 
   // A demo tag whose blob has expired or was never seeded. Says so plainly
   // rather than inventing content — the honesty rules `/r` follows apply here
@@ -200,19 +206,17 @@ export default async function DemoReceiptPage({
           logo={receipt?.logo}
           rasterPage={rasterPage}
         />
-        {/* The demo-data disclosure, directly under the receipt: after the
-            structured card a screenshot at a loud booth is most likely to
-            already include, before the value layer resumes the pitch below.
-            Absent entirely for a non-`fabricated` receipt (Sunset Leaf) — see
-            DemoDisclosure in ../ui.tsx for why this isn't the SampleFrame /
-            watermark treatment. */}
-        {disclosure && <DemoDisclosure text={disclosure} />}
-        {/* The value layer, below the paper — savings, rewards, PapeX's own
-            observation, the merchant's voucher, the opt-in. Deliberately
-            below: the receipt is the thing the visitor tapped for and has to
-            arrive first and intact. Everything here is additive, and a sid
-            with no enrichment renders exactly the page that shipped. */}
-        <EnrichmentSections enrichment={enrichment} daysRemaining={daysRemaining} />
+        {/* The value layer, below the paper, as cards: the demo-data
+            disclosure first (directly under the receipt, where a booth
+            screenshot most likely already reaches; absent entirely for a
+            non-`fabricated` receipt such as Sunset Leaf; see DemoDisclosure
+            in ../ui.tsx for why it isn't the SampleFrame / watermark
+            treatment), then savings, rewards, PapeX's own observation, the
+            merchant's voucher, the opt-in. Deliberately below: the receipt is
+            the thing the visitor tapped for and has to arrive first and
+            intact. Everything here is additive, and a sid with no cards
+            renders exactly the page that shipped. */}
+        <CardList cards={cards} now={now} />
         <DemoCtaRow platform={platform} />
       </Shell>
     );

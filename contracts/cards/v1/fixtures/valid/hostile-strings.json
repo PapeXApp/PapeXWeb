@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "sid": "c0ffee000000000c",
+  "status": "ok",
+  "merchant": {
+    "partner": false,
+    "ageRestricted": false
+  },
+  "cards": [
+    {
+      "id": "hostile-text",
+      "type": "text",
+      "mode": "live",
+      "voice": "merchant",
+      "title": "<script>alert('title')</script>",
+      "body": "\"><img src=x onerror=alert(1)> & {{merchant.name}} javascript:alert(1) **not markdown** [link](https://evil.example) &amp; 👨‍👩‍👧"
+    },
+    {
+      "id": "hostile-offer",
+      "type": "offer",
+      "mode": "live",
+      "valueLabel": "<b>$5</b>",
+      "title": "</p><h1>Injected</h1>",
+      "redemption": {
+        "type": "code",
+        "code": "<svg/onload=x>"
+      }
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "sid": "c0ffee000000000e",
+  "status": "none",
+  "configRef": "c7",
+  "merchant": {
+    "partner": false,
+    "ageRestricted": false
+  },
+  "cards": []
+}

@@ -1,0 +1,50 @@
+{
+  "description": "Entries that are not objects, or carry no string type, are skipped like unknown types.",
+  "requestSid": "c0ffee0000000100",
+  "response": {
+    "schemaVersion": 1,
+    "sid": "c0ffee0000000100",
+    "status": "ok",
+    "merchant": {
+      "partner": false,
+      "ageRestricted": false
+    },
+    "cards": [
+      {
+        "id": "a",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Card a."
+      },
+      "not a card",
+      42,
+      null,
+      [
+        "x"
+      ],
+      {
+        "id": "no-type",
+        "mode": "live",
+        "body": "x"
+      },
+      {
+        "id": "num-type",
+        "type": 7
+      },
+      {
+        "id": "b",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Card b."
+      }
+    ]
+  },
+  "expect": {
+    "cardIds": [
+      "a",
+      "b"
+    ]
+  }
+}

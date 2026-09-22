@@ -1,0 +1,45 @@
+{
+  "description": "PARTNER-ONLY: an emailCapture card in a response whose merchant is not a partner is dropped; the other cards render.",
+  "requestSid": "c0ffee0000000100",
+  "response": {
+    "schemaVersion": 1,
+    "sid": "c0ffee0000000100",
+    "status": "ok",
+    "merchant": {
+      "partner": false,
+      "ageRestricted": false
+    },
+    "cards": [
+      {
+        "id": "a",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Card a."
+      },
+      {
+        "id": "capture",
+        "type": "emailCapture",
+        "mode": "preview",
+        "consentLabel": "Share my email with Example Market.",
+        "consent": {
+          "textId": "example",
+          "textVersion": 1
+        }
+      },
+      {
+        "id": "b",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Card b."
+      }
+    ]
+  },
+  "expect": {
+    "cardIds": [
+      "a",
+      "b"
+    ]
+  }
+}

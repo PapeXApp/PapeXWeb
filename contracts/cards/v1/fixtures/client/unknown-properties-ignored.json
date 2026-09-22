@@ -1,0 +1,52 @@
+{
+  "description": "Unknown properties on the envelope, a card or a nested object are ignored.",
+  "requestSid": "c0ffee0000000100",
+  "response": {
+    "schemaVersion": 1,
+    "sid": "c0ffee0000000100",
+    "status": "ok",
+    "merchant": {
+      "partner": false,
+      "ageRestricted": false
+    },
+    "cards": [
+      {
+        "id": "a",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Card a.",
+        "futureField": {
+          "x": 1
+        },
+        "__proto__": {
+          "polluted": true
+        },
+        "constructor": {
+          "prototype": {
+            "polluted": true
+          }
+        }
+      },
+      {
+        "id": "o",
+        "type": "offer",
+        "mode": "live",
+        "valueLabel": "$5",
+        "title": "$5 off.",
+        "validity": {
+          "expiresAt": "2026-10-20T23:59:59Z",
+          "countdown": true,
+          "style": "fancy"
+        }
+      }
+    ],
+    "generatedAt": "2026-09-22T00:00:00Z"
+  },
+  "expect": {
+    "cardIds": [
+      "a",
+      "o"
+    ]
+  }
+}

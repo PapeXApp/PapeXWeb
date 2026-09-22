@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "sid": "c0ffee0000000001",
+  "status": "ok",
+  "merchant": {
+    "partner": false,
+    "ageRestricted": false
+  },
+  "cards": [
+    {
+      "id": "thanks",
+      "type": "text",
+      "mode": "live",
+      "voice": "merchant",
+      "icon": "gift",
+      "title": "Thanks for shopping with us",
+      "body": "Show this receipt at the counter on your birthday week for a free coffee."
+    },
+    {
+      "id": "papex-note",
+      "type": "text",
+      "mode": "live",
+      "voice": "papex",
+      "icon": "sparkle",
+      "heading": "From PapeX",
+      "body": "This receipt is saved for 90 days. Get PapeX to keep every receipt automatically."
+    }
+  ]
+}
