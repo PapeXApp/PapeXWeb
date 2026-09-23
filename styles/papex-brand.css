@@ -93,7 +93,7 @@
      clamp(90px,11vw,160px), which /business used literally while /customers
      ran its own clamp(44px,4.5vw,68px) — the two pages breathed differently.
      Both now reference this single token. */
-  --section-pad-y: clamp(56px, 7vw, 90px);
+  --section-pad-y: clamp(40px, 4.5vw, 60px);
   --section-pad-x: clamp(20px, 5vw, 56px);
   --section-max: 1150px;
   --gap-cards: clamp(16px, 2vw, 26px);

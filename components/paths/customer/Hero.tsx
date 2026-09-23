@@ -31,8 +31,8 @@ export function Hero() {
         // the headline floated in the middle with dead air above and below.
         // min(100vh, 760px) + items-start seats the content just under the
         // nav and lets the section end when the content does.
-        minHeight: "min(100vh, 760px)",
-        padding: "clamp(96px,12vh,128px) clamp(20px,5vw,56px) var(--section-pad-y)",
+        minHeight: "auto",
+        padding: "clamp(96px,12vh,120px) clamp(20px,5vw,56px) 56px",
       }}
     >
       {/* The hero keeps its own pointer-tracked glow: it is part of the live

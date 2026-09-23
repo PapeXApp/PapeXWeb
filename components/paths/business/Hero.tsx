@@ -34,7 +34,7 @@ export function Hero() {
   return (
     <FlowSection
       ground="navy"
-      className="flex min-h-[min(100vh,640px)] items-start overflow-hidden px-[clamp(20px,5vw,56px)] pb-[var(--section-pad-y)] pt-[clamp(96px,12vh,128px)]"
+      className="flex items-start overflow-hidden px-[clamp(20px,5vw,56px)] pb-[var(--section-pad-y)] pt-[clamp(96px,12vh,120px)]"
     >
       <HeroLoopStyles />
       <Spotlight
