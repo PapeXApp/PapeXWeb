@@ -561,7 +561,7 @@ function PrintScene() {
 const TREE_HEIGHTS = [78, 104, 88, 118, 94, 110, 82, 100, 76];
 const GROW_STAGGER = 70;
 const SWEEP_START = TREE_HEIGHTS.length * GROW_STAGGER + 520;
-const SWEEP_MS = 760;
+const SWEEP_MS = 520;
 const FOREST_DURATION = SWEEP_START + SWEEP_MS + 700;
 
 const ROUND_TREES = new Set([1, 4, 6]);
@@ -594,27 +594,27 @@ const FELLED = ROW.map((tree) => ({
 }));
 
 // The axe animates about its grip. Solve the grip position for where the bit must be.
-const AXE_SCALE = 0.9;
-const AXE_LEAD = 600; // enters + winds up before the strike lands at SWEEP_START
-const AXE_EXIT = 300;
+const AXE_SCALE = 0.64;
+const AXE_LEAD = 620; // enters + winds up before the strike lands at SWEEP_START
+const AXE_EXIT = 260;
 const gripFor = (bx: number, by: number, deg: number): [number, number] => {
   const [ox, oy] = rot(AXE_BIT[0] * AXE_SCALE, AXE_BIT[1] * AXE_SCALE, deg);
   return [bx - ox, by - oy];
 };
-const AXE_STRIKE = gripFor(BLADE_X0, bladeY(BLADE_X0), -18);
-const AXE_END = gripFor(BLADE_X1, bladeY(BLADE_X1), -10);
-const AXE_WIND: [number, number] = [AXE_STRIKE[0] - 24, AXE_STRIKE[1] - 18];
+const AXE_STRIKE = gripFor(BLADE_X0, bladeY(BLADE_X0), -14);
+const AXE_END = gripFor(BLADE_X1, bladeY(BLADE_X1), 16);
+const AXE_WIND: [number, number] = [AXE_STRIKE[0] - 16, AXE_STRIKE[1] - 26];
 const AXE_VARS = {
-  "--hex": px(AXE_WIND[0] - 30),
-  "--hey": px(AXE_WIND[1] - 40),
+  "--hex": px(AXE_WIND[0] - 22),
+  "--hey": px(AXE_WIND[1] - 34),
   "--hwx": px(AXE_WIND[0]),
   "--hwy": px(AXE_WIND[1]),
   "--h0x": px(AXE_STRIKE[0]),
   "--h0y": px(AXE_STRIKE[1]),
   "--h1x": px(AXE_END[0]),
   "--h1y": px(AXE_END[1]),
-  "--hxx": px(AXE_END[0] + 40),
-  "--hxy": px(AXE_END[1] - 34),
+  "--hxx": px(AXE_END[0] + 30),
+  "--hxy": px(AXE_END[1] - 26),
   animationDelay: `${SWEEP_START - AXE_LEAD}ms`,
   animationDuration: `${AXE_LEAD + SWEEP_MS + AXE_EXIT}ms`,
 } as CSSProperties;
@@ -624,7 +624,7 @@ const SWOOSH_D = (() => {
   const [gx, gy] = AXE_STRIKE;
   const pts = (k: number) =>
     Array.from({ length: 9 }, (_, i) => {
-      const deg = 78 - (96 * i) / 8;
+      const deg = 72 - (86 * i) / 8;
       const [x, y] = rot(AXE_BIT[0] * AXE_SCALE * k, AXE_BIT[1] * AXE_SCALE * k, deg);
       return `${r1(gx + x)} ${r1(gy + y)}`;
     });

@@ -654,38 +654,40 @@
   }
 }
 /* The axe pivots on its grip. Positions come from FlipCards.tsx (--h*); the
-   percentages are AXE_LEAD / SWEEP_MS / AXE_EXIT = 600 / 760 / 300 of 1660ms:
-   wind-up 380ms (22.89%), strike at 600ms (36.14%), sweep ends at 1360ms (81.93%).
+   percentages are AXE_LEAD / SWEEP_MS / AXE_EXIT = 620 / 520 / 260 of 1400ms:
+   wind-up peaks at 320ms (22.86%), strike lands at 620ms (44.29%), sweep ends at
+   1140ms (81.43%). The down-swing is the read: it gets 300ms of the 620ms lead,
+   not the 220ms it had, so the arc is visible instead of a two-frame jump.
    The sweep leg is linear so each tree's fellDelay lands as the bit passes it. */
 .axe {
   opacity: 0;
-  animation: fcAxe 1.66s linear both;
+  animation: fcAxe 1.4s linear both;
 }
 @keyframes fcAxe {
   0% {
     opacity: 0;
-    transform: translate(var(--hex), var(--hey)) rotate(160deg);
+    transform: translate(var(--hex), var(--hey)) rotate(150deg);
     animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1);
   }
-  10% {
+  8% {
     opacity: 1;
   }
-  22.89% {
-    transform: translate(var(--hwx), var(--hwy)) rotate(135deg);
-    animation-timing-function: cubic-bezier(0.55, 0, 0.95, 0.55);
+  22.86% {
+    transform: translate(var(--hwx), var(--hwy)) rotate(132deg);
+    animation-timing-function: cubic-bezier(0.5, 0, 0.85, 0.6);
   }
-  36.14% {
-    transform: translate(var(--h0x), var(--h0y)) rotate(-18deg);
+  44.29% {
+    transform: translate(var(--h0x), var(--h0y)) rotate(-14deg);
     animation-timing-function: linear;
   }
-  81.93% {
+  81.43% {
     opacity: 1;
-    transform: translate(var(--h1x), var(--h1y)) rotate(-10deg);
-    animation-timing-function: cubic-bezier(0.2, 0.6, 0.4, 1);
+    transform: translate(var(--h1x), var(--h1y)) rotate(16deg);
+    animation-timing-function: cubic-bezier(0.3, 0.6, 0.5, 1);
   }
   100% {
     opacity: 0;
-    transform: translate(var(--hxx), var(--hxy)) rotate(-55deg);
+    transform: translate(var(--hxx), var(--hxy)) rotate(44deg);
   }
 }
 

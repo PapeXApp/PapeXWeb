@@ -1769,7 +1769,7 @@
   width: 100%;
   container-type: size;
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: center;
   overflow: hidden;
   border-radius: 20px;
@@ -1783,13 +1783,20 @@
 }
 /* The device is deliberately cropped by the cell's bottom edge — a full phone
    floating inside a box reads as a sticker, a cropped one reads as a product
-   shot continuing past the frame. */
+   shot continuing past the frame. Bottom edge, and ONLY the bottom edge: the
+   cell aligns the device to its top so every pixel of overflow falls past the
+   bottom. Aligning to flex-end instead put ~41px of the crop on the top edge,
+   which sliced off the bezel and notch — the parts that make it read as a
+   phone at all — so it stopped looking cropped and started looking broken. */
 .featShotPhone {
   /* cqh, not % — a percentage height here would resolve against the phone's own
-     content-driven box and go circular. 118 means the device is taller than the
-     cell, which is what produces the crop. */
-  --wp-size: 118cqh;
-  transform: translateY(9%);
+     content-driven box and go circular. >100 means the device is taller than the
+     cell, which is what produces the crop. 132 is set so the crop lands just
+     below the last list row: at 112 the device fit the cell so loosely that
+     109px of the card (27%) was empty screen under the content. */
+  --wp-size: 132cqh;
+  /* a little air above the device so it isn't welded to the cell's top edge */
+  transform: translateY(4%);
 }
 
 /* --- search field in its active state ------------------------------------ */
@@ -1845,7 +1852,12 @@
   position: absolute;
   left: calc(6 * var(--wp-u));
   right: calc(6 * var(--wp-u));
-  bottom: calc(6 * var(--wp-u));
+  /* A real iOS sheet is flush to the bottom of the DEVICE. In a cell that crops
+     the device (see .featShotPhone) that bottom is off-frame, so a flush sheet
+     loses its action list. --wp-sheet-lift raises it to the crop line instead:
+     the viewer never sees the device bottom, so a sheet flush to the visible
+     edge still reads exactly right. 0 everywhere the device isn't cropped. */
+  bottom: calc(6 * var(--wp-u) + var(--wp-sheet-lift, 0px));
   z-index: 13;
   border-radius: calc(26 * var(--wp-u));
   padding: calc(10 * var(--wp-u)) 0 calc(10 * var(--wp-u));
