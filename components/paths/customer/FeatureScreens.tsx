@@ -26,7 +26,16 @@ import styles from "./customer.module.css";
  * so anything pinned there is off-frame; lifting it by that much puts it back
  * on the visible edge. Top-anchored screens (the receipt list) leave it unset.
  */
-function Shot({ children, sheetLift }: { children: React.ReactNode; sheetLift?: string }) {
+function Shot({
+  children,
+  sheetLift,
+  slot,
+}: {
+  children: React.ReactNode;
+  sheetLift?: string;
+  /** app-media slot whose real capture, if imported, replaces the drawn screen. */
+  slot: string;
+}) {
   return (
     // "dark" was for the navy panel this cell used to sit on; the card is
     // light now (2026-09-10), so the default (lighter) pointer-glow variant
@@ -36,7 +45,7 @@ function Shot({ children, sheetLift }: { children: React.ReactNode; sheetLift?: 
         className={styles.featShotPhone}
         style={sheetLift ? ({ "--wp-sheet-lift": sheetLift } as React.CSSProperties) : undefined}
       >
-        <PhoneChrome tab="receipts">{children}</PhoneChrome>
+        <PhoneChrome tab="receipts" mediaSlot={slot}>{children}</PhoneChrome>
       </div>
     </div>
   );
@@ -46,7 +55,7 @@ const CHIPS = ["All", "Dining", "Groceries", "Travel"];
 
 export function ReceiptListShot() {
   return (
-    <Shot>
+    <Shot slot="receipts-search">
       <div className={styles.wpBody}>
         <div className={styles.wpTitle}>{receiptsListContent.title}</div>
 
@@ -98,7 +107,7 @@ const SHARE_ACTIONS = ["Copy", "Save to Files", "Print"];
 
 export function ShareSheetShot() {
   return (
-    <Shot sheetLift="40cqh">
+    <Shot slot="share-sheet" sheetLift="40cqh">
       {/* The receipt list stays visible behind the sheet — that's what makes it
           read as a sheet presented over the app rather than its own screen. */}
       <div className={styles.wpBody} aria-hidden="true">

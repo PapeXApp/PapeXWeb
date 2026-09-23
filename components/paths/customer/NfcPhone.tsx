@@ -10,6 +10,7 @@ import { demoContent } from "./content";
 import { demoReceiptBytes } from "./demoReceipt";
 import { DemoReceiptView } from "./DemoReceiptView";
 import { RdhDevice } from "./RdhDevice";
+import { AppMedia } from "../shared/AppMedia";
 import styles from "./customer.module.css";
 
 type DemoState = "idle" | "bowing" | "done";
@@ -100,44 +101,54 @@ export function NfcPhone() {
           <div className={styles.demoShell}>
             <div aria-hidden="true" className={styles.demoNotch} />
             <div className={styles.demoScreen}>
-              {/* Taps inside the live receipt belong to the receipt — opening
-                  "Original receipt" must not also fire the phone's toggle and
-                  reset the demo. Stopping propagation here is what lets the two
-                  tap targets coexist: receipt UI in here, replay anywhere else
-                  on the phone (or the "Tap again" link below it). */}
-              <div
-                className={styles.acLive}
-                onClick={(event) => event.stopPropagation()}
-                onKeyDown={(event) => event.stopPropagation()}
-              >
-                <div className={styles.acBar}>
-                  <span className={styles.acWordmark}>papex</span>
-                  <span aria-hidden="true" className={styles.acDot} />
-                  <span className={styles.acBarLabel}>{demoContent.barLabel}</span>
-                </div>
-                <div className={styles.acScroll}>
-                  <DemoReceiptView summary={summary} />
-                </div>
-                <div className={styles.acFoot}>
-                  <button
-                    type="button"
-                    className={cn(styles.acBtn, saved && styles.acBtnSaved)}
-                    onClick={save}
-                    aria-live="polite"
+              {/* A real capture of the tap (app-media slot "hero-tap") takes over
+                  the whole screen when one exists; until then this renders the
+                  live-decoded demo below, unchanged. */}
+              <AppMedia
+                slot="hero-tap"
+                fallback={
+                  <>
+                  {/* Taps inside the live receipt belong to the receipt — opening
+                      "Original receipt" must not also fire the phone's toggle and
+                      reset the demo. Stopping propagation here is what lets the two
+                      tap targets coexist: receipt UI in here, replay anywhere else
+                      on the phone (or the "Tap again" link below it). */}
+                  <div
+                    className={styles.acLive}
+                    onClick={(event) => event.stopPropagation()}
+                    onKeyDown={(event) => event.stopPropagation()}
                   >
-                    {saved ? demoContent.savedLabel : demoContent.saveLabel}
-                  </button>
-                </div>
-              </div>
-              <div className={styles.acIdle}>
-                <div aria-hidden="true" className={styles.acIdleRing}>
-                  <span />
-                  <span />
-                  <b className={styles.acIdleRingDot} />
-                </div>
-                <div className={styles.acIdleT}>{demoContent.idleTitle}</div>
-                <div className={styles.acIdleS}>{demoContent.idleSubtitle}</div>
-              </div>
+                    <div className={styles.acBar}>
+                      <span className={styles.acWordmark}>papex</span>
+                      <span aria-hidden="true" className={styles.acDot} />
+                      <span className={styles.acBarLabel}>{demoContent.barLabel}</span>
+                    </div>
+                    <div className={styles.acScroll}>
+                      <DemoReceiptView summary={summary} />
+                    </div>
+                    <div className={styles.acFoot}>
+                      <button
+                        type="button"
+                        className={cn(styles.acBtn, saved && styles.acBtnSaved)}
+                        onClick={save}
+                        aria-live="polite"
+                      >
+                        {saved ? demoContent.savedLabel : demoContent.saveLabel}
+                      </button>
+                    </div>
+                  </div>
+                  <div className={styles.acIdle}>
+                    <div aria-hidden="true" className={styles.acIdleRing}>
+                      <span />
+                      <span />
+                      <b className={styles.acIdleRingDot} />
+                    </div>
+                    <div className={styles.acIdleT}>{demoContent.idleTitle}</div>
+                    <div className={styles.acIdleS}>{demoContent.idleSubtitle}</div>
+                  </div>
+                  </>
+                }
+              />
             </div>
           </div>
         </div>

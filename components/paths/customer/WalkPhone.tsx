@@ -3,6 +3,8 @@
 import { cn } from "@/lib/utils";
 import { receipt, receiptsListContent } from "./content";
 import { ReceiptCard } from "./ReceiptCard";
+import { AppMedia } from "../shared/AppMedia";
+import { hasAppMedia } from "../shared/appMediaIndex";
 import styles from "./customer.module.css";
 
 /**
@@ -102,18 +104,26 @@ export function TabBar({ active }: { active: (typeof TABS)[number]["key"] }) {
 export function PhoneChrome({
   children,
   tab,
+  mediaSlot,
 }: {
   children: React.ReactNode;
   tab?: (typeof TABS)[number]["key"];
+  /** app-media slot whose real capture, if imported, replaces the drawn screen. */
+  mediaSlot?: string;
 }) {
+  const drawn = (
+    <>
+      <div className={styles.wpIsland} />
+      <StatusBar />
+      {children}
+      {tab ? <TabBar active={tab} /> : null}
+      <div className={styles.wpHomeBar} aria-hidden="true" />
+    </>
+  );
   return (
     <div className={styles.wpFrame}>
       <div className={styles.wpScreen}>
-        <div className={styles.wpIsland} />
-        <StatusBar />
-        {children}
-        {tab ? <TabBar active={tab} /> : null}
-        <div className={styles.wpHomeBar} aria-hidden="true" />
+        {mediaSlot ? <AppMedia slot={mediaSlot} fallback={drawn} /> : drawn}
       </div>
     </div>
   );
@@ -126,11 +136,19 @@ export function WalkPhone({
   step: number;
   tapCopy: { headline: string; subline: string; caption: string };
 }) {
-  return (
-    <div className={styles.wpFrame}>
-      <div className={styles.wpScreen}>
-        <div className={styles.wpIsland} />
-        <StatusBar />
+  /* One `walk` video, if it exists, plays across all three steps; otherwise
+     each step looks for its own capture and falls back to the drawn scenes. */
+  const slot = hasAppMedia("walk")
+    ? "walk"
+    : step === 0
+      ? "walk-ready"
+      : step === 1
+        ? "walk-receipt"
+        : "walk-list";
+  const drawn = (
+    <>
+      <div className={styles.wpIsland} />
+      <StatusBar />
 
         {/* --- 0: tap to receive ------------------------------------------ */}
         <div className={cn(styles.wpScene, step === 0 && styles.wpSceneOn)}>
@@ -189,7 +207,14 @@ export function WalkPhone({
           <TabBar active="receipts" />
         </div>
 
-        <div className={styles.wpHomeBar} aria-hidden="true" />
+      <div className={styles.wpHomeBar} aria-hidden="true" />
+    </>
+  );
+
+  return (
+    <div className={styles.wpFrame}>
+      <div className={styles.wpScreen}>
+        <AppMedia slot={slot} fallback={drawn} />
       </div>
     </div>
   );
