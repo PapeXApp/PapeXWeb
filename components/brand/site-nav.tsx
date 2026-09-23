@@ -35,16 +35,16 @@ type NavLink = { href: string; label: string; choice?: PathChoice; home?: boolea
 const LINKS: NavLink[] = [
   { href: '/', label: 'Home', home: true },
   { href: '/customers', label: 'For Customers', choice: 'customer' },
-  { href: '/business', label: 'For Business', choice: 'business' },
+  { href: '/business', label: 'For Businesses', choice: 'business' },
   { href: '/blog', label: 'Blog' },
   { href: '/contact', label: 'Contact' },
 ]
 
 const CTA: Record<SitePath, { label: string; href: string; external?: boolean }> = {
-  fork: { label: 'Get Started', href: '/customers' },
-  customer: { label: 'Download App', href: APP_STORE_URL, external: true },
+  fork: { label: 'Get started', href: '/customers' },
+  customer: { label: 'Download the app', href: APP_STORE_URL, external: true },
   business: { label: 'Get the RDH', href: '/contact' },
-  page: { label: 'Get Started', href: '/customers' },
+  page: { label: 'Get started', href: '/customers' },
 }
 
 export function SiteNav({ path }: { path: SitePath }) {

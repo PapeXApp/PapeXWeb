@@ -6,7 +6,12 @@ import { ReceiptListShot, ShareSheetShot } from "./FeatureScreens";
 import { featuresContent } from "./content";
 
 /**
- * 2.5 Features — light ground (one navy swap now, saved for Proof/Vision).
+ * 2.5 Features — NAVY ground since 2026-09-22 (was light). The customer page
+ * now reads light, light, light, NAVY, light, navy, navy, footer navy: the
+ * app shots get one dark beat in the middle of the light run, and Proof/Vision
+ * close on the second. Every ink here is already --flow-*; the .featShot card
+ * bed gets a navy variant in customer.module.css (a white card with a navy
+ * shadow is a glowing slab on navy).
  * Two mirrored rows; the app shots come in with the clip-path mask wipe and
  * are pointer-lit (`data-lit` on FeatureScreens' `.featShot`, inside the mask
  * Reveal, so the reveal never fights it).
@@ -14,7 +19,7 @@ import { featuresContent } from "./content";
 export function Features() {
   return (
     <FlowSection
-      ground="light"
+      ground="navy"
       index="04"
       style={{ padding: "var(--section-pad) clamp(20px,5vw,56px)" }}
     >
@@ -25,7 +30,7 @@ export function Features() {
           <SectionLabel index="04">{featuresContent.eyebrow}</SectionLabel>
           <WordReveal
             as="h2"
-            className="max-w-[20ch] [font-family:var(--font-display)] font-bold text-[clamp(30px,4.4vw,58px)] leading-[1.03] tracking-[-.02em]"
+            className="max-w-[20ch] [font-family:var(--font-display)] font-bold text-[length:var(--fs-h2)] leading-[1.03] tracking-[-.02em]"
           >
             {featuresContent.headline}
           </WordReveal>

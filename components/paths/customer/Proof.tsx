@@ -26,15 +26,21 @@ export function Proof() {
       <div style={{ maxWidth: 1150, margin: "0 auto" }}>
         <Reveal variant="up">
           <SectionLabel index="06">{LABEL}</SectionLabel>
+          <h2 className="sr-only">At a glance</h2>
         </Reveal>
-        {/* One hairline-framed strip, cells split by hairlines. Frame and
-            dividers use the ground's hairline token so the strip never turns
-            into a stray box while the ground crossfades. */}
+        {/* ONE compact hairline strip (2026-09-22). This used to be three
+            ~300px-tall stacked cells — digit, orange rule, label — which gave
+            three product facts the visual weight of a full section. Now it is
+            a single ~150px band: digit LEFT, label RIGHT, cells split by the
+            ground's hairline token so the strip never turns into a stray box
+            while the ground crossfades. `divide-x` flips to `divide-y` in the
+            single-column stack below 720px, so the dividers stay between
+            cells in both directions. Font sizes are untouched (a follow-up
+            worker owns type) — the 96px display digit is what sets the band's
+            height. */}
         <div
-          className="grid text-center"
+          className="mt-2 grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] divide-x divide-[color:var(--flow-hair)] max-[719px]:grid-cols-1 max-[719px]:divide-x-0 max-[719px]:divide-y"
           style={{
-            marginTop: 8,
-            gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))",
             borderRadius: 16,
             border: "1px solid var(--flow-hair)",
             overflow: "hidden",
@@ -45,23 +51,12 @@ export function Proof() {
               key={fact.label}
               variant="up"
               delay={index * 0.09}
-              style={{
-                padding: "clamp(34px,4.4vw,56px) clamp(18px,2.4vw,32px)",
-                borderLeft: index === 0 ? "none" : "1px solid var(--flow-hair)",
-              }}
+              className="flex items-center gap-[clamp(14px,1.8vw,22px)]"
+              style={{ padding: "clamp(20px,2.4vw,28px) clamp(18px,2.2vw,28px)" }}
             >
-              <span className="block [font-family:var(--font-display)] font-bold text-[clamp(56px,7vw,96px)] leading-none tracking-[-.02em] text-[var(--orange)] [font-variant-numeric:tabular-nums]">
+              <span className="[font-family:var(--font-display)] font-bold text-[length:var(--fs-stat)] leading-none tracking-[-.02em] text-[var(--orange)] [font-variant-numeric:tabular-nums]">
                 {fact.value}
               </span>
-              <div
-                aria-hidden="true"
-                style={{
-                  width: 28,
-                  height: 1,
-                  margin: "22px auto 16px",
-                  background: "linear-gradient(90deg, transparent, rgba(235,113,0,.85), transparent)",
-                }}
-              />
               <div
                 style={{
                   fontFamily: "var(--font-label)",
@@ -71,8 +66,6 @@ export function Proof() {
                   lineHeight: 1.5,
                   textTransform: "uppercase",
                   color: "var(--flow-fg-2)",
-                  maxWidth: "26ch",
-                  margin: "0 auto",
                 }}
               >
                 {fact.label}

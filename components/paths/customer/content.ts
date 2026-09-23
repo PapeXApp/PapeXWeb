@@ -32,7 +32,7 @@ export const heroContent = {
   eyebrow: "Digital receipts, one tap away",
   headline: "The last receipt you'll ever lose.",
   lead: "Tap your phone at checkout. Your receipt appears instantly: saved, searchable, and yours forever. No paper, no app required to start.",
-  ctaLabel: "Download the free app",
+  ctaLabel: "Download the app",
   ctaSubtext: "Free on the App Store",
   scrollCue: "Scroll",
   tapZoneLabel: "Tap to receive",
@@ -310,6 +310,6 @@ export const visionContent = {
   eyebrow: "The vision",
   headline: "A world where every receipt is useful, and none of them are wasted.",
   body: "We're modernizing the most ignored moment of every purchase. Less paper, less waste, and receipts that finally work for you.",
-  primaryCta: "Download the App",
-  secondaryCta: "Get the RDH for Business",
+  primaryCta: "Download the app",
+  secondaryCta: "Get the RDH",
 };

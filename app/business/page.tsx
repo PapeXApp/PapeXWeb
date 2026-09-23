@@ -24,6 +24,22 @@ export const metadata: Metadata = {
     title: 'PapeX for Business | Modern checkout. Zero paper.',
     description:
       'A free device on your existing POS turns every sale into a digital receipt. No cost, no contract, PCI compliant.',
+    images: [
+      {
+        url: 'https://papex.app/og-image-v2.png',
+        width: 1200,
+        height: 630,
+        alt: 'PapeX - The Smarter Way to Do Receipts',
+        type: 'image/png',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'PapeX for Business | Modern checkout. Zero paper.',
+    description:
+      'A free device on your existing POS turns every sale into a digital receipt. No cost, no contract, PCI compliant.',
+    images: ['https://papex.app/og-image-v2.png'],
   },
 }
 

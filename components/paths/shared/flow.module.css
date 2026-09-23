@@ -81,13 +81,9 @@
   -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 320px), transparent);
   mask-image: linear-gradient(to bottom, #000 calc(100% - 320px), transparent);
 }
-/* The footer's 1px top border is right for the legacy pages (their bodies end
-   on their own surfaces) but on the path homes it is the last hard line on the
-   page — the flow already arrives at the footer as flat navy. Scoped with :has
-   to a <main> whose child is a flow, so the ten legacy routes keep theirs. */
-:global(.rd) main:has(> .flow) + :global(.rd-footer) {
-  border-top-color: transparent;
-}
+/* (The old `main:has(> .flow) + .rd-footer` border reset is gone: the in-flow
+   footer variant `.rd-footer-flow` in styles/papex-brand.css already drops its
+   own top border, and it is no longer a sibling of <main>.) */
 
 .viewport {
   position: sticky;
@@ -151,24 +147,16 @@
   filter: blur(96px);
 }
 
+/* REMOVED 2026-09-22 — the bottom scrim (a 160px navy gradient pinned to the
+   page bottom) existed only because the flat navy footer sat OUTSIDE the flow.
+   Under a light final section it read as a grey smudge. The footer is now the
+   final navy FlowSection inside the flow, so the ground crossfade IS the
+   transition and no fake gradient is needed. */
+
 /* --- Travelling watermark ---------------------------------------------------
    One plane, anchored in the right gutter and cropped by the viewport edge so
    most of it sits outside the text column. At 5-6% it tints, it never
    competes with body text. */
-/* --- Bottom scrim ----------------------------------------------------------
-   Height matches the sections' bottom padding, so it only ever sits under
-   empty space. On a navy ground it is navy-on-navy and disappears. */
-.scrim {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: clamp(90px, 11vw, 160px);
-  background: linear-gradient(to bottom, transparent, #00121d);
-  z-index: 0;
-  pointer-events: none;
-}
-
 .mark {
   position: absolute;
   top: 22vh;

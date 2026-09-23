@@ -62,7 +62,7 @@ export function Personas() {
           <SectionLabel index="03">{personasContent.eyebrow}</SectionLabel>
           <WordReveal
             as="h2"
-            className="mx-auto max-w-[24ch] [font-family:var(--font-display)] font-bold text-[clamp(30px,4.4vw,58px)] leading-[1.03] tracking-[-.02em]"
+            className="mx-auto max-w-[24ch] [font-family:var(--font-display)] font-bold text-[length:var(--fs-h2)] leading-[1.03] tracking-[-.02em]"
           >
             {personasContent.headline}
           </WordReveal>

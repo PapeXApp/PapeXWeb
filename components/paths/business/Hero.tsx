@@ -26,11 +26,15 @@ function HeroLoopStyles() {
 // page opens on the same flat #00121D and the commit reads as that half
 // growing. FlowGround (`initial="navy"`) paints the ground; this section only
 // declares it, and its text uses the ground's --flow-* ink.
+// Capped, not full-screen (2026-09-22): `min-h-screen` + items-center parked
+// the content in the middle of a ~900px box with dead air above and below.
+// min(100vh,760px) + items-start seats it just under the nav, and the bottom
+// padding is the shared --section-pad-y so the hero joins the page rhythm.
 export function Hero() {
   return (
     <FlowSection
       ground="navy"
-      className="flex min-h-screen items-center overflow-hidden px-[clamp(20px,5vw,56px)] pb-20 pt-[120px]"
+      className="flex min-h-[min(100vh,640px)] items-start overflow-hidden px-[clamp(20px,5vw,56px)] pb-[var(--section-pad-y)] pt-[clamp(96px,12vh,128px)]"
     >
       <HeroLoopStyles />
       <Spotlight
@@ -48,7 +52,7 @@ export function Hero() {
           <SectionLabel index="01">{hero.eyebrow}</SectionLabel>
           <WordReveal
             as="h1"
-            className="text-[clamp(38px,5.1vw,74px)] font-bold leading-[1.02] tracking-[-.025em] [font-family:var(--font-display)]"
+            className="text-[length:var(--fs-h1-merchant)] font-bold leading-[1.02] tracking-[-.025em] [font-family:var(--font-display)]"
           >
             {hero.heading}
           </WordReveal>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Magnetic, Reveal, Ripple, ScrollLit } from "@/components/motion";
+import { APP_STORE_URL } from "@/components/brand/links";
 import { FlowSection } from "../shared/FlowSection";
 import { SectionLabel } from "../shared/SectionLabel";
 import { visionContent } from "./content";
@@ -25,7 +26,7 @@ export function Vision() {
           <ScrollLit
             as="h2"
             text={visionContent.headline}
-            className="[font-family:var(--font-display)] font-bold text-[clamp(32px,4.8vw,66px)] leading-[1.06] tracking-[-.02em]"
+            className="[font-family:var(--font-display)] font-bold text-[length:var(--fs-h2-emphasis)] leading-[1.06] tracking-[-.02em]"
           />
           <p
             style={{
@@ -46,8 +47,10 @@ export function Vision() {
           <Magnetic className={styles.ctaMagnetic}>
             {/* rounded-full on Ripple: see .ctaMagnetic in customer.module.css. */}
             <Ripple variant="navy" className="overflow-hidden rounded-full">
-              <button
-                type="button"
+              <a
+                href={APP_STORE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
                 className={styles.ctaButton}
                 style={{
                   border: "none",
@@ -59,14 +62,16 @@ export function Vision() {
                   fontWeight: 600,
                   fontSize: 16,
                   boxShadow: "0 6px 22px rgba(235,113,0,.28)",
+                  textDecoration: "none",
+                  display: "inline-flex",
                 }}
               >
                 {visionContent.primaryCta}
-              </button>
+              </a>
             </Ripple>
           </Magnetic>
           <Link
-            href="/business"
+            href="/business#demo"
             className={`${styles.secondaryButton} ${styles.visionSecondaryCta}`}
             style={{
               cursor: "pointer",

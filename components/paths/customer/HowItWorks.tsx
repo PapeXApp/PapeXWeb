@@ -263,7 +263,7 @@ export function HowItWorks() {
               <SectionLabel index="05">{howItWorksContent.eyebrow}</SectionLabel>
               <WordReveal
                 as="h2"
-                className="max-w-[16ch] [font-family:var(--font-display)] font-bold text-[clamp(34px,4.4vw,60px)] leading-[1.02] tracking-[-.02em]"
+                className="max-w-[16ch] [font-family:var(--font-display)] font-bold text-[length:var(--fs-h2)] leading-[1.02] tracking-[-.02em]"
               >
                 {howItWorksContent.headline}
               </WordReveal>
@@ -296,7 +296,7 @@ export function HowItWorks() {
                       >
                         {s.number}
                       </div>
-                      <h4
+                      <h3
                         style={{
                           fontFamily: "var(--font-display)",
                           fontWeight: 600,
@@ -311,7 +311,7 @@ export function HowItWorks() {
                         >
                           {s.title}
                         </button>
-                      </h4>
+                      </h3>
                       <p style={{ marginTop: 7, fontSize: 15, color: "var(--flow-fg-2)", lineHeight: 1.5, maxWidth: "34ch" }}>
                         {s.body}
                       </p>

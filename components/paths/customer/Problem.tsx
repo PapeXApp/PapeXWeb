@@ -19,7 +19,7 @@ export function Problem() {
           <SectionLabel index="02">{problemContent.eyebrow}</SectionLabel>
           <WordReveal
             as="h2"
-            className="max-w-[20ch] [font-family:var(--font-display)] font-bold text-[clamp(32px,4.6vw,62px)] leading-[1.02] tracking-[-.02em]"
+            className="max-w-[20ch] [font-family:var(--font-display)] font-bold text-[length:var(--fs-h2)] leading-[1.02] tracking-[-.02em]"
           >
             {problemContent.headline}
           </WordReveal>

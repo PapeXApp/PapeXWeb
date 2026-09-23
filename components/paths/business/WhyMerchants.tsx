@@ -18,7 +18,7 @@ export function WhyMerchants() {
     <FlowSection
       ground="light"
       index="02"
-      className="px-[clamp(20px,5vw,56px)] pb-[clamp(64px,7vw,110px)] pt-[clamp(90px,11vw,160px)]"
+      className="px-[clamp(20px,5vw,56px)] py-[var(--section-pad-y)]"
     >
       <div className="mx-auto max-w-[1150px]">
         <Reveal>
@@ -26,7 +26,7 @@ export function WhyMerchants() {
           <ScrollLit
             as="h2"
             text={whyMerchants.heading}
-            className="max-w-[18ch] text-[clamp(30px,4.6vw,60px)] font-bold leading-[1.04] tracking-[-.02em] [font-family:var(--font-display)]"
+            className="max-w-[18ch] text-[length:var(--fs-h2)] font-bold leading-[1.04] tracking-[-.02em] [font-family:var(--font-display)]"
           />
         </Reveal>
 

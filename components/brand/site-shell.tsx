@@ -1,15 +1,20 @@
 // components/brand/site-shell.tsx
 //
 // Shared chrome for the redesigned site: the `.rd` token scope + the nav on
-// every screen, plus the dark footer on the two path pages. Stays a server
-// component so page content passed as `children` keeps rendering on the server.
+// every screen. Stays a server component so page content passed as `children`
+// keeps rendering on the server.
+//
+// The footer is NOT mounted here any more (2026-09-22). CustomerPath and
+// BusinessPath each render <SiteFooter inFlow /> as the last navy FlowSection
+// INSIDE their FlowGround, so it joins the page's ground crossfade instead of
+// being a flat slab below it. The fork has no footer at all, and the ten
+// legacy routes get theirs from components/framer/framer-page-shell.tsx.
 //
 // `.rd` is the scope class that activates styles/papex-brand.css. Everything
 // brand-new must live inside it; the legacy `.framer-site` pages must not.
 
 import type { ReactNode } from 'react'
 import { SiteNav, type SitePath } from './site-nav'
-import { SiteFooter } from './site-footer'
 import { RememberPath } from './remember-path'
 
 export function SiteShell({
@@ -19,7 +24,6 @@ export function SiteShell({
   path: SitePath
   children: ReactNode
 }) {
-  const isFork = path === 'fork'
   // SiteShell is only ever mounted with 'fork' | 'customer' | 'business'
   // (the 'page' variant is rendered standalone by framer-page-shell.tsx, not
   // through here), but SitePath now also includes 'page', so narrow
@@ -31,7 +35,6 @@ export function SiteShell({
       {pathChoice && <RememberPath choice={pathChoice} />}
       <SiteNav path={path} />
       <main>{children}</main>
-      {!isFork && <SiteFooter />}
     </div>
   )
 }

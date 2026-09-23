@@ -14,6 +14,22 @@
     <priority>1.0</priority>
   </url>
   
+  <!-- Customer Path -->
+  <url>
+    <loc>https://papex.app/customers/</loc>
+    <lastmod>2025-01-15T00:00:00+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Business Path -->
+  <url>
+    <loc>https://papex.app/business/</loc>
+    <lastmod>2025-01-15T00:00:00+00:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
   <!-- Blog Section -->
   <url>
     <loc>https://papex.app/blog/</loc>

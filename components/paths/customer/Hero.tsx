@@ -1,6 +1,7 @@
 "use client";
 
 import { ChildStagger, Magnetic, Ripple, Spotlight, WordReveal } from "@/components/motion";
+import { APP_STORE_URL } from "@/components/brand/links";
 import { FlowSection } from "../shared/FlowSection";
 import { SectionLabel } from "../shared/SectionLabel";
 import { heroContent } from "./content";
@@ -23,10 +24,15 @@ export function Hero() {
   return (
     <FlowSection
       ground="light"
-      className="flex items-center justify-center overflow-hidden"
+      className="flex items-start justify-center overflow-hidden"
       style={{
-        minHeight: "100vh",
-        padding: "clamp(84px,11vh,120px) clamp(20px,5vw,56px) clamp(62px,8vh,80px)",
+        // Capped, not full-screen (2026-09-22). A 100vh hero centred its
+        // content in whatever box the viewport gave it, so on a tall display
+        // the headline floated in the middle with dead air above and below.
+        // min(100vh, 760px) + items-start seats the content just under the
+        // nav and lets the section end when the content does.
+        minHeight: "min(100vh, 760px)",
+        padding: "clamp(96px,12vh,128px) clamp(20px,5vw,56px) var(--section-pad-y)",
       }}
     >
       {/* The hero keeps its own pointer-tracked glow: it is part of the live
@@ -59,7 +65,7 @@ export function Hero() {
             <SectionLabel index="01">{heroContent.eyebrow}</SectionLabel>
             <WordReveal
               as="h1"
-              className="[font-family:var(--font-display)] font-bold text-[clamp(40px,6vw,84px)] leading-[.98] tracking-[-.025em] text-[var(--flow-fg)]"
+              className="[font-family:var(--font-display)] font-bold text-[length:var(--fs-h1-customer)] leading-[.98] tracking-[-.025em] text-[var(--flow-fg)]"
             >
               {heroContent.headline}
             </WordReveal>
@@ -83,8 +89,10 @@ export function Hero() {
                     glow to the pill shape — see .ctaMagnetic in
                     customer.module.css for why the glow moved out here. */}
                 <Ripple variant="navy" className="overflow-hidden rounded-full">
-                  <button
-                    type="button"
+                  <a
+                    href={APP_STORE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className={styles.ctaButton}
                     style={{
                       border: "none",
@@ -96,10 +104,12 @@ export function Hero() {
                       fontWeight: 600,
                       fontSize: 16,
                       boxShadow: "0 6px 22px rgba(235,113,0,.28)",
+                      textDecoration: "none",
+                      display: "inline-flex",
                     }}
                   >
                     {heroContent.ctaLabel}
-                  </button>
+                  </a>
                 </Ripple>
               </Magnetic>
               <span style={{ fontSize: 14, color: "var(--flow-fg-3)" }}>{heroContent.ctaSubtext}</span>

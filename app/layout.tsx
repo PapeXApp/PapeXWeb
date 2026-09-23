@@ -114,9 +114,6 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="icon" href="/icons/favicon-32.png" type="image/png" sizes="32x32" />
-        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" sizes="180x180" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         {/* Google tag (gtag.js) */}
         <Script

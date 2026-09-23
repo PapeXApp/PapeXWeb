@@ -18,6 +18,13 @@ export const metadata: Metadata = {
   description:
     'PapeX turns every checkout into a digital receipt. Choose your path: digital receipts for customers, or free receipt hardware for your business.',
   alternates: { canonical: 'https://papex.app' },
+  openGraph: {
+    type: 'website',
+    url: 'https://papex.app',
+    title: 'PapeX | Never Lose a Receipt Again',
+    description:
+      'PapeX turns every checkout into a digital receipt. Choose your path: digital receipts for customers, or free receipt hardware for your business.',
+  },
 }
 
 export default function Home() {

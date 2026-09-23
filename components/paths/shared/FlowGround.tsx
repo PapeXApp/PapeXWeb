@@ -22,8 +22,12 @@ const MIDDLE_BAND = "-49% 0px -49% 0px"
  * `initial` is rendered on the server so first paint is already the hero's
  * colour — the fork's commit animation depends on that continuity.
  *
- * The site footer (navy, outside this component) is observed as a navy tail,
- * so a light final section hands over to it with a fade instead of a cut.
+ * The site footer now lives INSIDE this component as the final navy
+ * FlowSection (see each path's index.tsx), so it is observed like any other
+ * section and the last light section crossfades into it. The
+ * `document.querySelector('.rd-footer')` fallback below is kept only for the
+ * legacy mount shape; when the footer is in-flow it is already in `sections`
+ * and `observe()` on the same node is a no-op.
  */
 export function FlowGround({ initial, children }: { initial: Ground; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -33,7 +37,9 @@ export function FlowGround({ initial, children }: { initial: Ground; children: R
     if (!root || typeof IntersectionObserver === "undefined") return
 
     const sections = Array.from(root.querySelectorAll<HTMLElement>("[data-ground]"))
-    const footer = document.querySelector<HTMLElement>(".rd-footer")
+    const footer = root.querySelector<HTMLElement>(".rd-footer")
+      ? null
+      : document.querySelector<HTMLElement>(".rd-footer")
     const groundOf = (el: Element): Ground =>
       el === footer ? "navy" : ((el as HTMLElement).dataset.ground as Ground)
 
@@ -87,12 +93,6 @@ export function FlowGround({ initial, children }: { initial: Ground; children: R
           <i className={`${styles.rail} ${styles.railR}`} />
         </div>
       </div>
-      {/* Bottom scrim: the last section's bottom padding fades into the navy
-          footer, so a light final section never ends in a hard cut while the
-          footer is still below the middle of the viewport. Deliberately a
-          sibling of the kit, not inside it: the kit is masked to transparent
-          over its last 320px, which would erase this exact strip. */}
-      <div aria-hidden="true" className={styles.scrim} />
       <div className={styles.content}>{children}</div>
     </div>
   )

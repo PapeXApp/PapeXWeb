@@ -15,10 +15,10 @@
 // which is explicitly labelled as such below and in DashboardPreview.tsx.
 
 export const hero = {
-  eyebrow: "For Business",
-  heading: "Modernize your checkout. No cost. No hassle.",
+  eyebrow: "For business",
+  heading: "Modern checkout. Zero paper.",
   lead: "The RDH plugs into your existing POS and sends customers a digital receipt when they tap. Free hardware, free install, zero paper.",
-  ctaLabel: "Request a Demo",
+  ctaLabel: "Request a demo",
   phoneLabel: "or call",
   phone: "415-261-8675",
   phoneHref: "tel:+14152618675",
@@ -66,7 +66,6 @@ export const marquee = {
     "Works with your POS.",
     "Zero paper.",
     "PCI compliant.",
-    "No contract.",
   ],
 } as const
 
@@ -147,7 +146,7 @@ export const demo = {
   body: "See the RDH in action and get set up, free for qualified merchants.",
   phonePrefix: "Or call us:",
   phone: "415-261-8675",
-  submitLabel: "Request Demo",
+  submitLabel: "Request a demo",
   submitLabelPending: "Sending…",
   successMessage: "Thanks, we've got your request. We'll be in touch shortly to set up your demo.",
   errorMessage: "Something went wrong sending your request. Please try again, or call us directly.",

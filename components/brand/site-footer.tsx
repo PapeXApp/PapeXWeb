@@ -14,32 +14,39 @@
 // Link set note: the prototype lists Features and About; neither route exists
 // in this repo, so those slots are filled with real routes rather than 404s.
 //
-// Platform column: the legacy framer-footer.tsx links to the landing page's
-// own #feature/#integration/#faq anchor sections — those aren't real routes,
-// but they are live destinations, so they're carried over here rather than
-// dropped (see PapeXWeb CLAUDE.md / the re-skin brief: "the footer must not
-// lose a single link").
+// `inFlow` (2026-09-22): on the two path homes the footer is now rendered
+// INSIDE FlowGround as a navy FlowSection, so it joins the page's ground
+// crossfade instead of being a flat navy slab bolted on below it. In that mode
+// it paints no background of its own (the flow's ground is already navy
+// underneath) and takes its ink from --flow-*. The ten legacy FramerPageShell
+// routes mount <SiteFooter /> with no prop and keep the flat navy footer —
+// never make the transparent variant the global default.
+//
+// Platform column: the legacy framer-footer.tsx linked to the old landing
+// page's #feature/#integration/#faq anchor sections, which no longer exist on
+// this page (`/` is now the fork). Those slots now point at the real routes
+// that cover the same ground: /customers, /business, /support.
 
 import { useState } from 'react'
 import Link from 'next/link'
 import { FullLogo } from './full-logo'
 import { AdminLogin } from '@/components/AdminLogin'
-import { SALES_PHONE, SALES_PHONE_HREF, SUPPORT_EMAIL } from './links'
+import { SALES_PHONE, SALES_PHONE_HREF, SOCIAL_LINKS, SUPPORT_EMAIL } from './links'
 
 const COLUMNS: { title: string; links: { href: string; label: string }[] }[] = [
   {
     title: 'Platform',
     links: [
-      { href: '/#feature', label: 'Features' },
-      { href: '/#integration', label: 'Integration' },
-      { href: '/#faq', label: 'FAQ' },
+      { href: '/customers', label: 'Features' },
+      { href: '/business', label: 'Integration' },
+      { href: '/support', label: 'FAQ' },
     ],
   },
   {
     title: 'Product',
     links: [
       { href: '/customers', label: 'For Customers' },
-      { href: '/business', label: 'For Business' },
+      { href: '/business', label: 'For Businesses' },
       { href: '/pos-calculator', label: 'POS Calculator' },
       { href: '/blog', label: 'Blog' },
     ],
@@ -55,12 +62,15 @@ const COLUMNS: { title: string; links: { href: string; label: string }[] }[] = [
   },
 ]
 
-export function SiteFooter() {
+export function SiteFooter({ inFlow = false }: { inFlow?: boolean }) {
   const [email, setEmail] = useState('')
   const [joined, setJoined] = useState(false)
 
   return (
-    <footer className="rd-footer" data-nav-theme="dark">
+    <footer
+      className={inFlow ? 'rd-footer rd-footer-flow' : 'rd-footer'}
+      data-nav-theme="dark"
+    >
       <div className="rd-footer-grid">
         <div>
           <Link
@@ -68,34 +78,52 @@ export function SiteFooter() {
             aria-label="PapeX home"
             style={{ display: 'inline-flex', marginBottom: 18 }}
           >
-            {/* The real lockup, same as the nav — the footer is always on navy. */}
-            <FullLogo size={96} lines="var(--white)" />
+            {/* The real lockup, same as the nav — the footer is always on
+                navy. --foot-ink/-2 resolve to the flat on-dark tones by
+                default and to the live --flow-* ink inside the flow, so the
+                mark and copy crossfade with the ground instead of sitting
+                fixed-white over a half-turned page. */}
+            <FullLogo size={96} lines="var(--foot-ink)" />
           </Link>
           <p
             style={{
               fontSize: 15,
               lineHeight: 1.5,
-              color: 'rgba(245,245,245,.55)',
+              color: 'var(--foot-ink-2)',
               maxWidth: '30ch',
             }}
           >
             Digital receipts, one tap at checkout. No paper, no hassle.
           </p>
-          {/* Social chips are brand texture only — the prototype ships them
-              without hrefs and PapeX has no confirmed profile URLs in this
-              repo. Presentational until real links are supplied. */}
-          <div style={{ marginTop: 22, display: 'flex', gap: 12 }} aria-hidden="true">
-            {['in', 'X', 'IG'].map((label) => (
-              <span key={label} className="rd-social-chip">
-                {label}
-              </span>
-            ))}
+          {/* Social chips are brand texture only — PapeX has no confirmed
+              profile URLs in this repo yet, so each chip only renders once
+              its URL in SOCIAL_LINKS is filled in. */}
+          <div style={{ marginTop: 22, display: 'flex', gap: 12 }}>
+            {([
+              { key: 'linkedin', label: 'in', name: 'LinkedIn' },
+              { key: 'x', label: 'X', name: 'X' },
+              { key: 'instagram', label: 'IG', name: 'Instagram' },
+            ] as const).map(
+              (chip) =>
+                SOCIAL_LINKS[chip.key] && (
+                  <a
+                    key={chip.key}
+                    href={SOCIAL_LINKS[chip.key]}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`PapeX on ${chip.name}`}
+                    className="rd-social-chip"
+                  >
+                    {chip.label}
+                  </a>
+                ),
+            )}
           </div>
         </div>
 
         {COLUMNS.map((column) => (
           <div key={column.title}>
-            <div className="rd-foot-heading">{column.title}</div>
+            <h3 className="rd-foot-heading">{column.title}</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
               {column.links.map((link) => (
                 <Link key={link.href} href={link.href} className="rd-foot-link">
@@ -107,7 +135,7 @@ export function SiteFooter() {
         ))}
 
         <div>
-          <div className="rd-foot-heading">Stay in the loop</div>
+          <h3 className="rd-foot-heading">Stay in the loop</h3>
           <form
             style={{ display: 'flex', gap: 8, marginBottom: 16 }}
             onSubmit={(event) => {
@@ -131,7 +159,7 @@ export function SiteFooter() {
             </button>
           </form>
           <div
-            style={{ fontSize: 14, color: 'rgba(245,245,245,.55)', lineHeight: 1.7 }}
+            style={{ fontSize: 14, color: 'var(--foot-ink-2)', lineHeight: 1.7 }}
           >
             <a href={`mailto:${SUPPORT_EMAIL}`} className="rd-foot-link">
               {SUPPORT_EMAIL}

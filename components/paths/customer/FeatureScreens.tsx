@@ -31,7 +31,7 @@ function Shot({ children, sheetLift }: { children: React.ReactNode; sheetLift?: 
     // "dark" was for the navy panel this cell used to sit on; the card is
     // light now (2026-09-10), so the default (lighter) pointer-glow variant
     // matches — same as the light-ground quiz options in Personas.tsx.
-    <div className={styles.featShot} data-lit="" style={{ aspectRatio: "4 / 3" }}>
+    <div className={styles.featShot} data-lit="dark" style={{ aspectRatio: "4 / 3" }}>
       <div
         className={styles.featShotPhone}
         style={sheetLift ? ({ "--wp-sheet-lift": sheetLift } as React.CSSProperties) : undefined}

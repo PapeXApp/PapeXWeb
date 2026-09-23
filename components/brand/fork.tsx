@@ -484,7 +484,7 @@ export function Fork() {
               color: 'var(--offwhite)',
             }}
           >
-            Modern checkout. Zero paper.
+            Modernize your checkout. No cost. No hassle.
           </span>
           <span
             className="rd-fork-cue"

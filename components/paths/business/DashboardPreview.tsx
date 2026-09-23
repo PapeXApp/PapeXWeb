@@ -13,13 +13,13 @@ import { dashboard } from "./content"
 // the whole block would blur a 2880px image and everything with it for 700ms.
 export function DashboardPreview() {
   return (
-    <FlowSection ground="navy" index="05" className="px-[clamp(20px,5vw,56px)] py-[clamp(90px,11vw,160px)]">
+    <FlowSection ground="navy" index="05" className="px-[clamp(20px,5vw,56px)] py-[var(--section-pad-y)]">
       <div className="mx-auto max-w-[1080px]">
         <Reveal as="div" className="text-center">
           <SectionLabel index="05">{dashboard.eyebrow}</SectionLabel>
           <WordReveal
             as="h2"
-            className="mx-auto max-w-[22ch] text-[clamp(30px,4.4vw,58px)] font-bold leading-[1.03] tracking-[-.02em] [font-family:var(--font-display)]"
+            className="mx-auto max-w-[22ch] text-[length:var(--fs-h2)] font-bold leading-[1.03] tracking-[-.02em] [font-family:var(--font-display)]"
           >
             {dashboard.heading}
           </WordReveal>

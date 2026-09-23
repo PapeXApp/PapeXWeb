@@ -12,3 +12,11 @@ export const APP_STORE_URL = 'https://apps.apple.com/app/id6754945242'
 export const SUPPORT_EMAIL = 'support@papex.app'
 export const SALES_PHONE = '415-261-8675'
 export const SALES_PHONE_HREF = 'tel:+14152618675'
+
+// No confirmed profile URLs yet — Nico will fill these in. A chip only
+// renders in the footer once its URL here is non-empty.
+export const SOCIAL_LINKS = {
+  linkedin: '',
+  x: '',
+  instagram: '',
+}

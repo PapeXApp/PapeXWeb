@@ -8,19 +8,25 @@ import styles from "./business.module.css"
 // connector (PapeX Home.dc.html:248-252, :823-855). The dots are filled with
 // the running ground (and ringed with it, to mask the connector behind them),
 // so they stay correct while the page ground crossfades.
+//
+// LIGHT ground since 2026-09-22 (was navy): the business page's colour story
+// is now navy · light · light · navy · navy · light · navy, so Why and How
+// run as one light stretch before the RDH/dashboard navy block. Every ink
+// here is already a --flow-* var and the step dots/dashed connector are
+// orange, which is the brand's on-light accent — nothing to recolour.
 export function HowItWorks() {
   return (
     <FlowSection
-      ground="navy"
+      ground="light"
       index="03"
-      className="px-[clamp(20px,5vw,56px)] pb-[clamp(90px,11vw,160px)] pt-[clamp(64px,7vw,110px)]"
+      className="px-[clamp(20px,5vw,56px)] py-[var(--section-pad-y)]"
     >
       <div className="mx-auto max-w-[1100px]">
         <Reveal className="max-w-[760px]">
           <SectionLabel index="03">{howItWorks.eyebrow}</SectionLabel>
           <WordReveal
             as="h2"
-            className="text-[clamp(30px,4.6vw,60px)] font-bold leading-[1.04] tracking-[-.02em] [font-family:var(--font-display)]"
+            className="text-[length:var(--fs-h2)] font-bold leading-[1.04] tracking-[-.02em] [font-family:var(--font-display)]"
           >
             {howItWorks.heading}
           </WordReveal>
@@ -44,9 +50,9 @@ export function HowItWorks() {
               >
                 {step.number}
               </div>
-              <h4 className="mt-[18px] text-[19px] font-semibold" style={{ fontFamily: "var(--font-display)" }}>
+              <h3 className="mt-[18px] text-[19px] font-semibold" style={{ fontFamily: "var(--font-display)" }}>
                 {step.title}
-              </h4>
+              </h3>
               <p className="mt-2 max-w-[26ch] text-[15px] leading-[1.5]" style={{ color: "var(--flow-fg-2)" }}>
                 {step.body}
               </p>

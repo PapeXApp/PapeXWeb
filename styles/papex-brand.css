@@ -72,24 +72,28 @@
      receipt demo sizes its 32-column body on Courier's advance. */
   --font-label: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
-  --fs-h1-customer: clamp(40px, 6vw, 84px);
-  --fs-h1-merchant: clamp(38px, 5.6vw, 80px);
+  --fs-h1-customer: clamp(40px, 5.2vw, 72px);
+  --fs-h1-merchant: clamp(38px, 5vw, 70px);
   --fs-fork-heading: clamp(34px, 5.4vw, 72px);
   --fs-h2: clamp(30px, 4.4vw, 58px);
   --fs-h2-emphasis: clamp(32px, 4.8vw, 66px);
   --fs-h3: clamp(28px, 3.4vw, 46px);
-  --fs-stat: clamp(44px, 6vw, 80px);
+  --fs-stat: clamp(44px, 5.5vw, 72px);
   --fs-stat-lg: clamp(48px, 6vw, 76px);
   --fs-card-title: 24px;
   --fs-step-title: clamp(21px, 2.4vw, 28px);
   --fs-lead: clamp(17px, 1.5vw, 20px);
   --fs-body: 16px;
-  --fs-eyebrow: 13px;
+  --fs-eyebrow: 12px;
   --fs-nav-link: 14.5px;
   --fs-mono: 12px;
 
   /* --- Spacing ---------------------------------------------------------- */
-  --section-pad-y: clamp(90px, 11vw, 160px);
+  /* ONE vertical rhythm for both path homes (2026-09-22). Was
+     clamp(90px,11vw,160px), which /business used literally while /customers
+     ran its own clamp(44px,4.5vw,68px) — the two pages breathed differently.
+     Both now reference this single token. */
+  --section-pad-y: clamp(56px, 7vw, 90px);
   --section-pad-x: clamp(20px, 5vw, 56px);
   --section-max: 1150px;
   --gap-cards: clamp(16px, 2vw, 26px);
@@ -548,10 +552,35 @@ html[data-fork-skip] .rd-fork {
 
 /* --- Footer --------------------------------------------------------------- */
 .rd-footer {
+  /* Default (the ten legacy FramerPageShell routes): flat navy slab. */
+  --foot-ink: var(--white);
+  --foot-ink-2: rgba(245, 245, 245, 0.55);
+  --foot-ink-3: var(--on-dark-faint);
+  --foot-link: rgba(245, 245, 245, 0.7);
+  --foot-hair: var(--on-dark-border);
   background: var(--navy);
   color: var(--offwhite);
   padding: clamp(60px, 7vw, 90px) var(--section-pad-x) 40px;
   border-top: 1px solid var(--on-dark-border);
+}
+/* In-flow variant (2026-09-22) — the two path homes mount <SiteFooter inFlow />
+   INSIDE FlowGround as a navy FlowSection. The flow already paints navy
+   underneath, so the footer paints nothing and inherits the live --flow-* ink:
+   as the last light section hands over, footer copy crossfades with the ground
+   instead of sitting fixed-white on a half-turned page. This is also what
+   retired flow.module.css's `.scrim` (a 160px navy gradient pinned to the page
+   bottom that read as a grey smudge under the light demo form).
+   MUST stay opt-in: the legacy routes keep the flat slab above. */
+.rd-footer-flow {
+  --foot-ink: var(--flow-fg);
+  --foot-ink-2: var(--flow-fg-2);
+  --foot-ink-3: var(--flow-fg-3);
+  --foot-link: var(--flow-fg-2);
+  --foot-hair: var(--flow-hair);
+  background: transparent;
+  color: var(--flow-fg);
+  border-top-color: transparent;
+  padding-top: var(--section-pad-y);
 }
 .rd-footer-grid {
   max-width: var(--section-max);
@@ -565,12 +594,12 @@ html[data-fork-skip] .rd-fork {
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--on-dark-faint);
-  margin-bottom: 16px;
+  color: var(--foot-ink-3);
+  margin: 0 0 16px;
 }
 .rd-foot-link {
   font-size: 15px;
-  color: rgba(245, 245, 245, 0.7);
+  color: var(--foot-link);
   transition: color 0.2s ease;
 }
 .rd-foot-link:hover {
@@ -580,11 +609,11 @@ html[data-fork-skip] .rd-fork {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border: 1px solid var(--on-dark-border-strong);
+  border: 1px solid var(--foot-hair);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(245, 245, 245, 0.6);
+  color: var(--foot-link);
   font-size: 13px;
   transition: color 0.25s ease, border-color 0.25s ease;
 }
@@ -597,14 +626,14 @@ html[data-fork-skip] .rd-fork {
   min-width: 0;
   padding: 11px 14px;
   border-radius: var(--r-10);
-  border: 1px solid var(--on-dark-border-strong);
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--offwhite);
+  border: 1px solid var(--foot-hair);
+  background: color-mix(in srgb, var(--foot-ink) 6%, transparent);
+  color: var(--foot-ink);
   font-size: 14px;
   outline: none;
 }
 .rd-foot-input::placeholder {
-  color: var(--on-dark-muted);
+  color: var(--foot-ink-3);
 }
 .rd-foot-join {
   border: none;
@@ -620,14 +649,14 @@ html[data-fork-skip] .rd-fork {
   max-width: var(--section-max);
   margin: 44px auto 0;
   padding-top: 24px;
-  border-top: 1px solid var(--on-dark-border);
+  border-top: 1px solid var(--foot-hair);
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
   align-items: center;
   gap: 12px;
   font-size: 13px;
-  color: var(--on-dark-faint);
+  color: var(--foot-ink-3);
 }
 
 /* --- Motion keyframes ----------------------------------------------------- */

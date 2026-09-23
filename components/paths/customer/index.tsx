@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 import { FlowGround } from "../shared/FlowGround";
+import { FlowSection } from "../shared/FlowSection";
+import { SiteFooter } from "@/components/brand/site-footer";
 import { Hero } from "./Hero";
 import { Problem } from "./Problem";
 import { MarqueeBand } from "./MarqueeBand";
@@ -17,10 +19,12 @@ import { Vision } from "./Vision";
  * Sections no longer paint their own bands. Each declares a ground and
  * FlowGround crossfades ONE page-level ground between them (see
  * components/paths/shared/flow.module.css). One swap, not five (2026-09-10):
- *   Hero light · Problem light · ribbon · Personas light · Features light ·
- *   HowItWorks light · Proof navy · Vision navy → (footer navy)
+ *   Hero light · Problem light · ribbon · Personas light · Features NAVY ·
+ *   HowItWorks light · Proof navy · Vision navy · footer navy
+ * Three flips, not one (2026-09-22): the app-shot section takes a dark beat in
+ * the middle of the light run, then the page closes navy through the footer,
+ * which now rides inside the flow as a navy FlowSection (see below).
  * `initial="light"` is the hero's colour and MUST match the fork's bottom half.
- * Footer is owned by another agent and rendered by the caller.
  */
 export function CustomerPath() {
   // The fork's commit already scrolls to 0 before it pushes here (fork.tsx —
@@ -49,6 +53,13 @@ export function CustomerPath() {
       <HowItWorks />
       <Proof />
       <Vision />
+      {/* The footer is the page's navy tail, inside the flow (2026-09-22):
+          it declares ground="navy" like any other section, so the last light
+          section crossfades into it instead of hitting a hard navy edge.
+          `inFlow` makes it paint no background and take --flow-* ink. */}
+      <FlowSection ground="navy">
+        <SiteFooter inFlow />
+      </FlowSection>
     </FlowGround>
   );
 }

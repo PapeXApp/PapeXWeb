@@ -15,16 +15,32 @@ import { SiteShell } from '@/components/brand/site-shell'
 import { CustomerPath } from '@/components/paths/customer'
 
 export const metadata: Metadata = {
-  title: 'PapeX for Customers | The last receipt you’ll ever lose',
+  title: "PapeX for Customers | The last receipt you'll ever lose",
   description:
     'Tap your phone at checkout and your receipt is saved forever: searchable, shareable and organized. No paper, no app required to receive it.',
   alternates: { canonical: 'https://papex.app/customers' },
   openGraph: {
     type: 'website',
     url: 'https://papex.app/customers',
-    title: 'PapeX for Customers | The last receipt you’ll ever lose',
+    title: "PapeX for Customers | The last receipt you'll ever lose",
     description:
       'Tap your phone at checkout and your receipt is saved forever: searchable, shareable and organized.',
+    images: [
+      {
+        url: 'https://papex.app/og-image-v2.png',
+        width: 1200,
+        height: 630,
+        alt: 'PapeX - The Smarter Way to Do Receipts',
+        type: 'image/png',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "PapeX for Customers | The last receipt you'll ever lose",
+    description:
+      'Tap your phone at checkout and your receipt is saved forever: searchable, shareable and organized.',
+    images: ['https://papex.app/og-image-v2.png'],
   },
 }
 

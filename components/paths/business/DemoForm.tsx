@@ -8,7 +8,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { FlowSection } from "../shared/FlowSection"
 import { SectionLabel } from "../shared/SectionLabel"
+import { SALES_PHONE_HREF } from "@/components/brand/links"
 import { demo } from "./content"
+
+const ERROR_INK = "#c2410c"
 
 interface DemoFormState {
   fullName: string
@@ -118,8 +121,7 @@ export function DemoForm() {
       })
       setStatus("success")
       setStatusMessage(demo.successMessage)
-    } catch (err) {
-      console.error("Error submitting demo request: ", err)
+    } catch {
       setStatus("error")
       setStatusMessage(demo.errorMessage)
     }
@@ -130,7 +132,7 @@ export function DemoForm() {
       id="demo"
       ground="light"
       index="06"
-      className="scroll-mt-[100px] px-[clamp(20px,5vw,56px)] py-[clamp(90px,11vw,160px)]"
+      className="scroll-mt-[100px] px-[clamp(20px,5vw,56px)] py-[var(--section-pad-y)]"
     >
       <Reveal
         as="div"
@@ -139,7 +141,7 @@ export function DemoForm() {
         <div>
           <SectionLabel index="06">{demo.eyebrow}</SectionLabel>
           <h2
-            className="text-[clamp(30px,4vw,54px)] font-bold leading-[1.03] tracking-[-.02em]"
+            className="text-[length:var(--fs-h2)] font-bold leading-[1.03] tracking-[-.02em]"
             style={{ fontFamily: "var(--font-display)" }}
           >
             {demo.heading}
@@ -148,7 +150,7 @@ export function DemoForm() {
             {demo.body}
           </p>
           <p className="mt-6 text-[16px] font-semibold" style={{ color: "var(--flow-fg)" }}>
-            {demo.phonePrefix} <span style={{ color: "var(--orange)" }}>{demo.phone}</span>
+            {demo.phonePrefix} <a href={SALES_PHONE_HREF} style={{ color: "var(--orange)" }}>{demo.phone}</a>
           </p>
         </div>
 
@@ -164,7 +166,7 @@ export function DemoForm() {
               id={formErrorId}
               aria-live="assertive"
               className="min-h-[1em] text-[14px] font-medium"
-              style={{ color: status === "error" ? "#c2410c" : "transparent" }}
+              style={{ color: status === "error" ? ERROR_INK : "transparent" }}
             >
               {status === "error" ? statusMessage : ""}
             </p>
@@ -191,7 +193,7 @@ export function DemoForm() {
                 style={inputStyle}
               />
               {errors.fullName && (
-                <p id="demo-fullName-error" role="alert" className="text-[13px]" style={{ color: "#c2410c" }}>
+                <p id="demo-fullName-error" role="alert" className="text-[13px]" style={{ color: ERROR_INK }}>
                   {errors.fullName}
                 </p>
               )}
@@ -219,7 +221,7 @@ export function DemoForm() {
                 style={inputStyle}
               />
               {errors.businessName && (
-                <p id="demo-businessName-error" role="alert" className="text-[13px]" style={{ color: "#c2410c" }}>
+                <p id="demo-businessName-error" role="alert" className="text-[13px]" style={{ color: ERROR_INK }}>
                   {errors.businessName}
                 </p>
               )}
@@ -248,7 +250,7 @@ export function DemoForm() {
                 style={inputStyle}
               />
               {errors.email && (
-                <p id="demo-email-error" role="alert" className="text-[13px]" style={{ color: "#c2410c" }}>
+                <p id="demo-email-error" role="alert" className="text-[13px]" style={{ color: ERROR_INK }}>
                   {errors.email}
                 </p>
               )}
@@ -277,7 +279,7 @@ export function DemoForm() {
                   style={inputStyle}
                 />
                 {errors.phone && (
-                  <p id="demo-phone-error" role="alert" className="text-[13px]" style={{ color: "#c2410c" }}>
+                  <p id="demo-phone-error" role="alert" className="text-[13px]" style={{ color: ERROR_INK }}>
                     {errors.phone}
                   </p>
                 )}
