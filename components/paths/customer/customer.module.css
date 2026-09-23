@@ -220,12 +220,17 @@
   --phone-h: clamp(310px, calc(min(100vh, 860px) - 420px), 660px);
   --phone-w: calc(var(--phone-h) * 393 / 852);
 
-  /* Interior type unit. Equals 1px when the screen is 346px wide — the width at
-     which a standard 32-column receipt body stops needing to pan — and scales
-     with the phone below that, floored so it can never go illegible. Every
-     font-size inside the phone is `calc(N * var(--ac-u))`, so the whole UI
-     scales as one piece instead of 27 numbers drifting apart. */
+  /* The MONOSPACE receipt body's unit only (.acBody/.acLine). Equals 1px when
+     the screen is 346px wide — the width at which a standard 32-column receipt
+     body stops needing to pan. Everything else in the clip now scales on --u
+     below; this one keeps its own unit because the column arithmetic is what
+     makes the original receipt legible. */
   --ac-u: max(0.72px, calc(var(--phone-w) / 346));
+
+  /* The appui kit's unit: 1 iPhone POINT (a 393pt-wide screen), so every value
+     in appui.module.css is the real number read off app-media/reference/.
+     Floored so the drawn UI can never go illegible on a small phone. */
+  --u: max(0.66px, calc(var(--phone-w) / 393));
 }
 
 .demoPhone {
@@ -272,7 +277,10 @@
   /* Concentric with the shell: the screen radius is the shell radius minus the
      bezel, which is what stops the corners looking pinched. */
   border-radius: calc(var(--phone-w) * 0.124);
-  background: #181a20;
+  /* The clip's ground is a navy field with a warm aurora, not flat #181A20 —
+     see app-media/reference/clip-receipt-rendered.png. Still the App Clip's
+     own palette, not the site's brand tokens (PapeXWeb/CLAUDE.md). */
+  background: linear-gradient(168deg, #0a1826 0%, #12222f 55%, #081420 100%);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -346,99 +354,87 @@
   pointer-events: none;
 }
 
-/* brand bar */
-.acBar {
-  flex: 0 0 auto;
-  /* Top padding clears the Dynamic Island; scales with it. */
-  padding: calc(var(--phone-w) * 0.165) calc(var(--phone-w) * 0.058) calc(var(--phone-w) * 0.024);
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  background: linear-gradient(180deg, rgba(251, 133, 0, 0.14), rgba(251, 133, 0, 0));
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-}
-.acWordmark {
-  font-size: calc(17 * var(--ac-u));
-  font-weight: 500;
-  color: #f4f4f4;
-  letter-spacing: -0.01em;
-}
-.acDot {
-  width: 7px;
-  height: 7px;
-  border-radius: 2px;
-  background: #fb8500;
-}
-.acBarLabel {
-  margin-left: auto;
-  font-size: calc(12 * var(--ac-u));
-  color: #c4c7cc;
-}
-
 .acScroll {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: calc(16 * var(--ac-u)) calc(13 * var(--ac-u)) calc(20 * var(--ac-u));
+  padding: calc(12 * var(--u)) calc(12 * var(--u)) calc(16 * var(--u));
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: calc(12 * var(--u));
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
 }
 .acCard {
-  background: rgba(20, 26, 36, 0.72);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: calc(24 * var(--ac-u));
-  padding: calc(13 * var(--ac-u));
+  /* Liquid Glass, same recipe as the app's cards (appui.module.css .glass) —
+     the clip and the app are one visual system. */
+  background: rgba(20, 36, 50, 0.55);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid rgba(140, 170, 200, 0.28);
+  border-radius: calc(22 * var(--u));
+  padding: calc(14 * var(--u));
+  box-shadow: inset 0 1px 0 rgba(190, 215, 240, 0.34),
+    0 calc(8 * var(--u)) calc(22 * var(--u)) rgba(0, 0, 0, 0.3);
 }
+/* The one card with an orange rim: the totals. */
+.acCardTotals {
+  border-color: rgba(251, 133, 0, 0.8);
+}
+/* A section heading sits ABOVE its card, in the clip's accent. */
 .acSectionTitle {
-  font-size: calc(20 * var(--ac-u));
-  font-weight: 500;
-  color: #2b7fc6;
-  margin-bottom: 4px;
+  font-size: calc(20 * var(--u));
+  font-weight: 600;
+  color: #fb8500;
+  padding: calc(2 * var(--u)) 0 calc(6 * var(--u));
 }
 
 .acMerchant {
   display: flex;
-  gap: 12px;
-  align-items: flex-start;
+  gap: calc(13 * var(--u));
+  align-items: center;
+}
+/* Hairline under the merchant name, then address + date centred below it —
+   the clip's own layout (app-media/reference/clip-receipt-rendered.png). */
+.acMeta {
+  margin-top: calc(12 * var(--u));
+  padding-top: calc(12 * var(--u));
+  border-top: 1px solid rgba(140, 170, 200, 0.28);
+  text-align: center;
 }
 .acMonoBadge {
   flex: 0 0 auto;
-  width: 56px;
-  height: 56px;
+  width: calc(56 * var(--u));
+  height: calc(56 * var(--u));
   border-radius: 50%;
   background: #fff;
   border: 2px solid #fb8500;
   color: #fb8500;
-  font-size: calc(24 * var(--ac-u));
+  font-size: calc(24 * var(--u));
   font-weight: 500;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .acMname {
-  font-size: calc(24 * var(--ac-u));
-  font-weight: 500;
+  font-size: calc(24 * var(--u));
+  font-weight: 600;
   color: #f4f4f4;
   line-height: 1.15;
 }
 .acMaddr {
-  font-size: calc(14 * var(--ac-u));
+  font-size: calc(14 * var(--u));
   color: #c4c7cc;
   line-height: 1.35;
 }
 .acMdate {
-  font-size: calc(12 * var(--ac-u));
+  font-size: calc(12 * var(--u));
   font-weight: 300;
   color: #fb8500;
   padding-top: 2px;
 }
 .acMsrc {
-  font-size: calc(12 * var(--ac-u));
+  font-size: calc(12 * var(--u));
   color: #c4c7cc;
   padding-top: 2px;
 }
@@ -447,26 +443,26 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  gap: 12px;
-  padding: 12px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  gap: calc(12 * var(--u));
+  padding: calc(11 * var(--u)) 0;
+  border-bottom: 1px solid rgba(140, 170, 200, 0.28);
 }
 .acItem:last-child {
   border-bottom: none;
   padding-bottom: 0;
 }
 .acItemName {
-  font-size: calc(16 * var(--ac-u));
+  font-size: calc(16 * var(--u));
   font-weight: 500;
   color: #f4f4f4;
   line-height: 1.3;
 }
 .acItemQty {
-  font-size: calc(12 * var(--ac-u));
+  font-size: calc(12 * var(--u));
   color: #9aa1a8;
 }
 .acItemPrice {
-  font-size: calc(16 * var(--ac-u));
+  font-size: calc(16 * var(--u));
   font-weight: 500;
   color: #f4f4f4;
   font-variant-numeric: tabular-nums;
@@ -477,40 +473,49 @@
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  gap: 12px;
-  padding: 6px 0;
+  gap: calc(12 * var(--u));
+  padding: calc(5 * var(--u)) 0;
 }
 .acTlabel {
-  font-size: calc(16 * var(--ac-u));
+  font-size: calc(16 * var(--u));
   color: #c4c7cc;
 }
 .acTval {
-  font-size: calc(16 * var(--ac-u));
+  font-size: calc(16 * var(--u));
   font-weight: 500;
   color: #f4f4f4;
   font-variant-numeric: tabular-nums;
 }
 .acTvalBrand {
-  color: #2b7fc6;
+  color: #fb8500;
 }
 .acTrule {
-  height: 2px;
+  height: calc(2 * var(--u));
   background: #fb8500;
-  margin: 4px 0;
+  margin: calc(7 * var(--u)) 0;
 }
 .acGrandLabel {
-  font-size: calc(20 * var(--ac-u));
-  font-weight: 500;
+  font-size: calc(22 * var(--u));
+  font-weight: 600;
   color: #fb8500;
 }
 .acGrandVal {
-  font-size: calc(24 * var(--ac-u));
-  font-weight: 500;
+  font-size: calc(27 * var(--u));
+  font-weight: 600;
   color: #fff;
   font-variant-numeric: tabular-nums;
 }
+/* "YOU SAVED $x.xx (n% OFF)" under the items, when the receipt has a discount. */
+.acSaved {
+  text-align: center;
+  padding-top: calc(10 * var(--u));
+  font-size: calc(12.5 * var(--u));
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #fb8500;
+}
 .acChip {
-  font-size: calc(11 * var(--ac-u));
+  font-size: calc(11 * var(--u));
   font-weight: 700;
   letter-spacing: 0.5px;
   color: #fff;
@@ -522,20 +527,20 @@
 .acInforow {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  gap: calc(12 * var(--u));
+  padding: calc(8 * var(--u)) 0;
+  border-bottom: 1px solid rgba(140, 170, 200, 0.28);
 }
 .acInforow:last-child {
   border-bottom: none;
   padding-bottom: 0;
 }
 .acInfolabel {
-  font-size: calc(15 * var(--ac-u));
+  font-size: calc(15 * var(--u));
   color: #c4c7cc;
 }
 .acInfoval {
-  font-size: calc(15 * var(--ac-u));
+  font-size: calc(15 * var(--u));
   font-weight: 500;
   color: #f4f4f4;
   text-align: right;
@@ -547,7 +552,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: calc(20 * var(--ac-u));
+  font-size: calc(20 * var(--u));
   font-weight: 500;
   color: #2b7fc6;
 }
@@ -557,7 +562,7 @@
 .acChev {
   transition: transform 0.25s ease;
   color: #2b7fc6;
-  font-size: calc(13 * var(--ac-u));
+  font-size: calc(13 * var(--u));
 }
 .acOrig[open] .acChev {
   transform: rotate(180deg);
@@ -608,24 +613,33 @@
 
 .acFoot {
   flex: 0 0 auto;
-  padding: calc(16 * var(--ac-u)) calc(14 * var(--ac-u)) calc(20 * var(--ac-u));
-  background: #181a20;
+  padding: calc(12 * var(--u)) calc(14 * var(--u)) calc(16 * var(--u));
   display: flex;
-  gap: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  flex-direction: column;
+  align-items: center;
+  gap: calc(7 * var(--u));
+  background: linear-gradient(180deg, rgba(8, 20, 32, 0), rgba(8, 20, 32, 0.92) 40%);
 }
 .acBtn {
-  flex: 1;
+  width: 100%;
   border: none;
   cursor: pointer;
   font: inherit;
-  font-size: calc(16 * var(--ac-u));
-  font-weight: 500;
-  padding: 13px 0;
-  border-radius: 14px;
-  background: #fb8500;
-  color: #fff;
-  transition: opacity 0.2s, transform 0.15s, background 0.2s;
+  font-size: calc(18 * var(--u));
+  font-weight: 700;
+  padding: calc(13 * var(--u)) 0;
+  border-radius: 999px;
+  /* The clip's own yellow-orange, brighter than the app's #EB7100. */
+  background: linear-gradient(180deg, #ffc21f, #f7a400);
+  color: #3a2400;
+  box-shadow: 0 calc(8 * var(--u)) calc(20 * var(--u)) rgba(247, 164, 0, 0.32);
+  transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.22s ease;
+}
+.acFootNote {
+  font-size: calc(12 * var(--u));
+  color: rgba(255, 255, 255, 0.62);
+  text-align: center;
 }
 .acBtn:hover {
   opacity: 0.82;
@@ -637,83 +651,29 @@
    is the honest version of "does something": it reacts, it doesn't pretend
    to persist anything. */
 .acBtnSaved {
-  background: #16a34a;
+  background: linear-gradient(180deg, #34d168, #16a34a);
+  color: #06240f;
+  box-shadow: 0 calc(8 * var(--u)) calc(20 * var(--u)) rgba(22, 163, 74, 0.3);
 }
 
-.acIdle {
+/* The three beats of the hero's tap story are stacked layers, not screens:
+ * the lock screen with the App Clip card, the "Reading your receipt" state,
+ * and the rendered receipt. pointer-events follow opacity — both invisible
+ * layers must also be untouchable, or a hidden one swallows the first tap. */
+.acLayer {
   position: absolute;
   inset: 0;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(calc(10 * var(--u)));
+  /* Same easing and 380-520ms band as every other motion on these phones. */
+  transition: opacity 0.46s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.46s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 4;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  padding: 32px;
-  text-align: center;
-  background: #181a20;
-  transition: opacity 0.45s ease, transform 0.45s ease;
 }
-.demoPhoneDone .acIdle {
-  opacity: 0;
-  transform: scale(1.04);
-  pointer-events: none;
-}
-.acIdleRing {
-  position: relative;
-  width: calc(78 * var(--ac-u));
-  height: calc(78 * var(--ac-u));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.acIdleRing span {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: calc(78 * var(--ac-u));
-  height: calc(78 * var(--ac-u));
-  border-radius: 50%;
-  border: 2px solid #fb8500;
-  animation: nfcRipple 2.4s ease-out infinite;
-}
-.acIdleRing span:nth-child(2) {
-  animation-delay: 1.2s;
-}
-.acIdleRingDot {
-  position: relative;
-  width: calc(30 * var(--ac-u));
-  height: calc(30 * var(--ac-u));
-  border-radius: 50%;
-  background: #fb8500;
-  box-shadow: 0 0 0 8px rgba(251, 133, 0, 0.16);
-}
-.acIdleT {
-  font-size: calc(17 * var(--ac-u));
-  font-weight: 500;
-  color: #f4f4f4;
-}
-.acIdleS {
-  font-size: calc(13.5 * var(--ac-u));
-  color: #9aa1a8;
-  line-height: 1.45;
-}
-
-/* pointer-events follow opacity. Both layers are absolutely positioned over
-   each other for the whole life of the demo, so whichever one is invisible must
-   also be untouchable — otherwise the hidden receipt layer swallows the very
-   first tap on the idle screen. */
-.acLive {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(14px);
-  transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.demoPhoneDone .acLive {
+.acLayerOn {
   opacity: 1;
   transform: none;
   pointer-events: auto;
@@ -1164,9 +1124,7 @@
   .arrowBob,
   .demoTilt,
   .walkTilt,
-  .acIdle,
-  .acLive,
-  .acIdleRing span,
+  .acLayer,
   .rdhLed,
   .quizCard,
   .quizResult,
@@ -1465,6 +1423,12 @@
   height: var(--wp-h);
   border-radius: calc(var(--wp-w) * 0.124);
   overflow: hidden;
+  /* The appui kit's unit: 1 iPhone POINT on a 393pt-wide screen. Every value
+     in appui.module.css is then the real number read off the captures. */
+  /* Floor keeps the drawn UI legible on a small phone; below ~0.55 the type
+     stops being readable, above it the header pill and Select collide in the
+     narrow Features cells. */
+  --u: max(0.55px, calc(var(--wp-w) / 393));
   background: #00121d;
   /* The app's ground is not flat navy — it carries a warm lift behind the
      header, which is what the screenshots show. */
@@ -1484,229 +1448,6 @@
   z-index: 9;
 }
 
-/* --- iOS status bar ------------------------------------------------------- */
-.wpStatus {
-  position: absolute;
-  top: calc(16 * var(--wp-u));
-  left: 0;
-  right: 0;
-  height: calc(28 * var(--wp-u));
-  padding: 0 calc(26 * var(--wp-u));
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  z-index: 10;
-  color: #fff;
-  font-weight: 600;
-  font-size: calc(15 * var(--wp-u));
-  letter-spacing: 0.01em;
-}
-.wpStatusRight {
-  display: flex;
-  align-items: center;
-  gap: calc(5 * var(--wp-u));
-}
-/* Cellular bars: four rising rectangles. */
-.wpBars {
-  display: flex;
-  align-items: flex-end;
-  gap: calc(1.6 * var(--wp-u));
-  height: calc(11 * var(--wp-u));
-}
-.wpBars i {
-  display: block;
-  width: calc(3 * var(--wp-u));
-  background: #fff;
-  border-radius: calc(1 * var(--wp-u));
-}
-.wpBars i:nth-child(1) { height: 40%; }
-.wpBars i:nth-child(2) { height: 60%; }
-.wpBars i:nth-child(3) { height: 80%; }
-.wpBars i:nth-child(4) { height: 100%; }
-/* Wi-Fi: three nested arcs made from bordered quarter-circles. */
-.wpWifi {
-  position: relative;
-  width: calc(15 * var(--wp-u));
-  height: calc(11 * var(--wp-u));
-}
-.wpWifi i {
-  position: absolute;
-  left: 50%;
-  bottom: 0;
-  border: calc(1.7 * var(--wp-u)) solid #fff;
-  border-bottom-color: transparent;
-  border-left-color: transparent;
-  border-right-color: transparent;
-  border-radius: 50%;
-  transform: translateX(-50%);
-}
-.wpWifi i:nth-child(1) { width: calc(15 * var(--wp-u)); height: calc(15 * var(--wp-u)); }
-.wpWifi i:nth-child(2) { width: calc(9.5 * var(--wp-u)); height: calc(9.5 * var(--wp-u)); }
-.wpWifi i:nth-child(3) {
-  width: calc(3.4 * var(--wp-u));
-  height: calc(3.4 * var(--wp-u));
-  border-radius: 50%;
-  background: #fff;
-  border: none;
-  bottom: calc(0.4 * var(--wp-u));
-}
-.wpBattery {
-  position: relative;
-  width: calc(25 * var(--wp-u));
-  height: calc(12 * var(--wp-u));
-  border: calc(1.4 * var(--wp-u)) solid rgba(255, 255, 255, 0.55);
-  border-radius: calc(3.6 * var(--wp-u));
-  padding: calc(1.6 * var(--wp-u));
-}
-.wpBattery::after {
-  content: "";
-  position: absolute;
-  right: calc(-3.2 * var(--wp-u));
-  top: 50%;
-  transform: translateY(-50%);
-  width: calc(1.8 * var(--wp-u));
-  height: calc(4.4 * var(--wp-u));
-  border-radius: 0 calc(1.4 * var(--wp-u)) calc(1.4 * var(--wp-u)) 0;
-  background: rgba(255, 255, 255, 0.55);
-}
-.wpBattery i {
-  display: block;
-  width: 82%;
-  height: 100%;
-  background: #fff;
-  border-radius: calc(1.6 * var(--wp-u));
-}
-
-/* --- app content --------------------------------------------------------- */
-.wpBody {
-  position: absolute;
-  inset: 0;
-  padding: calc(58 * var(--wp-u)) calc(16 * var(--wp-u)) 0;
-  display: flex;
-  flex-direction: column;
-  gap: calc(12 * var(--wp-u));
-  font-family: var(--font-ui);
-}
-.wpTitle {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: calc(30 * var(--wp-u));
-  line-height: 1.1;
-  color: rgba(255, 255, 255, 0.92);
-  letter-spacing: -0.015em;
-}
-/* The small letterspaced group label above a list — straight from the app. */
-.wpSectionLabel {
-  font-size: calc(11 * var(--wp-u));
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.42);
-}
-.wpRow {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: calc(12 * var(--wp-u));
-  background: #1b242e;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: calc(22 * var(--wp-u));
-  padding: calc(12 * var(--wp-u)) calc(14 * var(--wp-u));
-}
-.wpRowUnreviewed::before {
-  content: "";
-  position: absolute;
-  left: calc(3 * var(--wp-u));
-  top: calc(3 * var(--wp-u));
-  bottom: calc(3 * var(--wp-u));
-  width: calc(3 * var(--wp-u));
-  border-radius: 999px;
-  background: var(--orange);
-}
-.wpAvatar {
-  width: calc(40 * var(--wp-u));
-  height: calc(40 * var(--wp-u));
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 500;
-  font-size: calc(15 * var(--wp-u));
-  color: rgba(255, 255, 255, 0.9);
-  flex: 0 0 auto;
-}
-.wpRowText { flex: 1; min-width: 0; }
-.wpMerchant {
-  font-weight: 500;
-  font-size: calc(16 * var(--wp-u));
-  color: rgba(255, 255, 255, 0.92);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.wpMeta {
-  font-size: calc(12.5 * var(--wp-u));
-  color: rgba(255, 255, 255, 0.6);
-  margin-top: calc(2 * var(--wp-u));
-}
-.wpAmount {
-  font-weight: 500;
-  font-size: calc(15.5 * var(--wp-u));
-  color: rgba(255, 255, 255, 0.92);
-  flex: 0 0 auto;
-}
-/* Trailing disclosure chevron — two borders, no icon font. */
-.wpChevron {
-  width: calc(7 * var(--wp-u));
-  height: calc(7 * var(--wp-u));
-  border-top: calc(1.6 * var(--wp-u)) solid rgba(255, 255, 255, 0.38);
-  border-right: calc(1.6 * var(--wp-u)) solid rgba(255, 255, 255, 0.38);
-  transform: rotate(45deg);
-  flex: 0 0 auto;
-  margin-left: calc(2 * var(--wp-u));
-}
-
-/* --- iOS 26 Liquid Glass tab bar ----------------------------------------
-   A capsule inset from the edges, floating over the content, with a real
-   backdrop blur + saturation so it MIRRORS what scrolls under it. That
-   mirroring is the whole character of the bar. */
-.wpTabBar {
-  position: absolute;
-  left: calc(14 * var(--wp-u));
-  right: calc(14 * var(--wp-u));
-  bottom: calc(14 * var(--wp-u));
-  height: calc(56 * var(--wp-u));
-  border-radius: 999px;
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  padding: 0 calc(8 * var(--wp-u));
-  z-index: 8;
-
-  background: rgba(255, 255, 255, 0.09);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  backdrop-filter: blur(22px) saturate(180%);
-  -webkit-backdrop-filter: blur(22px) saturate(180%);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.06);
-}
-.wpTab {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: calc(4 * var(--wp-u));
-  font-size: calc(10 * var(--wp-u));
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.5);
-}
-.wpTabOn { color: var(--orange); }
-.wpTabGlyph {
-  width: calc(20 * var(--wp-u));
-  height: calc(20 * var(--wp-u));
-  display: block;
-}
-
 /* --- home indicator ------------------------------------------------------ */
 .wpHomeBar {
   position: absolute;
@@ -1720,19 +1461,6 @@
   z-index: 11;
 }
 
-/* --- the tap/idle screen ------------------------------------------------- */
-.wpTapWrap {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: calc(22 * var(--wp-u));
-  padding: calc(26 * var(--wp-u));
-  text-align: center;
-}
-
 /* --- screen switching ---------------------------------------------------- */
 .wpScene {
   position: absolute;
@@ -1742,6 +1470,11 @@
   transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1),
     transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: none;
+}
+/* The App Clip screen (bar / scroll / action) is a column, not an overlay. */
+.wpSceneClip {
+  display: flex;
+  flex-direction: column;
 }
 .wpSceneOn {
   opacity: 1;
@@ -1832,48 +1565,6 @@
   --wp-size: 132cqh;
   /* a little air above the device so it isn't welded to the cell's top edge */
   transform: translateY(4%);
-}
-
-/* --- search field in its active state ------------------------------------ */
-.wpSearchActive {
-  display: flex;
-  align-items: center;
-  gap: calc(8 * var(--wp-u));
-  background: #1b242e;
-  border: 1px solid rgba(235, 113, 0, 0.5);
-  border-radius: calc(12 * var(--wp-u));
-  padding: calc(10 * var(--wp-u)) calc(12 * var(--wp-u));
-  font-size: calc(15 * var(--wp-u));
-  color: rgba(255, 255, 255, 0.92);
-}
-.wpCaret {
-  width: calc(1.5 * var(--wp-u));
-  height: calc(16 * var(--wp-u));
-  background: var(--orange);
-  margin-left: calc(-4 * var(--wp-u));
-}
-
-/* --- filter chips --------------------------------------------------------- */
-.wpChips {
-  display: flex;
-  gap: calc(6 * var(--wp-u));
-  flex-wrap: nowrap;
-  overflow: hidden;
-}
-.wpChip {
-  flex: 0 0 auto;
-  font-size: calc(11.5 * var(--wp-u));
-  padding: calc(6 * var(--wp-u)) calc(11 * var(--wp-u));
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  color: rgba(255, 255, 255, 0.62);
-  white-space: nowrap;
-}
-.wpChipOn {
-  background: rgba(235, 113, 0, 0.16);
-  border-color: rgba(235, 113, 0, 0.45);
-  color: var(--orange);
 }
 
 /* --- iOS share sheet ------------------------------------------------------ */

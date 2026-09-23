@@ -1,8 +1,8 @@
 {
-  "_readme": "Real PapeXV2 app media for the demo iPhones on /customers. FLOW: (1) drop the iPhone screen recordings / screenshots into app-media/inbox/ ; (2) set each slot's \"source\" below to the exact filename (leave \"\" to keep the hand-drawn fallback screen) ; (3) run `npm run media:import` ; (4) reload the site. The script writes public/app/media/<key>.{mp4,webm,png} + <key>-poster.jpg and rebuilds public/app/media/index.json. A slot with an empty or missing source is simply omitted from index.json, and <AppMedia> renders the drawn screen instead — so the site never breaks. KEYS: \"source\" = filename inside app-media/inbox (not a path). \"type\" = \"video\" | \"image\". \"trim\" = {start, end} in SECONDS for videos (end null = to the end of the clip); output is capped at 12s. \"loop\" = whether the <video> loops (videos only). Everything is centre-cropped to the iPhone 393x852 aspect if the source differs, and scaled to 780px wide. SLOTS: hero-tap (hero phone, NfcPhone.tsx - tap the reader, receipt appears; video preferred), receipts-search (FeatureScreens ReceiptListShot), share-sheet (FeatureScreens ShareSheetShot; image), walk-ready / walk-receipt / walk-list (WalkPhone.tsx steps 0/1/2). SPECIAL: if you fill the \"walk\" slot with one video it is used for ALL THREE walkthrough steps and the three walk-* slots are ignored. Verbal trigger: telling Claude \"refresh the app media\" means exactly steps 2-4.",
+  "_readme": "REFERENCE ONLY (Nico, 2026-09-22): captures in inbox/ and frames in reference/ show what the real app looks like; the site phones are hand-built mockups that must MATCH them, never play them. The import pipeline stays available but every slot is left empty on purpose. Real PapeXV2 app media for the demo iPhones on /customers. FLOW: (1) drop the iPhone screen recordings / screenshots into app-media/inbox/ ; (2) set each slot's \"source\" below to the exact filename (leave \"\" to keep the hand-drawn fallback screen) ; (3) run `npm run media:import` ; (4) reload the site. The script writes public/app/media/<key>.{mp4,webm,png} + <key>-poster.jpg and rebuilds public/app/media/index.json. A slot with an empty or missing source is simply omitted from index.json, and <AppMedia> renders the drawn screen instead — so the site never breaks. KEYS: \"source\" = filename inside app-media/inbox (not a path). \"type\" = \"video\" | \"image\". \"trim\" = {start, end} in SECONDS for videos (end null = to the end of the clip); output is capped at 12s. \"loop\" = whether the <video> loops (videos only). Everything is centre-cropped to the iPhone 393x852 aspect if the source differs, and scaled to 780px wide. SLOTS: hero-tap (hero phone, NfcPhone.tsx - tap the reader, receipt appears; video preferred), receipts-search (FeatureScreens ReceiptListShot), share-sheet (FeatureScreens ShareSheetShot; image), walk-ready / walk-receipt / walk-list (WalkPhone.tsx steps 0/1/2). SPECIAL: if you fill the \"walk\" slot with one video it is used for ALL THREE walkthrough steps and the three walk-* slots are ignored. Verbal trigger: telling Claude \"refresh the app media\" means exactly steps 2-4.",
   "slots": {
     "hero-tap": {
-      "source": "recording-01.mp4",
+      "source": "",
       "type": "video",
       "trim": {
         "start": 8.5,
@@ -11,7 +11,7 @@
       "loop": true
     },
     "receipts-search": {
-      "source": "recording-01.mp4",
+      "source": "",
       "type": "video",
       "trim": {
         "start": 9,
@@ -47,7 +47,7 @@
       "loop": true
     },
     "walk-receipt": {
-      "source": "receipt-detail-top.webp",
+      "source": "",
       "type": "image",
       "trim": {
         "start": 0,
@@ -56,7 +56,7 @@
       "loop": true
     },
     "walk-list": {
-      "source": "receipts-list-frame.png",
+      "source": "",
       "type": "image",
       "trim": {
         "start": 0,

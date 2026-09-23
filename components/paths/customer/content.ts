@@ -53,7 +53,8 @@ export const demoContent = {
   savedLabel: "Saved",
   barLabel: "Receipt",
   sectionTitles: {
-    items: "Items",
+    // "Items Purchased" is the heading the clip and the app both print.
+    items: "Items Purchased",
     info: "Receipt Information",
     original: "Original receipt",
   },

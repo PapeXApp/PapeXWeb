@@ -10,14 +10,21 @@ import { demoContent } from "./content";
 import styles from "./customer.module.css";
 
 /**
- * Renders a decoded `ReceiptSummary` (see lib/receiptSummary.ts) inside the
- * hero's live demo, styled in the App Clip's OWN theme — deliberately not
- * this site's palette (navy card / orange). Verbatim App Clip tokens (see
- * design-prototype/NOTES.md → "It uses the app's palette, not the site's"):
- *   background #181A20   accent #FB8500   brand-blue #2B7FC6
- *   text #F4F4F4   secondary #C4C7CC   muted #9AA1A8
- * All values live in customer.module.css's `.ac*` rules — never hardcode a
- * hex here, and never swap these for --navy/--orange.
+ * Renders a decoded `ReceiptSummary` (see lib/receiptSummary.ts) the way the
+ * App Clip does, from app-media/reference/clip-receipt-rendered.png:
+ *
+ *   glass merchant card — circle monogram, name, a hairline, then the address
+ *   and an ORANGE date line, centred
+ *   "Items Purchased" (orange) above a glass card of priced line items, with
+ *   the "YOU SAVED …" line under them when the receipt carries a discount
+ *   a totals card with an ORANGE RIM: Subtotal/Tax orange, a thick orange
+ *   rule, "Total" orange against a big white amount, then Payment + VISA
+ *
+ * Palette is the App Clip's OWN — deliberately not this site's navy/orange
+ * (PapeXWeb/CLAUDE.md → "the /customers receipt demo intentionally uses the
+ * App Clip's palette"). Verbatim tokens: accent #FB8500, brand blue #2B7FC6,
+ * text #F4F4F4, secondary #C4C7CC, muted #9AA1A8. All values live in
+ * customer.module.css's `.ac*` rules — never hardcode a hex here.
  *
  * `summary` is the output of `summarizeReceipt(parseEscPos(bytes).lines)` —
  * both real functions from this repo's lib/, not a re-implementation.
@@ -41,6 +48,13 @@ export function DemoReceiptView({ summary }: { summary: ReceiptSummary }) {
 
   const monogram = (summary.merchantName || "?").trim().charAt(0).toUpperCase();
 
+  // "YOU SAVED $x.xx (n% OFF)" — only when the decoded receipt really has a
+  // discount. Never invented: no discount line, no savings line.
+  const savedPct =
+    summary.discount != null && summary.subtotal
+      ? Math.round((Math.abs(summary.discount) / summary.subtotal) * 100)
+      : null;
+
   return (
     <>
       {(summary.merchantName || summary.addressLines.length > 0) && (
@@ -49,37 +63,44 @@ export function DemoReceiptView({ summary }: { summary: ReceiptSummary }) {
             <span aria-hidden="true" className={styles.acMonoBadge}>
               {monogram}
             </span>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              {summary.merchantName && <div className={styles.acMname}>{summary.merchantName}</div>}
-              {summary.addressLines.map((line) => (
-                <div key={line} className={styles.acMaddr}>
-                  {line}
-                </div>
-              ))}
-              {summary.dateline && <div className={styles.acMdate}>{summary.dateline}</div>}
-              <div className={styles.acMsrc}>{demoContent.sourceLabel}</div>
-            </div>
+            {summary.merchantName && <div className={styles.acMname}>{summary.merchantName}</div>}
+          </div>
+          <div className={styles.acMeta}>
+            {summary.addressLines.map((line) => (
+              <div key={line} className={styles.acMaddr}>
+                {line}
+              </div>
+            ))}
+            {summary.dateline && <div className={styles.acMdate}>{summary.dateline}</div>}
+            <div className={styles.acMsrc}>{demoContent.sourceLabel}</div>
           </div>
         </div>
       )}
 
       {summary.items.length > 0 && (
-        <div className={styles.acCard}>
+        <div>
           <div className={styles.acSectionTitle}>{demoContent.sectionTitles.items}</div>
-          {summary.items.map((item, i) => (
-            <div key={`${item.name}-${i}`} className={styles.acItem}>
-              <div style={{ minWidth: 0 }}>
-                <div className={styles.acItemName}>{item.name}</div>
-                {item.qty > 1 && <div className={styles.acItemQty}>Qty {item.qty}</div>}
+          <div className={styles.acCard}>
+            {summary.items.map((item, i) => (
+              <div key={`${item.name}-${i}`} className={styles.acItem}>
+                <div style={{ minWidth: 0 }}>
+                  <div className={styles.acItemName}>{item.name}</div>
+                  {item.qty > 1 && <div className={styles.acItemQty}>Qty {item.qty}</div>}
+                </div>
+                <div className={styles.acItemPrice}>{money(item.amount)}</div>
               </div>
-              <div className={styles.acItemPrice}>{money(item.amount)}</div>
-            </div>
-          ))}
+            ))}
+            {savedPct != null && (
+              <div className={styles.acSaved}>
+                YOU SAVED {money(Math.abs(summary.discount as number))} ({savedPct}% OFF)
+              </div>
+            )}
+          </div>
         </div>
       )}
 
       {(summary.subtotal != null || summary.tax != null || summary.total != null || summary.paymentLine) && (
-        <div className={styles.acCard}>
+        <div className={`${styles.acCard} ${styles.acCardTotals}`}>
           {summary.subtotal != null && (
             <div className={styles.acTrow}>
               <span className={styles.acTlabel}>Subtotal</span>
@@ -89,7 +110,7 @@ export function DemoReceiptView({ summary }: { summary: ReceiptSummary }) {
           {summary.tax != null && (
             <div className={styles.acTrow}>
               <span className={styles.acTlabel}>{taxLabel}</span>
-              <span className={styles.acTval}>{money(summary.tax)}</span>
+              <span className={`${styles.acTval} ${styles.acTvalBrand}`}>{money(summary.tax)}</span>
             </div>
           )}
           {summary.tip != null && (
@@ -116,7 +137,7 @@ export function DemoReceiptView({ summary }: { summary: ReceiptSummary }) {
           {summary.paymentLine && (
             <div className={styles.acTrow}>
               <span className={styles.acTlabel}>Payment</span>
-              <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ display: "flex", alignItems: "center", gap: "calc(8 * var(--u))" }}>
                 {paymentStyle && (
                   <span
                     className={styles.acChip}
@@ -133,20 +154,9 @@ export function DemoReceiptView({ summary }: { summary: ReceiptSummary }) {
         </div>
       )}
 
-      <div className={styles.acCard}>
-        <div className={styles.acSectionTitle}>{demoContent.sectionTitles.info}</div>
-        {summary.dateline && (
-          <div className={styles.acInforow}>
-            <span className={styles.acInfolabel}>Date</span>
-            <span className={styles.acInfoval}>{summary.dateline}</span>
-          </div>
-        )}
-        <div className={styles.acInforow}>
-          <span className={styles.acInfolabel}>Source</span>
-          <span className={styles.acInfoval}>{demoContent.infoSourceLabel}</span>
-        </div>
-      </div>
-
+      {/* The decoded ESC/POS body, verbatim. Kept because it is the one part of
+          the demo that proves the bytes really went through lib/escpos.ts —
+          and because the hero's hint copy invites you to open it. */}
       <div className={styles.acCard}>
         <details className={styles.acOrig} open={!hasStructure(summary)}>
           <summary>

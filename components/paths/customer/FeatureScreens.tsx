@@ -1,5 +1,4 @@
-import { cn } from "@/lib/utils";
-import { receiptsListContent } from "./content";
+import { ReceiptDetailScreen, ReceiptsScreen } from "./appui";
 import { PhoneChrome } from "./WalkPhone";
 import styles from "./customer.module.css";
 
@@ -8,23 +7,21 @@ import styles from "./customer.module.css";
  *
  * These cells shipped as literal TODO boxes — a 45-degree stripe pattern with
  * "[ app screen: receipt list + search ]" in Courier — waiting on simulator
- * captures of PapeXV2 that never came. Building them from the app's own tokens
- * instead means no capture is needed, they can't drift from the product, and
- * they stay sharp at any size.
+ * captures of PapeXV2 that never came. Building them from the app's own
+ * tokens instead means no capture is needed, they can't drift from the
+ * product, and they stay sharp at any size.
  *
- * Fidelity notes: the categories are PapeXV2's real list
- * (constants/receiptCategories.ts — "Dining", "Gas & auto", not invented ones),
- * and the share sheet is iOS's own anatomy: dimmed backdrop, translucent
- * blurred material, document header, the AirDrop/app row, then the action list.
+ * Rebuilt 2026-09-22 against app-media/reference/: both screens now come from
+ * `./appui`, the same kit the hero phone and the walkthrough use.
  */
 
 /**
  * Wraps a screen in the device and crops it against the cell's bottom edge.
  *
  * `sheetLift` is only for screens whose content is anchored to the bottom of
- * the device (the share sheet). The crop takes roughly 40cqh off the bottom,
- * so anything pinned there is off-frame; lifting it by that much puts it back
- * on the visible edge. Top-anchored screens (the receipt list) leave it unset.
+ * the device (the share sheet, and the tab bar / FAB of a full app screen).
+ * The crop takes roughly 40cqh off the bottom, so anything pinned there is
+ * off-frame; lifting it by that much puts it back on the visible edge.
  */
 function Shot({
   children,
@@ -45,57 +42,33 @@ function Shot({
         className={styles.featShotPhone}
         style={sheetLift ? ({ "--wp-sheet-lift": sheetLift } as React.CSSProperties) : undefined}
       >
-        <PhoneChrome tab="receipts" mediaSlot={slot}>{children}</PhoneChrome>
+        <PhoneChrome mediaSlot={slot}>{children}</PhoneChrome>
       </div>
     </div>
   );
 }
 
-const CHIPS = ["All", "Dining", "Groceries", "Travel"];
-
+/**
+ * Row 1 — the real Receipts screen, mid-search. An empty search field would
+ * say nothing about the feature this row is selling, so the query is typed
+ * with the caret still blinking.
+ */
 export function ReceiptListShot() {
   return (
-    <Shot slot="receipts-search">
-      <div className={styles.wpBody}>
-        <div className={styles.wpTitle}>{receiptsListContent.title}</div>
-
-        {/* Search shown mid-query — an empty field would say nothing about the
-            feature this row is actually selling. */}
-        <div className={styles.wpSearchActive}>
-          <span aria-hidden="true" className={styles.wpSearchIcon} />
-          blue
-          <span aria-hidden="true" className={styles.wpCaret} />
-        </div>
-
-        <div className={styles.wpChips}>
-          {CHIPS.map((chip, i) => (
-            <span key={chip} className={cn(styles.wpChip, i === 0 && styles.wpChipOn)}>
-              {chip}
-            </span>
-          ))}
-        </div>
-
-        <div className={styles.wpSectionLabel}>3 results</div>
-
-        {receiptsListContent.rows.map((row) => (
-          <div key={row.merchant} className={cn(styles.wpRow, row.unreviewed && styles.wpRowUnreviewed)}>
-            <span aria-hidden="true" className={styles.wpAvatar}>{row.initial}</span>
-            <span className={styles.wpRowText}>
-              <span className={styles.wpMerchant} style={{ display: "block" }}>{row.merchant}</span>
-              <span className={styles.wpMeta} style={{ display: "block" }}>
-                {row.category} &middot; {row.date}
-              </span>
-            </span>
-            <span className={styles.wpAmount}>{row.amount}</span>
-            <span aria-hidden="true" className={styles.wpChevron} />
-          </div>
-        ))}
-      </div>
+    <Shot slot="receipts-search" sheetLift="38cqh">
+      {/* The tab bar and FAB ride the crop line, so the five-tab glass bar
+          with Receipts selected is visible instead of falling off-frame. */}
+      <ReceiptsScreen query="blue" tabLift="38cqh" />
     </Shot>
   );
 }
 
-/** The apps iOS actually offers first for a document share. */
+/**
+ * Row 2 — a receipt DETAIL screen (where sharing actually starts: the People
+ * field), with iOS's own share sheet rising over it. Sheet anatomy is iOS's:
+ * dimmed backdrop, translucent blurred material, document header, the
+ * AirDrop/app row, then the action list.
+ */
 const SHARE_APPS = [
   { label: "AirDrop", bg: "linear-gradient(180deg,#3E8BFF,#1F63E8)" },
   { label: "Messages", bg: "linear-gradient(180deg,#5BF675,#28C63F)" },
@@ -108,23 +81,9 @@ const SHARE_ACTIONS = ["Copy", "Save to Files", "Print"];
 export function ShareSheetShot() {
   return (
     <Shot slot="share-sheet" sheetLift="40cqh">
-      {/* The receipt list stays visible behind the sheet — that's what makes it
+      {/* The receipt stays visible behind the sheet — that's what makes it
           read as a sheet presented over the app rather than its own screen. */}
-      <div className={styles.wpBody} aria-hidden="true">
-        <div className={styles.wpTitle}>{receiptsListContent.title}</div>
-        {receiptsListContent.rows.slice(0, 2).map((row) => (
-          <div key={row.merchant} className={styles.wpRow}>
-            <span className={styles.wpAvatar}>{row.initial}</span>
-            <span className={styles.wpRowText}>
-              <span className={styles.wpMerchant} style={{ display: "block" }}>{row.merchant}</span>
-              <span className={styles.wpMeta} style={{ display: "block" }}>
-                {row.category} &middot; {row.date}
-              </span>
-            </span>
-            <span className={styles.wpAmount}>{row.amount}</span>
-          </div>
-        ))}
-      </div>
+      <ReceiptDetailScreen peopleFocused />
 
       <div className={styles.wpDim} aria-hidden="true" />
 
@@ -133,7 +92,7 @@ export function ShareSheetShot() {
           <span aria-hidden="true" className={styles.wpSheetThumb} />
           <span>
             <span className={styles.wpSheetTitle} style={{ display: "block" }}>
-              Blue Bottle Coffee
+              United States Postal Service
             </span>
             <span className={styles.wpSheetSub} style={{ display: "block" }}>
               PapeX receipt &middot; PDF
