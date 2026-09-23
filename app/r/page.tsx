@@ -71,6 +71,8 @@ import { summarizeReceipt, hasStructure as computeHasStructure } from "@/lib/rec
 import { hasVisibleContent, resolveReceiptState } from "@/lib/receiptState";
 import { sampleReceiptLines } from "@/lib/sampleReceipt";
 import { isDemoSid } from "@/lib/demoReceipts";
+import { resolveReceiptRoute, type ReceiptRouteInput } from "@/lib/receiptRouting";
+import { APP_CLIP_BANNER_CONTENT, ridAppClipBannerEnabled } from "@/lib/appClipBanner";
 import {
   Shell,
   StateCard,
@@ -83,15 +85,42 @@ import {
 import { CtaRow } from "./CtaRow";
 import RetryButton from "./RetryButton";
 import ReceiptUpgrade from "./ReceiptUpgrade";
+import { renderSharedReceipt } from "./sharedReceiptView";
 
-export const metadata: Metadata = {
-  title: "Your PapeX Receipt",
-  description: "View your digital receipt from PapeX.",
-  robots: {
-    index: false,
-    follow: false,
-  },
-};
+type ReceiptSearchParams = { sid?: string | string[]; demo?: string | string[]; rid?: string | string[] };
+
+function routeInputFrom(params: ReceiptSearchParams): ReceiptRouteInput {
+  const rawDemo = Array.isArray(params.demo) ? params.demo[0] : params.demo;
+  return { sidParam: params.sid, ridParam: params.rid, demoRequested: rawDemo === "1" };
+}
+
+// Smart App Banner (`apple-itunes-app`) — sid (RDH) links only, unconditionally.
+// The App Clip live on the App Store has always understood `sid`, so there's
+// no sequencing risk here — see lib/appClipBanner.ts for the rid case, which
+// is NOT unconditional. Nothing prior to this branch had a banner at all
+// (checked: no `apple-itunes-app` anywhere in this repo before this change),
+// so there's nothing to deduplicate against.
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<ReceiptSearchParams>;
+}): Promise<Metadata> {
+  const params = await searchParams;
+  const route = resolveReceiptRoute(routeInputFrom(params));
+
+  const showAppClipBanner =
+    route.kind === "sid" || (route.kind === "rid" && ridAppClipBannerEnabled());
+
+  return {
+    title: "Your PapeX Receipt",
+    description: "View your digital receipt from PapeX.",
+    robots: {
+      index: false,
+      follow: false,
+    },
+    ...(showAppClipBanner ? { other: { "apple-itunes-app": APP_CLIP_BANNER_CONTENT } } : {}),
+  };
+}
 
 // Every render depends on a query param + a live upstream fetch — never
 // prerender or cache this route.
@@ -100,15 +129,24 @@ export const dynamic = "force-dynamic";
 export default async function ReceiptPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sid?: string | string[]; demo?: string | string[] }>;
+  searchParams: Promise<ReceiptSearchParams>;
 }) {
   const params = await searchParams;
-  const rawSid = Array.isArray(params.sid) ? params.sid[0] : params.sid;
-  const rawDemo = Array.isArray(params.demo) ? params.demo[0] : params.demo;
   const uaHeader = (await headers()).get("user-agent") ?? "";
   // Only decides which store link leads and whether "Save to PapeX" is a
   // universal link or the in-page sign-in sheet — never what the page shows.
   const platform = platformFromUserAgent(uaHeader);
+
+  // Precedence: sid > rid > demo/bare — see lib/receiptRouting.ts. A `rid`
+  // link (peer-to-peer share) is handled entirely separately, in
+  // ./sharedReceiptView, and never falls through to the sid/demo logic below.
+  const route = resolveReceiptRoute(routeInputFrom(params));
+  if (route.kind === "rid") {
+    return renderSharedReceipt(route.rid, platform);
+  }
+
+  const rawSid = Array.isArray(params.sid) ? params.sid[0] : params.sid;
+  const rawDemo = Array.isArray(params.demo) ? params.demo[0] : params.demo;
 
   // Explicit demo opt-in (`?demo=1`) — Nico's ask so the sample stays
   // reachable on demand. Deliberately checked before any backend fetch: this
