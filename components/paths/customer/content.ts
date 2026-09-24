@@ -87,13 +87,16 @@ export const problemContent = {
   // (unsourced lobby claim). The two $ / lbs figures are Grand View Research
   // (paywalled market research) as cited by Epson; the tree figure is Green
   // America's 2022 update, computed with the EPN Paper Calculator v4.0.
+  // Web 2.1 (C4): the unsourced add-ons "Most of it ends up in the trash."
+  // and "before printers and repairs" were cut — each caption now says only
+  // what its source says.
   cards: [
     {
       id: "print",
       question: "How much paper goes into US receipts?",
       hint: "Tap to reveal",
       value: "620M lbs",
-      caption: "of receipt paper used in the US every year. Most of it ends up in the trash.",
+      caption: "of receipt paper used in the US every year.",
       source: "Epson, citing Grand View Research (2025)",
     },
     {
@@ -109,7 +112,7 @@ export const problemContent = {
       question: "What do businesses pay for it?",
       hint: "Tap to reveal",
       value: "$540M+",
-      caption: "spent by US businesses on receipt paper every year, before printers and repairs.",
+      caption: "spent by US businesses on receipt paper in a single year (2025 forecast).",
       source: "Epson, citing Grand View Research (2025)",
     },
   ] satisfies ProblemCard[],
@@ -148,7 +151,9 @@ export interface PersonaResult {
  * Personas.tsx so it wins ties by design (the middle ground / safest read).
  */
 export const personasContent = {
-  eyebrow: "Quick quiz",
+  // Web 2.1 (Nico, 2026-09-24): the quiz answers "what's in it for ME", and
+  // its result re-orders section 05 Features (personaFeatures.ts).
+  eyebrow: "What's in it for you?",
   headline: "Answer 3 questions.",
   intro: "Tap an answer for each and we'll tell you which kind of receipt person you are.",
   tapHint: "Tap an answer",
@@ -207,24 +212,53 @@ export const personasContent = {
   ] satisfies PersonaResult[],
 };
 
-// The two rows are rendered as REAL app screens by FeatureScreens.tsx (built
-// from PapeXV2's own design tokens), not as images — so there is no asset path
-// and no placeholder label here any more.
+// Section 05 Features — four rows, live app features only (Nico's list,
+// 2026-09-24). Each row is drawn as a REAL app screen by FeatureScreens.tsx
+// (built from PapeXV2's own tokens, per docs/design/app-reference.md), not an
+// image. The ORDER of the rows and the benefit line each row shows come from
+// the quiz result — see personaFeatures.ts; this block holds only what every
+// persona shares.
+//
+// Cut on purpose (spec §8b): "Export for taxes without lifting a finger" (not
+// a listed live feature) and filtering "by amount" (app-reference.md shows
+// the amount on a row, but no amount FILTER is confirmed).
+export type FeatureKey = "find" | "add" | "share" | "deals";
+
+export interface FeatureRow {
+  /** The row's one-word label, set as its [05.N] eyebrow. */
+  eyebrow: string;
+  title: string;
+  /** The live features the row covers, as short tags under its line. */
+  tags: string[];
+}
+
 export const featuresContent = {
   eyebrow: "Once it's yours",
   headline: "Every receipt, kept and searchable.",
-  rows: [
-    {
-      eyebrow: "Everything in one place",
-      title: "Your entire receipt history, always a search away.",
-      body: "Filter by store, date, category or amount. Categorize food, transport, business and personal. Export for taxes without lifting a finger.",
+  rows: {
+    find: {
+      eyebrow: "Find",
+      title: "Find anything.",
+      tags: ["Search", "Auto-categorization", "Account stats"],
     },
-    {
-      eyebrow: "Share in a tap",
-      title: "Text, email or AirDrop any receipt in seconds.",
-      body: "Split an expense, submit a reimbursement, or send proof of purchase, no photos of crumpled paper, no scanning.",
+    add: {
+      eyebrow: "Add",
+      title: "Add the rest.",
+      tags: ["Scan paper receipts", "Forward email receipts"],
     },
-  ],
+    share: {
+      eyebrow: "Share",
+      title: "Share it.",
+      tags: ["Shared groups", "Person to person"],
+    },
+    deals: {
+      eyebrow: "Deals",
+      title: "Coupons and store pages.",
+      tags: ["Coupons", "Favorites", "Store pages"],
+    },
+  } satisfies Record<FeatureKey, FeatureRow>,
+  /** Small caption on every app shot: the rows in them are invented. */
+  demoLabel: "Demo data",
 };
 
 export const howItWorksContent = {

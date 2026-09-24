@@ -28,8 +28,9 @@ import styles from "./customer.module.css";
  *   02 How it works (walkthrough)        light  (the hero cue scrolls here)
  *      ribbon                            (no ground of its own)
  *   03 Problem — "Why does it matter?"   light
- *   04 Quiz — "Is it for me?"            NAVY
+ *   04 Quiz — "What's in it for you?"    NAVY
  *   05 Features — "What else can I do?"  NAVY   id="features"
+ *      (the quiz result re-orders Features' four rows: personaStore.ts)
  *   06 Privacy                           light
  *   07 Get it — Vision + Download        NAVY
  *   08 FAQ                               light  id="faq"

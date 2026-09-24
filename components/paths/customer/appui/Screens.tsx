@@ -255,7 +255,19 @@ function TagIcon() {
   );
 }
 
-function PeopleIcon() {
+/** `people` — outline while the receipt is in no group; FILLED and orange
+ *  (`colors.primary`) once it is (receiptDetail.tsx sharingTriggerContent). */
+function PeopleIcon({ on = false }: { on?: boolean }) {
+  if (on) {
+    return (
+      <svg viewBox="0 0 24 24" className={cn(s.fieldGlyph, s.fieldGlyphOn)} aria-hidden="true">
+        <circle cx="9.4" cy="8.6" r="3.4" fill="currentColor" />
+        <path d="M3.2 19.6a6.2 6.2 0 0 1 12.4 0z" fill="currentColor" />
+        <circle cx="16.6" cy="9.2" r="2.6" fill="currentColor" opacity="0.75" />
+        <path d="M16.9 13.6a5.2 5.2 0 0 1 4.3 6h-4a7.6 7.6 0 0 0-1.6-5.7c.4-.2.8-.3 1.3-.3z" fill="currentColor" opacity="0.75" />
+      </svg>
+    );
+  }
   return (
     <svg viewBox="0 0 24 24" className={s.fieldGlyph} fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" aria-hidden="true">
       <circle cx="9.6" cy="9.2" r="2.8" />
@@ -311,27 +323,35 @@ function MoreGlyph() {
  *   store card  blue `standard` rim: logo + name, divider, address, orange
  *               date, "📷 Scanned Receipt" + the blue "Shared" tag
  *   Category    orange heading; no rim while uncategorised; right chevron
- *   Shared Group white heading; no rim while not in a group
+ *   Shared Group white heading; no rim while not in a group, blue rim +
+ *               "Shared with <group>" once it is (DETAIL_RECEIPT.sharedGroup)
  *   Receipt Sharing  blue rim, "Shared with <name>" + chevron (the tag above
  *               and this summary read the same `sharedWith` list)
  *   Items Purchased  orange heading, blue-rim card
  *   totals      orange `important` rim
  *
- * Sharing a copy OUT is the ••• menu's Export -> iOS share sheet (a PDF);
- * the caller draws that sheet over this screen. Nothing here is focused —
- * a focused field would need a keyboard.
+ * Sharing a copy OUT is the ••• menu's Export -> iOS share sheet (a PDF).
+ * Nothing here is focused — a focused field would need a keyboard.
+ *
+ * `scrollY` draws the screen SCROLLED by that many points: the content moves
+ * up under the pinned header circles and status bar, exactly as the app's
+ * ScrollView does; the header itself never moves. A cropped phone uses it to
+ * bring a lower card into view instead of moving anything to the crop line.
  */
-export function ReceiptDetailScreen() {
+export function ReceiptDetailScreen({ scrollY = 0 }: { scrollY?: number }) {
   const r = DETAIL_RECEIPT;
   return (
     <div className={s.screen}>
       <div className={s.ground} aria-hidden="true" />
       <StatusBar time="7:08" />
 
-      <div className={s.detailScroll}>
+      <div
+        className={s.detailScroll}
+        style={scrollY ? { transform: `translateY(calc(${-scrollY} * var(--u)))` } : undefined}
+      >
         <div className={cn(s.card, s.rimStandard, s.storeCard)}>
           <div className={s.storeHead}>
-            <MerchantLogo initial={r.initial} bg="linear-gradient(160deg,#2f7ad6,#10529e)" detail />
+            <MerchantLogo initial={r.initial} bg={r.logoBg} detail />
             <div className={s.storeName}>{r.merchant}</div>
           </div>
           <div className={s.storeRule} aria-hidden="true" />
@@ -357,11 +377,19 @@ export function ReceiptDetailScreen() {
 
         <div className={s.detailSection}>
           <div className={s.sectionTitle}>Shared Group</div>
-          <div className={cn(s.card, s.fieldCard)}>
-            <PeopleIcon />
-            <span className={s.fieldText}>Not shared</span>
-            <Chevron />
-          </div>
+          {r.sharedGroup ? (
+            <div className={cn(s.card, s.rimStandard, s.fieldCard)}>
+              <PeopleIcon on />
+              <span className={cn(s.fieldText, s.fieldTextOn)}>Shared with {r.sharedGroup}</span>
+              <Chevron />
+            </div>
+          ) : (
+            <div className={cn(s.card, s.fieldCard)}>
+              <PeopleIcon />
+              <span className={s.fieldText}>Not shared</span>
+              <Chevron />
+            </div>
+          )}
         </div>
 
         <div className={s.detailSection}>

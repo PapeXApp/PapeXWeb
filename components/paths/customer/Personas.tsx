@@ -7,6 +7,7 @@ import { FlowSection } from "../shared/FlowSection";
 import { PointerLitGroup } from "../shared/PointerLit";
 import { SectionLabel } from "../shared/SectionLabel";
 import { heroContent, personasContent, type PersonaId } from "./content";
+import { setPersona } from "./personaStore";
 import { useStoreUrl } from "./Hero";
 import styles from "./personas.module.css";
 
@@ -52,6 +53,10 @@ function scoreAnswers(answers: (number | null)[]): PersonaId {
  * four full-card answers, auto-advance after a short beat, a Back button, and
  * a result screen that says what the persona means and ends on ONE action
  * (the page's own "Download the app" CTA) plus "Take it again".
+ *
+ * Web 2.1: the eyebrow is "What's in it for you?", and the result is handed
+ * to Features through personaStore.ts (in memory only), which re-orders the
+ * four feature rows for that persona.
  *
  * Ink: everything that sits on the ground uses --flow-fg / --flow-fg-2 so it
  * crossfades with the ground. The only fixed colours are the orange selected
@@ -106,6 +111,11 @@ export function Personas() {
     setPending(false);
     if (nextStep >= questionCount) {
       const id = scoreAnswers(nextAnswers);
+      // Hand the result to Features (section 05): it re-orders its four rows
+      // and swaps in this persona's benefit lines. "Take it again" keeps the
+      // last result until the new one lands, so the rows never snap back to
+      // the default mid-retake.
+      setPersona(id);
       const r = personasContent.results.find((x) => x.id === id);
       setAnnouncement(r ? `Your result: ${r.eyebrow}. ${r.title}` : "");
     } else {
