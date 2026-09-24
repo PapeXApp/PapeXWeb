@@ -3,6 +3,7 @@
 import { useState, useEffect, createContext, useContext } from 'react'
 import { auth } from '@/firebase/firebaseConfig'
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, User } from 'firebase/auth'
+import { isAdminEmail } from '@/lib/adminEmails'
 
 interface AdminContextType {
   user: User | null
@@ -27,28 +28,13 @@ export function useAdminAuth() {
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
 
-  // Admin emails - you can add more here
-  const adminEmails = [
-    'admin@papex.app',
-    'nicolas@papex.app',
-    'michael@papex.app',
-    'raasinr@gmail.com', // Your admin email
-    'nico.courbage@gmail.com', // Nico's admin email
-    'mike@series-zero.com', // Mike's admin email
-    'michael_khoury@icloud.com', // Michael Khoury's admin email
-    'krutartha2002@gmail.com', // Kru's admin email
-    // Add your Firebase auth email here
-    'test@papex.app',
-    'admin@gmail.com',
-    'nicolas@gmail.com',
-    'michael@gmail.com'
-  ]
-
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       console.log('Auth state changed:', user ? user.email : 'No user')
       setUser(user)
-      const isAdminUser = user ? adminEmails.includes(user.email || '') : false
+      // Admin emails live in lib/adminEmails.ts (shared with the server-side
+      // upload check) - add more there
+      const isAdminUser = user ? isAdminEmail(user.email) : false
       console.log('Is admin:', isAdminUser, 'Email:', user?.email)
       setIsAdmin(isAdminUser)
       setLoading(false)

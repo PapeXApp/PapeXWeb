@@ -22,12 +22,13 @@
     "test:demoBlobs": "tsx lib/demoBlobParity.test.ts",
     "test:raster": "tsx lib/starRaster.test.ts",
     "test:mockRaster": "tsx lib/mockStarRaster.test.ts",
-    "test": "npm run test:png && npm run test:escpos && npm run test:raster && npm run test:mockRaster && npm run test:summary && npm run test:state && npm run test:parsed && npm run test:merchantHost && npm run test:deployEnv && npm run test:demo && npm run test:demoBlobs && npm run test:decoded && npm run test:routing && npm run test:sharedReceipt && npm run test:banner",
+    "test": "npm run test:png && npm run test:escpos && npm run test:raster && npm run test:mockRaster && npm run test:summary && npm run test:state && npm run test:parsed && npm run test:merchantHost && npm run test:deployEnv && npm run test:demo && npm run test:demoBlobs && npm run test:decoded && npm run test:routing && npm run test:sharedReceipt && npm run test:banner && npm run test:uploadGuard",
     "test:state": "tsx lib/receiptState.test.ts",
     "test:parsed": "tsx lib/rdhParsed.test.ts",
     "test:routing": "tsx lib/receiptRouting.test.ts",
     "test:sharedReceipt": "tsx lib/sharedReceipt.test.ts",
     "test:banner": "tsx lib/appClipBanner.test.ts",
+    "test:uploadGuard": "tsx lib/uploadImageGuard.test.ts",
     "test:decoded": "tsx --tsconfig tsconfig.test.json components/DecodedText.test.tsx"
   },
   "dependencies": {
@@ -71,6 +72,7 @@
     "firebase": "^11.6.0",
     "gsap": "^3.15.0",
     "input-otp": "^1.4.2",
+    "jose": "^6.2.12",
     "lenis": "^1.3.23",
     "lucide-react": "^0.476.0",
     "motion": "^12.40.0",

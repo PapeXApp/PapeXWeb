@@ -5,8 +5,8 @@
  * Perfect for blog images!
  */
 
-import { put } from '@vercel/blob'
 import imageCompression from 'browser-image-compression'
+import { auth } from '@/firebase/firebaseConfig'
 
 /**
  * Compresses an image file before upload
@@ -36,36 +36,39 @@ export async function compressImage(file: File): Promise<File> {
 /**
  * Uploads an image to Vercel Blob Storage
  * Returns the public URL
+ *
+ * Requires a signed-in blog admin: the route verifies the Firebase ID token
+ * and stores everything under blog-images/ (server-chosen name + extension).
  */
-export async function uploadImageToVercelBlob(
-  file: File,
-  path: string = 'blog-images'
-): Promise<string> {
+export async function uploadImageToVercelBlob(file: File): Promise<string> {
   try {
+    const user = auth.currentUser
+    if (!user) {
+      throw new Error('Sign in as an admin to upload images')
+    }
+    const idToken = await user.getIdToken()
+
     // Compress image before upload
     const compressedFile = await compressImage(file)
-    
-    // Generate unique filename
-    const timestamp = Date.now()
-    const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
-    const fileName = `${path}/${timestamp}-${sanitizedFileName}`
+
+    // The server only keeps this as a readable base name
+    const fileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
 
     console.log('Uploading image to Vercel Blob Storage...', fileName)
-    
-    // Upload to Vercel Blob
-    // Note: This requires a server-side API route or server action
-    // We'll create an API route for this
+
     const formData = new FormData()
     formData.append('file', compressedFile)
     formData.append('filename', fileName)
 
     const response = await fetch('/api/upload-image', {
       method: 'POST',
+      headers: { Authorization: `Bearer ${idToken}` },
       body: formData,
     })
 
     if (!response.ok) {
-      throw new Error(`Upload failed: ${response.statusText}`)
+      const body = await response.json().catch(() => null)
+      throw new Error(`Upload failed: ${body?.error || response.statusText}`)
     }
 
     const data = await response.json()
@@ -84,8 +87,7 @@ export async function uploadImageToVercelBlob(
  */
 export async function uploadBase64ToVercelBlob(
   base64: string,
-  filename: string = 'migrated-image.jpg',
-  path: string = 'blog-images'
+  filename: string = 'migrated-image.jpg'
 ): Promise<string> {
   try {
     // Convert base64 to File
@@ -105,7 +107,7 @@ export async function uploadBase64ToVercelBlob(
     const blob = new Blob([byteArray], { type: mimeType })
     const file = new File([blob], filename, { type: mimeType })
 
-    return await uploadImageToVercelBlob(file, path)
+    return await uploadImageToVercelBlob(file)
   } catch (error) {
     console.error('Error uploading base64 image to Vercel Blob:', error)
     throw error
