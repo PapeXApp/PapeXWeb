@@ -30,6 +30,7 @@ import { DEMO_RECEIPTS, formatDemoDisclosure, offerDaysRemaining } from "@/lib/d
 import { EnrichmentSections } from "../enrichment";
 import { DemoDisclosure } from "../ui";
 import { CardList } from "./CardList";
+import { encodeQr, qrRuns } from "@/lib/cards/qr";
 import { CtaCardView } from "./CtaCard";
 import { EmailCaptureCardView, INERT_CAPTURE_NOTE } from "./EmailCaptureCard";
 
@@ -324,6 +325,34 @@ test("demo parity: the card renderer draws the old value layer byte for byte, on
 
 test("demo parity: Sunset Leaf (no enrichment) renders nothing, as before", () => {
   assert.equal(newLayer("5371e4f000000001", NOW), "");
+});
+
+// =============================================================================
+// QR redemption (v1.1): drawn server-side as SVG from lib/cards/qr.ts
+// =============================================================================
+
+test("qr offer (variants/offer-qr.json): an SVG QR code with a quiet zone and its text line", () => {
+  const r = readJson(join(CONTRACT, "fixtures/variants/offer-qr.json")) as ResolvedCards;
+  const html = renderResponse(r, r.sid);
+  const offer = r.cards[0];
+  assert.ok(offer.type === "offer" && offer.redemption?.type === "barcode" && offer.redemption.symbology === "qr");
+  const value = offer.redemption.value;
+  const q = encodeQr(value);
+  assert.ok(html.includes(`aria-label="QR code ${esc(offer.redemption.text ?? value)}"`), "labelled QR svg");
+  assert.ok(html.includes(`viewBox="0 0 ${q.size + 8} ${q.size + 8}"`), "4-module quiet zone on every side");
+  assert.equal((html.match(/<rect /g) ?? []).length, qrRuns(q).length, "one rect per dark run");
+  assert.ok(!html.includes('aria-label="Barcode'), "no 1-D barcode");
+  // `scope` is a display hint the web does not print.
+  for (const s of strings(offer).filter((x) => x !== offer.redemption?.scope)) assert.ok(html.includes(esc(s)), `missing ${JSON.stringify(s)}`);
+});
+
+test("qr offer whose value the encoder rejects is dropped whole, even if it skipped the normalizer", () => {
+  const r = readJson(join(CONTRACT, "fixtures/variants/offer-qr.json")) as ResolvedCards;
+  const forged = normalizeResolvedCards(r, r.sid);
+  const card = forged.cards[0];
+  assert.ok(card.type === "offer" && card.redemption?.type === "barcode");
+  card.redemption.value = "Q".repeat(81);
+  assert.equal(renderToStaticMarkup(<CardList cards={forged} now={NOW} />), "");
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);

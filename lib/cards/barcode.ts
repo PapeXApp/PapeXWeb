@@ -146,15 +146,15 @@ export function encodeUpcA(value: string): BarcodeModules {
 }
 
 /**
- * `qr` (v1.1) has no web encoder yet, so it throws: inside CardList's guard
- * that drops the card whole, never a voucher with a hole. The web therefore
- * does not advertise `barcode.qr` in its caps (types.ts CAPS_1_7_0), and the
- * server never sends it a QR offer.
+ * The 1-D symbologies. `qr` (v1.1) is two-dimensional and is not drawn from
+ * a module row: lib/cards/qr.ts encodes it and app/r/cards/QrCode.tsx draws
+ * it, so this still throws for `qr` (inside CardList's guard that would drop
+ * the card whole, never a voucher with a hole).
  */
 export function encodeBarcode(symbology: BarcodeSymbology, value: string): BarcodeModules {
   switch (symbology) {
     case "qr":
-      throw new RangeError("qr: no web encoder yet");
+      throw new RangeError("qr is 2-D: use encodeQr (lib/cards/qr.ts)");
     case "code128":
       return encodeCode128(value);
     case "ean13":
