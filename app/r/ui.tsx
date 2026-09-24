@@ -789,6 +789,31 @@ export function AppCta({ platform }: { platform: Platform }) {
   );
 }
 
+// ---- "Save in the PapeX app" (rid save-link, issue #23 S4) ---------------------
+//
+// A second, small link under AppCta on `/r?rid=` (peer-to-peer shared
+// receipts only — see app/r/sharedReceiptView.tsx, the only caller) that
+// hands an iOS Safari visitor to `https://links.papex.app/r?rid=...&save=1`,
+// a cross-host universal link the installed app intercepts and completes the
+// save for (see lib/ridSaveLink.ts for the URL contract and the flag it sits
+// behind). Android and desktop visitors get nothing here — see that module's
+// doc comment for why.
+//
+// Server component: a plain <a>, no client JS, same as AppCta above.
+export function SaveInAppLink({ href }: { href: string }) {
+  return (
+    <p className="text-center text-xs" style={{ color: S.textMuted }}>
+      <a
+        href={href}
+        className="font-medium underline underline-offset-2"
+        style={{ color: T.orange }}
+      >
+        Save in the PapeX app
+      </a>
+    </p>
+  );
+}
+
 /**
  * The CTA row for a receipt that must not offer a claim: "Get PapeX" and
  * nothing else.
