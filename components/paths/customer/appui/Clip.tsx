@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { cn } from "@/lib/utils";
 import { StatusBar } from "./Chrome";
 import s from "./appui.module.css";
@@ -6,6 +7,9 @@ import s from "./appui.module.css";
    there. Two sheets on purpose: appui.module.css is the shared app-UI kit and
    is owned by the app restyle running in parallel. */
 import c from "../customer.module.css";
+/* Device + iOS system chrome (lock screen, Live Activity, wallpaper) lives
+   with the phone frame, in iphone.module.css (2.1, 2026-09-23). */
+import ip from "../iphone.module.css";
 
 /**
  * The App Clip beats of the tap story, rebuilt 2026-09-22 from the camera
@@ -47,24 +51,127 @@ function NfcWaves() {
 }
 
 /**
- * The locked phone.
+ * An iOS lock-screen wallpaper in Apple's layered style (stacked, soft-shadowed
+ * wave bands, like the iOS 16-18 "Collections" gradients) but in brand navy,
+ * blue and orange. 2.1 (2026-09-23): replaces a stack of radial blobs that read
+ * as a generic Android gradient. Drawn, not an image; ids are per-instance
+ * because the hero and the walkthrough both mount one.
+ */
+function Wallpaper() {
+  const id = useId().replace(/:/g, "");
+  const g = (name: string) => `${name}-${id}`;
+  return (
+    <svg className={ip.wall} viewBox="0 0 393 852" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <linearGradient id={g("sky")} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#00121d" />
+          <stop offset="0.55" stopColor="#04233a" />
+          <stop offset="1" stopColor="#00121d" />
+        </linearGradient>
+        {/* Each band is lit at its crest and falls into shadow below it, the
+            way Apple's layered wallpapers are shaded; the next band's drop
+            shadow then lands on that dark part. Vertical ramps, because a
+            horizontal one read as a flat flag. */}
+        <linearGradient id={g("blue")} x1="0" y1="0" x2="0.25" y2="1">
+          <stop offset="0" stopColor="#2a9df0" />
+          <stop offset="0.16" stopColor="#0079d1" />
+          <stop offset="0.42" stopColor="#063b66" />
+          <stop offset="1" stopColor="#00121d" />
+        </linearGradient>
+        <linearGradient id={g("orange")} x1="0" y1="0" x2="0.3" y2="1">
+          <stop offset="0" stopColor="#ff9d45" />
+          <stop offset="0.14" stopColor="#eb7100" />
+          <stop offset="0.42" stopColor="#8a3c02" />
+          <stop offset="1" stopColor="#1a0f0a" />
+        </linearGradient>
+        <linearGradient id={g("deep")} x1="0" y1="0" x2="0.2" y2="1">
+          <stop offset="0" stopColor="#123e5e" />
+          <stop offset="0.3" stopColor="#06243a" />
+          <stop offset="1" stopColor="#00121d" />
+        </linearGradient>
+        <radialGradient id={g("sheen")} cx="0.78" cy="0.3" r="0.7">
+          <stop offset="0" stopColor="#fff" stopOpacity="0.14" />
+          <stop offset="1" stopColor="#fff" stopOpacity="0" />
+        </radialGradient>
+        <filter id={g("lift")} x="-10%" y="-20%" width="120%" height="140%">
+          <feDropShadow dx="0" dy="-10" stdDeviation="14" floodColor="#000814" floodOpacity="0.55" />
+        </filter>
+      </defs>
+      <rect width="393" height="852" fill={`url(#${g("sky")})`} />
+      <path
+        filter={`url(#${g("lift")})`}
+        fill={`url(#${g("blue")})`}
+        d="M0 330C96 318 170 250 250 214s110-40 143-44V852H0Z"
+      />
+      <path
+        filter={`url(#${g("lift")})`}
+        fill={`url(#${g("orange")})`}
+        d="M0 540C88 520 150 452 236 420s124-10 157-14V852H0Z"
+      />
+      <path
+        filter={`url(#${g("lift")})`}
+        fill={`url(#${g("deep")})`}
+        d="M0 700C110 690 180 630 270 612s98 2 123 8V852H0Z"
+      />
+      <rect width="393" height="852" fill={`url(#${g("sheen")})`} />
+      {/* crest highlights: the thin light line along each band's top edge */}
+      <g fill="none" stroke="#fff" strokeWidth="1" strokeOpacity="0.22">
+        <path d="M0 330C96 318 170 250 250 214s110-40 143-44" />
+        <path d="M0 540C88 520 150 452 236 420s124-10 157-14" />
+        <path d="M0 700C110 690 180 630 270 612s98 2 123 8" />
+      </g>
+    </svg>
+  );
+}
+
+function FlashlightGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" aria-hidden="true">
+      <path d="M8 2.8h8v3.6l-1.8 3v11a1.4 1.4 0 0 1-1.4 1.4h-1.6a1.4 1.4 0 0 1-1.4-1.4v-11L8 6.4Z" />
+      <path d="M8 6.4h8" />
+      <circle cx="12" cy="13.2" r="1.1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function CameraGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3.2 8.4a2 2 0 0 1 2-2h2.6l1.5-2h5.4l1.5 2h2.6a2 2 0 0 1 2 2v9.4a2 2 0 0 1-2 2H5.2a2 2 0 0 1-2-2Z" />
+      <circle cx="12" cy="12.9" r="3.6" />
+    </svg>
+  );
+}
+
+/** Copy for the lock screen's idle Live Activity. */
+export type LockPrompt = { title: string; body: string };
+
+/**
+ * The locked iPhone.
  *
- * `card` is FALSE at rest in the hero (2026-09-22): iOS does not show an App
- * Clip card until something is tapped, so neither do we — the card mounting is
- * the payoff for tapping the reader, and mounting it is also what plays the
- * kit's slide-up-from-the-bottom animation.
- *
- * `onView` makes the blue View pill a real button; `pulse` gives it the
- * looping glow ring that tells the visitor where to click next.
+ *   - status bar (right cluster only: an iOS lock screen has no small clock),
+ *     date over a very large thin SF clock, flashlight + camera buttons, and
+ *     the layered wallpaper — 2.1, 2026-09-23.
+ *   - `prompt`: an iOS Live Activity near the bottom ("Tap to get your
+ *     receipt / Hold your iPhone near the PapeX device"), with NFC waves that
+ *     light toward the phone's bottom edge. It is what keeps the idle hero
+ *     from reading as a blank phone.
+ *   - `card`: the App Clip card. FALSE at rest in the hero: iOS shows it only
+ *     after an NFC tap, so it is the payoff for tapping. Mounting it plays the
+ *     kit's slide-up; the prompt and the quick buttons step aside for it.
+ *   - `onView` makes the blue View pill a real button; `pulse` gives it the
+ *     looping glow ring that says where to click next.
  */
 export function ClipLockScreen({
   card = true,
   pulse = false,
   onView,
+  prompt,
 }: {
   card?: boolean;
   pulse?: boolean;
   onView?: () => void;
+  prompt?: LockPrompt;
 }) {
   const view = onView ? (
     <button
@@ -84,59 +191,89 @@ export function ClipLockScreen({
   );
 
   return (
-    <div className={s.lock}>
-      <div className={s.lockWall} aria-hidden="true" />
-      {/* An iOS lock screen's status bar carries NO clock on the left — the
-          big clock below is the clock. Only the right cluster shows. */}
+    <div className={ip.lock}>
+      <Wallpaper />
       <StatusBar time="" />
-      <div className={s.lockClock} aria-hidden="true">
-        <div className={s.lockDate}>Tue Sep 22</div>
-        <div className={s.lockTime}>7:12</div>
+      <div className={ip.clock} aria-hidden="true">
+        <div className={ip.date}>Tue Sep 22</div>
+        <div className={ip.time}>7:12</div>
       </div>
 
-      {card ? (
-      <div className={s.clipCard}>
-        <div className={s.clipHero}>
-          <span className={s.clipClose} aria-hidden="true">
-            ×
+      {prompt ? (
+        <div className={cn(ip.activity, ip.leaves, card && ip.gone)} aria-hidden={card}>
+          <span className={ip.activityIcon} aria-hidden="true">
+            <PapeXMark className="h-full w-full" />
           </span>
-          <div className={s.clipArt} aria-hidden="true">
-            <NfcWaves />
-            <div className={s.clipPaper}>
-              <div className={s.clipPaperMark}>PapeX</div>
-              <div className={s.clipPaperLines}>
-                <i /><i /><i /><i /><i />
-                <i className={cn(s.clipPaperAcc, c.clipPaperAccBrand)} />
+          <span className={ip.activityText}>
+            <span className={ip.activityTitle}>{prompt.title}</span>
+            <span className={ip.activityBody}>{prompt.body}</span>
+          </span>
+          <svg
+            viewBox="0 0 30 46"
+            className={ip.activityWaves}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3.4"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
+            <path d="M11 22a3 3 0 0 1 0 2" />
+            <path d="M18 18a9 9 0 0 1 0 10" />
+            <path d="M25 13a16 16 0 0 1 0 20" />
+          </svg>
+        </div>
+      ) : null}
+
+      <span className={cn(ip.quick, ip.quickL, ip.leaves, card && ip.gone)} aria-hidden="true">
+        <FlashlightGlyph />
+      </span>
+      <span className={cn(ip.quick, ip.quickR, ip.leaves, card && ip.gone)} aria-hidden="true">
+        <CameraGlyph />
+      </span>
+
+      {card ? (
+        <div className={s.clipCard}>
+          <div className={s.clipHero}>
+            <span className={s.clipClose} aria-hidden="true">
+              ×
+            </span>
+            <div className={s.clipArt} aria-hidden="true">
+              <NfcWaves />
+              <div className={s.clipPaper}>
+                <div className={s.clipPaperMark}>PapeX</div>
+                <div className={s.clipPaperLines}>
+                  <i /><i /><i /><i /><i />
+                  <i className={cn(s.clipPaperAcc, c.clipPaperAccBrand)} />
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className={s.clipFoot}>
-          <span>
-            <span className={s.clipName} style={{ display: "block" }}>
-              PapeX
+          <div className={s.clipFoot}>
+            <span>
+              <span className={s.clipName} style={{ display: "block" }}>
+                PapeX
+              </span>
+              <span className={s.clipTagline} style={{ display: "block" }}>
+                Tap to View Your Receipt
+              </span>
             </span>
-            <span className={s.clipTagline} style={{ display: "block" }}>
-              Tap to View Your Receipt
-            </span>
-          </span>
-          {view}
-        </div>
+            {view}
+          </div>
 
-        <div className={s.clipCredit} aria-hidden="true">
-          <span className={s.clipCreditMark}>
-            <PapeXMark className="h-full w-full" />
-          </span>
-          <span>
-            Powered by
-            <span className={s.clipCreditName} style={{ display: "block" }}>
-              PapeX
+          <div className={s.clipCredit} aria-hidden="true">
+            <span className={s.clipCreditMark}>
+              <PapeXMark className="h-full w-full" />
             </span>
-          </span>
-          <span className={s.clipStore}>App Store ›</span>
+            <span>
+              Powered by
+              <span className={s.clipCreditName} style={{ display: "block" }}>
+                PapeX
+              </span>
+            </span>
+            <span className={s.clipStore}>App Store ›</span>
+          </div>
         </div>
-      </div>
       ) : null}
     </div>
   );
@@ -149,7 +286,7 @@ export function IslandLockGlyph() {
   return (
     <svg
       viewBox="0 0 24 24"
-      className={c.wpIslandLock}
+      className={ip.islandLock}
       fill="none"
       stroke="currentColor"
       strokeWidth="2.2"

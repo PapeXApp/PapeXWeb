@@ -9,31 +9,29 @@ import { demoReceiptBytes } from "./demoReceipt";
 import { ClipReceiptScreen } from "./ReceiptCard";
 import { AppMedia } from "../shared/AppMedia";
 import { hasAppMedia } from "../shared/appMediaIndex";
-import styles from "./customer.module.css";
+import ip from "./iphone.module.css";
 
 /**
- * The "How it works" device: a real iPhone running the real PapeX flow.
+ * The iPhone every phone on /customers is drawn in, and the "How it works"
+ * walkthrough that runs inside it.
  *
- * Rebuilt 2026-09-22 against app-media/reference/. All the screen furniture
- * (status bar, tab bar, rows, glass) now comes from `./appui`, which the hero
- * phone and the two Features shots share — before this each phone drew its
- * own version and they had already drifted apart.
+ * 2.1 (2026-09-23): the device moved to iphone.module.css and was rebuilt as
+ * an iPhone 16/17 Pro after Nico said the 2.0 phone read as Android — body
+ * proportions, a thin graphite titanium band, the black bezel, Apple's side
+ * buttons, the Dynamic Island at its real size and the home indicator. See
+ * the header of iphone.module.css for the numbers.
  *
- * The device itself is still measured against the real thing: iPhone 15/16
- * proportions and concentric radii, a Dynamic Island, a real iOS status bar,
- * and the home indicator. See .wpFrame in customer.module.css.
- *
- * Presentational only: the parent owns `step` and the gestures.
+ * Screens come from `./appui` (the app kit, owned separately) and the lock
+ * screen / App Clip beats from `./appui/Clip.tsx`.
  */
 
 /**
- * The device — frame, screen, Dynamic Island, status bar, home indicator —
- * with the screen left for a caller to fill. Extracted so the "Once it's
- * yours" shots (FeatureScreens.tsx) render the SAME phone as the walkthrough
- * instead of a second, slightly-different one.
+ * The device — frame, side buttons, bezel, screen, Dynamic Island, optional
+ * status bar, home indicator, glass — with the screen left for a caller to
+ * fill. The hero, the Features shots and the walkthrough all render THIS, so
+ * there is exactly one iPhone on the page.
  *
- * `statusBar` is opt-out: screens from ./appui draw their own (they have to,
- * because the hero phone has no .wpFrame around it).
+ * `statusBar` is opt-in: screens from ./appui draw their own.
  */
 export function PhoneChrome({
   children,
@@ -55,19 +53,25 @@ export function PhoneChrome({
       {/* The glyph is a CHILD of the island: every screen layer below makes its
           own stacking context, so a glyph drawn from the lock screen would be
           painted under the island no matter how high its z-index. */}
-      <div className={styles.wpIsland}>{islandLock ? <IslandLockGlyph /> : null}</div>
+      <div className={ip.island}>{islandLock ? <IslandLockGlyph /> : null}</div>
       {statusBar ? <StatusBar /> : null}
       {children}
-      <div className={styles.wpHomeBar} aria-hidden="true" />
-      <div className={styles.wpGlare} aria-hidden="true" />
+      <div className={ip.homeBar} aria-hidden="true" />
+      <div className={ip.glare} aria-hidden="true" />
     </>
   );
   return (
-    <div className={styles.wpFrame}>
-      {/* titanium band > BLACK bezel ring > screen. The black ring is what
-          makes this read as an iPhone rather than a grey slab. */}
-      <div className={styles.wpBezel}>
-        <div className={cn(styles.wpScreen, screenClassName)}>
+    <div className={ip.frame}>
+      {/* Left: Action button, volume up, volume down. Right: side button and
+          the flush Camera Control. Outside the silhouette, like the metal. */}
+      <span className={cn(ip.btn, ip.btnL, ip.btnAction)} aria-hidden="true" />
+      <span className={cn(ip.btn, ip.btnL, ip.btnVolUp)} aria-hidden="true" />
+      <span className={cn(ip.btn, ip.btnL, ip.btnVolDown)} aria-hidden="true" />
+      <span className={cn(ip.btn, ip.btnR, ip.btnSide)} aria-hidden="true" />
+      <span className={cn(ip.btn, ip.btnR, ip.btnCamera)} aria-hidden="true" />
+      {/* titanium band > black bezel ring > screen */}
+      <div className={ip.bezel}>
+        <div className={cn(ip.screen, screenClassName)}>
           {mediaSlot ? <AppMedia slot={mediaSlot} fallback={drawn} /> : drawn}
         </div>
       </div>
@@ -96,40 +100,24 @@ export function WalkPhone({
       : step === 1
         ? "walk-receipt"
         : "walk-list";
-  const drawn = (
-    <>
-      <div className={styles.wpIsland}>{step === 0 ? <IslandLockGlyph /> : null}</div>
 
+  return (
+    <PhoneChrome mediaSlot={slot} islandLock={step === 0}>
       {/* --- 0: ready to tap — the locked phone with the App Clip card ---- */}
-      <div className={cn(styles.wpScene, step === 0 && styles.wpSceneOn)} aria-label={tapCopy.headline}>
+      <div className={cn(ip.scene, step === 0 && ip.sceneOn)} aria-label={tapCopy.headline}>
         <ClipLockScreen />
       </div>
 
       {/* --- 1: the receipt lands, rendered by the App Clip --------------- *
-       * No tab bar: the clip is not the app, it has no tabs. An earlier
-       * version drew one anyway and its translucent capsule glowed as a
-       * faded oval through the empty space below the card. */}
-      <div className={cn(styles.wpScene, styles.wpSceneClip, step === 1 && styles.wpSceneOn)}>
+       * No tab bar: the clip is not the app, it has no tabs. */}
+      <div className={cn(ip.scene, ip.sceneClip, step === 1 && ip.sceneOn)}>
         <ClipReceiptScreen summary={summary} />
       </div>
 
       {/* --- 2: filed into the app's own Receipts list -------------------- */}
-      <div className={cn(styles.wpScene, step === 2 && styles.wpSceneOn)}>
+      <div className={cn(ip.scene, step === 2 && ip.sceneOn)}>
         <ReceiptsScreen />
       </div>
-
-      <div className={styles.wpHomeBar} aria-hidden="true" />
-      <div className={styles.wpGlare} aria-hidden="true" />
-    </>
-  );
-
-  return (
-    <div className={styles.wpFrame}>
-      <div className={styles.wpBezel}>
-        <div className={styles.wpScreen}>
-          <AppMedia slot={slot} fallback={drawn} />
-        </div>
-      </div>
-    </div>
+    </PhoneChrome>
   );
 }

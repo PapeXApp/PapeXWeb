@@ -41,13 +41,23 @@ export const heroContent = {
 /** The hero's live receipt demo — hint copy per state, and the tappable phone's a11y label. */
 export const demoContent = {
   phoneLabel: "Replay the tap",
+  /* The phone is a second way in (2.1): clicking it at rest starts the tap. */
+  phoneStartLabel: "Tap your phone on the PapeX device to receive a receipt",
   /* The reader is the primary tap target now (2026-09-22): the hero's story is
      "tap the PapeX device", and nothing happens until the visitor taps IT. */
   deviceLabel: "Tap the PapeX reader to receive a receipt",
   idleTitle: "Tap to receive",
   idleSubtitle: "Tap the reader below. No app needed to get the receipt.",
+  /* The idle prompt ON the phone (2.1, 2026-09-23): an iOS Live Activity on
+     the lock screen, so the locked phone never reads as blank and points at
+     the device. The device's own chip says the same thing from below. */
+  lockPrompt: {
+    title: "Tap to get your receipt",
+    body: "Hold your iPhone near the PapeX device.",
+  },
   hint: {
-    idle: "Tap the PapeX device below",
+    // Rendered as a chip attached to the device, caret pointing up at it.
+    idle: "Tap the PapeX device",
     bowing: "Tapping…",
     card: "Now tap View to open your receipt",
     done: "Scroll it, open the original receipt, or tap the frame to replay.",

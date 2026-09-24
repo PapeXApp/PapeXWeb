@@ -1,0 +1,566 @@
+/* ==========================================================================
+ * iPHONE — the one device every phone on /customers is drawn in (hero,
+ * the "Once it's yours" shots, the How-it-works walk). Web redesign 2.1,
+ * 2026-09-23. Replaces the .wp* chrome in customer.module.css, which is left
+ * in place (another task owns that sheet) but is no longer referenced.
+ *
+ * Nico, looking at the 2.0 hero: "It looks like an Android phone and an
+ * Android operating system. This should be an iPhone." Then: the grey
+ * titanium outline has to be more subtle, a refined metal edge, not a thick
+ * grey border. What makes it read as an iPhone 16/17 Pro now:
+ *
+ *   1. Body proportions. 71.5 x 146.6 mm = 0.488. The SCREEN is 393 x 852pt
+ *      (19.5:9) and --wp-size is still its height, so the frame's total edge
+ *      per side (band + bezel) is 5% of the screen width: 1.1W / (H + 0.1W)
+ *      = 0.485. Change the two thicknesses together or the body ratio drifts.
+ *   2. A THIN graphite titanium band (1.2% of W, low contrast against the
+ *      black bezel) with a hairline specular, instead of a bright grey slab.
+ *   3. A black bezel ring (3.8% of W) between metal and pixels.
+ *   4. Apple's button layout: Action button + volume up + volume down on the
+ *      left, the side button and the flush Camera Control on the right.
+ *   5. The Dynamic Island at Apple's real size (126 x 37pt, 11pt down).
+ *   6. The home indicator (134 x 5pt, 8pt up).
+ *   7. An iOS lock screen (appui/Clip.tsx): SF clock, date, flashlight and
+ *      camera buttons, a layered-wave wallpaper in brand navy/blue/orange.
+ *
+ * CSS has circular corners only, so the radii approximate Apple's continuous
+ * curve: the three rings are concentric, and the screen radius is 55pt on a
+ * 393pt screen (0.14W), which is the real display corner.
+ *
+ * UNITS. --wp-w / --wp-h are the SCREEN box. --u is one iPhone point (the
+ * appui kit's unit). --wp-u is kept because the share sheet in
+ * customer.module.css (.wpSheet) still reads it.
+ * ========================================================================== */
+
+.frame {
+  /* A parent overrides --wp-size (screen height) to reuse the device at a
+     different scale: .demoStage (hero), .featShotPhone, .walkStage. */
+  --wp-h: var(--wp-size, min(560px, 62vh));
+  --wp-w: calc(var(--wp-h) * 393 / 852);
+  --wp-u: calc(var(--wp-w) / 355);
+  --u: max(0.55px, calc(var(--wp-w) / 393));
+
+  --band: calc(var(--wp-w) * 0.012);
+  --bezel: calc(var(--wp-w) * 0.038);
+  --screen-r: calc(var(--wp-w) * 0.14);
+  --bezel-r: calc(var(--screen-r) + var(--bezel));
+  --frame-r: calc(var(--bezel-r) + var(--band));
+
+  position: relative;
+  width: max-content;
+  padding: var(--band);
+  border-radius: var(--frame-r);
+  /* Graphite titanium. The old band ran #c4c9d0 -> #4a4f58, a 3:1 swing that
+     read as a grey border; this one stays within a narrow dark range so it
+     reads as metal catching light, not as an outline. */
+  background: linear-gradient(
+    150deg,
+    #7b8088 0%,
+    #43474d 18%,
+    #2b2e33 50%,
+    #43474d 82%,
+    #767b83 100%
+  );
+  box-shadow:
+    /* the machined chamfer: one hairline of light, one of shade */
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    /* contact + ambient shadow, navy-tinted for the light hero */
+    0 1px 2px rgba(0, 18, 29, 0.35),
+    0 28px 60px -14px rgba(0, 18, 29, 0.42);
+  font-family: -apple-system, "SF Pro Display", "SF Pro Text", system-ui, "Helvetica Neue", sans-serif;
+}
+
+.bezel {
+  position: relative;
+  padding: var(--bezel);
+  border-radius: var(--bezel-r);
+  background: #030405;
+  box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.05);
+}
+
+.screen {
+  position: relative;
+  width: var(--wp-w);
+  height: var(--wp-h);
+  border-radius: var(--screen-r);
+  overflow: hidden;
+  /* Stops the scaled screen from inheriting the page's font, and makes every
+     piece of iOS system UI on it (status bar, lock screen, card) SF. The app
+     screens set their own font on appui's .screen. */
+  font-family: -apple-system, "SF Pro Display", "SF Pro Text", system-ui, "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  isolation: isolate;
+  background: #00121d;
+  background-image: radial-gradient(120% 62% at 78% -8%, rgba(235, 113, 0, 0.14), transparent 62%),
+    radial-gradient(90% 50% at 8% 4%, rgba(96, 166, 214, 0.08), transparent 60%);
+}
+
+/* --- side buttons ---------------------------------------------------------
+   Outside the silhouette, the same graphite as the band, and thin: they are
+   the silhouette's giveaway, not a feature. Positions are fractions of the
+   frame's height, read off the iPhone 16 Pro side elevation. */
+.btn {
+  position: absolute;
+  width: calc(var(--wp-w) * 0.009);
+  background: linear-gradient(90deg, #5f646b, #33363b 60%, #4b4f55);
+  pointer-events: none;
+}
+.btnL {
+  left: calc(var(--wp-w) * -0.0075);
+  border-radius: calc(var(--wp-w) * 0.006) 0 0 calc(var(--wp-w) * 0.006);
+}
+.btnR {
+  right: calc(var(--wp-w) * -0.0075);
+  border-radius: 0 calc(var(--wp-w) * 0.006) calc(var(--wp-w) * 0.006) 0;
+}
+.btnAction { top: 16.5%; height: 4.4%; }
+.btnVolUp { top: 23.5%; height: 7%; }
+.btnVolDown { top: 32%; height: 7%; }
+.btnSide { top: 25%; height: 11%; }
+/* Camera Control sits nearly flush: a sapphire pad, darker and barely
+   proud of the band. */
+.btnCamera {
+  top: 58%;
+  height: 7%;
+  right: calc(var(--wp-w) * -0.003);
+  background: linear-gradient(90deg, #26292d, #121315);
+}
+
+/* --- Dynamic Island -------------------------------------------------------- */
+.island {
+  position: absolute;
+  top: calc(11 * var(--u));
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(126 * var(--u));
+  height: calc(37 * var(--u));
+  border-radius: 999px;
+  background: #000;
+  z-index: 20;
+}
+/* The front camera: a lens dot inside the right end of the pill. */
+.island::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: calc(12 * var(--u));
+  width: calc(11 * var(--u));
+  height: calc(11 * var(--u));
+  border-radius: 999px;
+  transform: translateY(-50%);
+  background: radial-gradient(circle at 34% 30%, #2f3945 0%, #141a21 55%, #07090c 100%);
+}
+/* iOS's lock glyph in the LEFT end of the island while the phone is locked.
+   A child of the island so it paints above every screen layer. */
+.islandLock {
+  position: absolute;
+  top: 50%;
+  left: calc(15 * var(--u));
+  width: calc(13 * var(--u));
+  height: calc(13 * var(--u));
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+/* --- home indicator ------------------------------------------------------- */
+.homeBar {
+  position: absolute;
+  bottom: calc(8 * var(--u));
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(134 * var(--u));
+  height: calc(5 * var(--u));
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  z-index: 19;
+  pointer-events: none;
+}
+
+/* --- the pane of glass ---------------------------------------------------- */
+.glare {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(118deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0) 38%);
+  z-index: 21;
+}
+
+/* --- iOS status bar glyphs (appui/Chrome.tsx StatusBar) -------------------- */
+.sfTime {
+  font-family: -apple-system, "SF Pro Text", system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  min-width: calc(54 * var(--u));
+  text-align: center;
+}
+.sbSignal {
+  width: calc(18 * var(--u));
+  height: calc(12 * var(--u));
+  display: block;
+}
+.sbWifi {
+  width: calc(16 * var(--u));
+  height: calc(12 * var(--u));
+  display: block;
+}
+.sbBattery {
+  width: calc(27 * var(--u));
+  height: calc(13 * var(--u));
+  display: block;
+}
+
+/* ==========================================================================
+ * iOS LOCK SCREEN (appui/Clip.tsx ClipLockScreen)
+ * ========================================================================== */
+.lock {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  color: #fff;
+}
+.wall {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.clock {
+  position: absolute;
+  top: calc(66 * var(--u));
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.96);
+  pointer-events: none;
+}
+.date {
+  font-family: -apple-system, "SF Pro Text", system-ui, sans-serif;
+  font-size: calc(19 * var(--u));
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  opacity: 0.92;
+}
+.time {
+  font-family: -apple-system, "SF Pro Display", system-ui, sans-serif;
+  font-size: calc(112 * var(--u));
+  font-weight: 200;
+  line-height: 1;
+  margin-top: calc(-2 * var(--u));
+  letter-spacing: calc(-3 * var(--u));
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 calc(2 * var(--u)) calc(18 * var(--u)) rgba(0, 18, 29, 0.35);
+}
+
+/* Things that leave when the App Clip card arrives: the card rises into the
+   same bottom band, so iOS hides the prompt and the quick-action buttons. */
+.leaves {
+  transition: opacity 0.32s ease, transform 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.gone {
+  opacity: 0;
+  transform: translateY(calc(18 * var(--u)));
+  pointer-events: none;
+}
+
+/* The idle prompt: an iOS Live Activity on the lock screen. It is what stops
+   the locked phone reading as blank (Nico: "it doesn't really prompt me to do
+   anything"), and it points at the device the visitor has to tap. */
+.activity {
+  position: absolute;
+  left: calc(10 * var(--u));
+  right: calc(10 * var(--u));
+  bottom: calc(112 * var(--u));
+  display: flex;
+  align-items: center;
+  gap: calc(12 * var(--u));
+  padding: calc(14 * var(--u)) calc(16 * var(--u)) calc(14 * var(--u)) calc(14 * var(--u));
+  border-radius: calc(24 * var(--u));
+  background: rgba(8, 14, 22, 0.52);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.16), 0 calc(10 * var(--u)) calc(30 * var(--u)) rgba(0, 0, 0, 0.28);
+}
+.activityIcon {
+  flex: 0 0 auto;
+  width: calc(42 * var(--u));
+  height: calc(42 * var(--u));
+  border-radius: calc(10 * var(--u));
+  background: linear-gradient(160deg, #0d2a42, #00121d);
+  box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(5 * var(--u));
+}
+.activityText {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.activityTitle {
+  display: block;
+  font-size: calc(15.5 * var(--u));
+  font-weight: 600;
+  line-height: 1.2;
+  color: #fff;
+}
+.activityBody {
+  display: block;
+  margin-top: calc(2 * var(--u));
+  font-size: calc(13.5 * var(--u));
+  line-height: 1.3;
+  color: rgba(255, 255, 255, 0.72);
+}
+/* NFC waves, lit one after another, travelling toward the bottom of the
+   phone — the edge that meets the device. */
+.activityWaves {
+  flex: 0 0 auto;
+  width: calc(26 * var(--u));
+  height: calc(34 * var(--u));
+  color: #eb7100;
+  transform: rotate(90deg);
+}
+.activityWaves path {
+  opacity: 0.35;
+  animation: nfcWave 1.5s ease-in-out infinite;
+}
+.activityWaves path:nth-child(1) { animation-delay: 0s; }
+.activityWaves path:nth-child(2) { animation-delay: 0.18s; }
+.activityWaves path:nth-child(3) { animation-delay: 0.36s; }
+@keyframes nfcWave {
+  0%, 100% { opacity: 0.3; }
+  40% { opacity: 1; }
+}
+
+/* Flashlight + camera — the two round buttons every iPhone lock screen has. */
+.quick {
+  position: absolute;
+  bottom: calc(40 * var(--u));
+  width: calc(50 * var(--u));
+  height: calc(50 * var(--u));
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 14, 22, 0.42);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+.quickL { left: calc(46 * var(--u)); }
+.quickR { right: calc(46 * var(--u)); }
+.quick svg {
+  width: calc(22 * var(--u));
+  height: calc(22 * var(--u));
+}
+
+/* ==========================================================================
+ * HERO INTERACTION (NfcPhone.tsx)
+ * ========================================================================== */
+
+/* The idle phone leans toward the device every few seconds — a small version
+   of the real tap, so the motion itself says "this goes on that". It lives on
+   its own wrapper so it never fights .demoTilt's bow transition. */
+.nudge {
+  transform-origin: 50% 100%;
+}
+.nudgeOn {
+  animation: phoneNudge 3.6s cubic-bezier(0.45, 0, 0.2, 1) 1.2s infinite;
+}
+@keyframes phoneNudge {
+  0%, 62%, 100% { transform: none; }
+  74% { transform: translateY(8px) rotate(2.2deg); }
+  84% { transform: none; }
+}
+
+.phoneHit {
+  transition: filter 0.3s ease;
+}
+.phoneHit:hover {
+  filter: brightness(1.04);
+}
+
+/* The device's affordance: an orange glow on its top face and NFC rings
+   spreading from where the phone lands. Both sit INSIDE the button (which
+   already makes a stacking context via its drop-shadow filter), behind the
+   artwork. */
+.rdh {
+  isolation: isolate;
+}
+.rdhGlow,
+.rdhRing {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+/* A halo BEHIND the box, big enough to spill past its silhouette — inside
+   the box's outline it would be painted over by the black art. */
+.rdhGlow {
+  left: 54%;
+  top: 46%;
+  width: 128%;
+  height: 112%;
+  z-index: -1;
+  background: radial-gradient(closest-side, rgba(235, 113, 0, 0.5), rgba(235, 113, 0, 0.18) 55%, transparent);
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+}
+.rdhGlowPulse {
+  animation: rdhGlow 2.4s ease-in-out infinite;
+}
+@keyframes rdhGlow {
+  0%, 100% { opacity: 0.55; transform: translate(-50%, -50%) scale(0.94); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
+}
+/* An isometric ellipse (the top face is a diamond, ~1.7:1), drawn ABOVE the
+   art so it reads on the black box, then faded as it grows. */
+.rdhRing {
+  /* centred on the visible part of the top face (the phone covers the rest) */
+  left: 66%;
+  top: 30%;
+  z-index: 1;
+  width: 48%;
+  height: 28%;
+  border: 2.5px solid rgba(255, 140, 40, 0.95);
+  box-shadow: 0 0 12px rgba(235, 113, 0, 0.6), inset 0 0 10px rgba(235, 113, 0, 0.35);
+  opacity: 0;
+}
+.rdhRingPulse {
+  animation: rdhRing 2.4s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+}
+.rdhRingPulse.rdhRing2 {
+  animation-delay: 1.2s;
+}
+@keyframes rdhRing {
+  0% { opacity: 0.95; transform: translate(-50%, -50%) scale(0.45); }
+  80%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.25); }
+}
+.rdh:hover:not(:disabled) .rdhGlow {
+  opacity: 1;
+  animation-play-state: paused;
+}
+.rdhIdleOff .rdhGlow {
+  opacity: 0;
+}
+
+/* The caption, attached to the device: a chip right under it, with a caret
+   pointing up at it. Offset like .demoRdh (--rdh-x there) so it centres on
+   the box, not on the stage. */
+.hintRow {
+  position: relative;
+  z-index: 3;
+  justify-content: center;
+  text-align: center;
+}
+/* Only the idle chip is seated on the device; the later beats' one-line
+   hints are longer and stay centred on the stage so they never clip. */
+.hintRowIdle {
+  transform: translateX(clamp(26px, 8.4vw, 108px));
+  margin-top: clamp(-34px, -2.2vw, -14px);
+}
+.chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px 8px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: #00121d;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  cursor: pointer;
+  box-shadow: 0 8px 22px -6px rgba(0, 18, 29, 0.45);
+}
+.chip::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -5px;
+  width: 11px;
+  height: 11px;
+  background: #00121d;
+  border-radius: 2px;
+  transform: translateX(-50%) rotate(45deg);
+}
+.chip:focus-visible {
+  outline: 3px solid rgba(235, 113, 0, 0.65);
+  outline-offset: 2px;
+}
+.chipDot {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #eb7100;
+  flex: 0 0 auto;
+}
+.chipDot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: #eb7100;
+  animation: chipDot 1.6s ease-out infinite;
+}
+@keyframes chipDot {
+  0% { opacity: 0.7; transform: scale(1); }
+  100% { opacity: 0; transform: scale(2.6); }
+}
+
+/* --- walkthrough scene switching (WalkPhone) ------------------------------ */
+.scene {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: translateX(14px);
+  transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+.sceneClip {
+  display: flex;
+  flex-direction: column;
+}
+.sceneOn {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+/* Reduced motion: every loop stops, every prompt stays. The glow holds at
+   full strength and one ring sits still, so the device still reads as the
+   thing to tap. */
+@media (prefers-reduced-motion: reduce) {
+  .nudgeOn,
+  .activityWaves path,
+  .rdhGlowPulse,
+  .chipDot::after {
+    animation: none;
+  }
+  .activityWaves path {
+    opacity: 1;
+  }
+  .rdhGlowPulse {
+    opacity: 1;
+  }
+  .rdhRingPulse {
+    animation: none;
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  .rdhRingPulse.rdhRing2 {
+    opacity: 0;
+  }
+  .leaves,
+  .scene,
+  .phoneHit {
+    transition: none;
+  }
+}

@@ -13,6 +13,7 @@ import { ClipReceiptScreen } from "./ReceiptCard";
 import { RdhDevice } from "./RdhDevice";
 import { PhoneChrome } from "./WalkPhone";
 import styles from "./customer.module.css";
+import ip from "./iphone.module.css";
 
 /**
  * The five beats of the tap. The card beat is new on 2026-09-22: before it,
@@ -32,8 +33,13 @@ const SAVED_MS = 1800;
  * The hero's live receipt demo — the biggest build in the customer path, and
  * the App Clip's real story beat for beat:
  *
- *   idle    the phone is LOCKED and empty. No App Clip card: iOS shows one
- *           only after an NFC tap, so the card is the reward, not the set.
+ *   idle    the phone is LOCKED. No App Clip card yet (iOS shows one only
+ *           after an NFC tap), but never blank either (2.1, 2026-09-23): an
+ *           iOS Live Activity on the lock screen says "Tap to get your
+ *           receipt", the phone leans toward the reader every few seconds,
+ *           the reader glows and sends NFC rings off its top face, and a chip
+ *           attached under the reader says "Tap the PapeX device". Clicking
+ *           the reader, the chip OR the phone starts the tap.
  *   bowing  the visitor tapped the READER (the device is the button); the
  *           phone bows onto it and the reader's LED pulses.
  *   card    the phone is back up and iOS has slid the App Clip card in from
@@ -120,7 +126,8 @@ export function NfcPhone() {
     savedTimer.current = window.setTimeout(() => setSaved(false), SAVED_MS);
   }
 
-  const locked = demo === "idle" || demo === "bowing" || demo === "card";
+  const idle = demo === "idle";
+  const locked = idle || demo === "bowing" || demo === "card";
   // The hint copy has one line per visible beat; "reading" borrows the tap's.
   const hint = demoContent.hint[demo === "reading" ? "bowing" : demo];
 
@@ -129,7 +136,7 @@ export function NfcPhone() {
       <div
         role="button"
         tabIndex={0}
-        aria-label={demoContent.phoneLabel}
+        aria-label={demo === "idle" ? demoContent.phoneStartLabel : demoContent.phoneLabel}
         aria-pressed={demo !== "idle"}
         onClick={tapPhone}
         onKeyDown={(event) => {
@@ -137,9 +144,14 @@ export function NfcPhone() {
           event.preventDefault();
           tapPhone();
         }}
-        className={cn(styles.demoPhone, demo === "bowing" && styles.demoPhoneBowing)}
+        className={cn(styles.demoPhone, ip.phoneHit, demo === "bowing" && styles.demoPhoneBowing)}
       >
         <div className={styles.demoTilt}>
+          {/* The idle lean toward the device: its own wrapper, so it never
+              fights .demoTilt's bow transition. Reduced motion is handled by
+              the CSS media query only — gating the class on useReducedMotion()
+              (null on the server) caused a hydration class mismatch. */}
+          <div className={cn(ip.nudge, idle && ip.nudgeOn)}>
           <PhoneChrome islandLock={locked}>
             {/* 1. the locked phone. The App Clip card only exists from the
                    "card" beat on — mounting it is what plays iOS's
@@ -149,6 +161,7 @@ export function NfcPhone() {
                 card={demo === "card"}
                 pulse={!prefersReduced}
                 onView={openClip}
+                prompt={demoContent.lockPrompt}
               />
             </div>
 
@@ -170,24 +183,46 @@ export function NfcPhone() {
               <ClipReceiptScreen summary={summary} saved={saved} onSave={save} />
             </div>
           </PhoneChrome>
+          </div>
         </div>
       </div>
 
       {/* THE tap target. The reader is what the hero asks you to tap, so it is
           a real <button>: pointer, Enter and Space all start the sequence, and
-          it drops out of the tab order once it has been used. */}
+          it drops out of the tab order once it has been used. At rest it glows
+          and sends NFC rings off its top face (2.1): the box has to look like
+          something you can press, not a product shot. */}
       <button
         type="button"
-        className={styles.demoRdh}
+        className={cn(styles.demoRdh, ip.rdh, !idle && ip.rdhIdleOff)}
         onClick={tapDevice}
         disabled={demo !== "idle"}
         aria-label={demoContent.deviceLabel}
       >
+        <span className={cn(ip.rdhGlow, idle && ip.rdhGlowPulse)} aria-hidden="true" />
         <RdhDevice pulsing={demo === "bowing"} />
+        {idle ? (
+          <>
+            <span className={cn(ip.rdhRing, ip.rdhRingPulse)} aria-hidden="true" />
+            <span className={cn(ip.rdhRing, ip.rdhRingPulse, ip.rdhRing2)} aria-hidden="true" />
+          </>
+        ) : null}
       </button>
 
-      <div className={styles.demoHintRow}>
-        <span aria-live="polite">{hint}</span>
+      {/* The caption is attached to the device: at rest it is a chip right
+          under the box with a caret pointing up at it (clicking it also
+          taps). Later beats reuse the same spot for their one-line hint. */}
+      <div className={cn(styles.demoHintRow, ip.hintRow, idle && ip.hintRowIdle)}>
+        <span aria-live="polite">
+          {idle ? (
+            <span className={ip.chip} onClick={tapDevice}>
+              <span className={ip.chipDot} aria-hidden="true" />
+              {hint}
+            </span>
+          ) : (
+            hint
+          )}
+        </span>
         <button
           type="button"
           onClick={reset}
