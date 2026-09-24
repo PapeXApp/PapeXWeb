@@ -36,12 +36,20 @@
 // different one — an `acceptLinkShare`-style endpoint that doesn't exist
 // yet — so this renders no claim affordance at all rather than wiring one up
 // to the wrong backend.
+//
+// SAVE-LINK (issue #23 S4, behind RID_SAVE_LINK — lib/ridSaveLink.ts). Below
+// AppCta, an iOS-only "Save in the PapeX app" link to
+// `links.papex.app/r?rid=...&save=1`. Only in the REAL branch below: a rid
+// that's malformed or 404s never reaches here, so "no save is ever attempted
+// without a valid rid" (issue23-contract.md) holds for free — NotAvailable
+// and ErrorState, above/below, never render it.
 
 import { resolveSharedReceiptPageState } from "@/lib/sharedReceipt";
 import { parsedToSummary } from "@/lib/rdhParsed";
 import { hasStructure as computeHasStructure } from "@/lib/receiptSummary";
+import { ridSaveLinkEnabled, ridSaveLinkHref } from "@/lib/ridSaveLink";
 import type { Platform } from "@/lib/storeLinks";
-import { Shell, StateCard, ReceiptNotAvailable, ReceiptView, AppCta } from "./ui";
+import { Shell, StateCard, ReceiptNotAvailable, ReceiptView, AppCta, SaveInAppLink } from "./ui";
 import RetryButton from "./RetryButton";
 
 function NotAvailable({ platform }: { platform: Platform }) {
@@ -85,10 +93,15 @@ export async function renderSharedReceipt(rid: string, platform: Platform) {
 
   const summary = parsedToSummary(state.receipt);
 
+  // iOS only — Android/desktop server-save is 1.7.1 (issue23-rid-scope.md
+  // §3). Flag off by default; see lib/ridSaveLink.ts.
+  const showSaveLink = ridSaveLinkEnabled() && platform === "ios";
+
   return (
     <Shell>
       <ReceiptView summary={summary} hasStructure={computeHasStructure(summary)} />
       <AppCta platform={platform} />
+      {showSaveLink ? <SaveInAppLink href={ridSaveLinkHref(rid)} /> : null}
     </Shell>
   );
 }
