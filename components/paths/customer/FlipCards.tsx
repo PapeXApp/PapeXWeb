@@ -3,31 +3,47 @@
 import {
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactElement,
   type Ref,
+  type RefObject,
 } from "react";
 import { useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { problemContent, type ProblemCardId } from "./content";
+import { PROBLEM_SOURCE_URLS } from "./problemSources";
 import styles from "./flipcards.module.css";
 
 /**
  * The Problem section's three tap-to-flip cards. Each back runs a short scripted
- * scene (SVG + CSS keyframes, timed by mount) before the stat counts up.
+ * scene (SVG + CSS keyframes, timed by mount), then the scene DOCKS: it shrinks
+ * into a short, wide strip that settles in the gap under the caption, while the
+ * stat, rule and caption rise in at the top. The revealed card is filled top to
+ * bottom: label row → stat → caption → docked scene → linked source.
  *
- * Sequence: tap → 360ms flip → scene → stage fades → stat reveals + counts.
- * Reduced motion branches in JS: instant flip, no scene, no count.
+ * Sequence: tap → 360ms flip → scene → dock (750ms clip + transform) with the
+ * text rising in → stat counts. Flip back keeps the docked layout while the card
+ * turns away, then resets. Reduced motion branches in JS: instant flip, the scene
+ * mounts already docked on its last frame, no count.
  *
- * Illustration system (front plates + back scenes share it): full-bleed painted
- * dioramas — backdrop, ground plane with perspective, objects with volume, soft
- * cast + contact shadows. Light comes from the top-left; farther things are
- * lighter and cooler. Brand orange is the ONE accent per card (printer LED /
- * axe head / till total). Everything is inline SVG with static gradients; motion
- * is CSS transform/opacity only. Gradient/clip ids are prefixed per card + useId.
+ * Structure: the card is a <div>, not a <button>, because the back face holds a
+ * real link (the source) and a link inside a button is invalid HTML. Each face
+ * has its own full-bleed flip <button> underneath its content; the hidden face
+ * is `inert`, and focus hops to the other face's button after a keyboard flip.
+ *
+ * Illustration system (front plates + back scenes share it): flat vector. One
+ * light direction (top-left), every volume is ONE lit tone + ONE shade tone with
+ * a hard edge (the `split` gradients in Defs), every silhouette carries the same
+ * 1px navy ink line (INK — strokes are non-scaling, so 1px on every card at every
+ * size), contact shadows are flat ellipses. No glows, blurs, halos or motion
+ * trails. Brand orange is the ONE accent per card (printer LED / axe head / till
+ * total). Motion is CSS transform/opacity only. Gradient/clip ids are prefixed
+ * per card + useId.
  */
 
 type Card = (typeof problemContent.cards)[number];
@@ -37,11 +53,24 @@ const LABEL: Record<ProblemCardId, string> = { print: "Paper", forest: "Forest",
 
 /** Wait for the flip to expose the back face before the scene mounts. */
 const FLIP_TO_SCENE_MS = 360;
-/** Stage cross-fade after the scene, before it unmounts. */
-const STAGE_OUT_MS = 420;
 /** Matches .inner's rotateY transition — the back stays intact until it has turned away. */
 const FLIP_BACK_MS = 800;
 const COUNT_MS = 1200;
+
+/** Every scene is drawn in this view box. */
+const VB_W = 280;
+const VB_H = 320;
+
+/**
+ * The part of each scene that is kept in the docked strip, in view-box units
+ * [x, y, w, h]. The strip is wide and short, so the region is scaled to the
+ * strip's HEIGHT and centred; the scenery bleeds out sideways to fill the width.
+ */
+const DOCK_FOCUS: Record<ProblemCardId, [number, number, number, number]> = {
+  print: [10, 84, 260, 214],
+  forest: [0, 176, 280, 118],
+  proof: [0, 84, 280, 200],
+};
 
 const r1 = (n: number) => Math.round(n * 10) / 10;
 const px = (n: number) => `${r1(n)}px`;
@@ -58,6 +87,13 @@ const rot = (x: number, y: number, deg: number): [number, number] => {
 // ---------------------------------------------------------------------------
 const NAVY = "#00121D";
 const ORANGE = "#EB7100";
+/** Flat contact shadow — one tone everywhere. */
+const SHADOW = "rgba(0,18,29,0.13)";
+const SHADOW_SOFT = "rgba(0,18,29,0.07)";
+/** The one outline every silhouette wears. */
+const INK = { stroke: NAVY, strokeOpacity: 0.34, strokeWidth: 1 } as const;
+/** Detail lines (grain, seams, print rows) — same weight, lighter. */
+const DETAIL = { strokeWidth: 1, fill: "none" } as const;
 
 type Ids = { id: (name: string) => string; url: (name: string) => string };
 type U = Ids["url"];
@@ -70,68 +106,46 @@ function useSvgIds(prefix: string): Ids {
 type Stop = [number, string, number?];
 type Vec = [number, number, number, number];
 
+/** Left→right lit/shade split (light from the left). */
+const H: Vec = [0, 0, 1, 0];
+/** Top→bottom lit/shade split (light from above). */
+const V: Vec = [0, 0, 0, 1];
+
 function Defs({ ids, children }: { ids: Ids; children?: ReactElement | ReactElement[] }) {
-  const lin = (name: string, stops: Stop[], v: Vec = [0, 0, 0, 1]) => (
+  const lin = (name: string, stops: Stop[], v: Vec = V) => (
     <linearGradient id={ids.id(name)} x1={v[0]} y1={v[1]} x2={v[2]} y2={v[3]}>
       {stops.map(([o, c, a = 1], i) => (
         <stop key={i} offset={o} stopColor={c} stopOpacity={a} />
       ))}
     </linearGradient>
   );
-  const radial = (name: string, stops: Stop[], cx = 0.5, cy = 0.5, r = 0.5) => (
-    <radialGradient id={ids.id(name)} cx={cx} cy={cy} r={r}>
-      {stops.map(([o, c, a = 1], i) => (
-        <stop key={i} offset={o} stopColor={c} stopOpacity={a} />
-      ))}
-    </radialGradient>
-  );
+  /** One lit tone, one shade tone, a hard edge between them. */
+  const split = (name: string, lit: string, shade: string, at = 0.5, v: Vec = H) =>
+    lin(name, [[0, lit], [at, lit], [at, shade], [1, shade]], v);
   return (
     <defs>
-      {/* shadows */}
-      {radial("shadow", [[0, NAVY, 0.34], [0.5, NAVY, 0.14], [1, NAVY, 0]])}
-      {radial("shadowSoft", [[0, NAVY, 0.16], [0.6, NAVY, 0.06], [1, NAVY, 0]])}
-      {/* outdoors */}
-      {lin("sky", [[0, "#D6E7EC"], [0.5, "#E9F0EC"], [1, "#F6F0E3"]])}
-      {radial("sun", [[0, "#FFF7E2"], [0.28, "#FFF1D0", 0.9], [1, "#FFF1D0", 0]])}
-      {lin("hillFar", [[0, "#D2E3DA"], [1, "#C4DACD"]])}
-      {lin("hillMid", [[0, "#B9D5B0"], [1, "#A2C79A"]])}
-      {lin("grass", [[0, "#B0D291"], [0.4, "#8DBF72"], [1, "#629A4E"]])}
-      {lin("pine", [[0, "#86C47F"], [0.47, "#4F9D5E"], [0.53, "#2F7849"], [1, "#215A39"]], [0, 0, 1, 0.3])}
-      {radial("leaf", [[0, "#A3D492"], [0.55, "#56A262"], [1, "#2D6C44"]], 0.34, 0.3, 0.78)}
-      {lin("bark", [[0, "#A6743F"], [0.45, "#7E502C"], [1, "#52321E"]], [0, 0, 1, 0])}
-      {radial("stumpTop", [[0, "#F7E0B5"], [1, "#D6AA70"]], 0.42, 0.4, 0.62)}
-      {lin("logEnd", [[0, "#F3D7A6"], [1, "#D2A46A"]], [0, 0, 1, 1])}
+      {/* outdoors — the sky and ground are the only soft ramps: they're light, not objects */}
+      {lin("sky", [[0, "#D9E8EC"], [1, "#F4F0E6"]])}
+      {lin("grass", [[0, "#A3CD85"], [1, "#78AE5F"]])}
+      {split("pine", "#63AB68", "#377F4E", 0.5)}
+      {split("leaf", "#72B86C", "#468F55", 0.52, [0, 0, 1, 1])}
+      {split("bark", "#8E5E36", "#643F24", 0.5)}
       {/* the axe */}
-      {lin("wood", [[0, "#E7B277"], [0.5, "#BE7F46"], [1, "#8B5228"]], [0, 0, 1, 0])}
-      {lin("paint", [[0, "#FFA852"], [0.45, ORANGE], [1, "#B45100"]], [0, 0, 0.55, 1])}
-      {lin("bevel", [[0, "#AEB9C2"], [0.55, "#E8EDF1"], [1, "#FFFFFF"]], [0, 0, 1, 0])}
-      {lin("steel", [[0, "#F1F4F6"], [0.5, "#BCC6CE"], [1, "#8894A0"]], [0, 0, 1, 1])}
-      {lin("steelDark", [[0, "#808B96"], [1, "#46505A"]])}
-      {lin("swoosh", [[0, "#FFFFFF", 0], [1, "#FFFFFF", 0.85]], [0, 0, 1, 0])}
+      {split("wood", "#DDA468", "#B07440", 0.5)}
+      {split("paint", ORANGE, "#C45E00", 0.56, V)}
       {/* indoors: wall + counter */}
-      {lin("wall", [[0, "#E1E8EC"], [1, "#F1EEE8"]])}
-      {lin("counter", [[0, "#EFE8DC"], [1, "#DACDBA"]])}
-      {lin("counterEdge", [[0, "#C8B8A0"], [0.12, "#BBAA90"], [1, "#A6947B"]])}
-      {lin("wallShade", [[0, NAVY, 0], [1, NAVY, 0.07]])}
+      {lin("wall", [[0, "#E4EAEE"], [1, "#F1EEE8"]])}
       {/* paper */}
-      {lin("paper", [[0, "#FFFFFF"], [0.72, "#FBF9F4"], [1, "#E8ECEF"]])}
-      {lin("paperSide", [[0, "#FFFFFF"], [0.62, "#F8F6F1"], [1, "#D4DCE3"]], [0, 0, 1, 0])}
-      {lin("curl", [[0, "#C3CDD6"], [0.6, "#E9EDF0"], [1, "#FFFFFF"]])}
-      {lin("roll", [[0, "#FFFFFF"], [0.45, "#F5F2EB"], [1, "#C4CED7"]])}
+      {split("paper", "#FFFFFF", "#EEF1F3", 0.72, V)}
+      {split("paperSide", "#FFFFFF", "#EEF1F3", 0.7)}
+      {split("roll", "#FFFFFF", "#E1E6EA", 0.55, V)}
       {/* printer */}
-      {lin("printerTop", [[0, "#62717E"], [1, "#384450"]], [0, 0, 0.35, 1])}
-      {lin("printerFront", [[0, "#35424D"], [1, "#182129"]])}
-      {lin("glass", [[0, "#B3C7D4", 0.5], [1, "#1E2B35", 0.35]])}
-      {radial("ledGlow", [[0, "#FF8A1F", 0.95], [0.35, "#FF8A1F", 0.4], [1, "#FF8A1F", 0]])}
-      {radial("ledGreen", [[0, "#7BE09A", 0.7], [1, "#7BE09A", 0]])}
+      {split("printerTop", "#5A6772", "#46525D", 0.5, V)}
+      {split("printerFront", "#35424D", "#27323B", 0.5, H)}
       {/* till */}
-      {lin("tillTop", [[0, "#F5F7F8"], [1, "#D3D9DE"]])}
-      {lin("tillFront", [[0, "#D6DCE1"], [1, "#B4BDC5"]])}
-      {lin("drawer", [[0, "#C4CCD3"], [1, "#98A3AD"]])}
-      {lin("key", [[0, "#FFFFFF"], [1, "#E0E5EA"]])}
-      {lin("bezel", [[0, "#2C3844"], [1, "#11181E"]])}
-      {radial("screenGlow", [[0, ORANGE, 0.42], [0.55, ORANGE, 0.12], [1, ORANGE, 0]], 0.32, 0.72, 0.78)}
-      {lin("glare", [[0, "#FFFFFF", 0], [0.5, "#FFFFFF", 0.14], [1, "#FFFFFF", 0]], [0, 0, 1, 0.5])}
+      {split("tillTop", "#F4F6F8", "#DCE2E6", 0.5, V)}
+      {split("drawer", "#C9D0D6", "#AAB4BC", 0.5, V)}
+      {split("steel", "#DCE2E7", "#A1ACB6", 0.5)}
       <>{children}</>
     </defs>
   );
@@ -145,12 +159,11 @@ function Defs({ ids, children }: { ids: Ids; children?: ReactElement | ReactElem
 function Counter({ u, back, front }: { u: U; back: number; front: number }) {
   return (
     <g>
-      <rect x="-200" y="-200" width="700" height={back + 200} fill={u("wall")} />
-      <rect x="-200" y={back - 14} width="700" height="14" fill={u("wallShade")} />
-      <rect x="-200" y={back} width="700" height={front - back} fill={u("counter")} />
-      <path d={`M-200 ${back}H500`} stroke="#FFFFFF" strokeOpacity={0.7} strokeWidth={1} />
-      <rect x="-200" y={front} width="700" height="300" fill={u("counterEdge")} />
-      <path d={`M-200 ${front}H500`} stroke="#F8F3EA" strokeWidth={1.2} />
+      <rect x="-300" y="-300" width="900" height={back + 300} fill={u("wall")} />
+      <rect x="-300" y={back} width="900" height={front - back} fill="#ECE4D6" />
+      <path d={`M-300 ${back}H600`} stroke={NAVY} strokeOpacity={0.12} strokeWidth={1} />
+      <rect x="-300" y={front} width="900" height="400" fill="#BFAE95" />
+      <path d={`M-300 ${front}H600`} stroke="#F8F3EA" strokeWidth={1} />
     </g>
   );
 }
@@ -160,18 +173,17 @@ function Outdoors({ u, horizon, sun }: { u: U; horizon: number; sun: [number, nu
   const h = horizon;
   return (
     <g>
-      <rect x="-200" y="-200" width="700" height="800" fill={u("sky")} />
-      <circle cx={sun[0]} cy={sun[1]} r={sun[2] * 3.2} fill={u("sun")} />
-      <circle cx={sun[0]} cy={sun[1]} r={sun[2]} fill="#FFF8E8" />
+      <rect x="-300" y="-300" width="900" height="900" fill={u("sky")} />
+      <circle cx={sun[0]} cy={sun[1]} r={sun[2]} fill="#FFF3D6" />
       <path
-        d={`M-200 ${h - 18}C-60 ${h - 40} 20 ${h - 52} 90 ${h - 34}S200 ${h - 56} 270 ${h - 40}S420 ${h - 44} 500 ${h - 30}V${h + 40}H-200Z`}
-        fill={u("hillFar")}
+        d={`M-300 ${h - 18}C-60 ${h - 40} 20 ${h - 52} 90 ${h - 34}S200 ${h - 56} 270 ${h - 40}S420 ${h - 44} 600 ${h - 30}V${h + 40}H-300Z`}
+        fill="#CFE1D6"
       />
       <path
-        d={`M-200 ${h}C-40 ${h - 22} 40 ${h - 30} 120 ${h - 14}S240 ${h - 26} 320 ${h - 16}S440 ${h - 12} 500 ${h - 6}V${h + 60}H-200Z`}
-        fill={u("hillMid")}
+        d={`M-300 ${h}C-40 ${h - 22} 40 ${h - 30} 120 ${h - 14}S240 ${h - 26} 320 ${h - 16}S440 ${h - 12} 600 ${h - 6}V${h + 60}H-300Z`}
+        fill="#B5D3AB"
       />
-      <path d={`M-200 ${h + 8}C0 ${h - 6} 180 ${h - 8} 500 ${h + 4}V700H-200Z`} fill={u("grass")} />
+      <path d={`M-300 ${h + 8}C0 ${h - 6} 180 ${h - 8} 600 ${h + 4}V900H-300Z`} fill={u("grass")} />
     </g>
   );
 }
@@ -183,7 +195,7 @@ function GrassTufts({ tufts }: { tufts: [number, number, number][] }) {
         `M${x} ${y}q${r1(-1.5 * s)} ${r1(-4 * s)} ${r1(-3.5 * s)} ${r1(-5.5 * s)}M${x} ${y}q${r1(0.4 * s)} ${r1(-5 * s)} ${r1(0.2 * s)} ${r1(-7.5 * s)}M${x} ${y}q${r1(1.8 * s)} ${r1(-3.6 * s)} ${r1(4 * s)} ${r1(-5 * s)}`,
     )
     .join("");
-  return <path d={d} fill="none" stroke="#4E8A45" strokeWidth={1.1} strokeOpacity={0.85} />;
+  return <path d={d} stroke="#4E8A45" strokeOpacity={0.7} {...DETAIL} />;
 }
 
 // ---------------------------------------------------------------------------
@@ -191,6 +203,8 @@ function GrassTufts({ tufts }: { tufts: [number, number, number][] }) {
 // ---------------------------------------------------------------------------
 type TreeKind = "pine" | "round";
 const STUMP_H = 7;
+/** Trunk half-width at the cut, tree-local. */
+const TRUNK_HALF = 4;
 
 function tierPath(top: number, bot: number, w: number) {
   const h = bot - top;
@@ -226,34 +240,29 @@ function roundBlobs(h: number): [number, number, number][] {
 /** The tree above the cut. `haze` (0..1) veils it toward the sky colour — atmospheric depth. */
 function Tree({ kind, h, u, haze = 0 }: { kind: TreeKind; h: number; u: U; haze?: number }) {
   const H = h - STUMP_H;
+  const veil = haze > 0 ? r1(haze * 100) / 100 : 0;
   if (kind === "pine") {
     const tiers = pineTiers(h);
     return (
       <g>
-        <path d={`M-4 0.5L-2.4 ${r1(-H * 0.5)}H2.4L4 0.5Z`} fill={u("bark")} />
+        <path d={`M${-TRUNK_HALF} 0.5L-2.4 ${r1(-H * 0.5)}H2.4L${TRUNK_HALF} 0.5Z`} fill={u("bark")} {...INK} />
         {tiers.map((t, i) => (
-          <g key={i}>
-            {i > 0 && <ellipse cx="0" cy={r1(t.bot + 1.2)} rx={r1(t.w * 0.44)} ry="2.4" fill="#173F2A" opacity={0.32} />}
-            <path d={t.d} fill={u("pine")} />
-          </g>
+          <path key={i} d={t.d} fill={u("pine")} {...INK} />
         ))}
-        {haze > 0 && (
-          <path d={tiers.map((t) => t.d).join("")} fill="#E4EEEE" opacity={r1(haze * 100) / 100} />
-        )}
+        {veil > 0 && <path d={tiers.map((t) => t.d).join("")} fill="#E4EEEE" opacity={veil} />}
       </g>
     );
   }
   const blobs = roundBlobs(h);
   return (
     <g>
-      <path d={`M-4 0.5L-2.6 ${r1(-H * 0.56)}H2.6L4 0.5Z`} fill={u("bark")} />
-      <path d={`M0.5 ${r1(-H * 0.36)}L${r1(H * 0.13)} ${r1(-H * 0.5)}`} stroke="#6F4527" strokeWidth={1.6} fill="none" />
+      <path d={`M${-TRUNK_HALF} 0.5L-2.6 ${r1(-H * 0.56)}H2.6L${TRUNK_HALF} 0.5Z`} fill={u("bark")} {...INK} />
+      <path d={`M0.5 ${r1(-H * 0.36)}L${r1(H * 0.13)} ${r1(-H * 0.5)}`} stroke="#643F24" strokeWidth={1.5} fill="none" />
       {blobs.map(([cx, cy, r], i) => (
-        <circle key={i} cx={r1(cx)} cy={r1(cy)} r={r1(r)} fill={u("leaf")} />
+        <circle key={i} cx={r1(cx)} cy={r1(cy)} r={r1(r)} fill={u("leaf")} {...INK} />
       ))}
-      <ellipse cx="0" cy={r1(-H * 0.4)} rx={r1(H * 0.2)} ry="2.6" fill="#173F2A" opacity={0.28} />
-      {haze > 0 && (
-        <g fill="#E4EEEE" opacity={r1(haze * 100) / 100}>
+      {veil > 0 && (
+        <g fill="#E4EEEE" opacity={veil}>
           {blobs.map(([cx, cy, r], i) => (
             <circle key={i} cx={r1(cx)} cy={r1(cy)} r={r1(r)} />
           ))}
@@ -268,57 +277,49 @@ function Stump({ u }: { u: U }) {
   const s = STUMP_H;
   return (
     <g>
-      <path d={`M-4.4 ${-s}V-1.2Q-4.6 0.6 -7.2 1.2H7.2Q4.6 0.6 4.4 -1.2V${-s}Z`} fill={u("bark")} />
-      <ellipse cx="0" cy={-s} rx="4.4" ry="1.7" fill={u("stumpTop")} />
-      <ellipse cx="-0.2" cy={-s} rx="2.6" ry="0.95" fill="none" stroke="#B98549" strokeWidth={0.6} />
-      <circle cx="-0.3" cy={-s} r="0.55" fill="#9A6A38" />
+      <path d={`M-4.4 ${-s}V-1.2Q-4.6 0.6 -7.2 1.2H7.2Q4.6 0.6 4.4 -1.2V${-s}Z`} fill={u("bark")} {...INK} />
+      <ellipse cx="0" cy={-s} rx="4.4" ry="1.7" fill="#EECE98" {...INK} />
+      <ellipse cx="-0.2" cy={-s} rx="2.4" ry="0.9" stroke="#C39158" {...DETAIL} />
     </g>
   );
 }
 
 // ---------------------------------------------------------------------------
-// the axe — grip end at 0,0, handle hanging down, head at the bottom, bit facing +x
+// the axe — a classic felling axe in strict side profile. Grip (the knob end of
+// the haft) at 0,0; the haft rises straight up (-y); the steel head sits on TOP
+// of the haft; the poll faces -x and the cutting edge faces +x. Rotating it
+// clockwise (+deg) swings the head forward and down into whatever is at +x.
 // ---------------------------------------------------------------------------
-const AXE_L = 94;
-/** The centre of the cutting edge, in the axe's own coordinates. */
-const AXE_BIT: [number, number] = [29, AXE_L - 2];
+const AXE_L = 96;
+/** The middle of the cutting edge, axe-local. */
+const AXE_EDGE: [number, number] = [26.5, -AXE_L + 1.8];
 
 function Axe({ u }: { u: U }) {
-  const L = AXE_L;
+  const T = -AXE_L; // where the haft passes through the eye
   return (
     <g>
+      {/* haft — hickory, a swell at the knob, slimmer through the throat */}
       <path
-        d={`M-3.4 -1Q0 -5.4 3.4 -1L2.5 9C2.1 38 2.7 68 2.9 ${L + 6}L-2.9 ${L + 6}C-2.7 68 -2.1 38 -2.5 9Z`}
+        d={`M-3.2 3Q0 5.4 3.4 2.8L3.5 -2.6C2.5 -8 2.3 -24 2.4 -44C2.5 -64 2.7 ${T + 22} 2.6 ${T - 1}H-2.6C-2.5 ${T + 22} -2.3 -64 -2.2 -44C-2.1 -24 -2.3 -8 -3.4 -2.6Z`}
         fill={u("wood")}
-        stroke={NAVY}
-        strokeOpacity={0.35}
-        strokeWidth={0.8}
+        {...INK}
       />
+      <path d={`M-0.4 -12C-0.2 -40 -0.7 -64 -0.3 ${T + 16}`} stroke="#8A5A2E" strokeOpacity={0.4} {...DETAIL} />
+      {/* head: flat poll · eye · neck · flared bit, painted, with a ground steel edge */}
       <path
-        d={`M-0.9 12C-0.5 40 -1.1 64 -0.7 ${L - 10}M1.1 22C1.5 46 1 58 1.3 ${L - 18}M-1.6 30C-1.4 42 -1.7 50 -1.5 58`}
-        fill="none"
-        stroke="#7A4520"
-        strokeOpacity={0.45}
-        strokeWidth={0.7}
-      />
-      <path d="M-2.9 6H2.9M-2.8 8.6H2.8" stroke="#6B3D1C" strokeOpacity={0.55} strokeWidth={0.8} />
-      <path
-        d={`M-9 ${L - 7}L4 ${L - 8}C12 ${L - 8} 20 ${L - 11} 27 ${L - 17}Q31.5 ${L - 2} 27 ${L + 13}C20 ${L + 8} 12 ${L + 5} 4 ${L + 5}L-9 ${L + 4}Q-10.5 ${L - 1.5} -9 ${L - 7}Z`}
+        d={`M-7.5 ${T - 7}H4C8 ${T - 7} 11 ${T - 5.6} 13.5 ${T - 5}C17 ${T - 6} 21 ${T - 8.5} 24 ${T - 12}Q29 ${T + 1.5} 24 ${T + 16}C20.5 ${T + 12.5} 17 ${T + 8.5} 13.5 ${T + 7}C11 ${T + 6.6} 8 ${T + 8.5} 4 ${T + 9}H-7.5Z`}
         fill={u("paint")}
-        stroke={NAVY}
-        strokeOpacity={0.5}
-        strokeWidth={0.8}
+        {...INK}
       />
-      <path d={`M21.6 ${L - 13.2}Q25.6 ${L - 2} 21.4 ${L + 9.6}L27 ${L + 13}Q31.5 ${L - 2} 27 ${L - 17}Z`} fill={u("bevel")} />
-      <path d={`M27.3 ${L - 15.6}Q31 ${L - 2} 27.2 ${L + 11.6}`} fill="none" stroke="#FFFFFF" strokeWidth={1} />
-      <path d={`M-9 ${L - 7}L-4.5 ${L - 7.3}V${L + 4.2}L-9 ${L + 4}Q-10.5 ${L - 1.5} -9 ${L - 7}Z`} fill={u("steelDark")} />
       <path
-        d={`M-8 ${L - 6.2}L4 ${L - 7}C12 ${L - 7} 19 ${L - 9.8} 25 ${L - 14.6}`}
-        fill="none"
-        stroke="#FFC894"
-        strokeOpacity={0.9}
-        strokeWidth={0.9}
+        d={`M24 ${T - 12}Q29 ${T + 1.5} 24 ${T + 16}L19.6 ${T + 11.4}Q23.4 ${T + 1.5} 19.8 ${T - 7.8}Z`}
+        fill="#DCE2E7"
       />
+      <path d={`M24.7 ${T - 10.4}Q28.4 ${T + 1.5} 24.7 ${T + 14.2}`} stroke="#FFFFFF" {...DETAIL} />
+      <path d={`M-7.5 ${T - 7}H-4.6V${T + 9}H-7.5Z`} fill="#8E99A3" {...INK} />
+      {/* the haft's end showing through the top of the eye, wedged */}
+      <path d={`M-2.6 ${T - 7}V${T - 9.6}H2.6V${T - 7}Z`} fill="#E6C28C" {...INK} />
+      <path d={`M0 ${T - 9.6}V${T - 7}`} stroke="#8A5A2E" strokeOpacity={0.6} {...DETAIL} />
     </g>
   );
 }
@@ -344,14 +345,12 @@ function Printer({
 }) {
   return (
     <g>
-      <ellipse cx="18" cy="2" rx="92" ry="11" fill={u("shadowSoft")} />
-      <ellipse cx="2" cy="0.5" rx="70" ry="4.2" fill={u("shadow")} />
-      <path d="M-52 -92H52Q59 -92 60.5 -86L64.5 -58H-64.5L-60.5 -86Q-59 -92 -52 -92Z" fill={u("printerTop")} />
-      <path d="M-51 -91H51" stroke="#8C9BA7" strokeWidth={0.8} strokeOpacity={0.8} />
+      <ellipse cx="8" cy="1" rx="76" ry="5" fill={SHADOW} />
+      <path d="M-52 -92H52Q59 -92 60.5 -86L64.5 -58H-64.5L-60.5 -86Q-59 -92 -52 -92Z" fill={u("printerTop")} {...INK} />
       <clipPath id={ids.id("window")}>
         <path d={PRINTER_WINDOW_D} />
       </clipPath>
-      <path d={PRINTER_WINDOW_D} fill="#0D161D" />
+      <path d={PRINTER_WINDOW_D} fill="#141E26" />
       <g clipPath={u("window")}>
         <g className={rollClass} style={rollStyle}>
           <rect x="-42" y="-87" width="84" height="16" rx="8" fill={u("roll")} />
@@ -359,24 +358,19 @@ function Printer({
           <ellipse cx="-42" cy="-79" rx="1.3" ry="3.1" fill="#B98A57" />
         </g>
       </g>
-      <path d={PRINTER_WINDOW_D} fill={u("glass")} />
-      <path d="M-30 -88H-19L-25 -70H-36Z" fill="#FFFFFF" opacity={0.14} />
-      <path d={PRINTER_WINDOW_D} fill="none" stroke="#7A8996" strokeWidth={0.8} />
-      <rect x="-64" y="-58" width="128" height="58" rx="7" fill={u("printerFront")} />
-      <path d="M-62 -57.3H62" stroke="#8E9EAB" strokeWidth={0.9} />
-      <path d="M-63.3 -52V-8" stroke="#56646F" strokeWidth={0.8} />
-      <rect x="-41" y="-52" width="82" height="3.6" rx="1.8" fill="#05090C" />
-      <path d="M-40 -47.3H40" stroke="#5E6C78" strokeWidth={0.8} />
-      <path d="M-54 -12H-38M-54 -8H-38M-54 -4H-38" stroke="#0E151B" strokeWidth={1} />
-      <circle cx="-46" cy="-24" r="4.2" fill="#10181E" />
-      <circle cx="-46.3" cy="-24.3" r="3" fill={u("steel")} />
-      <circle cx="47" cy="-24" r="4" fill="#0A1014" />
-      <circle cx="47" cy="-24" r="7" fill={u("ledGreen")} opacity={0.55} />
-      <circle cx="47" cy="-24" r="2" fill="#70D38E" />
+      <path d={PRINTER_WINDOW_D} fill="#9FB4C2" fillOpacity={0.22} />
+      <path d="M-30 -88H-20L-26 -70H-36Z" fill="#FFFFFF" opacity={0.16} />
+      <path d={PRINTER_WINDOW_D} stroke="#7A8996" {...DETAIL} />
+      <rect x="-64" y="-58" width="128" height="58" rx="7" fill={u("printerFront")} {...INK} />
+      <rect x="-41" y="-52" width="82" height="3.6" rx="1.8" fill="#070C10" />
+      <path d="M-54 -12H-38M-54 -8H-38M-54 -4H-38" stroke="#161F26" {...DETAIL} />
+      <circle cx="-46" cy="-24" r="4" fill="#A1ACB6" {...INK} />
+      <circle cx="47" cy="-24" r="3.6" fill="#0A1014" />
+      <circle cx="47" cy="-24" r="1.8" fill="#6FCF8C" />
       {ledOn && (
         <g className={ledOn.className} style={ledOn.style}>
-          <circle cx="47" cy="-24" r="11" fill={u("ledGlow")} />
-          <circle cx="47" cy="-24" r="2.4" fill="#FF8A1F" />
+          <circle cx="47" cy="-24" r="6.5" stroke={ORANGE} strokeOpacity={0.55} {...DETAIL} />
+          <circle cx="47" cy="-24" r="2.4" fill={ORANGE} />
         </g>
       )}
       <rect x="-60" y="-1.5" width="12" height="3" rx="1.2" fill="#0A0F13" />
@@ -395,14 +389,14 @@ const SLIP_BARS = "M-10 44V49M-8.4 44V49M-5.6 44V49M-4 44V49M-1.2 44V49M1.6 44V4
 function Slip({ u }: { u: U }) {
   return (
     <g>
-      <path d={SLIP_BODY_D} transform="translate(2 3)" fill={NAVY} opacity={0.12} />
-      <path d={SLIP_BODY_D} fill={u("paper")} stroke={NAVY} strokeOpacity={0.14} strokeWidth={0.7} />
-      <path d="M-23 53C-23 60 23 60 23 53C23 50 -23 50 -23 53Z" fill={u("curl")} />
-      <path d="M-9 8H9" stroke={NAVY} strokeWidth={1.6} />
-      <path d={SLIP_ROWS} stroke="#97A3AE" strokeWidth={1} />
-      <path d="M-16 34H16" stroke="#B8C1C8" strokeWidth={0.8} strokeDasharray="2 2" />
-      <path d="M-16 40H-4M8 40H16" stroke={NAVY} strokeWidth={1.3} />
-      <path d={SLIP_BARS} stroke="#5C6873" strokeWidth={0.8} />
+      <path d={SLIP_BODY_D} transform="translate(2 3)" fill={SHADOW} />
+      <path d={SLIP_BODY_D} fill={u("paper")} {...INK} />
+      <path d="M-23 53C-23 60 23 60 23 53C23 50 -23 50 -23 53Z" fill="#DCE2E7" {...INK} />
+      <path d="M-9 8H9" stroke={NAVY} strokeWidth={1.5} />
+      <path d={SLIP_ROWS} stroke="#97A3AE" {...DETAIL} />
+      <path d="M-16 34H16" stroke="#B8C1C8" strokeDasharray="2 2" {...DETAIL} />
+      <path d="M-16 40H-4M8 40H16" stroke={NAVY} strokeWidth={1.5} />
+      <path d={SLIP_BARS} stroke="#5C6873" {...DETAIL} />
     </g>
   );
 }
@@ -413,12 +407,10 @@ function Slip({ u }: { u: U }) {
 function Roll({ u }: { u: U }) {
   return (
     <g>
-      <path d="M0 -22H80A8 22 0 0 1 80 22H0Z" fill={u("roll")} />
-      <path d="M2 -20.5H78" stroke="#FFFFFF" strokeWidth={1.2} />
-      <ellipse cx="0" cy="0" rx="8" ry="22" fill="#F2F0EA" />
-      <ellipse cx="0" cy="0" rx="6.5" ry="17.8" fill="none" stroke="#DCE1E5" strokeWidth={0.6} />
-      <ellipse cx="0" cy="0" rx="5" ry="13.4" fill="none" stroke="#DCE1E5" strokeWidth={0.6} />
-      <ellipse cx="0" cy="0" rx="3" ry="8" fill="#C39561" />
+      <path d="M0 -22H80A8 22 0 0 1 80 22H0Z" fill={u("roll")} {...INK} />
+      <ellipse cx="0" cy="0" rx="8" ry="22" fill="#F4F2EC" {...INK} />
+      <ellipse cx="0" cy="0" rx="5.4" ry="15" stroke="#DCE1E5" {...DETAIL} />
+      <ellipse cx="0" cy="0" rx="3" ry="8" fill="#C39561" {...INK} />
       <ellipse cx="0.2" cy="0" rx="1.5" ry="4.2" fill="#5B4632" />
     </g>
   );
@@ -442,34 +434,26 @@ const TILL_KEYS = (() => {
 function Till({ u, total, totalRef }: { u: U; total: string; totalRef?: Ref<SVGTextElement> }) {
   return (
     <g>
-      <ellipse cx="16" cy="2" rx="76" ry="10" fill={u("shadowSoft")} />
-      <ellipse cx="0" cy="0.5" rx="60" ry="4" fill={u("shadow")} />
-      <rect x="-56" y="-34" width="112" height="34" rx="4" fill={u("drawer")} />
-      <path d="M-55 -33.4H55" stroke="#E4E9ED" strokeWidth={0.8} />
+      <ellipse cx="8" cy="1" rx="66" ry="4.6" fill={SHADOW} />
+      <rect x="-56" y="-34" width="112" height="34" rx="4" fill={u("drawer")} {...INK} />
       <rect x="-14" y="-22" width="28" height="3.2" rx="1.6" fill="#66727D" />
-      <path d="M-13 -17.8H13" stroke="#E4E9ED" strokeWidth={0.7} />
-      <rect x="-52" y="-60" width="104" height="27" fill={u("tillFront")} />
-      <path d="M-44 -96H44L52 -60H-52Z" fill={u("tillTop")} />
-      <path d="M-43.6 -95.4H43.6" stroke="#FFFFFF" strokeWidth={0.9} />
+      <rect x="-52" y="-60" width="104" height="27" fill="#C2CAD1" {...INK} />
+      <path d="M-44 -96H44L52 -60H-52Z" fill={u("tillTop")} {...INK} />
       {TILL_KEYS.map((k, i) => (
         <g key={i}>
           <rect x={r1(k.x)} y={k.y + 1.6} width={r1(k.w)} height="7" rx="1.8" fill={k.dark ? "#0B141A" : "#AEB8C1"} />
-          <rect x={r1(k.x)} y={k.y} width={r1(k.w)} height="7" rx="1.8" fill={k.dark ? "#26323D" : u("key")} />
+          <rect x={r1(k.x)} y={k.y} width={r1(k.w)} height="7" rx="1.8" fill={k.dark ? "#26323D" : "#FFFFFF"} />
         </g>
       ))}
-      <rect x="-6" y="-126" width="12" height="32" fill={u("steel")} />
-      <ellipse cx="-4" cy="-94" rx="26" ry="3" fill={NAVY} opacity={0.12} />
-      <rect x="-52" y="-170" width="104" height="48" rx="6" fill={u("bezel")} />
-      <path d="M-47 -169.4H47" stroke="#5A6875" strokeWidth={0.8} />
-      <rect x="-46" y="-164" width="92" height="36" rx="3" fill="#06111A" />
-      <rect x="-46" y="-164" width="92" height="36" rx="3" fill={u("screenGlow")} />
+      <rect x="-6" y="-126" width="12" height="32" fill={u("steel")} {...INK} />
+      <rect x="-52" y="-170" width="104" height="48" rx="6" fill="#1F2A34" {...INK} />
+      <rect x="-46" y="-164" width="92" height="36" rx="3" fill="#07121A" />
       <text x="-38" y="-151" className={styles.tillLabel}>
         TOTAL
       </text>
       <text x="-38" y="-135" ref={totalRef} className={styles.tillTotal}>
         {total}
       </text>
-      <path d="M-46 -164H-10L-30 -128H-46Z" fill={u("glare")} />
     </g>
   );
 }
@@ -507,11 +491,11 @@ function PrintScene() {
   const u = ids.url;
   const slotY = PRINTER_AT[1] + PRINTER_SLOT_Y;
   return (
-    <svg viewBox="0 0 280 320" className={styles.sceneSvg} aria-hidden="true">
+    <svg viewBox={`0 0 ${VB_W} ${VB_H}`} className={styles.sceneSvg} aria-hidden="true">
       <Defs ids={ids}>
         {/* slips only exist below the slot — nothing peeks over the printer while they wait */}
         <clipPath id={ids.id("slot")}>
-          <rect x="-200" y={slotY} width="700" height="600" />
+          <rect x="-300" y={slotY} width="900" height="700" />
         </clipPath>
       </Defs>
       <Counter u={u} back={COUNTER_BACK} front={COUNTER_FRONT} />
@@ -554,188 +538,209 @@ function PrintScene() {
 }
 
 // ---------------------------------------------------------------------------
-// card "forest" — a receding row of trees grows in; an axe swings in and sweeps
-// the row at the base; each tree tips and falls as the blade passes, chips fly,
-// leaves burst on impact, stumps with rings remain
+// card "forest" — the nearest tree is felled the way a person does it: the axe
+// winds back and bites into the trunk three times, chips fly back out of the
+// notch, and on the third blow the tree tips over, away from the cut. Then the
+// rest of the stand goes down in turn, leaving a field of stumps.
 // ---------------------------------------------------------------------------
-const TREE_HEIGHTS = [78, 104, 88, 118, 94, 110, 82, 100, 76];
-const GROW_STAGGER = 70;
-const SWEEP_START = TREE_HEIGHTS.length * GROW_STAGGER + 520;
-const SWEEP_MS = 520;
-const FOREST_DURATION = SWEEP_START + SWEEP_MS + 700;
 
-const ROUND_TREES = new Set([1, 4, 6]);
-const ROW = TREE_HEIGHTS.map((h, k) => {
-  const t = k / (TREE_HEIGHTS.length - 1);
-  const sc = 1 - t * 0.32;
-  const base = 266 - t * 44;
+/** The tree being chopped: base at (x, base), drawn at `s` × the stand's scale. */
+const FT = { x: 106, base: 284, s: 1.9, h: 80 };
+/** Its cut point (top of the stump), in view-box units. */
+const FT_CUT: [number, number] = [FT.x, FT.base - STUMP_H * FT.s];
+/** Where the middle of the edge stops: just inside the trunk's left face, a notch above the stump. */
+const FT_BITE: [number, number] = [FT.x - TRUNK_HALF * FT.s + 2.4, FT_CUT[1] - 1.4 * FT.s];
+
+/** The rest of the stand, far → near (draw order). */
+const STAND: { x: number; base: number; s: number; h: number; kind: TreeKind }[] = [
+  { x: 30, base: 222, s: 0.62, h: 96, kind: "pine" },
+  { x: 268, base: 224, s: 0.6, h: 102, kind: "pine" },
+  { x: 228, base: 230, s: 0.68, h: 110, kind: "round" },
+  { x: 176, base: 236, s: 0.76, h: 112, kind: "pine" },
+  { x: 250, base: 242, s: 0.74, h: 94, kind: "pine" },
+  { x: 204, base: 246, s: 0.8, h: 92, kind: "pine" },
+  { x: 150, base: 252, s: 0.86, h: 104, kind: "round" },
+];
+const GROW_STAGGER = 55;
+
+// The axe's timeline (ms from its own start) — .axe's keyframe percentages in
+// flipcards.module.css are these over AXE_MS. Three blows, each: wind back, swing
+// (ease-in, it accelerates), bite and hold, pull out.
+const AXE_START = 420;
+const AXE_MS = 1800;
+const AXE_IMPACTS = [600, 1080, 1560];
+const FALL_AT = AXE_START + AXE_IMPACTS[2] + 40;
+const CASCADE_AT = FALL_AT + 520;
+const CASCADE_STAGGER = 95;
+const FALL_MS = 1000;
+const FOREST_DURATION = CASCADE_AT + (STAND.length - 1) * CASCADE_STAGGER + FALL_MS - 120;
+
+const AXE_SCALE = 0.55;
+const AXE_BITE_DEG = 32;
+/** Grip position that puts the middle of the edge exactly at (bx, by) at `deg`. */
+const gripFor = (bx: number, by: number, deg: number): [number, number] => {
+  const [ox, oy] = rot(AXE_EDGE[0] * AXE_SCALE, AXE_EDGE[1] * AXE_SCALE, deg);
+  return [bx - ox, by - oy];
+};
+const AXE_GRIP = gripFor(FT_BITE[0], FT_BITE[1], AXE_BITE_DEG);
+const AXE_VARS = {
+  "--gx": px(AXE_GRIP[0]),
+  "--gy": px(AXE_GRIP[1]),
+  // the hands draw back and up a little on the wind-up, and leave to the left
+  "--wx": px(AXE_GRIP[0] - 9),
+  "--wy": px(AXE_GRIP[1] - 7),
+  "--ox": px(AXE_GRIP[0] - 26),
+  "--oy": px(AXE_GRIP[1] - 4),
+  "--r-bite": `${AXE_BITE_DEG}deg`,
+  "--r-wind": "-50deg",
+  "--r-back": "-62deg",
+  "--r-out": "-24deg",
+  animationDelay: `${AXE_START}ms`,
+  animationDuration: `${AXE_MS}ms`,
+} as CSSProperties;
+
+/** The notch after each blow: a wedge of fresh wood cut into the trunk's left face. */
+const NOTCHES = [
+  [2.4, 1.8],
+  [4.6, 3.1],
+  [7, 4.4],
+].map(([depth, half], i) => {
+  const x0 = FT.x - TRUNK_HALF * FT.s;
+  const y = FT_BITE[1];
   return {
-    k,
-    h,
-    t,
-    sc,
-    cx: 38 + k * 25.5,
-    base,
-    cutY: base - STUMP_H * sc,
-    kind: (ROUND_TREES.has(k) ? "round" : "pine") as TreeKind,
-    growDelay: k * GROW_STAGGER,
+    d: `M${r1(x0)} ${r1(y - half)}L${r1(x0 + depth)} ${r1(y)}L${r1(x0)} ${r1(y + half)}Z`,
+    at: AXE_START + AXE_IMPACTS[i],
   };
 });
 
-// the blade's path: along the row, just above the stumps
-const BLADE_X0 = ROW[0].cx - 4;
-const BLADE_X1 = ROW[ROW.length - 1].cx + 40;
-const BLADE_SLOPE = (ROW[ROW.length - 1].cutY - ROW[0].cutY) / (ROW[ROW.length - 1].cx - ROW[0].cx);
-const bladeY = (x: number) => ROW[0].cutY - 2 + (x - ROW[0].cx) * BLADE_SLOPE;
-
-const FELLED = ROW.map((tree) => ({
-  ...tree,
-  fellDelay: Math.round(SWEEP_START + ((tree.cx - BLADE_X0) / (BLADE_X1 - BLADE_X0)) * SWEEP_MS),
-}));
-
-// The axe animates about its grip. Solve the grip position for where the bit must be.
-const AXE_SCALE = 0.64;
-const AXE_LEAD = 620; // enters + winds up before the strike lands at SWEEP_START
-const AXE_EXIT = 260;
-const gripFor = (bx: number, by: number, deg: number): [number, number] => {
-  const [ox, oy] = rot(AXE_BIT[0] * AXE_SCALE, AXE_BIT[1] * AXE_SCALE, deg);
-  return [bx - ox, by - oy];
-};
-const AXE_STRIKE = gripFor(BLADE_X0, bladeY(BLADE_X0), -14);
-const AXE_END = gripFor(BLADE_X1, bladeY(BLADE_X1), 16);
-const AXE_WIND: [number, number] = [AXE_STRIKE[0] - 16, AXE_STRIKE[1] - 26];
-const AXE_VARS = {
-  "--hex": px(AXE_WIND[0] - 22),
-  "--hey": px(AXE_WIND[1] - 34),
-  "--hwx": px(AXE_WIND[0]),
-  "--hwy": px(AXE_WIND[1]),
-  "--h0x": px(AXE_STRIKE[0]),
-  "--h0y": px(AXE_STRIKE[1]),
-  "--h1x": px(AXE_END[0]),
-  "--h1y": px(AXE_END[1]),
-  "--hxx": px(AXE_END[0] + 30),
-  "--hxy": px(AXE_END[1] - 26),
-  animationDelay: `${SWEEP_START - AXE_LEAD}ms`,
-  animationDuration: `${AXE_LEAD + SWEEP_MS + AXE_EXIT}ms`,
-} as CSSProperties;
-
-// the motion trail of the down-swing: a crescent swept by the bit around the grip
-const SWOOSH_D = (() => {
-  const [gx, gy] = AXE_STRIKE;
-  const pts = (k: number) =>
-    Array.from({ length: 9 }, (_, i) => {
-      const deg = 72 - (86 * i) / 8;
-      const [x, y] = rot(AXE_BIT[0] * AXE_SCALE * k, AXE_BIT[1] * AXE_SCALE * k, deg);
-      return `${r1(gx + x)} ${r1(gy + y)}`;
-    });
-  const outer = pts(1.06);
-  const inner = pts(0.8).reverse();
-  return `M${outer.join("L")}L${inner.join("L")}Z`;
-})();
-
+/** Chips fly back out of the notch toward the axe, arc, and land. */
 const CHIPS = [
-  { mx: 7, my: -13, ex: 13, ey: 3, r: 220, c: "#EBC894" },
-  { mx: 11, my: -7, ex: 19, ey: 4, r: -170, c: "#C9955A" },
-  { mx: 3, my: -16, ex: 8, ey: 2, r: 300, c: "#F2D4A2" },
-  { mx: -4, my: -9, ex: -8, ey: 3, r: -200, c: "#B9844C" },
-];
-const LEAVES = [
-  { mx: -6, my: -10, ex: -10, ey: -2, r: 160 },
-  { mx: 4, my: -13, ex: 8, ey: -3, r: -220 },
-  { mx: 10, my: -6, ex: 15, ey: 0, r: 120 },
+  { mx: -8, my: -12, ex: -15, ey: 10, r: 220, c: "#EBC894" },
+  { mx: -13, my: -6, ex: -22, ey: 12, r: -170, c: "#C9955A" },
+  { mx: -4, my: -15, ex: -9, ey: 9, r: 300, c: "#F2D4A2" },
+  { mx: -10, my: -10, ex: -18, ey: 11, r: -200, c: "#B9844C" },
 ];
 
 const FOREST_TUFTS: [number, number, number][] = [
-  [14, 300, 1.2],
-  [40, 312, 1],
-  [96, 296, 1.1],
-  [150, 308, 1.3],
-  [204, 294, 1],
-  [252, 304, 1.2],
-  [120, 276, 0.8],
-  [230, 262, 0.7],
+  [14, 302, 1.2],
+  [44, 312, 1],
+  [150, 306, 1.3],
+  [206, 296, 1],
+  [254, 306, 1.2],
+  [124, 272, 0.8],
+  [232, 264, 0.7],
 ];
+
+function Chips({ at, x, y }: { at: number; x: number; y: number }) {
+  return (
+    <g transform={`translate(${r1(x)} ${r1(y)})`}>
+      {CHIPS.map((c, i) => (
+        <path
+          key={i}
+          d="M-1.8 -1.1L2 -0.8L1.3 1.2L-1.5 1Z"
+          fill={c.c}
+          className={styles.chip}
+          style={
+            {
+              "--cmx": px(c.mx),
+              "--cmy": px(c.my),
+              "--cex": px(c.ex),
+              "--cey": px(c.ey),
+              "--cr": `${c.r}deg`,
+              animationDelay: `${at}ms`,
+            } as CSSProperties
+          }
+        />
+      ))}
+    </g>
+  );
+}
+
+/** One tree on its stump: grows in at `grow`, falls over (away to the right) at `fall`. */
+function StandTree({
+  u,
+  x,
+  base,
+  s,
+  h,
+  kind,
+  haze,
+  grow,
+  fall,
+}: {
+  u: U;
+  x: number;
+  base: number;
+  s: number;
+  h: number;
+  kind: TreeKind;
+  haze: number;
+  grow: number;
+  fall: number;
+}) {
+  return (
+    <g transform={`translate(${r1(x)} ${r1(base)}) scale(${r1(s * 100) / 100})`}>
+      <g className={styles.treeGrow} style={{ animationDelay: `${grow}ms` }}>
+        <ellipse
+          cx={r1(h * 0.3)}
+          cy="0.6"
+          rx={r1(h * 0.36)}
+          ry="3.2"
+          fill={SHADOW}
+          className={styles.treeShadow}
+          style={{ animationDelay: `${fall}ms` }}
+        />
+        <Stump u={u} />
+        <g transform={`translate(0 ${-STUMP_H})`}>
+          <g className={styles.treeFell} style={{ animationDelay: `${fall}ms` }}>
+            <Tree kind={kind} h={h} u={u} haze={haze} />
+          </g>
+        </g>
+      </g>
+    </g>
+  );
+}
 
 function ForestScene() {
   const ids = useSvgIds("forest");
   const u = ids.url;
+  // the stand falls left → right after the big tree
+  const order = [...STAND].sort((a, b) => a.x - b.x);
+  const fallFor = (x: number) => CASCADE_AT + order.findIndex((t) => t.x === x) * CASCADE_STAGGER;
   return (
-    <svg viewBox="0 0 280 320" className={styles.sceneSvg} aria-hidden="true">
+    <svg viewBox={`0 0 ${VB_W} ${VB_H}`} className={styles.sceneSvg} aria-hidden="true">
       <Defs ids={ids} />
-      <Outdoors u={u} horizon={206} sun={[212, 70, 15]} />
-      <ellipse cx="150" cy="248" rx="150" ry="30" fill="#6E9F58" opacity={0.18} />
-      {[...FELLED].reverse().map((t) => {
-        const H = t.h - STUMP_H;
+      <Outdoors u={u} horizon={204} sun={[214, 72, 14]} />
+      {STAND.map((t, i) => {
+        const fall = fallFor(t.x);
         return (
-          <g key={t.k} transform={`translate(${r1(t.cx)} ${r1(t.base)}) scale(${r1(t.sc * 100) / 100})`}>
-            <g className={styles.treeGrow} style={{ animationDelay: `${t.growDelay}ms` }}>
-              <ellipse
-                cx={r1(t.h * 0.3)}
-                cy="0.6"
-                rx={r1(t.h * 0.38)}
-                ry="3.6"
-                fill={u("shadow")}
-                className={styles.treeShadow}
-                style={{ animationDelay: `${t.fellDelay}ms` }}
-              />
-              <Stump u={u} />
-              <g transform={`translate(0 ${-STUMP_H})`}>
-                <g className={styles.treeFell} style={{ animationDelay: `${t.fellDelay}ms` }}>
-                  <Tree kind={t.kind} h={t.h} u={u} haze={t.t * 0.42} />
-                </g>
-                {CHIPS.map((c, i) => (
-                  <path
-                    key={i}
-                    d="M-1.8 -1.1L2 -0.8L1.3 1.2L-1.5 1Z"
-                    fill={c.c}
-                    className={styles.chip}
-                    style={
-                      {
-                        "--cmx": px(c.mx),
-                        "--cmy": px(c.my),
-                        "--cex": px(c.ex),
-                        "--cey": px(c.ey),
-                        "--cr": `${c.r}deg`,
-                        animationDelay: `${t.fellDelay}ms`,
-                      } as CSSProperties
-                    }
-                  />
-                ))}
-              </g>
-              <g transform={`translate(${r1(H * 0.58)} -2)`}>
-                <ellipse
-                  rx={r1(H * 0.34)}
-                  ry="4"
-                  fill="#DCD3B6"
-                  className={styles.dust}
-                  style={{ animationDelay: `${t.fellDelay + 470}ms` }}
-                />
-                {LEAVES.map((l, i) => (
-                  <ellipse
-                    key={i}
-                    rx="2.2"
-                    ry="1.1"
-                    fill={i % 2 ? "#4E9A5C" : "#7DBE78"}
-                    className={styles.chip}
-                    style={
-                      {
-                        "--cmx": px(l.mx),
-                        "--cmy": px(l.my),
-                        "--cex": px(l.ex),
-                        "--cey": px(l.ey),
-                        "--cr": `${l.r}deg`,
-                        animationDelay: `${t.fellDelay + 470}ms`,
-                      } as CSSProperties
-                    }
-                  />
-                ))}
-              </g>
-            </g>
+          <g key={t.x}>
+            <StandTree
+              u={u}
+              {...t}
+              haze={Math.max(0, (0.9 - t.s) * 1.3)}
+              grow={(i + 1) * GROW_STAGGER}
+              fall={fall}
+            />
+            <Chips at={fall} x={t.x - TRUNK_HALF * t.s} y={t.base - STUMP_H * t.s - 1} />
           </g>
         );
       })}
+      <StandTree u={u} x={FT.x} base={FT.base} s={FT.s} h={FT.h} kind="round" haze={0} grow={0} fall={FALL_AT} />
+      {NOTCHES.map((n, i) => (
+        <path
+          key={i}
+          d={n.d}
+          fill="#EFCF98"
+          {...INK}
+          className={styles.notch}
+          style={{ animationDelay: `${n.at}ms`, animationDuration: `${FALL_AT - n.at + 60}ms` }}
+        />
+      ))}
       <GrassTufts tufts={FOREST_TUFTS} />
-      <path d={SWOOSH_D} fill={u("swoosh")} className={styles.swoosh} style={{ animationDelay: `${SWEEP_START - 170}ms` }} />
+      {AXE_IMPACTS.map((t) => (
+        <Chips key={t} at={AXE_START + t} x={FT_BITE[0] - 2} y={FT_BITE[1]} />
+      ))}
       <g className={styles.axe} style={AXE_VARS}>
         <g transform={`scale(${AXE_SCALE})`}>
           <Axe u={u} />
@@ -751,6 +756,7 @@ function ForestScene() {
 const COST_FEED_MS = 2500;
 const COST_TICK_TARGET = 540_000_000;
 const COST_DURATION = COST_FEED_MS + 500;
+const formatTotal = (v: number) => `$${Math.round(v).toLocaleString("en-US")}`;
 
 const ROLL_AT: [number, number] = [56, 58];
 const STRIP_X = 62;
@@ -771,42 +777,46 @@ const STRIP_ROWS = Array.from({ length: 44 }, (_, j) => {
 }).join("");
 const TILL_AT: [number, number] = [210, 274];
 
-function CostScene() {
+function CostScene({ still }: { still: boolean }) {
   const ids = useSvgIds("proof");
   const u = ids.url;
   const total = useRef<SVGTextElement>(null);
 
   useEffect(() => {
+    if (still) {
+      if (total.current) total.current.textContent = formatTotal(COST_TICK_TARGET);
+      return;
+    }
     let raf = 0;
     const start = performance.now() + 200;
     const span = COST_FEED_MS - 300;
     const tick = (now: number) => {
       const p = Math.min(1, Math.max(0, (now - start) / span));
       const v = COST_TICK_TARGET * p * p * p; // ease-in: spend accelerates with the feed
-      if (total.current) total.current.textContent = `$${Math.round(v).toLocaleString("en-US")}`;
+      if (total.current) total.current.textContent = formatTotal(v);
       if (p < 1) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [still]);
 
   return (
-    <svg viewBox="0 0 280 320" className={styles.sceneSvg} aria-hidden="true">
+    <svg viewBox={`0 0 ${VB_W} ${VB_H}`} className={styles.sceneSvg} aria-hidden="true">
       <Defs ids={ids}>
         <clipPath id={ids.id("feed")}>
-          <rect x="-200" y={ROLL_AT[1] + 12} width="700" height="600" />
+          <rect x="-300" y={ROLL_AT[1] + 12} width="900" height="700" />
         </clipPath>
       </Defs>
       <Counter u={u} back={COUNTER_BACK} front={COUNTER_FRONT} />
-      {/* wall bracket + the roll's soft shadow on the wall */}
-      <ellipse cx="104" cy="92" rx="60" ry="9" fill={u("shadowSoft")} />
-      <rect x="38" y="42" width="7" height="32" rx="2" fill={u("steel")} />
+      {/* wall bracket + the roll's flat shadow on the wall */}
+      <ellipse cx="100" cy="88" rx="52" ry="6" fill={SHADOW_SOFT} />
+      <rect x="38" y="42" width="7" height="32" rx="2" fill={u("steel")} {...INK} />
       <rect x="44" y="56.6" width="13" height="2.8" fill="#8894A0" />
       <g clipPath={u("feed")}>
         <g className={styles.feed} style={{ animationDuration: `${COST_FEED_MS}ms` }}>
-          <path d={STRIP_D} transform="translate(6 3)" fill={NAVY} opacity={0.08} />
-          <path d={STRIP_D} fill={u("paperSide")} stroke={NAVY} strokeOpacity={0.12} strokeWidth={0.7} />
-          <path d={STRIP_ROWS} stroke="#9AA6B0" strokeWidth={1} />
+          <path d={STRIP_D} transform="translate(5 3)" fill={SHADOW_SOFT} />
+          <path d={STRIP_D} fill={u("paperSide")} {...INK} />
+          <path d={STRIP_ROWS} stroke="#9AA6B0" {...DETAIL} />
         </g>
       </g>
       {/* the roll, drawn over the strip's root; it thins as it unspools */}
@@ -822,7 +832,11 @@ function CostScene() {
   );
 }
 
-const SCENES: Record<ProblemCardId, () => ReactElement> = { print: PrintScene, forest: ForestScene, proof: CostScene };
+const SCENES: Record<ProblemCardId, (p: { still: boolean }) => ReactElement> = {
+  print: PrintScene,
+  forest: ForestScene,
+  proof: CostScene,
+};
 const SCENE_DURATION: Record<ProblemCardId, number> = {
   print: PRINT_DURATION,
   forest: FOREST_DURATION,
@@ -830,7 +844,7 @@ const SCENE_DURATION: Record<ProblemCardId, number> = {
 };
 
 // ---------------------------------------------------------------------------
-// front illustrations — static hero frames of each scene, same painted language.
+// front illustrations — static hero frames of each scene, same flat language.
 // No CSS transforms on the front face (see the CSS header); SVG transform
 // attributes are fine.
 // ---------------------------------------------------------------------------
@@ -852,71 +866,66 @@ function FrontPrint() {
         <Printer u={u} ids={ids} />
       </g>
       {/* the slip coming out of the slot, curling forward onto the counter */}
-      <path d="M89.5 61.5H110.5V84C110.5 92 89.5 92 89.5 84Z" fill={u("paperSide")} stroke={NAVY} strokeOpacity={0.14} strokeWidth={0.7} />
-      <path d="M89.5 84C89.5 94 110.5 94 110.5 84C110.5 80.6 89.5 80.6 89.5 84Z" fill={u("curl")} />
-      <path d="M93 66H101M104 66H107M93 70H99M104 70H107M93 74H102M104 74H107" stroke="#97A3AE" strokeWidth={0.9} />
-      <path d="M93 79H98M103 79H107" stroke={NAVY} strokeWidth={1.1} />
+      <path d="M89.5 61.5H110.5V84C110.5 92 89.5 92 89.5 84Z" fill={u("paperSide")} {...INK} />
+      <path d="M89.5 84C89.5 94 110.5 94 110.5 84C110.5 80.6 89.5 80.6 89.5 84Z" fill="#DCE2E7" {...INK} />
+      <path d="M93 66H101M104 66H107M93 70H99M104 70H107M93 74H102M104 74H107" stroke="#97A3AE" {...DETAIL} />
+      <path d="M93 79H98M103 79H107" stroke={NAVY} {...DETAIL} />
     </svg>
   );
 }
 
+/** The forest front plate: the scene's third blow — axe bitten into the trunk, notch open. */
 function FrontForest() {
   const ids = useSvgIds("forest-front");
   const u = ids.url;
-  const stump: [number, number] = [140, 84];
-  const S = 2.3;
-  const topY = stump[1] - STUMP_H * S;
-  // axe lodged in the stump: bit a little below the cut face, handle rising to the right
-  const axeDeg = 50;
-  const axeScale = 0.42;
-  const [ox, oy] = rot(AXE_BIT[0] * axeScale, AXE_BIT[1] * axeScale, axeDeg);
-  const grip: [number, number] = [stump[0] + 1 - ox, topY + 3 - oy];
+  const t = { x: 88, base: 93, s: 1.05, h: 82 };
+  const cutY = t.base - STUMP_H * t.s;
+  const x0 = t.x - TRUNK_HALF * t.s;
+  const bite: [number, number] = [x0 + 1.5, cutY - 1.4 * t.s];
+  const axeScale = 0.36;
+  const [ox, oy] = rot(AXE_EDGE[0] * axeScale, AXE_EDGE[1] * axeScale, AXE_BITE_DEG);
+  const grip: [number, number] = [bite[0] - ox, bite[1] - oy];
   return (
     <svg viewBox="0 0 200 100" className={styles.artSvg} aria-hidden="true">
-      <Defs ids={ids}>
-        <clipPath id={ids.id("lodged")}>
-          <path d={`M-100 -100H300V${r1(topY + 0.4)}H-100Z`} />
-        </clipPath>
-      </Defs>
-      <Outdoors u={u} horizon={70} sun={[168, 24, 7]} />
+      <Defs ids={ids} />
+      <Outdoors u={u} horizon={68} sun={[170, 24, 7]} />
       {[
-        { x: 28, y: 78, h: 44, kind: "pine" as TreeKind, haze: 0.45, s: 0.72 },
-        { x: 62, y: 80, h: 58, kind: "round" as TreeKind, haze: 0.18, s: 0.82 },
-        { x: 44, y: 88, h: 72, kind: "pine" as TreeKind, haze: 0, s: 0.95 },
-        { x: 84, y: 90, h: 62, kind: "pine" as TreeKind, haze: 0, s: 0.92 },
-      ].map((t, i) => (
-        <g key={i} transform={`translate(${t.x} ${t.y}) scale(${t.s})`}>
-          <ellipse cx={r1(t.h * 0.3)} cy="0.6" rx={r1(t.h * 0.38)} ry="3.4" fill={u("shadow")} />
+        { x: 128, y: 76, h: 60, kind: "pine" as TreeKind, haze: 0.4, s: 0.7 },
+        { x: 176, y: 78, h: 66, kind: "round" as TreeKind, haze: 0.3, s: 0.74 },
+        { x: 150, y: 84, h: 70, kind: "pine" as TreeKind, haze: 0.1, s: 0.86 },
+        { x: 26, y: 78, h: 58, kind: "pine" as TreeKind, haze: 0.4, s: 0.7 },
+      ].map((tr, i) => (
+        <g key={i} transform={`translate(${tr.x} ${tr.y}) scale(${tr.s})`}>
+          <ellipse cx={r1(tr.h * 0.3)} cy="0.6" rx={r1(tr.h * 0.36)} ry="3" fill={SHADOW} />
           <Stump u={u} />
           <g transform={`translate(0 ${-STUMP_H})`}>
-            <Tree kind={t.kind} h={t.h} u={u} haze={t.haze} />
+            <Tree kind={tr.kind} h={tr.h} u={u} haze={tr.haze} />
           </g>
         </g>
       ))}
-      {/* a felled log, rings to camera */}
-      <g transform="translate(166 82)">
-        <ellipse cx="4" cy="6.4" rx="24" ry="2.6" fill={u("shadow")} />
-        <path d="M-12 -5H18A3.2 5.6 0 0 1 18 6.2H-12Z" fill={u("bark")} />
-        <path d="M-10 -2.6H14M-6 1.8H16" stroke="#4A2D19" strokeOpacity={0.5} strokeWidth={0.6} />
-        <ellipse cx="-12" cy="0.6" rx="3.4" ry="5.6" fill={u("logEnd")} stroke="#7E502C" strokeWidth={0.8} />
-        <ellipse cx="-12" cy="0.6" rx="2" ry="3.4" fill="none" stroke="#B98549" strokeWidth={0.5} />
-        <ellipse cx="-12" cy="0.6" rx="0.9" ry="1.5" fill="none" stroke="#B98549" strokeWidth={0.5} />
-      </g>
-      {/* the stump with the axe in it */}
-      <ellipse cx={stump[0] + 12} cy={stump[1] + 1} rx="20" ry="3.4" fill={u("shadow")} />
-      <g transform={`translate(${stump[0]} ${stump[1]}) scale(${S})`}>
+      {/* one already down: a stump in the grass */}
+      <g transform="translate(184 92) scale(0.9)">
         <Stump u={u} />
-        <ellipse cx="-0.2" cy={-STUMP_H} rx="1.5" ry="0.55" fill="none" stroke="#B98549" strokeWidth={0.5} />
       </g>
-      <path d={`M${stump[0] - 3} ${r1(topY + 0.6)}L${stump[0] + 5} ${r1(topY - 0.4)}`} stroke="#5A3820" strokeWidth={1.1} />
-      <g clipPath={u("lodged")}>
-        <g transform={`translate(${r1(grip[0])} ${r1(grip[1])}) rotate(${axeDeg}) scale(${axeScale})`}>
-          <Axe u={u} />
+      {/* the tree being felled */}
+      <g transform={`translate(${t.x} ${t.base}) scale(${t.s})`}>
+        <ellipse cx={r1(t.h * 0.3)} cy="0.6" rx={r1(t.h * 0.36)} ry="3" fill={SHADOW} />
+        <Stump u={u} />
+        <g transform={`translate(0 ${-STUMP_H})`}>
+          <Tree kind="round" h={t.h} u={u} />
         </g>
       </g>
-      {/* chips on the grass */}
-      <path d="M122 88l3 -0.6l-0.4 1.4ZM131 91l2.6 0.4l-1.2 1.2ZM153 90l2.8 -0.8l0 1.4ZM159 87l2 0.5l-1 1Z" fill="#E4BE86" />
-      <GrassTufts tufts={[[16, 94, 0.8], [104, 96, 0.9], [184, 95, 0.8], [118, 84, 0.6]]} />
+      <path
+        d={`M${r1(x0)} ${r1(bite[1] - 3.2)}L${r1(x0 + 4.4)} ${r1(bite[1])}L${r1(x0)} ${r1(bite[1] + 3.2)}Z`}
+        fill="#EFCF98"
+        {...INK}
+      />
+      <g transform={`translate(${r1(grip[0])} ${r1(grip[1])}) rotate(${AXE_BITE_DEG}) scale(${axeScale})`}>
+        <Axe u={u} />
+      </g>
+      {/* chips thrown back out of the notch */}
+      <path d="M72 84l2.6 -0.8l-0.2 1.4ZM66 88l2.4 0.4l-1.2 1.1ZM78 80l2 -0.6l-0.2 1.2ZM60 94l2.6 -0.4l-0.6 1.3Z" fill="#E4BE86" />
+      <GrassTufts tufts={[[12, 95, 0.8], [110, 97, 0.9], [196, 96, 0.8], [132, 88, 0.6]]} />
     </svg>
   );
 }
@@ -928,14 +937,14 @@ function FrontCost() {
     <svg viewBox="0 0 200 100" className={styles.artSvg} aria-hidden="true">
       <Defs ids={ids} />
       <Counter u={u} back={54} front={92} />
-      <ellipse cx="72" cy="34" rx="34" ry="5" fill={u("shadowSoft")} />
-      <rect x="30" y="16" width="4" height="18" rx="1.2" fill={u("steel")} />
+      <ellipse cx="70" cy="32" rx="28" ry="3.4" fill={SHADOW_SOFT} />
+      <rect x="30" y="16" width="4" height="18" rx="1.2" fill={u("steel")} {...INK} />
       <rect x="33" y="24.2" width="7" height="1.6" fill="#8894A0" />
       {/* strip runs from the roll down to the counter and loops over */}
-      <path d="M43 36H74V78C74 88 60 90 50 88C43 86 43 82 43 78Z" fill={NAVY} opacity={0.07} transform="translate(3 2)" />
-      <path d="M43 36H74V80H43Z" fill={u("paperSide")} stroke={NAVY} strokeOpacity={0.12} strokeWidth={0.6} />
-      <path d="M43 80C43 92 74 92 74 80C74 76.5 43 76.5 43 80Z" fill={u("curl")} />
-      <path d="M47 44H58M66 44H70M47 50H56M66 50H70M47 56H60M66 56H70M47 62H55M66 62H70M47 68H59M66 68H70" stroke="#9AA6B0" strokeWidth={0.8} />
+      <path d="M43 36H74V78C74 88 60 90 50 88C43 86 43 82 43 78Z" fill={SHADOW_SOFT} transform="translate(3 2)" />
+      <path d="M43 36H74V80H43Z" fill={u("paperSide")} {...INK} />
+      <path d="M43 80C43 92 74 92 74 80C74 76.5 43 76.5 43 80Z" fill="#DCE2E7" {...INK} />
+      <path d="M47 44H58M66 44H70M47 50H56M66 50H70M47 56H60M66 56H70M47 62H55M66 62H70M47 68H59M66 68H70" stroke="#9AA6B0" {...DETAIL} />
       <g transform="translate(40 25) scale(0.55)">
         <Roll u={u} />
       </g>
@@ -1027,34 +1036,124 @@ function Stat({ value, run, instant }: { value: string; run: boolean; instant: b
 }
 
 // ---------------------------------------------------------------------------
+// the dock — measure the empty strip under the caption (layout px, so the card's
+// 3D rotation can't skew it) and hand the stage two CSS values: the clip window
+// (--dock-clip) and the move that scales + slides the scene's DOCK_FOCUS region
+// into that window (--dock-move). The strip is filled by layout; nothing about
+// the card's outer size changes.
+// ---------------------------------------------------------------------------
+function offsetIn(el: HTMLElement, root: HTMLElement): [number, number] {
+  let x = 0;
+  let y = 0;
+  let n: HTMLElement | null = el;
+  while (n && n !== root) {
+    x += n.offsetLeft;
+    y += n.offsetTop;
+    n = n.offsetParent as HTMLElement | null;
+  }
+  return [x, y];
+}
+
+/** The stage's border (it wears the .plate frame) — the scene sits inside it. */
+const STAGE_BORDER = 1;
+const DOCK_RADIUS = 12;
+
+function useDock(
+  active: boolean,
+  id: ProblemCardId,
+  face: RefObject<HTMLDivElement | null>,
+  stage: RefObject<HTMLDivElement | null>,
+  slot: RefObject<HTMLDivElement | null>,
+) {
+  useLayoutEffect(() => {
+    const f = face.current;
+    const st = stage.current;
+    const sl = slot.current;
+    if (!active || !f || !st || !sl) return;
+    const measure = () => {
+      const W = st.offsetWidth;
+      const Hh = st.offsetHeight;
+      const [stX, stY] = offsetIn(st, f);
+      const [slX, slY] = offsetIn(sl, f);
+      const sx = slX - stX;
+      const sy = slY - stY;
+      const sw = sl.offsetWidth;
+      const sh = sl.offsetHeight;
+      if (W <= 0 || Hh <= 0 || sw <= 0 || sh <= 0) return;
+      st.style.setProperty(
+        "--dock-clip",
+        `inset(${px(sy)} ${px(W - sx - sw)} ${px(Hh - sy - sh)} ${px(sx)} round ${DOCK_RADIUS}px)`,
+      );
+      // the scene's own box (inside the border), letterboxed like an <svg> "meet"
+      const cw = W - 2 * STAGE_BORDER;
+      const ch = Hh - 2 * STAGE_BORDER;
+      const k = Math.min(cw / VB_W, ch / VB_H);
+      const ox = (cw - VB_W * k) / 2;
+      const oy = (ch - VB_H * k) / 2;
+      const [fx, fy, fw, fh] = DOCK_FOCUS[id];
+      const m = Math.min(sh / (fh * k), sw / (fw * k));
+      const tx = sx - STAGE_BORDER + sw / 2 - m * (ox + (fx + fw / 2) * k);
+      const ty = sy - STAGE_BORDER + sh / 2 - m * (oy + (fy + fh / 2) * k);
+      st.style.setProperty("--dock-move", `translate(${px(tx)}, ${px(ty)}) scale(${m.toFixed(4)})`);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(f);
+    ro.observe(sl);
+    return () => ro.disconnect();
+  }, [active, id, face, stage, slot]);
+}
+
+// ---------------------------------------------------------------------------
 // the card
 // ---------------------------------------------------------------------------
 type Stage = "idle" | "scene" | "revealed";
 
 export function FlipCard({ card, index }: { card: Card; index: number }) {
   const { id, question, hint, value, caption, source } = card;
+  const href = PROBLEM_SOURCE_URLS[id];
   const [flipped, setFlipped] = useState(false);
   const [stage, setStage] = useState<Stage>("idle");
   const [sceneMounted, setSceneMounted] = useState(false);
+  /** Reduced motion: the scene mounts on its last frame, already docked. */
+  const [still, setStill] = useState(false);
   const prefersReduced = useReducedMotion() ?? false;
   const timers = useRef<number[]>([]);
+  const focusAfterFlip = useRef(false);
+  const frontBtn = useRef<HTMLButtonElement>(null);
+  const backBtn = useRef<HTMLButtonElement>(null);
+  const backFace = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const slotRef = useRef<HTMLDivElement>(null);
   const resultId = useId();
   const Scene = SCENES[id];
   const label = `[${String(index + 1).padStart(2, "0")}]`;
 
+  useDock(sceneMounted, id, backFace, stageRef, slotRef);
+
   useEffect(() => () => timers.current.forEach((t) => window.clearTimeout(t)), []);
+
+  // A keyboard flip leaves focus on a button that just went inert — hand it across.
+  useEffect(() => {
+    if (!focusAfterFlip.current) return;
+    focusAfterFlip.current = false;
+    (flipped ? backBtn : frontBtn).current?.focus({ preventScroll: true });
+  }, [flipped]);
 
   const after = (ms: number, fn: () => void) => timers.current.push(window.setTimeout(fn, ms));
 
-  function toggle() {
+  function toggle(e: ReactMouseEvent<HTMLButtonElement>) {
     timers.current.forEach((t) => window.clearTimeout(t));
     timers.current = [];
+    focusAfterFlip.current = document.activeElement === e.currentTarget;
 
     if (flipped) {
+      // The docked layout stays put while the card turns away, then resets.
       setFlipped(false);
       const reset = () => {
         setStage("idle");
         setSceneMounted(false);
+        setStill(false);
       };
       if (prefersReduced) reset();
       else after(FLIP_BACK_MS, reset);
@@ -1062,23 +1161,23 @@ export function FlipCard({ card, index }: { card: Card; index: number }) {
     }
 
     setFlipped(true);
-    setStage("idle");
-    setSceneMounted(false);
     if (prefersReduced) {
+      setStill(true);
+      setSceneMounted(true);
       setStage("revealed");
       return;
     }
+    setStill(false);
+    setStage("idle");
+    setSceneMounted(false);
     after(FLIP_TO_SCENE_MS, () => {
       setStage("scene");
       setSceneMounted(true);
-      after(SCENE_DURATION[id], () => {
-        setStage("revealed");
-        after(STAGE_OUT_MS, () => setSceneMounted(false));
-      });
+      after(SCENE_DURATION[id], () => setStage("revealed"));
     });
   }
 
-  function onPointerMove(e: ReactPointerEvent<HTMLButtonElement>) {
+  function onPointerMove(e: ReactPointerEvent<HTMLDivElement>) {
     if (e.pointerType !== "mouse") return;
     const el = e.currentTarget;
     const r = el.getBoundingClientRect();
@@ -1092,18 +1191,16 @@ export function FlipCard({ card, index }: { card: Card; index: number }) {
   const revealed = stage === "revealed";
 
   return (
-    <button
-      type="button"
-      data-flipcard={id}
-      aria-pressed={flipped}
-      aria-label={`Flip card: ${question}`}
-      aria-describedby={revealed ? resultId : undefined}
-      onClick={toggle}
-      onPointerMove={onPointerMove}
-      className={cn(styles.card, flipped && styles.cardFlipped)}
-    >
+    <div data-flipcard={id} onPointerMove={onPointerMove} className={cn(styles.card, flipped && styles.cardFlipped)}>
       <div className={styles.inner}>
-        <div className={styles.face}>
+        <div className={styles.face} inert={flipped} aria-hidden={flipped}>
+          <button
+            ref={frontBtn}
+            type="button"
+            className={styles.flipBtn}
+            aria-label={`${question} ${hint}`}
+            onClick={toggle}
+          />
           <div className={styles.head}>
             <span className={styles.label}>
               <span className={styles.labelIndex}>{label}</span> {LABEL[id]}
@@ -1122,29 +1219,66 @@ export function FlipCard({ card, index }: { card: Card; index: number }) {
           </div>
         </div>
 
-        <div className={cn(styles.face, styles.faceBack)}>
+        <div ref={backFace} className={cn(styles.face, styles.faceBack)} inert={!flipped} aria-hidden={!flipped}>
+          <button
+            ref={backBtn}
+            type="button"
+            className={styles.flipBtn}
+            aria-label={`Flip back: ${question}`}
+            aria-describedby={revealed ? resultId : undefined}
+            onClick={toggle}
+          />
           <div className={styles.head}>
             <span className={styles.label}>
               <span className={styles.labelIndex}>{label}</span> {LABEL[id]}
             </span>
             <FlipGlyph />
           </div>
-          {sceneMounted && (
-            <div className={cn(styles.plate, styles.stage, revealed && styles.stageOut)} aria-hidden="true">
-              <Scene />
-            </div>
-          )}
           <div id={resultId} className={cn(styles.result, revealed && styles.resultOn)}>
             <div className={styles.resultTop}>
               <Stat value={value} run={revealed} instant={prefersReduced} />
               <span className={styles.rule} aria-hidden="true" />
               <p className={styles.caption}>{caption}</p>
             </div>
-            <p className={styles.source}>Source: {source}</p>
+            {/* the strip the scene docks into */}
+            <div ref={slotRef} className={styles.slot} aria-hidden="true" />
+            <p className={styles.source}>
+              Source:{" "}
+              {href ? (
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.sourceLink}
+                  tabIndex={revealed ? 0 : -1}
+                  onClick={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
+                  {source}
+                  <span className={styles.sourceArrow} aria-hidden="true">
+                    ↗
+                  </span>
+                  <span className="sr-only"> (opens in a new tab)</span>
+                </a>
+              ) : (
+                source
+              )}
+            </p>
           </div>
+          {sceneMounted && (
+            <div
+              ref={stageRef}
+              className={cn(styles.plate, styles.stage, revealed && styles.stageDocked, still && styles.still)}
+              aria-hidden="true"
+            >
+              <div className={styles.stageContent}>
+                <Scene still={still} />
+              </div>
+            </div>
+          )}
         </div>
       </div>
-    </button>
+    </div>
   );
 }
 
