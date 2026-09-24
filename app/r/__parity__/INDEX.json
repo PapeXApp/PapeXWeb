@@ -1,0 +1,253 @@
+{
+  "note": "Rendered before receipt cards reached production /r. Do not regenerate for a cards change.",
+  "scenarios": {
+    "sid-text": {
+      "sha256": "c8e6a3cdc871acb94ef3ba55d14aa5edee4aa252f0ac01575db54b93f8ac4b9e",
+      "redirect": null,
+      "urls": [
+        "https://api.papex.app/receipt/a1b2c3d4e5f60718",
+        "https://api.papex.app/receipt/a1b2c3d4e5f60718/parsed"
+      ]
+    },
+    "sid-text-android": {
+      "sha256": "829fc8dcc56bdbffdb56f6bc84124a15cd24b4c77e0cb9b6dc98a1a5e2aca51f",
+      "redirect": null,
+      "urls": [
+        "https://api.papex.app/receipt/a1b2c3d4e5f60718",
+        "https://api.papex.app/receipt/a1b2c3d4e5f60718/parsed"
+      ]
+    },
+    "sid-raster-pending": {
+      "sha256": "137d3bd2ab075f3215fe0757fc5fbd11e8002bd9e7186caaab0177cabbc09d8e",
+      "redirect": null,
+      "urls": [
+        "https://api.papex.app/receipt/3ea8e69cc7764ad8",
+        "https://api.papex.app/receipt/3ea8e69cc7764ad8/parsed"
+      ]
+    },
+    "sid-raster-parsed": {
+      "sha256": "178855f302406c86bc21c26137d282389512a11e4cd386b4f296e4fd1ae7c2e4",
+      "redirect": null,
+      "urls": [
+        "https://api.papex.app/receipt/3ea8e69cc7764ad8",
+        "https://api.papex.app/receipt/3ea8e69cc7764ad8/parsed"
+      ]
+    },
+    "sid-raster-parsed-error": {
+      "sha256": "137d3bd2ab075f3215fe0757fc5fbd11e8002bd9e7186caaab0177cabbc09d8e",
+      "redirect": null,
+      "urls": [
+        "https://api.papex.app/receipt/3ea8e69cc7764ad8",
+        "https://api.papex.app/receipt/3ea8e69cc7764ad8/parsed"
+      ]
+    },
+    "sid-unknown": {
+      "sha256": "79cd3f6f0240f6681a726763046580a748d217581138972733e6b7683b28cb11",
+      "redirect": null,
+      "urls": [
+        "https://api.papex.app/receipt/0000000000000404",
+        "https://api.papex.app/receipt/0000000000000404/parsed"
+      ]
+    },
+    "sid-backend-error": {
+      "sha256": "7109ca221518512cba585c4f68ff2ab5533e4ab4412f1b412660d22f8b6b2b65",
+      "redirect": null,
+      "urls": [
+        "https://api.papex.app/receipt/0000000000000500",
+        "https://api.papex.app/receipt/0000000000000500/parsed"
+      ]
+    },
+    "sid-malformed": {
+      "sha256": "79cd3f6f0240f6681a726763046580a748d217581138972733e6b7683b28cb11",
+      "redirect": null,
+      "urls": []
+    },
+    "bare": {
+      "sha256": "697d1478bde3af472df6a06e5024f47a57106f8fe8dc4cf294b346ab5ff266fc",
+      "redirect": null,
+      "urls": []
+    },
+    "demo-flag": {
+      "sha256": "697d1478bde3af472df6a06e5024f47a57106f8fe8dc4cf294b346ab5ff266fc",
+      "redirect": null,
+      "urls": []
+    },
+    "demo-flag-with-sid": {
+      "sha256": "697d1478bde3af472df6a06e5024f47a57106f8fe8dc4cf294b346ab5ff266fc",
+      "redirect": null,
+      "urls": []
+    },
+    "rid-ok": {
+      "sha256": "688e85e21557710cd946a1e059d419dd5c24e393ae4108d097d011cf70fdf491",
+      "redirect": null,
+      "urls": [
+        "https://us-central1-papexv2.cloudfunctions.net/sharedReceipt?rid=receipt_1776344585632_4mrd9txmk"
+      ]
+    },
+    "rid-not-found": {
+      "sha256": "79cd3f6f0240f6681a726763046580a748d217581138972733e6b7683b28cb11",
+      "redirect": null,
+      "urls": [
+        "https://us-central1-papexv2.cloudfunctions.net/sharedReceipt?rid=receipt_1776344585632_4mrd9txmk"
+      ]
+    },
+    "rid-malformed": {
+      "sha256": "79cd3f6f0240f6681a726763046580a748d217581138972733e6b7683b28cb11",
+      "redirect": null,
+      "urls": []
+    },
+    "sid-and-rid": {
+      "sha256": "c8e6a3cdc871acb94ef3ba55d14aa5edee4aa252f0ac01575db54b93f8ac4b9e",
+      "redirect": null,
+      "urls": [
+        "https://api.papex.app/receipt/a1b2c3d4e5f60718",
+        "https://api.papex.app/receipt/a1b2c3d4e5f60718/parsed"
+      ]
+    },
+    "r-hartwells": {
+      "sha256": "28b45e48ce4e7c2b14c21d3a619b6f064c02d0af92f91a73a9209f5de33cc2fc",
+      "redirect": null,
+      "urls": [
+        "https://api.papex.app/receipt/5ca1e00000000001",
+        "https://api.papex.app/receipt/5ca1e00000000001/parsed"
+      ]
+    },
+    "r-ellsworth": {
+      "sha256": "8dbc167c395114611b2d66727d7b8ed8198a5456879d051ca06336c852cff5d9",
+      "redirect": null,
+      "urls": [
+        "https://api.papex.app/receipt/b0de9a0000000001",
+        "https://api.papex.app/receipt/b0de9a0000000001/parsed"
+      ]
+    },
+    "r-sunset-leaf": {
+      "sha256": "2dcdd9454058423688e7b2aede82b687fd3dc2f0818c7ee5f4f6c9cd1c2588e5",
+      "redirect": null,
+      "urls": [
+        "https://api.papex.app/receipt/5371e4f000000001",
+        "https://api.papex.app/receipt/5371e4f000000001/parsed"
+      ]
+    },
+    "r-demo-hartwells": {
+      "sha256": "5211586a5549149cd052bdacaf10653cae4ac6b3033a0ca492eb67d78d3fa7e0",
+      "redirect": null,
+      "urls": [
+        "https://api.papex.app/receipt/5ca1e00000000001"
+      ]
+    },
+    "r-demo-ellsworth": {
+      "sha256": "28b2bbb994b55d1a8a138e0d5f54f3178da2604da9a095b14d465af57e2016ef",
+      "redirect": null,
+      "urls": [
+        "https://api.papex.app/receipt/b0de9a0000000001"
+      ]
+    },
+    "r-demo-sunset-leaf": {
+      "sha256": "2dcdd9454058423688e7b2aede82b687fd3dc2f0818c7ee5f4f6c9cd1c2588e5",
+      "redirect": null,
+      "urls": [
+        "https://api.papex.app/receipt/5371e4f000000001"
+      ]
+    },
+    "demo-r-hartwells": {
+      "sha256": "5211586a5549149cd052bdacaf10653cae4ac6b3033a0ca492eb67d78d3fa7e0",
+      "redirect": null,
+      "urls": [
+        "https://api.papex.app/receipt/5ca1e00000000001"
+      ]
+    },
+    "demo-r-ellsworth": {
+      "sha256": "28b2bbb994b55d1a8a138e0d5f54f3178da2604da9a095b14d465af57e2016ef",
+      "redirect": null,
+      "urls": [
+        "https://api.papex.app/receipt/b0de9a0000000001"
+      ]
+    },
+    "r-demo-non-demo-sid": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "redirect": "/r?sid=a1b2c3d4e5f60718",
+      "urls": []
+    }
+  },
+  "metadata": {
+    "sid": {
+      "title": "Your PapeX Receipt",
+      "description": "View your digital receipt from PapeX.",
+      "robots": {
+        "index": false,
+        "follow": false
+      },
+      "other": {
+        "apple-itunes-app": "app-id=6754945242, app-clip-bundle-id=com.app.papex.Clip, app-clip-display=card"
+      }
+    },
+    "sid-demo-sid": {
+      "title": "Your PapeX Receipt",
+      "description": "View your digital receipt from PapeX.",
+      "robots": {
+        "index": false,
+        "follow": false
+      },
+      "other": {
+        "apple-itunes-app": "app-id=6754945242, app-clip-bundle-id=com.app.papex.Clip, app-clip-display=card"
+      }
+    },
+    "sid-malformed": {
+      "title": "Your PapeX Receipt",
+      "description": "View your digital receipt from PapeX.",
+      "robots": {
+        "index": false,
+        "follow": false
+      },
+      "other": {
+        "apple-itunes-app": "app-id=6754945242, app-clip-bundle-id=com.app.papex.Clip, app-clip-display=card"
+      }
+    },
+    "rid-flag-off": {
+      "title": "Your PapeX Receipt",
+      "description": "View your digital receipt from PapeX.",
+      "robots": {
+        "index": false,
+        "follow": false
+      }
+    },
+    "rid-flag-on": {
+      "title": "Your PapeX Receipt",
+      "description": "View your digital receipt from PapeX.",
+      "robots": {
+        "index": false,
+        "follow": false
+      },
+      "other": {
+        "apple-itunes-app": "app-id=6754945242, app-clip-bundle-id=com.app.papex.Clip, app-clip-display=card"
+      }
+    },
+    "sid-and-rid": {
+      "title": "Your PapeX Receipt",
+      "description": "View your digital receipt from PapeX.",
+      "robots": {
+        "index": false,
+        "follow": false
+      },
+      "other": {
+        "apple-itunes-app": "app-id=6754945242, app-clip-bundle-id=com.app.papex.Clip, app-clip-display=card"
+      }
+    },
+    "bare": {
+      "title": "Your PapeX Receipt",
+      "description": "View your digital receipt from PapeX.",
+      "robots": {
+        "index": false,
+        "follow": false
+      }
+    },
+    "demo-flag": {
+      "title": "Your PapeX Receipt",
+      "description": "View your digital receipt from PapeX.",
+      "robots": {
+        "index": false,
+        "follow": false
+      }
+    }
+  }
+}
