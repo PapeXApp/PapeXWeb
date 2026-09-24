@@ -246,6 +246,12 @@ async function main() {
     assert.ok(code.html.includes(card.redemption.code));
   });
 
+  await test("QR offer (variant 0003) on /r: a server-drawn SVG QR code, no 1-D barcode", async () => {
+    const r = await renderVariant("offer-qr");
+    assert.match(r.html, /<svg[^>]*aria-label="QR code ELLS10OFF75"/);
+    assert.ok(!/aria-label="Barcode/.test(r.html));
+  });
+
   await test("licence line: drawn verbatim for the age-restricted merchant; absent for the control", async () => {
     const on = await renderVariant("offer-licence");
     const line = JSON.parse(readVariant(variant("offer-licence").responses.web)).cards[0].compliance.licenseLine;

@@ -59,7 +59,7 @@ All additive; `schemaVersion` stays 1. A P0 client ignores every one of them saf
 - **`compliance: {licenseLine}`** (at most 120) on `offer`, `text` and `cta`. Rendered verbatim, muted, under the terms/body. For `merchant.ageRestricted === true`, every offer and every merchant-voice text/cta card MUST carry it: the schema says so, and a client drops such a card without it. A malformed `compliance` drops its card for any merchant.
 - **`savings.headline`** (at most 60): "You saved $4.00 with a PapeX coupon". Savings is always PapeX's voice.
 - **Body size**: a response body over 32 768 bytes renders no cards (`parseCardsResponse`).
-- **Caps**: comma tokens; `barcode:a|b|c` lists symbologies. 1.7.0 clip/app send `text,offer,cta,savings,disclosure,compliance,barcode:code128|ean13|upca|qr`; the web omits `qr`. `compliance` means "I render the licence line": without it the server sends no card from an age-restricted merchant. `save` actions are emitted only for `surface=app`. See `CAPS_1_7_0` in `lib/cards/types.ts`.
+- **Caps**: comma tokens; `barcode:a|b|c` lists symbologies. 1.7.0 web, clip and app all send `text,offer,cta,savings,disclosure,compliance,barcode:code128|ean13|upca|qr`. (Amended 2026-09-23: the web row first omitted `qr`; the web now draws QR server-side, `lib/cards/qr.ts`, so test variant 0003 answers `surface=web` with its QR offer too.) `compliance` means "I render the licence line": without it the server sends no card from an age-restricted merchant. `save` actions are emitted only for `surface=app`. See `CAPS_1_7_0` in `lib/cards/types.ts`.
 - **The resolver emits at most 6 cards**; clients still accept up to 8 (rule 6).
 
 ## Countdown chip

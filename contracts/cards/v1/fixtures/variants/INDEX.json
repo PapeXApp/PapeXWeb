@@ -2,7 +2,7 @@
   "format": 1,
   "description": "1.7.0 card variants. Each `sid` is a planned TEST sid (merchant `test-cards` or `test-cards-21`, never a demo or pilot merchant). `responses[surface]` is the exact response for GET /receipt/{sid}/cards?surface=<surface>&schema=1&caps=<CAPS_1_7_0[surface]>, byte for byte except `configRef`. Mint each sid with a byte copy of the receipt blob of `copyReceiptBlobFrom`. `clientOnly` cases are never minted: clients feed the file to their decoder.",
   "capsBySurface": {
-    "web": "text,offer,cta,savings,disclosure,compliance,barcode:code128|ean13|upca",
+    "web": "text,offer,cta,savings,disclosure,compliance,barcode:code128|ean13|upca|qr",
     "clip": "text,offer,cta,savings,disclosure,compliance,barcode:code128|ean13|upca|qr",
     "app": "text,offer,cta,savings,disclosure,compliance,barcode:code128|ean13|upca|qr"
   },
@@ -101,12 +101,14 @@
       "layout": "receipt-first",
       "status": "ok",
       "responses": {
-        "web": "offer-qr.web.json",
+        "web": "offer-qr.json",
         "clip": "offer-qr.json",
         "app": "offer-qr.app.json"
       },
       "expectCardIds": {
-        "web": [],
+        "web": [
+          "tc-offer-3"
+        ],
         "clip": [
           "tc-offer-3"
         ],
@@ -114,7 +116,7 @@
           "tc-offer-3-app"
         ]
       },
-      "purpose": "QR redemption. The web does not advertise barcode.qr in 1.7.0, so web gets status none."
+      "purpose": "QR redemption, on every surface (the web advertises barcode:qr since the 2026-09-23 amendment)."
     },
     {
       "sid": "7e57ca4d00000004",

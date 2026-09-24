@@ -487,8 +487,8 @@ test("v1.1 caps: each 1.7.0 surface's caps string is exactly what the contract s
   const web = parseCaps(CAPS_1_7_0.web);
   const clip = parseCaps(CAPS_1_7_0.clip);
   const app = parseCaps(CAPS_1_7_0.app);
-  assert.equal(web.symbologies.has("qr"), false, "web has no QR encoder yet");
-  assert.ok(clip.symbologies.has("qr") && app.symbologies.has("qr"));
+  assert.ok(web.symbologies.has("qr") && clip.symbologies.has("qr") && app.symbologies.has("qr"), "every surface draws QR");
+  assert.equal(CAPS_1_7_0.web, CAPS_1_7_0.clip, "web and clip advertise the same caps");
   for (const c of [web, clip, app]) {
     assert.deepEqual([...c.types].sort(), ["compliance", "cta", "disclosure", "offer", "savings", "text"]);
     assert.ok(["code128", "ean13", "upca"].every((s) => c.symbologies.has(s)));

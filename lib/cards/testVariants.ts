@@ -240,7 +240,7 @@ interface Variant {
 export const VARIANTS: Variant[] = [
   { n: 1, name: "rf-offer-code128", merchant: "test-cards", template: "hartwells", order: "receipt-first", cards: [offer("tc-offer", "h-bounty-code128", H_HEADING)], purpose: "Receipt-first (the default). One offer, Code 128, shared code." },
   { n: 2, name: "cf-offer-code128", merchant: "test-cards", template: "hartwells", order: "cards-first", cards: [offer("tc-offer", "h-bounty-code128", H_HEADING)], purpose: "Cards-first: the same offer as 0001, inserted ABOVE the receipt once, with a fade." },
-  { n: 3, name: "offer-qr", merchant: "test-cards", template: "ellsworth", order: "receipt-first", cards: [offer("tc-offer", "e-10off75-qr", E_HEADING)], capsDrop: { web: [] }, purpose: "QR redemption. The web does not advertise barcode.qr in 1.7.0, so web gets status none." },
+  { n: 3, name: "offer-qr", merchant: "test-cards", template: "ellsworth", order: "receipt-first", cards: [offer("tc-offer", "e-10off75-qr", E_HEADING)], purpose: "QR redemption, on every surface (the web advertises barcode:qr since the 2026-09-23 amendment)." },
   { n: 4, name: "offer-upca", merchant: "test-cards", template: "ellsworth", order: "receipt-first", cards: [offer("tc-offer", "e-10off75-upca", E_HEADING)], purpose: "UPC-A redemption (check digit valid)." },
   { n: 5, name: "offer-text-code", merchant: "test-cards", template: "hartwells", order: "receipt-first", cards: [offer("tc-offer", "h-bounty-code", H_HEADING)], purpose: "Text code only, no barcode." },
   { n: 6, name: "offer-unique-template", merchant: "test-cards", template: "ellsworth", order: "receipt-first", cards: [offer("tc-offer", "e-10off75-template", E_HEADING)], purpose: "Unique per-sid code, template mode EM10-{sid6}; scope unique." },

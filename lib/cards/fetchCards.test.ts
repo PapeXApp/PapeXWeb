@@ -224,7 +224,7 @@ async function main() {
 
   // ---- the web-caps filter --------------------------------------------------------------
 
-  await test("restrictToWebCaps drops loyalty/insight/emailCapture and QR offers the web did not ask for", () => {
+  await test("restrictToWebCaps drops the P0-only types the web does not ask for (loyalty/insight/emailCapture)", () => {
     const base = { schemaVersion: 1, sid: SID, status: "ok", merchant: { partner: true, ageRestricted: false } };
     const fixture = (f: string) => JSON.parse(readFileSync(resolve(__dirname, "../../contracts/cards/v1/fixtures/valid", f), "utf8"));
     const cards = [

@@ -67,12 +67,14 @@ export type CardsSurface = (typeof CARDS_SURFACES)[number];
  *     server sends NO card from an age-restricted merchant.
  *   - There is no `save` token: the server emits `save` actions only for
  *     `surface=app`, whose client implements them locally.
- *   - The web omits `qr` until it has a QR encoder (lib/cards/barcode.ts).
+ *   - All three surfaces send `qr` (v1.1, 2026-09-23 amendment): the web
+ *     draws it server-side (lib/cards/qr.ts). Before that amendment the web
+ *     row omitted `qr`; see contracts/cards/v1/README.md "v1.1".
  * A client MUST send caps: an absent `caps` means "every v1 type" to the
  * server (the P0 behaviour), which no 1.7.0 client can render.
  */
 export const CAPS_1_7_0 = {
-  web: "text,offer,cta,savings,disclosure,compliance,barcode:code128|ean13|upca",
+  web: "text,offer,cta,savings,disclosure,compliance,barcode:code128|ean13|upca|qr",
   clip: "text,offer,cta,savings,disclosure,compliance,barcode:code128|ean13|upca|qr",
   app: "text,offer,cta,savings,disclosure,compliance,barcode:code128|ean13|upca|qr",
 } as const satisfies Record<Exclude<CardsSurface, "preview">, string>;
