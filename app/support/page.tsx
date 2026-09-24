@@ -146,14 +146,14 @@ const TROUBLESHOOTING: { title: string; steps: string[] }[] = [
     title: 'No light, device unresponsive',
     steps: [
       "Check it's plugged in securely.",
-      'Try a different USB port or cable.',
+      'Try a different outlet or power cable.',
       'Still nothing? Call PapeX support.',
     ],
   },
   {
-    title: 'No paper receipts (printer replacement only)',
+    title: 'No paper receipts (paper switched off)',
     steps: [
-      'Expected. Receipts are digital now.',
+      'Expected if your store has switched off paper in the POS. Receipts are digital now.',
       'Use your POS reprint function if you need paper for a specific transaction.',
     ],
   },
@@ -203,18 +203,7 @@ const CUSTOMER_QA: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: '“Can I still get a paper receipt?”',
-    a: (
-      <>
-        <span className="block">
-          <span className="font-semibold text-[#00121D]">Printer Replacement:</span> We went
-          digital, but I can reprint one from the register if you need it.
-        </span>
-        <span className="mt-1 block">
-          <span className="font-semibold text-[#00121D]">Parallel Install:</span> Yep, you’ll still
-          get a paper one too. The tap is just if you want it on your phone.
-        </span>
-      </>
-    ),
+    a: "Yep. If we still print, you'll get paper too. If we've gone paper-free, I can reprint one from the register.",
   },
   {
     q: '“What if it didn’t work / nothing happened?”',
@@ -222,7 +211,7 @@ const CUSTOMER_QA: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: '“Does it work with my phone?”',
-    a: 'Yeah. iPhones open the receipt right on the lock screen. Android phones open it in the browser.',
+    a: 'Yeah, iPhone and Android both tap. iPhones open the receipt right away; Android phones open it in the browser.',
   },
 ]
 
@@ -421,7 +410,7 @@ export default function SupportPage() {
             </div>
           </section>
 
-          {/* PCI Compliance — navy gradient callout matching the site's subpage CTA.
+          {/* Never touches card data — navy gradient callout matching the site's subpage CTA.
               NOTE: framer-site.css sets `.framer-site a { color: inherit }`, which
               outranks Tailwind's `text-white` on links (class+element > class). The
               `!text-white` important modifier is required so the button label is
@@ -446,16 +435,16 @@ export default function SupportPage() {
                 </svg>
               </div>
               <div className="flex-1">
-                <h2 className="text-xl font-semibold text-white">PCI Compliance</h2>
+                <h2 className="text-xl font-semibold text-white">Never touches card data</h2>
                 <p className="mt-2 leading-relaxed text-white/75">
-                  Your PapeX RDH is a POS peripheral device that does not store, process, or transmit
-                  cardholder data. Full PCI DSS documentation is available at papex.app/pci.
+                  Your PapeX device (RDH) is a POS peripheral: it doesn&rsquo;t store, process or
+                  transmit cardholder data. The full PCI scope letter is at papex.app/pci.
                 </p>
                 <Link
                   href="/pci"
                   className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#EB7100] px-6 py-3 text-sm font-semibold !text-white shadow-sm transition hover:bg-[#cc6300]"
                 >
-                  View PCI compliance statement
+                  How we handle card data
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="16"
