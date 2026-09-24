@@ -15,8 +15,11 @@ export const HOW_IT_WORKS_ANCHOR = "how-it-works";
 export const FAQ_ANCHOR = "faq";
 
 export const heroContent = {
-  eyebrow: "Digital receipts, one tap away",
-  headline: "The last receipt you'll ever lose.",
+  // Web 2.1 H1 (Nico, 2026-09-24): the H1 says WHAT PapeX is, as a familiar
+  // gesture + one twist, and sets up the "How does that work?" cue below.
+  // The eyebrow carries the search category, so "tap" isn't said twice.
+  eyebrow: "The free digital receipts app",
+  headline: "Tap your phone. Get your receipt.",
   // Web 2.1 (spec §3.2): "no app to GET it, the free app to KEEP it" — the old
   // "saved… forever. No app required" line contradicted the Download button
   // right under it.

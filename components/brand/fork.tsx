@@ -483,7 +483,7 @@ export function Fork() {
             className={`rd-display ${styles.headline} ${styles.headlineTop}`}
             style={{ color: 'var(--offwhite)' }}
           >
-            Modernize your checkout. No cost. No hassle.
+            Free digital receipts for your store.
           </span>
           <span
             className={`rd-fork-cue ${styles.cue}`}
@@ -495,12 +495,17 @@ export function Fork() {
         </span>
       </button>
 
-      {/* One centre-bright rule, no label. The designer deleted the "Choose
-          your path" span (and its rd-seam-glow pulse) in the latest prototype:
-          the seam is brightest at the middle and fades to both edges on its
-          own, and closing the gap the text left is the point. */}
-      <div className="rd-fork-seam" aria-hidden="true">
-        <div className={styles.seamRule} />
+      {/* One centre-bright rule, plus ONE static brand line on it (Web 2.1,
+          task F1, Nico round 3: "Your receipt, one tap away"). Until now
+          nothing on `/` said what PapeX is. It is the page's H1 — the two
+          halves are buttons, and a button can't hold a heading. The line sits
+          OVER the rule (absolutely centred, so the seam stays 1px and the
+          halves' 50/50 layout doesn't move) and fades with the seam's locked
+          commit opacity in papex-brand.css; it has no motion of its own.
+          Only the rule is aria-hidden: the heading must stay readable. */}
+      <div className="rd-fork-seam">
+        <div className={styles.seamRule} aria-hidden="true" />
+        <h1 className={styles.seamLine}>Your receipt, one tap away</h1>
       </div>
 
       {/* BOTTOM HALF — light surface, always. Its destination is BOTTOM_PATH. */}

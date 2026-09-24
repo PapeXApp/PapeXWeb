@@ -304,6 +304,10 @@
   .planeWrap {
     display: none;
   }
+  .seamLine {
+    padding: 4px 12px;
+    font-size: 11px;
+  }
 }
 
 /* --- The seam -------------------------------------------------------------
@@ -319,6 +323,33 @@
     rgba(235, 113, 0, 0.5) 50%,
     transparent
   );
+}
+
+/* The seam line (F1) — the fork's H1. A small navy capsule centred ON the
+   rule, straddling the two halves: navy fill + off-white ink reads on both
+   the navy half above and the light half below, and the orange hairline
+   picks up the rule's bright centre. Absolutely positioned so the seam keeps
+   its 1px flex height (the halves' sizes and the locked commit are untouched).
+   Static: no transition or animation here; it fades only with the seam's own
+   commit opacity (papex-brand.css). */
+.seamLine {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  padding: 7px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(235, 113, 0, 0.45);
+  background: var(--navy);
+  color: var(--offwhite);
+  font-family: var(--font-label);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  box-shadow: 0 4px 18px rgba(0, 18, 29, 0.28);
 }
 
 /* --- Commit ---------------------------------------------------------------

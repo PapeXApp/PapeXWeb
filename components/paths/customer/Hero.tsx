@@ -43,7 +43,7 @@ function scrollToHash(event: MouseEvent<HTMLAnchorElement>) {
 }
 
 /**
- * 2.1 Hero — LIGHT. The signature "last receipt you'll ever lose" moment.
+ * 2.1 Hero — LIGHT. "Tap your phone. Get your receipt." — the WHAT, first.
  *
  * Light because the fork's light bottom half leads here (2026-09-10): the
  * page must open on the same flat #F5F5F5 so the fork's commit reads as that

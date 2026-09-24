@@ -15,6 +15,13 @@ import { barlow, gloock, kameron } from './fonts'
 import { Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/react'
 import Script from 'next/script'
+import {
+  APP_STORE_URL,
+  PLAY_STORE_URL,
+  SALES_PHONE,
+  SOCIAL_LINKS,
+  SUPPORT_EMAIL,
+} from '@/components/brand/links'
 
 // Mono face for the path homes' section labels and ribbon — exposed as
 // --font-geist-mono and consumed through the `--font-label` token in
@@ -29,6 +36,46 @@ const geistMono = Geist_Mono({
 })
 
 const GA_MEASUREMENT_ID = 'G-QX3WCTWR03'
+
+// Site-wide structured data (Web 2.1 SEO, .claude/plans/2026-09-24-web-2.1-
+// seo-keywords.md §5): Organization + WebSite, so Google can tell the
+// receipts PapeX apart from the other "papex"es and show the site name.
+// Every value comes from components/brand/links.ts, so a phone, email or
+// profile change there is the one edit. `sameAs` lists only real, live URLs:
+// the two store listings, plus any social profile once its slot in
+// SOCIAL_LINKS is filled (empty slots are dropped, never emitted blank).
+// Page-specific schema (FAQPage, blog Article) lives with its page.
+const ORG_ID = 'https://papex.app/#organization'
+const SITE_JSON_LD = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': ORG_ID,
+      name: 'PapeX',
+      url: 'https://papex.app',
+      logo: 'https://papex.app/icons/icon-512.png',
+      description: 'PapeX digital receipts: tap your phone at checkout and your receipt opens.',
+      email: SUPPORT_EMAIL,
+      sameAs: [APP_STORE_URL, PLAY_STORE_URL, ...Object.values(SOCIAL_LINKS).filter(Boolean)],
+      contactPoint: {
+        '@type': 'ContactPoint',
+        contactType: 'customer service',
+        telephone: `+1-${SALES_PHONE}`,
+        email: SUPPORT_EMAIL,
+      },
+    },
+    {
+      '@type': 'WebSite',
+      '@id': 'https://papex.app/#website',
+      name: 'PapeX',
+      alternateName: 'PapeX digital receipts',
+      url: 'https://papex.app',
+      publisher: { '@id': ORG_ID },
+    },
+  ],
+  // Escape "<" so no value can ever close the script element.
+}).replace(/</g, '\\u003c')
 
 export const metadata: Metadata = {
   title: 'PapeX | Digital Receipts Revolutionized - Paperless Receipt Solutions',
@@ -115,6 +162,7 @@ export default function RootLayout({
     >
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: SITE_JSON_LD }} />
         {/* Google tag (gtag.js) */}
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
