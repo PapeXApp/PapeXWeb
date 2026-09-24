@@ -1,10 +1,15 @@
 /* ==========================================================================
  * Problem — three tap-to-flip cards (components/paths/customer/FlipCards.tsx).
  *
- * Structure: .card (button — owns hover lift + perspective)
+ * Structure: .card (div — owns hover lift + perspective)
  *              └ .inner (owns rotateY — never give it a second transform)
- *                  ├ .face        front: label row, illustration plate, question, footer
- *                  └ .face.faceBack  back: label row, scene stage, stat/caption/source
+ *                  ├ .face        front: flip button, label row, illustration plate, question, footer
+ *                  └ .face.faceBack  back: flip button, label row, stat/caption, dock slot,
+ *                                    linked source, and the scene stage on top
+ *
+ * The card is a div because the back holds a real <a> (the source). Each face's
+ * .flipBtn is a transparent full-bleed button UNDER the face's content; content
+ * ignores the pointer (so taps fall through to the button) except the link.
  *
  * Pointer light: FlipCards sets --mx / --my (and mirrored --mxf for the back)
  * on .card from pointermove; the faces' ::before/::after read them. No rAF.
@@ -35,10 +40,21 @@
   gap: clamp(16px, 2vw, 28px);
   margin-top: clamp(32px, 4vw, 56px);
 }
-@media (max-width: 899px) {
+/* One breakpoint, the site's 820/821 split. 821–1100px keeps three columns, so
+   each card is ~235–320px wide: tighter padding and type keep the revealed back
+   (stat · caption · docked scene · source) from starving the dock slot. */
+@media (min-width: 821px) and (max-width: 1100px) {
+  .grid {
+    --fc-pad: 18px;
+    --fc-caption: 15.5px;
+    --fc-question: 20px;
+  }
+}
+@media (max-width: 820px) {
   .grid {
     --fc-height: 408px;
     grid-template-columns: minmax(0, 480px);
+    justify-content: center;
     gap: 18px;
   }
 }
@@ -60,11 +76,10 @@
   text-align: left;
   cursor: pointer;
   perspective: 1600px;
-  outline: none;
   -webkit-tap-highlight-color: transparent;
   transition: transform 0.45s var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1));
 }
-.card:active {
+.card:has(.flipBtn:active) {
   transform: scale(0.985);
 }
 .inner {
@@ -129,6 +144,27 @@
 .face > * {
   position: relative;
   z-index: 1;
+  /* taps fall through to the face's .flipBtn; only the source link opts back in */
+  pointer-events: none;
+}
+.face > .flipBtn {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: none;
+  cursor: pointer;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+.flipBtn:focus {
+  outline: none;
 }
 
 @media (hover: hover) {
@@ -153,7 +189,7 @@
     stroke: var(--fc-orange);
   }
 }
-.card:focus-visible .face {
+.face:has(> .flipBtn:focus-visible) {
   border-color: var(--fc-orange);
   box-shadow: 0 0 0 3px rgba(235, 113, 0, 0.28), var(--fc-shadow);
 }
@@ -220,13 +256,15 @@
   inset: 0;
   width: 100%;
   height: 100%;
+  /* the scenery bleeds past the view box; the plate's rounded edge clips it */
+  overflow: visible;
 }
 
 .question {
   margin: 20px 0 0;
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 22px;
+  font-size: var(--fc-question, 22px);
   line-height: 1.14;
   letter-spacing: -0.012em;
   color: var(--fc-navy);
@@ -259,8 +297,14 @@
   transition: stroke 0.3s ease;
 }
 
-/* ---- back: scene stage --------------------------------------------------- */
+/* ---- back: scene stage + dock ------------------------------------------ */
 
+/* The stage covers everything under the label row while its scene plays. On
+   reveal it DOCKS: clip-path closes to the .slot strip under the caption while
+   .stageContent scales + slides the scene's focus region into that strip — the
+   values (--dock-clip, --dock-move) are measured in FlipCards.tsx (useDock).
+   Only clip-path and transform animate, both ways, same curve, so the window
+   and the picture land together. The card's outer box never changes. */
 .stage {
   position: absolute;
   z-index: 2;
@@ -271,43 +315,84 @@
   height: auto;
   margin: 0;
   overflow: hidden;
-  transition: opacity 0.4s ease;
+  pointer-events: none;
+  clip-path: inset(0px 0px 0px 0px round 12px);
+  transition: clip-path 0.75s cubic-bezier(0.65, 0, 0.25, 1);
 }
-.stageOut {
-  opacity: 0;
+.stageContent {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 0;
+  transform: translate(0px, 0px) scale(1);
+  transition: transform 0.75s cubic-bezier(0.65, 0, 0.25, 1);
+}
+.stageDocked {
+  clip-path: var(--dock-clip);
+}
+.stageDocked .stageContent {
+  transform: var(--dock-move);
 }
 .sceneSvg {
+  display: block;
   width: 100%;
   height: 100%;
-  overflow: hidden;
+  /* bleed fills the strip's width once the scene is scaled down into it */
+  overflow: visible;
+}
+/* Reduced motion: the scene mounts ALREADY on its last frame. These are static
+   styles, not animation tricks: styles/papex-brand.css kills every animation
+   under .rd with `animation: none !important`, so no keyframe end state can
+   apply. Each line mirrors the 100% keyframe of the class it names — keep them
+   in step if a keyframe's end changes. */
+.still .slip {
+  transform: translate(var(--dx), var(--dy)) scale(var(--sx), var(--sy)) rotate(var(--rot));
+}
+.still .printRoll {
+  transform: scale(1, 0.26);
+}
+.still .ledOn,
+.still .paperOut,
+.still .treeGrow {
+  opacity: 1;
+}
+.still .treeFell,
+.still .treeShadow,
+.still .chip,
+.still .notch,
+.still .axe {
+  opacity: 0;
+}
+.still .feed {
+  transform: translateY(300px);
+}
+.still .roll {
+  transform: scale(1, 0.7);
 }
 
 /* ---- back: result -------------------------------------------------------- */
 
-/* .result fills the space below .head (fixed height, like .face itself). Round
-   2 fix (Nico: dead space after the reveal): .resultTop used to sit at a fixed
-   top offset and .source was pinned to the bottom by margin-top: auto, which
-   left a 100-130px gap between the caption and the source on a 424px-tall
-   card. Now .resultTop is a flex item that GROWS to fill all the space above
-   .source and centres its own content (stat/rule/caption) inside that grown
-   box — so the back reads as intentionally composed at any card height,
-   instead of front-loaded with empty air below it. .source still lands at
-   the true bottom, now simply because .resultTop has already claimed
-   everything above it. */
+/* .result fills the space below .head: the stat block sits right under the
+   label row, .slot grows to take whatever height is left (the docked scene
+   lands there), and .source closes the card at the bottom. So the revealed back
+   is filled top to bottom at any card width — no dead bands. */
 .result {
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: stretch;
 }
 .resultTop {
-  flex: 1 1 auto;
-  min-height: 0;
+  flex: none;
+  margin-top: 14px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: center;
+}
+.slot {
+  flex: 1 1 auto;
+  min-height: 48px;
+  margin-top: 16px;
 }
 .resultTop > * {
   opacity: 0;
@@ -322,13 +407,18 @@
 }
 .resultOn .resultTop > :nth-child(2) {
   animation-name: fcRule;
-  animation-delay: 0.12s;
+}
+.resultOn .resultTop > :first-child {
+  animation-delay: 0.14s;
+}
+.resultOn .resultTop > :nth-child(2) {
+  animation-delay: 0.26s;
 }
 .resultOn .resultTop > :nth-child(3) {
-  animation-delay: 0.18s;
+  animation-delay: 0.32s;
 }
 .resultOn > .source {
-  animation-delay: 0.28s;
+  animation-delay: 0.5s;
 }
 @keyframes fcRise {
   from {
@@ -356,7 +446,7 @@
   align-items: baseline;
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: clamp(64px, 6.4vw, 92px);
+  font-size: clamp(56px, 5.6vw, 82px);
   line-height: 0.92;
   letter-spacing: -0.035em;
   color: var(--fc-orange);
@@ -396,22 +486,23 @@
   display: block;
   width: 32px;
   height: 1px;
-  margin: 22px 0 16px;
+  margin: 14px 0 12px;
   background: rgba(0, 18, 29, 0.22);
   transform-origin: left center;
 }
 .caption {
   margin: 0;
   font-family: var(--font-ui);
-  font-size: 17.5px;
-  line-height: 1.45;
+  font-size: var(--fc-caption, 17px);
+  line-height: 1.42;
   color: var(--body-on-light, #4a4a4a);
-  max-width: 30ch;
+  max-width: 34ch;
+  text-wrap: pretty;
 }
 .source {
   align-self: stretch;
-  margin: 24px 0 0;
-  padding-top: 14px;
+  margin: 14px 0 0;
+  padding-top: 12px;
   border-top: 1px solid var(--fc-line-soft);
   font-family: var(--fc-mono);
   font-size: 10.5px;
@@ -422,6 +513,38 @@
   min-height: calc(3em + 15px);
   letter-spacing: 0.04em;
   color: rgba(0, 18, 29, 0.58);
+}
+/* the one thing on the card you can press that isn't the flip. Two classes on
+   purpose: `.rd a` (styles/papex-brand.css) strips link underlines at (0,1,1). */
+.card .sourceLink {
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
+  color: var(--fc-navy);
+  text-decoration: underline;
+  text-decoration-color: rgba(0, 18, 29, 0.3);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: color 0.2s ease, text-decoration-color 0.2s ease;
+}
+.card .sourceLink:hover {
+  color: var(--fc-orange);
+  text-decoration-color: currentColor;
+}
+.sourceLink:focus-visible {
+  outline: 2px solid var(--fc-orange);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+.sourceArrow {
+  display: inline-block;
+  margin-left: 0.3em;
+  text-decoration: none;
+  color: var(--fc-orange);
+}
+/* the source isn't pressable until it has faded in */
+.result:not(.resultOn) .sourceLink {
+  pointer-events: none;
 }
 
 /* ---- illustration system (front art + scenes) ---------------------------
@@ -446,7 +569,6 @@
 .treeGrow,
 .treeFell,
 .chip,
-.dust,
 .axe {
   transform-box: view-box;
   transform-origin: 0 0;
@@ -618,76 +740,83 @@
     transform: translate(var(--cex), var(--cey)) rotate(var(--cr));
   }
 }
-/* A soft puff, not a disc: a solid ellipse at .8 read as hard white plates over
-   the fallen trees. Static blur (tiny element, cheap) + a lower peak. */
-.dust {
+/* the notch after each blow: appears on its impact, gone when the tree falls
+   (duration set inline = impact → fall) */
+.notch {
   opacity: 0;
-  filter: blur(1.8px);
-  animation: fcDust 0.7s ease-out both;
+  animation: fcNotch 1s linear both;
 }
-@keyframes fcDust {
-  0% {
-    opacity: 0;
-    transform: scale(0.3, 0.5);
-  }
-  25% {
-    opacity: 0.45;
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1.3, 1.1);
-  }
-}
-.swoosh {
-  opacity: 0;
-  animation: fcSwoosh 0.5s linear both;
-}
-@keyframes fcSwoosh {
+@keyframes fcNotch {
   0% {
     opacity: 0;
   }
-  40% {
-    opacity: 0.9;
+  1%,
+  96% {
+    opacity: 1;
   }
   100% {
     opacity: 0;
   }
 }
-/* The axe pivots on its grip. Positions come from FlipCards.tsx (--h*); the
-   percentages are AXE_LEAD / SWEEP_MS / AXE_EXIT = 620 / 520 / 260 of 1400ms:
-   wind-up peaks at 320ms (22.86%), strike lands at 620ms (44.29%), sweep ends at
-   1140ms (81.43%). The down-swing is the read: it gets 300ms of the 620ms lead,
-   not the 220ms it had, so the arc is visible instead of a two-frame jump.
-   The sweep leg is linear so each tree's fellDelay lands as the bit passes it. */
+/* The axe pivots on its grip (the knob end of the haft); head on top, edge
+   forward. Three blows. Poses come from FlipCards.tsx (--g* grip at the bite,
+   --w* grip on the wind-up, --o* on the way out, --r-* angles). Percentages are
+   AXE_IMPACTS 600 / 1080 / 1560 of AXE_MS 1800:
+     wind back → swing (ease-in: it accelerates) → bite + hold 80ms → pull back.
+   A bite is a pose held exactly at --g/--r-bite, so the edge sits in the notch. */
 .axe {
   opacity: 0;
-  animation: fcAxe 1.4s linear both;
+  animation: fcAxe 1.8s linear both;
 }
 @keyframes fcAxe {
   0% {
     opacity: 0;
-    transform: translate(var(--hex), var(--hey)) rotate(150deg);
-    animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1);
+    transform: translate(var(--wx), var(--wy)) rotate(var(--r-wind));
+    animation-timing-function: ease-out;
   }
   8% {
     opacity: 1;
   }
-  22.86% {
-    transform: translate(var(--hwx), var(--hwy)) rotate(132deg);
-    animation-timing-function: cubic-bezier(0.5, 0, 0.85, 0.6);
+  21.1% {
+    transform: translate(var(--wx), var(--wy)) rotate(var(--r-back));
+    animation-timing-function: cubic-bezier(0.55, 0, 0.95, 0.45);
   }
-  44.29% {
-    transform: translate(var(--h0x), var(--h0y)) rotate(-14deg);
+  33.33% {
+    transform: translate(var(--gx), var(--gy)) rotate(var(--r-bite));
     animation-timing-function: linear;
   }
-  81.43% {
+  37.78% {
+    transform: translate(var(--gx), var(--gy)) rotate(var(--r-bite));
+    animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1);
+  }
+  49% {
+    transform: translate(var(--wx), var(--wy)) rotate(var(--r-wind));
+    animation-timing-function: cubic-bezier(0.55, 0, 0.95, 0.45);
+  }
+  60% {
+    transform: translate(var(--gx), var(--gy)) rotate(var(--r-bite));
+    animation-timing-function: linear;
+  }
+  64.44% {
+    transform: translate(var(--gx), var(--gy)) rotate(var(--r-bite));
+    animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1);
+  }
+  75.6% {
+    transform: translate(var(--wx), var(--wy)) rotate(var(--r-wind));
+    animation-timing-function: cubic-bezier(0.55, 0, 0.95, 0.45);
+  }
+  86.67% {
+    transform: translate(var(--gx), var(--gy)) rotate(var(--r-bite));
+    animation-timing-function: linear;
+  }
+  91.11% {
     opacity: 1;
-    transform: translate(var(--h1x), var(--h1y)) rotate(16deg);
-    animation-timing-function: cubic-bezier(0.3, 0.6, 0.5, 1);
+    transform: translate(var(--gx), var(--gy)) rotate(var(--r-bite));
+    animation-timing-function: cubic-bezier(0.3, 0.5, 0.6, 1);
   }
   100% {
     opacity: 0;
-    transform: translate(var(--hxx), var(--hxy)) rotate(44deg);
+    transform: translate(var(--ox), var(--oy)) rotate(var(--r-out));
   }
 }
 
@@ -731,20 +860,24 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ---- reduced motion: JS already skips the scene and the count; CSS makes the flip and reveal instant */
+/* ---- reduced motion: JS mounts the scene on its last frame and skips the count; CSS makes the flip, dock and reveal instant */
 @media (prefers-reduced-motion: reduce) {
   .card,
   .inner,
   .face,
   .face::before,
   .face::after,
-  .stage {
+  .stage,
+  .stageContent {
     transition: none;
   }
-  .card:hover {
+  .card:hover,
+  .card:has(.flipBtn:active) {
     transform: none;
   }
-  .resultOn > * {
+  /* straight to the final layout: text in place, scene already docked (JS mounts it still) */
+  .resultOn .resultTop > *,
+  .resultOn > .source {
     animation: none;
     opacity: 1;
   }
