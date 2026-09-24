@@ -344,6 +344,7 @@ export function FoldReceipt() {
   const pinRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
   const infoRef = useRef<HTMLDivElement>(null)
+  const hintRef = useRef<HTMLParagraphElement>(null)
   const infoInnerRef = useRef<HTMLDivElement>(null)
   const slotRef = useRef<HTMLDivElement>(null)
   const copyRef = useRef<HTMLDivElement>(null)
@@ -422,13 +423,14 @@ export function FoldReceipt() {
       const sx = sr.left - pr.left
       const sy = sr.top - pr.top + d.shift
       const s = Math.min(sr.width / lw, sr.height / lh) || 1
-      // The stage scales about its own top-left (transform-origin 0 0). Its
-      // own offset in the pin is subtracted per frame in `draw` instead: the
-      // hint line under it can wrap as its text changes, which moves the
-      // stage without resizing anything an observer would see.
+      // The stage scales about its own top-left (transform-origin 0 0), and
+      // offsetLeft/Top ignore transforms, so subtracting its resting offset
+      // here makes tx/ty final — `draw` does no layout reads for act 3. The
+      // stage moves when the hint line under it wraps as its text changes;
+      // the hint is observed below, so that re-measures too.
       d.s = s
-      d.tx = sx + sr.width / 2 - s * (lx + lw / 2)
-      d.ty = sy + sr.height / 2 - s * (ly + lh / 2)
+      d.tx = sx + sr.width / 2 - s * (lx + lw / 2) - stageEl.offsetLeft
+      d.ty = sy + sr.height / 2 - s * (ly + lh / 2) - stageEl.offsetTop
       d.overflow = Math.max(0, innerEl.offsetHeight - info.clientHeight)
     }
 
@@ -717,9 +719,8 @@ export function FoldReceipt() {
       const ai = seg(p, ACT2_END, 1)
       const dk = ease(seg(ai, 0, I_DOCK))
       const dg = dock.current
-      // offsetLeft/Top ignore transforms, so these are the stage's resting spot
-      const tx = dg.tx - (stageEl?.offsetLeft ?? 0)
-      const ty = dg.ty - (stageEl?.offsetTop ?? 0)
+      const tx = dg.tx
+      const ty = dg.ty
       const shiftPx = ease(seg(ai, I_SCROLL[0], I_SCROLL[1])) * dg.overflow
       dg.shift = shiftPx
       set(
@@ -792,6 +793,8 @@ export function FoldReceipt() {
     // act 3's slot and layout move with the viewport's height, not just width
     if (infoInnerRef.current) ro.observe(infoInnerRef.current)
     if (pinRef.current) ro.observe(pinRef.current)
+    // the hint wrapping (its text changes per phase) moves the stage in the pin
+    if (hintRef.current) ro.observe(hintRef.current)
     return () => {
       window.removeEventListener("scroll", onScroll)
       window.removeEventListener("resize", onResize)
@@ -972,7 +975,7 @@ export function FoldReceipt() {
           </div>
 
           {pinned && (
-            <p className={styles.frHint}>
+            <p className={styles.frHint} ref={hintRef}>
               {phase === "print" && "Printing your reasons…"}
               {phase === "shift" && "Four reasons. Nothing to sign."}
               {(phase === "fold" || phase === "plane") && "Keep scrolling — the paper folds away"}
