@@ -1,0 +1,413 @@
+/* ==========================================================================
+ * /customers 04 — Privacy ("Your receipt, not your identity.")
+ *
+ * Page text uses --flow-* ink (FlowSection rule). The receipt is an ELEVATED
+ * surface, so it keeps its own colours (white paper, navy ink) on any ground.
+ *
+ * The redaction is driven by `data-phase` on .receipt (see Privacy.tsx):
+ *   rest      redacted, no transitions (SSR, no-JS, reduced motion)
+ *   clear     armed: full digits showing, blocks wiped away
+ *   redacted  blocks wipe in left-to-right (clip-path), digits fade out, the
+ *             kept last-4 gets its underline, the stamp lands
+ * Every channel is clip-path / opacity / transform, so it runs on the
+ * compositor. Re-arming to "clear" is instant (it only happens once the card
+ * is fully off screen), so scrolling back replays the redaction.
+ * ========================================================================== */
+
+.section {
+  position: relative;
+  padding: var(--section-pad-y) var(--section-pad-x);
+  /* The tilted receipt and the stamp's scaled-up start state must never widen
+     the page on a phone (an invisible transformed box still counts toward
+     scroll width). `clip`, not `hidden`: no scroll container is created. */
+  overflow-x: clip;
+  --gap-title: clamp(20px, 2.4vw, 36px);
+  --gap-body: clamp(28px, 3.2vw, 48px);
+}
+
+@media (min-width: 821px) {
+  .section {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 100svh;
+  }
+}
+
+.inner {
+  width: 100%;
+  max-width: 1150px;
+  margin: 0 auto;
+  display: grid;
+  gap: var(--gap-body);
+  align-items: center;
+}
+@media (min-width: 900px) {
+  .inner {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: clamp(40px, 6vw, 96px);
+  }
+}
+
+.copy {
+  min-width: 0;
+}
+
+.heading {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-h2);
+  line-height: 1.03;
+  letter-spacing: -0.02em;
+  color: var(--flow-fg);
+  max-width: 16ch;
+}
+
+.lead {
+  margin-top: var(--gap-title);
+  max-width: 52ch;
+  font-size: var(--fs-lead);
+  line-height: 1.55;
+  color: var(--flow-fg);
+}
+
+.body {
+  margin-top: 12px;
+  max-width: 52ch;
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  color: var(--flow-fg-2);
+}
+
+/* --- What a tap never collects --------------------------------------------- */
+
+.never {
+  margin-top: var(--gap-body);
+}
+
+.neverTitle {
+  margin: 0 0 14px;
+  font-family: var(--font-label);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--flow-fg-2);
+}
+
+.neverList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+@media (min-width: 560px) {
+  .neverList {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 24px;
+  }
+}
+
+.neverItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: var(--fs-body);
+  line-height: 1.45;
+  color: var(--flow-fg);
+}
+
+.neverIcon {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  fill: none;
+  stroke: var(--orange);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.policyLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 22px;
+  font-weight: 600;
+  font-size: var(--fs-body);
+  color: var(--flow-fg);
+  text-decoration: underline;
+  text-decoration-color: var(--orange);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+.policyLink:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.arrow {
+  display: inline-block;
+  transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.policyLink:hover .arrow {
+  transform: translateX(4px);
+}
+
+/* --- The receipt ----------------------------------------------------------- */
+
+.stage {
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+.receipt {
+  --r-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --r-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --r-base: 320ms; /* lets the section's own reveal land first */
+  --r-step: 150ms;
+
+  position: relative;
+  width: min(100%, 340px);
+  padding: 26px 24px 30px;
+  border-radius: 18px;
+  background: #ffffff;
+  color: #00121d;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.5;
+  box-shadow:
+    0 1px 0 rgba(0, 18, 29, 0.04),
+    0 18px 50px -18px rgba(0, 18, 29, 0.28);
+  transform: rotate(-1.5deg);
+}
+/* A torn-paper bottom edge, drawn with a mask on a pseudo so the card itself
+   keeps its shadow. */
+.receipt::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -7px;
+  height: 8px;
+  background: #ffffff;
+  -webkit-mask: radial-gradient(circle at 6px 0, #000 5.5px, transparent 6px) 0 0 / 12px 8px repeat-x;
+  mask: radial-gradient(circle at 6px 0, #000 5.5px, transparent 6px) 0 0 / 12px 8px repeat-x;
+}
+
+.rHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-label);
+}
+.rMono {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: #00121d;
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 3.5px #eb7100;
+}
+.rMerchant {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.rMeta {
+  display: block;
+  font-size: 11.5px;
+  color: rgba(0, 18, 29, 0.55);
+}
+
+.rRule {
+  margin: 14px 0 10px;
+  border-top: 1.5px dashed rgba(0, 18, 29, 0.22);
+}
+
+.rRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.rTotal {
+  font-weight: 700;
+}
+
+.rCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(0, 18, 29, 0.05);
+}
+.rCardLabel {
+  font-family: var(--font-label);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(0, 18, 29, 0.6);
+}
+.rPan {
+  display: inline-flex;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.group {
+  position: relative;
+  display: inline-block;
+}
+.digits {
+  display: inline-block;
+  transition: opacity 200ms ease;
+  transition-delay: calc(var(--r-base) + var(--i) * var(--r-step) + 140ms);
+}
+.block {
+  position: absolute;
+  inset: -2px -3px;
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+  background: #00121d;
+  clip-path: inset(0 100% 0 0 round 4px);
+  transition: clip-path 260ms var(--r-ease);
+  transition-delay: calc(var(--r-base) + var(--i) * var(--r-step));
+}
+.dots {
+  color: #ffffff;
+  letter-spacing: 0.08em;
+  opacity: 0;
+  transition: opacity 180ms ease;
+  transition-delay: calc(var(--r-base) + var(--i) * var(--r-step) + 200ms);
+}
+
+.kept {
+  position: relative;
+  font-weight: 700;
+}
+.kept::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 2.5px;
+  border-radius: 2px;
+  background: #eb7100;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 320ms var(--r-ease);
+  transition-delay: calc(var(--r-base) + 3 * var(--r-step) + 120ms);
+}
+
+.rNote {
+  margin: 8px 0 0;
+  font-family: var(--font-label);
+  font-size: 11px;
+  color: rgba(0, 18, 29, 0.55);
+  opacity: 0;
+  transition: opacity 300ms ease;
+  transition-delay: calc(var(--r-base) + 3 * var(--r-step) + 240ms);
+}
+
+.stamp {
+  position: absolute;
+  top: 22px;
+  right: 16px;
+  padding: 4px 10px;
+  border: 2px solid #eb7100;
+  border-radius: 6px;
+  color: #eb7100;
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.9);
+  opacity: 0;
+  transform: rotate(-16deg) scale(1.4);
+  transition:
+    opacity 180ms ease,
+    transform 420ms var(--r-pop);
+  transition-delay: calc(var(--r-base) + 3 * var(--r-step) + 360ms);
+}
+
+/* The redacted look — shared by the animated end state and the static rest. */
+.receipt[data-phase="redacted"] .digits,
+.receipt[data-phase="rest"] .digits {
+  opacity: 0;
+}
+.receipt[data-phase="redacted"] .block,
+.receipt[data-phase="rest"] .block {
+  clip-path: inset(0 0 0 0 round 4px);
+}
+.receipt[data-phase="redacted"] .dots,
+.receipt[data-phase="rest"] .dots,
+.receipt[data-phase="redacted"] .rNote,
+.receipt[data-phase="rest"] .rNote {
+  opacity: 1;
+}
+.receipt[data-phase="redacted"] .kept::after,
+.receipt[data-phase="rest"] .kept::after {
+  transform: scaleX(1);
+}
+.receipt[data-phase="redacted"] .stamp,
+.receipt[data-phase="rest"] .stamp {
+  opacity: 1;
+  transform: rotate(-8deg) scale(1);
+}
+
+/* Re-arming ("clear") happens off-screen, so undo it instantly. */
+.receipt[data-phase="clear"] .digits,
+.receipt[data-phase="clear"] .block,
+.receipt[data-phase="clear"] .dots,
+.receipt[data-phase="clear"] .kept::after,
+.receipt[data-phase="clear"] .rNote,
+.receipt[data-phase="clear"] .stamp,
+.receipt[data-phase="rest"] .digits,
+.receipt[data-phase="rest"] .block,
+.receipt[data-phase="rest"] .dots,
+.receipt[data-phase="rest"] .kept::after,
+.receipt[data-phase="rest"] .rNote,
+.receipt[data-phase="rest"] .stamp {
+  transition: none;
+}
+
+@media (max-width: 380px) {
+  .receipt {
+    padding: 22px 16px 28px;
+    font-size: 13px;
+  }
+  .rPan {
+    gap: 4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .receipt {
+    transform: none;
+  }
+  .receipt *,
+  .receipt *::after,
+  .arrow {
+    transition: none !important;
+  }
+  .policyLink:hover .arrow {
+    transform: none;
+  }
+}

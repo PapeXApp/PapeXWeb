@@ -1,0 +1,326 @@
+/* ==========================================================================
+ * FAQ accordion — shared by /customers (07) and /business (06).
+ *
+ * The section paints NO background (FlowSection rule): every ink is a
+ * --flow-* colour, so the whole thing follows the ground crossfade on either
+ * ground. Hairlines and the open-row tint are the ground's own ink mixed
+ * down, for the same reason.
+ *
+ * Motion budget (compositor-only where it matters):
+ *   - The plus icon: two bars. Opening turns the vertical bar flat (rotate)
+ *     and spins the whole icon half a turn with a small overshoot, so the
+ *     plus "flips" into a minus. transform only.
+ *   - The answer: a grid-rows 0fr -> 1fr height reveal on the panel WRAPPER
+ *     only (the one allowed height channel), while the answer text itself
+ *     fades and rises (opacity + transform).
+ *   - The open row's orange rule grows from the top (scaleY).
+ * A closed answer is `visibility: hidden` (delayed until the collapse ends),
+ * which takes it out of the tab order and the accessibility tree without any
+ * JS — links inside a closed answer can't be tabbed into.
+ * ========================================================================== */
+
+.section {
+  position: relative;
+  padding: var(--section-pad-y) var(--section-pad-x);
+  --gap-title: clamp(20px, 2.4vw, 36px);
+  --gap-body: clamp(28px, 3.2vw, 48px);
+  --faq-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --faq-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --faq-dur: 420ms;
+}
+
+/* "Screens, not sections": the same model both path homes use. A floor, not
+   a fit — opening answers can grow the section past one screen. */
+@media (min-width: 821px) {
+  .section {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 100svh;
+  }
+}
+
+.inner {
+  width: 100%;
+  max-width: 1150px;
+  margin: 0 auto;
+  display: grid;
+  gap: var(--gap-body);
+}
+
+/* From 1024px: the heading takes a sticky left column so the question list
+   never scrolls away from its title. */
+@media (min-width: 1024px) {
+  .inner {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: clamp(40px, 6vw, 96px);
+    align-items: start;
+  }
+  .head {
+    position: sticky;
+    top: 120px;
+  }
+}
+
+.heading {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-h2);
+  line-height: 1.03;
+  letter-spacing: -0.02em;
+  color: var(--flow-fg);
+  max-width: 14ch;
+}
+
+.hint {
+  margin-top: var(--gap-title);
+  font-size: var(--fs-body);
+  line-height: 1.55;
+  color: var(--flow-fg-3);
+}
+
+/* --- The list ----------------------------------------------------------- */
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  position: relative;
+  border-radius: 18px;
+  transition: background-color var(--faq-dur) var(--faq-ease);
+}
+/* Hairline between rows, in the ground's own ink. */
+.item + .item::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 20px;
+  right: 20px;
+  height: 1px;
+  background: var(--flow-fg);
+  opacity: 0.12;
+  pointer-events: none;
+}
+.item[data-open="true"] {
+  background-color: color-mix(in srgb, var(--flow-fg) 5%, transparent);
+}
+/* An open row's own hairline and the next one's are hidden: the tinted card
+   is the separation. */
+.item[data-open="true"]::before,
+.item[data-open="true"] + .item::before {
+  opacity: 0;
+}
+
+/* The orange rule on the open row's leading edge. */
+.rule {
+  position: absolute;
+  top: 18px;
+  bottom: 18px;
+  left: 0;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--orange);
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform var(--faq-dur) var(--faq-ease);
+  pointer-events: none;
+}
+.item[data-open="true"] .rule {
+  transform: scaleY(1);
+}
+
+.qHeading {
+  margin: 0;
+  font: inherit;
+}
+
+.button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 20px;
+  min-height: 64px;
+  border: 0;
+  border-radius: 18px;
+  background: transparent;
+  color: var(--flow-fg);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+.button:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 2px;
+}
+
+.num {
+  flex: none;
+  min-width: 2ch;
+  font-family: var(--font-label);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--orange);
+  font-variant-numeric: tabular-nums;
+}
+
+.qText {
+  flex: 1;
+  min-width: 0;
+  font-size: clamp(17px, 1.45vw, 20px);
+  font-weight: 600;
+  line-height: 1.35;
+  transition: transform 260ms var(--faq-ease);
+}
+@media (hover: hover) and (pointer: fine) {
+  .button:hover .qText {
+    transform: translateX(4px);
+  }
+  .button:hover .icon {
+    border-color: var(--orange);
+  }
+}
+
+/* The plus: a 34px ring with two bars. Open = vertical bar lies flat and the
+   whole icon spins half a turn with a little overshoot -> a minus, on orange. */
+.icon {
+  position: relative;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1.5px solid color-mix(in srgb, var(--flow-fg) 28%, transparent);
+  transition:
+    transform 520ms var(--faq-pop),
+    background-color var(--faq-dur) var(--faq-ease),
+    border-color var(--faq-dur) var(--faq-ease);
+}
+.bar {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 2px;
+  margin: -1px 0 0 -6px;
+  border-radius: 2px;
+  background: var(--flow-fg);
+  transition:
+    transform 520ms var(--faq-pop),
+    background-color var(--faq-dur) var(--faq-ease);
+}
+.barV {
+  transform: rotate(90deg);
+}
+.item[data-open="true"] .icon {
+  transform: rotate(180deg);
+  background-color: var(--orange);
+  border-color: var(--orange);
+}
+.item[data-open="true"] .bar {
+  background: var(--navy);
+}
+.item[data-open="true"] .barV {
+  transform: rotate(0deg);
+}
+
+/* --- The answer ---------------------------------------------------------- */
+
+.panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--faq-dur) var(--faq-ease);
+}
+.item[data-open="true"] .panel {
+  grid-template-rows: 1fr;
+}
+.panelClip {
+  min-height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  /* Stay visible until the collapse has finished, then drop out of the tab
+     order / a11y tree. Opening flips it back immediately. */
+  transition: visibility 0s linear var(--faq-dur);
+}
+.item[data-open="true"] .panelClip {
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+.answer {
+  padding: 0 20px 22px calc(20px + 2ch + 16px);
+  max-width: 62ch;
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  color: var(--flow-fg-2);
+  opacity: 0;
+  transform: translateY(-8px);
+  transition:
+    opacity 260ms ease,
+    transform var(--faq-dur) var(--faq-ease);
+}
+.item[data-open="true"] .answer {
+  opacity: 1;
+  transform: none;
+  transition-delay: 80ms;
+}
+.answer p {
+  margin: 0;
+}
+.answer p + p {
+  margin-top: 0.75em;
+}
+/* Links keep the ground's ink for contrast (orange text on the light ground
+   is under 3:1) and carry the orange as a thick underline instead. */
+.answer a {
+  color: var(--flow-fg);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--orange);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  transition: text-decoration-color 200ms ease;
+}
+.answer a:hover {
+  text-decoration-color: currentColor;
+}
+.answer a:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+@media (max-width: 480px) {
+  .button {
+    gap: 12px;
+    padding: 18px 14px;
+  }
+  .answer {
+    padding: 0 14px 20px 14px;
+  }
+  .item + .item::before {
+    left: 14px;
+    right: 14px;
+  }
+}
+
+/* Reduced motion: every state change is instant. Open/closed still work. */
+@media (prefers-reduced-motion: reduce) {
+  .item,
+  .rule,
+  .qText,
+  .icon,
+  .bar,
+  .panel,
+  .panelClip,
+  .answer {
+    transition: none !important;
+  }
+  .button:hover .qText {
+    transform: none;
+  }
+}
