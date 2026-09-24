@@ -90,7 +90,8 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { headers } from "next/headers";
 import { fetchReceiptBytes, isValidSid } from "@/lib/rdh";
-import { platformFromUserAgent } from "@/lib/storeLinks";
+import { platformFromUserAgent, rdhUniversalLink } from "@/lib/storeLinks";
+import { offerSaveLinkEnabled } from "@/lib/offerSaveLink";
 import { fetchParsedReceipt } from "@/lib/rdhParsed";
 import { parseEscPos } from "@/lib/escpos";
 import { summarizeReceipt, hasStructure as computeHasStructure } from "@/lib/receiptSummary";
@@ -308,6 +309,15 @@ export default async function ReceiptPage({
     // request that has ALREADY finished, or undefined.
     const settledCards = cardsTask?.peek();
 
+    // "Save in the PapeX app" under an OFFER card (lib/offerSaveLink.ts).
+    // iOS only, flag-gated, and only ever reached when cardsTask exists —
+    // i.e. never for a demo sid or `?demo=1` (mayFetchWebCards already
+    // excludes both), so `isDemoSid` needs no re-check here. `undefined`
+    // when off: WebCardStack/StreamedCards then render exactly what they
+    // did before this existed.
+    const offerSaveLinkHref =
+      offerSaveLinkEnabled() && platform === "ios" && rawSid ? rdhUniversalLink(rawSid) : undefined;
+
     // No cards: no request (demo sid), or it finished with nothing to draw.
     // This is exactly the tree this branch returned before cards existed.
     if (!cardsTask || (settledCards && settledCards.cards.cards.length === 0)) {
@@ -321,7 +331,7 @@ export default async function ReceiptPage({
 
     // Cards finished first: place them inline, no Suspense, no layout shift.
     if (settledCards) {
-      const stack = <WebCardStack cards={settledCards.cards} now={cardsNow} />;
+      const stack = <WebCardStack cards={settledCards.cards} now={cardsNow} saveLinkHref={offerSaveLinkHref} />;
       return settledCards.cards.layout.order === "cards-first" ? (
         <Shell>
           {stack}
@@ -346,11 +356,11 @@ export default async function ReceiptPage({
     return (
       <Shell>
         <Suspense fallback={null}>
-          <StreamedCards task={cardsTask} position="cards-first" now={cardsNow} />
+          <StreamedCards task={cardsTask} position="cards-first" now={cardsNow} saveLinkHref={offerSaveLinkHref} />
         </Suspense>
         {receiptNode}
         <Suspense fallback={null}>
-          <StreamedCards task={cardsTask} position="receipt-first" now={cardsNow} />
+          <StreamedCards task={cardsTask} position="receipt-first" now={cardsNow} saveLinkHref={offerSaveLinkHref} />
         </Suspense>
         {ctaRow}
       </Shell>

@@ -22,7 +22,7 @@
     "test:demoBlobs": "tsx lib/demoBlobParity.test.ts",
     "test:raster": "tsx lib/starRaster.test.ts",
     "test:mockRaster": "tsx lib/mockStarRaster.test.ts",
-    "test": "npm run test:png && npm run test:escpos && npm run test:raster && npm run test:mockRaster && npm run test:summary && npm run test:state && npm run test:parsed && npm run test:merchantHost && npm run test:deployEnv && npm run test:demo && npm run test:demoBlobs && npm run test:decoded && npm run test:routing && npm run test:sharedReceipt && npm run test:banner && npm run test:cards && npm run test:cardsRender && npm run test:qr && npm run test:cardsFetch && npm run test:rParity && npm run test:rCards && npm run test:ridSaveLink && npm run test:ridSaveLinkRender",
+    "test": "npm run test:png && npm run test:escpos && npm run test:raster && npm run test:mockRaster && npm run test:summary && npm run test:state && npm run test:parsed && npm run test:merchantHost && npm run test:deployEnv && npm run test:demo && npm run test:demoBlobs && npm run test:decoded && npm run test:routing && npm run test:sharedReceipt && npm run test:banner && npm run test:cards && npm run test:cardsRender && npm run test:qr && npm run test:cardsFetch && npm run test:rParity && npm run test:rCards && npm run test:ridSaveLink && npm run test:ridSaveLinkRender && npm run test:offerSaveLink && npm run test:offerSaveLinkRender",
     "test:state": "tsx lib/receiptState.test.ts",
     "test:parsed": "tsx lib/rdhParsed.test.ts",
     "test:routing": "tsx lib/receiptRouting.test.ts",
@@ -36,7 +36,9 @@
     "test:rCards": "tsx --tsconfig tsconfig.test.json app/r/receiptPage.cards.test.tsx",
     "test:qr": "tsx lib/cards/qr.test.ts",
     "test:ridSaveLink": "tsx lib/ridSaveLink.test.ts",
-    "test:ridSaveLinkRender": "tsx --tsconfig tsconfig.test.json app/r/ridSaveLink.test.tsx"
+    "test:ridSaveLinkRender": "tsx --tsconfig tsconfig.test.json app/r/ridSaveLink.test.tsx",
+    "test:offerSaveLink": "tsx lib/offerSaveLink.test.ts",
+    "test:offerSaveLinkRender": "tsx --tsconfig tsconfig.test.json app/r/offerSaveLink.test.tsx"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
