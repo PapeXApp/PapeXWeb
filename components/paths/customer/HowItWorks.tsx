@@ -243,7 +243,13 @@ export function HowItWorks() {
   const stageStyle = pinned ? undefined : ({ ["--walk-s" as string]: step } as CSSProperties);
 
   return (
-    <FlowSection ground="light" index="05">
+    // `styles.screen` (2026-09-23): when the stage pins, the runway is already
+    // taller than a screen and this is a no-op; when it doesn't (reduced
+    // motion, or a desktop window under 600px tall) the section still owns a
+    // full screen like every other one from 821px. The runway is a plain
+    // block, so the screen's column flexbox stretches it full width and the
+    // sticky stage inside it is unaffected.
+    <FlowSection ground="light" index="05" className={`${styles.screen} ${styles.rhythm}`}>
       <div
         ref={runwayRef}
         className={styles.walkRunway}
@@ -269,7 +275,7 @@ export function HowItWorks() {
               </WordReveal>
               <div
                 className={cn("grid", !pinned && styles.walkStepsEased)}
-                style={{ marginTop: "clamp(28px,3.6vw,44px)", gap: 8 }}
+                style={{ marginTop: "var(--gap-body)", gap: 8 }}
               >
                 {howItWorksContent.steps.map((s, index) => (
                   // The row is the click target; the <button> inside is what

@@ -24,16 +24,16 @@ export function Hero() {
   return (
     <FlowSection
       ground="light"
-      className="flex items-start justify-center overflow-hidden"
-      style={{
-        // Capped, not full-screen (2026-09-22). A 100vh hero centred its
-        // content in whatever box the viewport gave it, so on a tall display
-        // the headline floated in the middle with dead air above and below.
-        // min(100vh, 760px) + items-start seats the content just under the
-        // nav and lets the section end when the content does.
-        minHeight: "auto",
-        padding: "clamp(80px,10vh,112px) clamp(20px,5vw,56px) 52px",
-      }}
+      // A FULL SCREEN again (2026-09-23, "screens, not sections" parity with
+      // /business). `styles.screen` makes it >= 100svh from 821px and centres
+      // the content column vertically; `items-center` centres the 1150 column
+      // horizontally in both directions of the flex box (column on desktop,
+      // row below 821px, where the hero is content-height again). The padding
+      // lives on `styles.hero` because the phone's height budget
+      // (.demoStage in customer.module.css) reads the same --hero-pt: the top
+      // clears the nav so the whole phone shows, and the bottom keeps the
+      // scroll cue on its own line.
+      className={`${styles.screen} ${styles.rhythm} ${styles.hero} flex items-center justify-center overflow-hidden`}
     >
       {/* The hero keeps its own pointer-tracked glow: it is part of the live
           demo moment, not decoration. Everything else (aurora, grain,
@@ -54,7 +54,7 @@ export function Hero() {
           instead of shrinking; centring the pair as a block pushed the
           headline's left edge past where every other section's headline
           starts (2026-09-10 — Nico: "text too far right"). This 1150 column
-          is the same one Problem/Features/HowItWorks/Proof use, so hugging
+          is the same one Problem/Features/HowItWorks/Vision use, so hugging
           it to the left edge lines every left-aligned headline up. */}
       <div
         className="relative flex w-full flex-wrap items-center justify-start"
@@ -71,8 +71,8 @@ export function Hero() {
             </WordReveal>
             <p
               style={{
-                marginTop: 26,
-                fontSize: "clamp(17px,1.5vw,20px)",
+                marginTop: "var(--gap-title)",
+                fontSize: "var(--fs-lead)",
                 lineHeight: 1.5,
                 color: "var(--flow-fg-2)",
                 maxWidth: "44ch",
@@ -81,14 +81,14 @@ export function Hero() {
             >
               {heroContent.lead}
             </p>
-            <div className="flex flex-wrap items-center" style={{ marginTop: 36, gap: 14 }}>
+            <div className="flex flex-wrap items-center" style={{ marginTop: "var(--gap-body)", gap: 14 }}>
               <Magnetic className={styles.ctaMagnetic}>
                 {/* Navy ripple: it's the press feedback ON the orange button,
-                    so it's right on either ground. rounded-full on Ripple
-                    clips both the ripple splash AND the button's own hover
-                    glow to the pill shape — see .ctaMagnetic in
-                    customer.module.css for why the glow moved out here. */}
-                <Ripple variant="navy" className="overflow-hidden rounded-full">
+                    so it's right on either ground. The Ripple is the pill
+                    itself (styles.ctaPill): it clips the splash AND carries
+                    the hover glow and press scale, so the glow hugs the pill
+                    exactly — see .ctaPill in customer.module.css. */}
+                <Ripple variant="navy" className={`overflow-hidden rounded-full ${styles.ctaPill}`}>
                   <a
                     href={APP_STORE_URL}
                     target="_blank"
@@ -103,7 +103,6 @@ export function Hero() {
                       color: "var(--navy)",
                       fontWeight: 600,
                       fontSize: 16,
-                      boxShadow: "0 6px 22px rgba(235,113,0,.28)",
                       textDecoration: "none",
                       display: "inline-flex",
                     }}
@@ -120,15 +119,15 @@ export function Hero() {
         <NfcPhone />
       </div>
 
-      {/* The original cue: the word plus a hairline. On a short viewport the
-          hero used to grow past 100vh and this absolutely-positioned element
-          landed below the fold — the fix is the hero's height budget (see the
-          phone sizing in customer.module.css), not the cue. */}
+      {/* The original cue: the word plus a hairline, at the foot of the
+          screen. From 821px the hero's 100px bottom padding (styles.hero)
+          keeps the demo's hint row ~28px above it, so the two never read as
+          one caption line; below 821px it is hidden (see .heroCue). */}
       <div
         aria-hidden="true"
         className={`absolute flex flex-col items-center ${styles.heroCue}`}
         style={{
-          bottom: 26,
+          bottom: 22,
           left: "50%",
           transform: "translateX(-50%)",
           fontFamily: "var(--font-label)",
