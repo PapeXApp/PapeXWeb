@@ -8,6 +8,9 @@
 // (which leads here), for the same continuity reason as /customers. The first
 // paint comes from FlowGround's `initial="navy"` in components/paths/business,
 // which owns the section content.
+//
+// Metadata follows the Web 2.1 CLAIM RULES in components/paths/business/
+// content.ts. SEO refines the wording later.
 
 import type { Metadata } from 'next'
 import { SiteShell } from '@/components/brand/site-shell'
@@ -16,14 +19,14 @@ import { BusinessPath } from '@/components/paths/business'
 export const metadata: Metadata = {
   title: 'PapeX for Business | Modern checkout. Zero paper.',
   description:
-    'A free device on your existing POS turns every sale into a digital receipt. No cost, no contract, PCI compliant, installed the same afternoon.',
+    'A free PapeX device joins your POS as a printer. Customers tap their phone for a digital receipt; you get a dashboard of every sale. Free device, free install, never touches card data. Go paper-free whenever you’re ready.',
   alternates: { canonical: 'https://papex.app/business' },
   openGraph: {
     type: 'website',
     url: 'https://papex.app/business',
     title: 'PapeX for Business | Modern checkout. Zero paper.',
     description:
-      'A free device on your existing POS turns every sale into a digital receipt. No cost, no contract, PCI compliant.',
+      'A free PapeX device joins your POS as a printer. Customers tap for a digital receipt; you get a dashboard of every sale. Free device, free install, paper-free when you’re ready.',
     images: [
       {
         url: 'https://papex.app/og-image-v2.png',
@@ -38,7 +41,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'PapeX for Business | Modern checkout. Zero paper.',
     description:
-      'A free device on your existing POS turns every sale into a digital receipt. No cost, no contract, PCI compliant.',
+      'A free PapeX device joins your POS as a printer. Customers tap for a digital receipt; you get a dashboard of every sale. Free device, free install, paper-free when you’re ready.',
     images: ['https://papex.app/og-image-v2.png'],
   },
 }

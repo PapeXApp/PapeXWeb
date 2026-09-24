@@ -19,9 +19,15 @@ import styles from "./business.module.css"
 // bullets run as a tall column beside it, both vertically centred. Scaled a
 // second time the same day: centring alone still read as padding (444px of
 // content in 900), so the device, the heading (--fs-h3 -> --fs-h2) and the
-// bullets (--fs-lead) all grew. The spec strip under the bullets is NOT new
-// copy: "USB", "serial" and "Ethernet" are the ports named verbatim in the
-// first bullet, set as a row so the port story is readable at a glance.
+// bullets (--fs-lead) all grew.
+// Web 2.1 claims pass: the old heading/bullets/spec strip claimed a
+// certification, wired ports and a second install mode — none true (see the
+// CLAIM RULES in content.ts). It now says what is: Wi-Fi network printer, paper keeps
+// printing, no card data (-> /pci, which certifies nothing, so we don't
+// either), status light + help (-> /support). Spec strip: Wi-Fi · Network
+// printer · Status light.
+// Final page order (Nico, 2026-09-24): 04 "Is it safe?", navy between the
+// light receipt scene and the light setup -> demo path.
 // Web 2.1: the heading moved above the device/bullets row (see below), so the
 // row can take the device at full column width.
 export function RdhDevice() {
@@ -57,42 +63,43 @@ export function RdhDevice() {
           </Reveal>
 
           <Reveal as="div">
-            <div className="grid gap-[var(--gap-list)]">
+            <ul className="grid gap-[var(--gap-list)]">
               {rdhDevice.points.map((point) => (
-                <div key={point} className="flex items-start gap-3.5">
+                <li key={point.text} className="flex items-start gap-3.5">
                   <span aria-hidden="true" className="text-[22px] font-bold leading-[1.35]" style={{ color: "var(--orange)" }}>
                     →
                   </span>
                   <span className="text-[length:var(--fs-lead)] leading-[1.5]" style={{ color: "var(--flow-fg-2)" }}>
-                    {point}
+                    {point.text}
+                    {"link" in point ? (
+                      <>
+                        {" "}
+                        <Link href={point.link.href} className="cursor-pointer whitespace-nowrap" style={{ color: "var(--orange)" }}>
+                          {point.link.label} →
+                        </Link>
+                      </>
+                    ) : null}
                   </span>
-                </div>
+                </li>
               ))}
-              <div className="flex items-start gap-3.5">
-                <span aria-hidden="true" className="text-[22px] font-bold leading-[1.35]" style={{ color: "var(--orange)" }}>
-                  →
-                </span>
-                <span className="text-[length:var(--fs-lead)] leading-[1.5]" style={{ color: "var(--flow-fg-2)" }}>
-                  {rdhDevice.complianceText}{" "}
-                  <Link href="/pci" className="cursor-pointer" style={{ color: "var(--orange)" }}>
-                    {rdhDevice.complianceLinkLabel}
-                  </Link>
-                  .
-                </span>
-              </div>
-            </div>
+            </ul>
 
-            {/* Spec strip — the ports already named in the first bullet, set as
-                a scannable row. No new claim, no new copy in content.ts. */}
+            {/* Spec strip — the three facts the bullets already state, set as a
+                scannable row. Copy lives in content.ts (rdhDevice.specs). */}
             <div
               className="mt-[var(--gap-body)] flex flex-wrap items-center gap-x-4 gap-y-2 border-t pt-[var(--gap-list)] text-[13px] font-semibold uppercase tracking-[.16em]"
               style={{ borderColor: "var(--flow-hair)", color: "var(--flow-fg-3)", fontFamily: "var(--font-label)" }}
             >
-              <span>USB</span>
-              <span aria-hidden="true" style={{ color: "var(--orange)" }}>·</span>
-              <span>Serial</span>
-              <span aria-hidden="true" style={{ color: "var(--orange)" }}>·</span>
-              <span>Ethernet</span>
+              {rdhDevice.specs.map((spec, i) => (
+                <span key={spec} className="flex items-center gap-x-4">
+                  {i > 0 ? (
+                    <span aria-hidden="true" style={{ color: "var(--orange)" }}>
+                      ·
+                    </span>
+                  ) : null}
+                  <span>{spec}</span>
+                </span>
+              ))}
             </div>
           </Reveal>
         </div>

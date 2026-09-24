@@ -143,7 +143,6 @@ export function DemoForm() {
     <FlowSection
       id="demo"
       ground="light"
-      index="05"
       /* A full screen since 2026-09-22 ("screens, not sections"): it measured
          454px at 1440x900, so the demo ask shared a viewport with the
          dashboard columns above it. `styles.screen` gives it >= 100svh with
@@ -156,7 +155,9 @@ export function DemoForm() {
         className="mx-auto grid w-full max-w-[1100px] grid-cols-1 items-start gap-[clamp(30px,5vw,70px)] min-[821px]:grid-cols-2 min-[821px]:items-center"
       >
         <div>
-          <SectionLabel index="05">{demo.eyebrow}</SectionLabel>
+          {/* No index: the form is the second half of 05 "How do I get it?"
+              (setup -> demo), not a section of its own. */}
+          <SectionLabel>{demo.eyebrow}</SectionLabel>
           <h2
             className="text-[length:var(--fs-h1-merchant)] font-bold leading-[1.03] tracking-[-.02em]"
             style={{ fontFamily: "var(--font-display)" }}
@@ -171,168 +172,180 @@ export function DemoForm() {
           </p>
         </div>
 
-        {status === "success" ? (
-          <div role="status" aria-live="polite" className="rounded-[12px] border border-[rgba(0,18,29,.14)] bg-white p-6">
-            <p className="text-[16px] font-semibold" style={{ color: "var(--ink)" }}>
-              {demo.successMessage}
-            </p>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} noValidate className="grid gap-[var(--gap-list)]">
-            <p
-              id={formErrorId}
-              aria-live="assertive"
-              className="min-h-[1em] text-[14px] font-medium"
-              style={{ color: status === "error" ? ERROR_INK : "transparent" }}
-            >
-              {status === "error" ? statusMessage : ""}
-            </p>
-
-            <div className="grid gap-2">
-              <Label htmlFor="demo-fullName" className={labelClass} style={labelStyle}>
-                Your name
-              </Label>
-              <Input
-                id="demo-fullName"
-                name="fullName"
-                autoComplete="name"
-                value={fields.fullName}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                ref={(el) => {
-                  fieldRefs.current.fullName = el
-                }}
-                aria-invalid={Boolean(errors.fullName)}
-                aria-describedby={errors.fullName ? "demo-fullName-error" : undefined}
-                required
-                className="h-auto"
-                style={inputStyle}
-              />
-              {errors.fullName && (
-                <p id="demo-fullName-error" role="alert" className="text-[13px]" style={{ color: ERROR_INK }}>
-                  {errors.fullName}
-                </p>
-              )}
+        {/* Right column: the proof line (Web 2.1, Nico: "Live in the Bay
+            Area." and nothing more), then the form or its success state.
+            Copy only; the form's mechanics are unchanged. */}
+        <div>
+          <p
+            className="mb-[var(--gap-list)] inline-flex items-center gap-2.5 rounded-full border px-4 py-2 text-[14px] font-semibold"
+            style={{ borderColor: "var(--flow-hair)", color: "var(--flow-fg)" }}
+          >
+            <span aria-hidden="true" className="h-2 w-2 rounded-full" style={{ background: "var(--orange)" }} />
+            {demo.proof}
+          </p>
+          {status === "success" ? (
+            <div role="status" aria-live="polite" className="rounded-[12px] border border-[rgba(0,18,29,.14)] bg-white p-6">
+              <p className="text-[16px] font-semibold" style={{ color: "var(--ink)" }}>
+                {demo.successMessage}
+              </p>
             </div>
+          ) : (
+            <form onSubmit={handleSubmit} noValidate className="grid gap-[var(--gap-list)]">
+              <p
+                id={formErrorId}
+                aria-live="assertive"
+                className="min-h-[1em] text-[14px] font-medium"
+                style={{ color: status === "error" ? ERROR_INK : "transparent" }}
+              >
+                {status === "error" ? statusMessage : ""}
+              </p>
 
-            <div className="grid gap-2">
-              <Label htmlFor="demo-businessName" className={labelClass} style={labelStyle}>
-                Business name
-              </Label>
-              <Input
-                id="demo-businessName"
-                name="businessName"
-                autoComplete="organization"
-                value={fields.businessName}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                ref={(el) => {
-                  fieldRefs.current.businessName = el
-                }}
-                aria-invalid={Boolean(errors.businessName)}
-                aria-describedby={errors.businessName ? "demo-businessName-error" : undefined}
-                required
-                className="h-auto"
-                style={inputStyle}
-              />
-              {errors.businessName && (
-                <p id="demo-businessName-error" role="alert" className="text-[13px]" style={{ color: ERROR_INK }}>
-                  {errors.businessName}
-                </p>
-              )}
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="demo-email" className={labelClass} style={labelStyle}>
-                Email
-              </Label>
-              <Input
-                id="demo-email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                value={fields.email}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                ref={(el) => {
-                  fieldRefs.current.email = el
-                }}
-                aria-invalid={Boolean(errors.email)}
-                aria-describedby={errors.email ? "demo-email-error" : undefined}
-                required
-                className="h-auto"
-                style={inputStyle}
-              />
-              {errors.email && (
-                <p id="demo-email-error" role="alert" className="text-[13px]" style={{ color: ERROR_INK }}>
-                  {errors.email}
-                </p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 gap-[var(--gap-list)] min-[481px]:grid-cols-2 min-[821px]:grid-cols-1">
               <div className="grid gap-2">
-                <Label htmlFor="demo-phone" className={labelClass} style={labelStyle}>
-                  Phone
+                <Label htmlFor="demo-fullName" className={labelClass} style={labelStyle}>
+                  Your name
                 </Label>
                 <Input
-                  id="demo-phone"
-                  name="phone"
-                  type="tel"
-                  autoComplete="tel"
-                  value={fields.phone}
+                  id="demo-fullName"
+                  name="fullName"
+                  autoComplete="name"
+                  value={fields.fullName}
                   onChange={handleChange}
                   onBlur={handleBlur}
                   ref={(el) => {
-                    fieldRefs.current.phone = el
+                    fieldRefs.current.fullName = el
                   }}
-                  aria-invalid={Boolean(errors.phone)}
-                  aria-describedby={errors.phone ? "demo-phone-error" : undefined}
+                  aria-invalid={Boolean(errors.fullName)}
+                  aria-describedby={errors.fullName ? "demo-fullName-error" : undefined}
+                  required
                   className="h-auto"
                   style={inputStyle}
                 />
-                {errors.phone && (
-                  <p id="demo-phone-error" role="alert" className="text-[13px]" style={{ color: ERROR_INK }}>
-                    {errors.phone}
+                {errors.fullName && (
+                  <p id="demo-fullName-error" role="alert" className="text-[13px]" style={{ color: ERROR_INK }}>
+                    {errors.fullName}
                   </p>
                 )}
               </div>
+
               <div className="grid gap-2">
-                <Label htmlFor="demo-posSystem" className={labelClass} style={labelStyle}>
-                  POS system
+                <Label htmlFor="demo-businessName" className={labelClass} style={labelStyle}>
+                  Business name
                 </Label>
                 <Input
-                  id="demo-posSystem"
-                  name="posSystem"
-                  value={fields.posSystem}
+                  id="demo-businessName"
+                  name="businessName"
+                  autoComplete="organization"
+                  value={fields.businessName}
                   onChange={handleChange}
                   onBlur={handleBlur}
                   ref={(el) => {
-                    fieldRefs.current.posSystem = el
+                    fieldRefs.current.businessName = el
                   }}
+                  aria-invalid={Boolean(errors.businessName)}
+                  aria-describedby={errors.businessName ? "demo-businessName-error" : undefined}
+                  required
                   className="h-auto"
                   style={inputStyle}
                 />
+                {errors.businessName && (
+                  <p id="demo-businessName-error" role="alert" className="text-[13px]" style={{ color: ERROR_INK }}>
+                    {errors.businessName}
+                  </p>
+                )}
               </div>
-            </div>
 
-            {/* Ripple only accepts {children, variant, as, className, style} —
-                the real `<button>` (type, disabled, focus) lives inside it so
-                submit/pending semantics stay intact while still getting the
-                click-ripple treatment from the motion toolkit. */}
-            <Ripple as="div" variant="navy" className="mt-[calc(var(--gap-list)/2)] overflow-hidden rounded-[12px]">
-              <button
-                type="submit"
-                disabled={status === "submitting"}
-                aria-busy={status === "submitting"}
-                className="h-[60px] w-full rounded-[12px] text-[17px] font-semibold transition-transform duration-200 hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
-                style={{ background: "var(--orange)", color: "var(--ink)" }}
-              >
-                {status === "submitting" ? demo.submitLabelPending : demo.submitLabel}
-              </button>
-            </Ripple>
-          </form>
-        )}
+              <div className="grid gap-2">
+                <Label htmlFor="demo-email" className={labelClass} style={labelStyle}>
+                  Email
+                </Label>
+                <Input
+                  id="demo-email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  value={fields.email}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  ref={(el) => {
+                    fieldRefs.current.email = el
+                  }}
+                  aria-invalid={Boolean(errors.email)}
+                  aria-describedby={errors.email ? "demo-email-error" : undefined}
+                  required
+                  className="h-auto"
+                  style={inputStyle}
+                />
+                {errors.email && (
+                  <p id="demo-email-error" role="alert" className="text-[13px]" style={{ color: ERROR_INK }}>
+                    {errors.email}
+                  </p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 gap-[var(--gap-list)] min-[481px]:grid-cols-2 min-[821px]:grid-cols-1">
+                <div className="grid gap-2">
+                  <Label htmlFor="demo-phone" className={labelClass} style={labelStyle}>
+                    Phone
+                  </Label>
+                  <Input
+                    id="demo-phone"
+                    name="phone"
+                    type="tel"
+                    autoComplete="tel"
+                    value={fields.phone}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    ref={(el) => {
+                      fieldRefs.current.phone = el
+                    }}
+                    aria-invalid={Boolean(errors.phone)}
+                    aria-describedby={errors.phone ? "demo-phone-error" : undefined}
+                    className="h-auto"
+                    style={inputStyle}
+                  />
+                  {errors.phone && (
+                    <p id="demo-phone-error" role="alert" className="text-[13px]" style={{ color: ERROR_INK }}>
+                      {errors.phone}
+                    </p>
+                  )}
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="demo-posSystem" className={labelClass} style={labelStyle}>
+                    POS system
+                  </Label>
+                  <Input
+                    id="demo-posSystem"
+                    name="posSystem"
+                    value={fields.posSystem}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    ref={(el) => {
+                      fieldRefs.current.posSystem = el
+                    }}
+                    className="h-auto"
+                    style={inputStyle}
+                  />
+                </div>
+              </div>
+
+              {/* Ripple only accepts {children, variant, as, className, style} —
+                  the real `<button>` (type, disabled, focus) lives inside it so
+                  submit/pending semantics stay intact while still getting the
+                  click-ripple treatment from the motion toolkit. */}
+              <Ripple as="div" variant="navy" className="mt-[calc(var(--gap-list)/2)] overflow-hidden rounded-[12px]">
+                <button
+                  type="submit"
+                  disabled={status === "submitting"}
+                  aria-busy={status === "submitting"}
+                  className="h-[60px] w-full rounded-[12px] text-[17px] font-semibold transition-transform duration-200 hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
+                  style={{ background: "var(--orange)", color: "var(--ink)" }}
+                >
+                  {status === "submitting" ? demo.submitLabelPending : demo.submitLabel}
+                </button>
+              </Ripple>
+            </form>
+          )}
+        </div>
       </Reveal>
     </FlowSection>
   )

@@ -65,6 +65,14 @@ export function Hero() {
           >
             {hero.lead}
           </p>
+          {/* Nico, round 2: "Zero paper" in the H1 is only allowed with this
+              line under it. Keep them together. */}
+          <p
+            className="mt-[calc(var(--gap-title)*.5)] max-w-[46ch] text-[length:var(--fs-lead)] font-semibold leading-[1.5]"
+            style={{ color: "var(--flow-fg)" }}
+          >
+            {hero.paperLine}
+          </p>
           <div className="mt-[var(--gap-body)] flex flex-wrap items-center gap-3.5">
             {/* Jumps to the on-page demo form (section 3.7). */}
             <Ripple as="div" variant="navy" className="inline-block overflow-hidden rounded-full">
@@ -114,6 +122,19 @@ export function Hero() {
               </span>
             </a>
           </div>
+          {/* Secondary anchor (Web 2.1): for the merchant who wants to see the
+              customer's side before asking for a demo. Points at the
+              "What your customers see" section's id. */}
+          <a
+            href={hero.secondaryHref}
+            className="mt-[calc(var(--gap-body)*.6)] flex w-fit items-center gap-2 text-[15px] font-semibold underline-offset-4 transition-colors duration-200 hover:underline"
+            style={{ color: "var(--flow-fg-2)" }}
+          >
+            {hero.secondaryLabel}
+            <span aria-hidden="true" style={{ color: "var(--orange)" }}>
+              ↓
+            </span>
+          </a>
         </ChildStagger>
 
         {/* RDH device at the POS — real product artwork (3.1c). */}
