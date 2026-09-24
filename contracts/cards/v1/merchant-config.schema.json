@@ -1,0 +1,1096 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://papex.app/contracts/cards/v1/merchant-config.schema.json",
+  "title": "PapeX receipt cards: merchant CONFIG, format 1 (server-side authoring)",
+  "description": "What a merchant's cards config looks like BEFORE resolution. Authored as JSON (RDH repo, later the dashboard), validated by this schema plus the publish lint (x-publishLint below, enforced by the publisher), stored as immutable versions, and resolved per request by the RDH cards Lambda into a resolved-cards.schema.json response. Never sent to clients. 1.7.0 scope: no emailCapture, insight or loyalty; the rule language is the minimal v1 (surface, device.id, sid, time window). Receipt-fact rules (receipt.total, items...) are v1.1.",
+  "x-publishLint": [
+    "L1 AUDIENCES: a card's surfaces may not mix 'app' with 'web' or 'clip' (preview may accompany either). App and clip/web audiences are separate card ids, typically pointing at the same offer template. [schema-enforced]",
+    "L2 SAVE: an offer's actions (save) are allowed only when its surfaces are a subset of [app, preview]. [schema-enforced]",
+    "L3 LICENCE: merchant.ageRestricted=true requires merchant.licenseLine; the resolver stamps it as compliance.licenseLine onto every offer and every merchant-voice text/cta card that lacks its own. [schema-enforced for the merchant field; resolver-enforced per card]",
+    "L4 1.7.0 TYPES: only text, offer, cta, savings, disclosure. No emailCapture in 1.7.0. [schema-enforced]",
+    "L5 LINKS: every cta url is https and its host is exactly one of links.ctaHostAllowlist. [lint]",
+    "L6 IDS: card ids are unique within the config; every card's `offer` names a key of `offers`; every perSid `pool` exists in the code-pool store. [lint]",
+    "L7 TEST HOOKS: the `sid` fact and `debug` are allowed only when merchant.test=true and merchantId starts with 'test-'. [schema-enforced for debug; lint for sid]",
+    "L8 LENGTHS: every string, after resolution (codes from template/pool at their maximum length), fits the resolved schema's limits; code values match the symbology's pattern and check digit. [lint]",
+    "L9 COUNT: the resolver emits at most 6 cards per response (MAX_EMITTED_CARDS), after surface/schedule/when/caps filtering, in ascending priority (ties: config order). Clients accept up to 8. [resolver]",
+    "L10 RULE DEPTH: all/any/not nest at most 3 deep; at most 64 predicates per config. [lint]",
+    "L11 EXPIRY: exactly one of validity.expiresOn / validity.validForDays. The resolver never emits an offer whose expiresAt has passed, and sets hideWhenExpired from the template (default true). [schema + resolver]"
+  ],
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "configFormat",
+    "merchantId",
+    "merchant",
+    "layout",
+    "links",
+    "cards"
+  ],
+  "properties": {
+    "configFormat": {
+      "const": 1
+    },
+    "merchantId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,63}$",
+      "description": "The RDH merchant_id (papex-rdh-merchants pk). Never sent to clients."
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 2000,
+      "description": "Authoring comment. Ignored by the resolver."
+    },
+    "merchant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "displayName",
+        "timezone",
+        "enabled",
+        "ageRestricted",
+        "partner"
+      ],
+      "properties": {
+        "displayName": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/plainText"
+            }
+          ],
+          "maxLength": 60
+        },
+        "timezone": {
+          "type": "string",
+          "pattern": "^[A-Za-z_]+(/[A-Za-z0-9_+-]+){0,2}$|^UTC$",
+          "description": "IANA zone for expiry and time windows. Default America/Los_Angeles."
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "false: every request gets status none (per-merchant kill switch)."
+        },
+        "ageRestricted": {
+          "type": "boolean",
+          "description": "Cannabis/alcohol. Echoed to clients as merchant.ageRestricted; requires licenseLine (L3)."
+        },
+        "partner": {
+          "type": "boolean",
+          "description": "Echoed as merchant.partner. No 1.7.0 card depends on it."
+        },
+        "licenseLine": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/plainText"
+            }
+          ],
+          "maxLength": 120,
+          "description": "Resolved verbatim into compliance.licenseLine. Required when ageRestricted."
+        },
+        "test": {
+          "type": "boolean",
+          "description": "A TEST merchant (test-*): unlocks the sid fact and debug hooks. Excluded from pilot metrics."
+        }
+      },
+      "if": {
+        "properties": {
+          "ageRestricted": {
+            "const": true
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "licenseLine"
+        ]
+      }
+    },
+    "layout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "order"
+      ],
+      "properties": {
+        "order": {
+          "$ref": "#/definitions/layoutOrder"
+        },
+        "overrides": {
+          "type": "array",
+          "maxItems": 8,
+          "description": "First override whose `when` is TRUE sets the order; else `order`.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "when",
+              "order"
+            ],
+            "properties": {
+              "when": {
+                "$ref": "#/definitions/rule"
+              },
+              "order": {
+                "$ref": "#/definitions/layoutOrder"
+              }
+            }
+          }
+        }
+      }
+    },
+    "links": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ctaHostAllowlist"
+      ],
+      "properties": {
+        "ctaHostAllowlist": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$"
+          }
+        }
+      }
+    },
+    "offers": {
+      "type": "object",
+      "description": "Offer templates by id. Cards reference them; app and clip/web cards may share one template (Noah: same offer, segregated entries).",
+      "propertyNames": {
+        "pattern": "^[a-z0-9][a-z0-9-]{0,47}$"
+      },
+      "maxProperties": 32,
+      "additionalProperties": {
+        "$ref": "#/definitions/offerTemplate"
+      }
+    },
+    "cards": {
+      "type": "array",
+      "maxItems": 96,
+      "items": {
+        "$ref": "#/definitions/configCard"
+      }
+    },
+    "debug": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "TEST merchants only (L7): force a status for listed sids, to exercise client paths.",
+      "properties": {
+        "forceStatus": {
+          "type": "array",
+          "maxItems": 16,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "sids",
+              "status"
+            ],
+            "properties": {
+              "sids": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 16,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{16}$"
+                }
+              },
+              "status": {
+                "enum": [
+                  "degraded",
+                  "pending"
+                ]
+              },
+              "retryAfterMs": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 60000
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "description": "debug requires a test merchant (L7).",
+      "if": {
+        "required": [
+          "debug"
+        ]
+      },
+      "then": {
+        "properties": {
+          "merchant": {
+            "required": [
+              "test"
+            ],
+            "properties": {
+              "test": {
+                "const": true
+              }
+            }
+          },
+          "merchantId": {
+            "pattern": "^test-"
+          }
+        }
+      }
+    }
+  ],
+  "definitions": {
+    "plainText": {
+      "type": "string",
+      "minLength": 1,
+      "allOf": [
+        {
+          "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u2028\\u2029\\u202A-\\u202E\\u2066-\\u2069]*$"
+        },
+        {
+          "pattern": "\\S"
+        }
+      ]
+    },
+    "layoutOrder": {
+      "enum": [
+        "receipt-first",
+        "cards-first"
+      ]
+    },
+    "cardId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,47}$"
+    },
+    "surface": {
+      "enum": [
+        "web",
+        "clip",
+        "app",
+        "preview"
+      ]
+    },
+    "isoInstant": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "rule": {
+      "description": "v1 minimal rule. A card shows only when its rule is TRUE; absent `when` always matches. 'now' is the server clock; the between bounds are UTC instants, inclusive start, exclusive end.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "all"
+          ],
+          "properties": {
+            "all": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 16,
+              "items": {
+                "$ref": "#/definitions/rule"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "any"
+          ],
+          "properties": {
+            "any": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 16,
+              "items": {
+                "$ref": "#/definitions/rule"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "not"
+          ],
+          "properties": {
+            "not": {
+              "$ref": "#/definitions/rule"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "fact",
+            "op",
+            "value"
+          ],
+          "properties": {
+            "fact": {
+              "const": "request.surface"
+            },
+            "op": {
+              "const": "in"
+            },
+            "value": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/definitions/surface"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "fact",
+            "op",
+            "value"
+          ],
+          "properties": {
+            "fact": {
+              "const": "device.id"
+            },
+            "op": {
+              "const": "in"
+            },
+            "value": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 64,
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9._-]{1,64}$"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "fact",
+            "op",
+            "value"
+          ],
+          "properties": {
+            "fact": {
+              "const": "sid"
+            },
+            "op": {
+              "const": "in"
+            },
+            "value": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 64,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{16}$"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "fact",
+            "op",
+            "value"
+          ],
+          "properties": {
+            "fact": {
+              "const": "now"
+            },
+            "op": {
+              "const": "between"
+            },
+            "value": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "$ref": "#/definitions/isoInstant"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "codeSpec": {
+      "description": "How the redemption code is chosen for THIS sid. static: one code for everyone (scope shared). perSid: the next unused code from pool `pool`, assigned once per (offer template id, sid) and stored as CODE#<offerId>#<sid>, stable across re-taps and across audiences; an exhausted pool drops the card (scope unique). template: a code derived from the sid; tokens {sid6} and {sid8} = the last 6/8 hex chars, UPPERCASED (scope unique).",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "value"
+          ],
+          "properties": {
+            "mode": {
+              "const": "static"
+            },
+            "value": {
+              "type": "string",
+              "pattern": "^[\\x21-\\x7E]{1,80}$"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "pool"
+          ],
+          "properties": {
+            "mode": {
+              "const": "perSid"
+            },
+            "pool": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9-]{0,47}$"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "template"
+          ],
+          "properties": {
+            "mode": {
+              "const": "template"
+            },
+            "template": {
+              "type": "string",
+              "pattern": "^[A-Z0-9-]{0,40}(\\{sid6\\}|\\{sid8\\})[A-Z0-9-]{0,40}$"
+            }
+          }
+        }
+      ]
+    },
+    "offerTemplate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "valueLabel",
+        "title",
+        "validity"
+      ],
+      "properties": {
+        "kicker": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/plainText"
+            }
+          ],
+          "maxLength": 40
+        },
+        "valueLabel": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/plainText"
+            }
+          ],
+          "maxLength": 12
+        },
+        "valueSuffix": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/plainText"
+            }
+          ],
+          "maxLength": 12
+        },
+        "qualifier": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/plainText"
+            }
+          ],
+          "maxLength": 40
+        },
+        "title": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/plainText"
+            }
+          ],
+          "maxLength": 160
+        },
+        "terms": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/plainText"
+            }
+          ],
+          "maxLength": 500
+        },
+        "validity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "countdown"
+          ],
+          "properties": {
+            "expiresOn": {
+              "type": "string",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+              "description": "Last valid day, merchant-local. expiresAt = 23:59:59 that day in merchant.timezone, as UTC."
+            },
+            "validForDays": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 366,
+              "description": "Last valid day = receipt purchase date + N (merchant-local)."
+            },
+            "countdown": {
+              "type": "boolean"
+            },
+            "hideWhenExpired": {
+              "type": "boolean",
+              "default": true
+            }
+          },
+          "oneOf": [
+            {
+              "required": [
+                "expiresOn"
+              ],
+              "not": {
+                "required": [
+                  "validForDays"
+                ]
+              }
+            },
+            {
+              "required": [
+                "validForDays"
+              ],
+              "not": {
+                "required": [
+                  "expiresOn"
+                ]
+              }
+            }
+          ]
+        },
+        "redemption": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "type",
+                "code"
+              ],
+              "properties": {
+                "type": {
+                  "const": "code"
+                },
+                "code": {
+                  "$ref": "#/definitions/codeSpec"
+                },
+                "caption": {
+                  "allOf": [
+                    {
+                      "$ref": "#/definitions/plainText"
+                    }
+                  ],
+                  "maxLength": 80
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "type",
+                "symbology",
+                "code"
+              ],
+              "properties": {
+                "type": {
+                  "const": "barcode"
+                },
+                "symbology": {
+                  "enum": [
+                    "code128",
+                    "ean13",
+                    "upca",
+                    "qr"
+                  ]
+                },
+                "code": {
+                  "$ref": "#/definitions/codeSpec"
+                },
+                "text": {
+                  "allOf": [
+                    {
+                      "$ref": "#/definitions/plainText"
+                    }
+                  ],
+                  "maxLength": 80
+                },
+                "caption": {
+                  "allOf": [
+                    {
+                      "$ref": "#/definitions/plainText"
+                    }
+                  ],
+                  "maxLength": 80
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "compliance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "licenseLine"
+      ],
+      "properties": {
+        "licenseLine": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/plainText"
+            }
+          ],
+          "maxLength": 120
+        }
+      }
+    },
+    "configCard": {
+      "type": "object",
+      "required": [
+        "id",
+        "surfaces",
+        "type"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/cardId"
+        },
+        "surfaces": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/definitions/surface"
+          },
+          "not": {
+            "allOf": [
+              {
+                "contains": {
+                  "const": "app"
+                }
+              },
+              {
+                "contains": {
+                  "enum": [
+                    "web",
+                    "clip"
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 999,
+          "default": 100,
+          "description": "Lower first. Ties keep config order."
+        },
+        "schedule": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "startsAt": {
+              "$ref": "#/definitions/isoInstant"
+            },
+            "endsAt": {
+              "$ref": "#/definitions/isoInstant"
+            }
+          }
+        },
+        "when": {
+          "$ref": "#/definitions/rule"
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "type": {
+          "enum": [
+            "text",
+            "offer",
+            "cta",
+            "savings",
+            "disclosure"
+          ]
+        },
+        "heading": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/plainText"
+            }
+          ],
+          "maxLength": 60
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "offer"
+              }
+            }
+          },
+          "then": {
+            "additionalProperties": false,
+            "required": [
+              "offer"
+            ],
+            "properties": {
+              "id": {},
+              "surfaces": {},
+              "priority": {},
+              "schedule": {},
+              "when": {},
+              "notes": {},
+              "type": {},
+              "heading": {},
+              "offer": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9-]{0,47}$"
+              },
+              "actions": {
+                "type": "array",
+                "maxItems": 2,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "type",
+                    "label"
+                  ],
+                  "properties": {
+                    "type": {
+                      "const": "save"
+                    },
+                    "label": {
+                      "allOf": [
+                        {
+                          "$ref": "#/definitions/plainText"
+                        }
+                      ],
+                      "maxLength": 80
+                    }
+                  }
+                }
+              },
+              "compliance": {
+                "$ref": "#/definitions/compliance"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "offer"
+              }
+            },
+            "required": [
+              "actions"
+            ]
+          },
+          "then": {
+            "properties": {
+              "surfaces": {
+                "items": {
+                  "enum": [
+                    "app",
+                    "preview"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "text"
+              }
+            }
+          },
+          "then": {
+            "additionalProperties": false,
+            "required": [
+              "voice",
+              "body"
+            ],
+            "properties": {
+              "id": {},
+              "surfaces": {},
+              "priority": {},
+              "schedule": {},
+              "when": {},
+              "notes": {},
+              "type": {},
+              "heading": {},
+              "voice": {
+                "enum": [
+                  "merchant",
+                  "papex"
+                ]
+              },
+              "icon": {
+                "enum": [
+                  "tag",
+                  "gift",
+                  "star",
+                  "mail",
+                  "info",
+                  "sparkle",
+                  "clock",
+                  "bag"
+                ]
+              },
+              "title": {
+                "allOf": [
+                  {
+                    "$ref": "#/definitions/plainText"
+                  }
+                ],
+                "maxLength": 120
+              },
+              "body": {
+                "allOf": [
+                  {
+                    "$ref": "#/definitions/plainText"
+                  }
+                ],
+                "maxLength": 500
+              },
+              "compliance": {
+                "$ref": "#/definitions/compliance"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "cta"
+              }
+            }
+          },
+          "then": {
+            "additionalProperties": false,
+            "required": [
+              "voice",
+              "label",
+              "url",
+              "style"
+            ],
+            "properties": {
+              "id": {},
+              "surfaces": {},
+              "priority": {},
+              "schedule": {},
+              "when": {},
+              "notes": {},
+              "type": {},
+              "heading": {},
+              "voice": {
+                "enum": [
+                  "merchant",
+                  "papex"
+                ]
+              },
+              "title": {
+                "allOf": [
+                  {
+                    "$ref": "#/definitions/plainText"
+                  }
+                ],
+                "maxLength": 120
+              },
+              "body": {
+                "allOf": [
+                  {
+                    "$ref": "#/definitions/plainText"
+                  }
+                ],
+                "maxLength": 500
+              },
+              "label": {
+                "allOf": [
+                  {
+                    "$ref": "#/definitions/plainText"
+                  }
+                ],
+                "maxLength": 40
+              },
+              "url": {
+                "type": "string",
+                "maxLength": 2048,
+                "pattern": "^https://"
+              },
+              "style": {
+                "enum": [
+                  "primary",
+                  "secondary"
+                ]
+              },
+              "compliance": {
+                "$ref": "#/definitions/compliance"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "savings"
+              }
+            }
+          },
+          "then": {
+            "additionalProperties": false,
+            "required": [
+              "total",
+              "totalLabel"
+            ],
+            "properties": {
+              "id": {},
+              "surfaces": {},
+              "priority": {},
+              "schedule": {},
+              "when": {},
+              "notes": {},
+              "type": {},
+              "heading": {},
+              "headline": {
+                "allOf": [
+                  {
+                    "$ref": "#/definitions/plainText"
+                  }
+                ],
+                "maxLength": 60
+              },
+              "total": {
+                "allOf": [
+                  {
+                    "$ref": "#/definitions/plainText"
+                  }
+                ],
+                "maxLength": 16
+              },
+              "totalLabel": {
+                "allOf": [
+                  {
+                    "$ref": "#/definitions/plainText"
+                  }
+                ],
+                "maxLength": 40
+              },
+              "components": {
+                "type": "array",
+                "maxItems": 10,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "label",
+                    "amount"
+                  ],
+                  "properties": {
+                    "label": {
+                      "allOf": [
+                        {
+                          "$ref": "#/definitions/plainText"
+                        }
+                      ],
+                      "maxLength": 80
+                    },
+                    "amount": {
+                      "allOf": [
+                        {
+                          "$ref": "#/definitions/plainText"
+                        }
+                      ],
+                      "maxLength": 16
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "disclosure"
+              }
+            }
+          },
+          "then": {
+            "additionalProperties": false,
+            "required": [
+              "text"
+            ],
+            "properties": {
+              "id": {},
+              "surfaces": {},
+              "priority": {},
+              "schedule": {},
+              "when": {},
+              "notes": {},
+              "type": {},
+              "heading": {},
+              "text": {
+                "allOf": [
+                  {
+                    "$ref": "#/definitions/plainText"
+                  }
+                ],
+                "maxLength": 280
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

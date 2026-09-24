@@ -186,6 +186,7 @@ test("a card that throws while rendering costs only itself", () => {
   const forged: NormalizedCards = {
     status: "ok",
     merchant: { partner: false, ageRestricted: false },
+    layout: { order: "receipt-first" },
     dropped: [],
     cards: [
       { id: "before", type: "text", mode: "live", voice: "papex", body: "Before." },

@@ -43,6 +43,64 @@ export type CardType = (typeof CARD_TYPES)[number];
 export const MAX_RENDERED_CARDS = 8;
 
 /**
+ * v1.1 (1.7.0): a response body larger than this many bytes (UTF-8, as
+ * received) renders no cards. The resolver never gets near it: 6 cards at
+ * their maximum lengths are well under 16 KB.
+ */
+export const MAX_RESPONSE_BYTES = 32_768;
+
+/**
+ * v1.1 (1.7.0): the `surface` query parameter. It is a request parameter and
+ * is NOT echoed in the response. `app` is the installed PapeX app's tap
+ * landing; `preview` needs a preview key. Audiences are segregated in config:
+ * a card configured for `app` is never also configured for `web`/`clip`.
+ */
+export const CARDS_SURFACES = ["web", "clip", "app", "preview"] as const;
+export type CardsSurface = (typeof CARDS_SURFACES)[number];
+
+/**
+ * v1.1 (1.7.0): the capability tokens a client sends as `caps=` (comma
+ * separated, flat, no nesting). The server drops any card whose type, or any
+ * feature of it, is not covered. Unknown tokens are ignored by the server.
+ *   - `compliance`: the client renders `compliance.licenseLine`. Without it the
+ *     server sends no card from an age-restricted merchant at all.
+ *   - `save`: the client implements the `save` action (1.7.0: the app only).
+ *   - `barcode.<symbology>`: the client can draw that symbology.
+ */
+export const CAPS_1_7_0 = {
+  web: ["text", "offer", "cta", "savings", "disclosure", "compliance", "barcode.code128", "barcode.ean13", "barcode.upca"],
+  clip: ["text", "offer", "cta", "savings", "disclosure", "compliance", "barcode.code128", "barcode.ean13", "barcode.upca", "barcode.qr"],
+  app: ["text", "offer", "cta", "savings", "disclosure", "compliance", "save", "barcode.code128", "barcode.ean13", "barcode.upca", "barcode.qr"],
+} as const satisfies Record<Exclude<CardsSurface, "preview">, readonly string[]>;
+
+/**
+ * v1.1 (1.7.0): where the card stack sits relative to the receipt.
+ * `receipt-first` (the default): cards below the receipt.
+ * `cards-first`: cards above the receipt. The receipt still paints first and
+ * never waits: clients reserve no space, insert the stack above the receipt
+ * once, with a fade, when (and if) it arrives, and never re-order afterwards.
+ * A missing, malformed or unknown value is `receipt-first`.
+ */
+export const LAYOUT_ORDERS = ["receipt-first", "cards-first"] as const;
+export type LayoutOrder = (typeof LAYOUT_ORDERS)[number];
+export interface CardsLayout {
+  order: LayoutOrder;
+}
+
+/**
+ * v1.1 (1.7.0): the legally required line under a merchant's promotional
+ * content, e.g. a cannabis licence number (Cal. B&P §26152(a), 4 CCR §15040).
+ * Rendered verbatim, muted, directly under the offer terms (or under the
+ * body of a text/cta card). For a `merchant.ageRestricted` merchant, every
+ * offer, and every text/cta card in the merchant's voice, MUST carry one; a
+ * client drops such a card without it.
+ */
+export interface CardCompliance {
+  /** At most 120 code points. */
+  licenseLine: string;
+}
+
+/**
  * `live`: a real card for a real receipt. `preview`: a demo, a merchant
  * preview, or anything whose write actions must stay inert. In P0 the web
  * renderer treats every write action as inert regardless of mode.
@@ -75,18 +133,30 @@ export interface TextCard extends CardBase {
   icon?: CardIcon;
   title?: string;
   body: string;
+  /** v1.1. Required when `merchant.ageRestricted` and `voice` is `merchant`. */
+  compliance?: CardCompliance;
 }
 
 // ---- offer ------------------------------------------------------------------
 
-export const BARCODE_SYMBOLOGIES = ["code128", "ean13", "upca"] as const;
+/** `qr` is v1.1 (1.7.0): at most 80 printable ASCII characters. */
+export const BARCODE_SYMBOLOGIES = ["code128", "ean13", "upca", "qr"] as const;
 export type BarcodeSymbology = (typeof BARCODE_SYMBOLOGIES)[number];
+
+/**
+ * v1.1 (1.7.0), a DISPLAY HINT only: `shared` = one code for everyone,
+ * `unique` = a code issued to this receipt (a client may label it "Your
+ * code"). The code itself is always already resolved for this sid. An unknown
+ * value is ignored (treated as absent); it never drops the card.
+ */
+export const REDEMPTION_SCOPES = ["shared", "unique"] as const;
+export type RedemptionScope = (typeof REDEMPTION_SCOPES)[number];
 
 export type OfferRedemption =
   /** A code the shopper reads out or types at the register. */
-  | { type: "code"; code: string; caption?: string }
+  | { type: "code"; code: string; caption?: string; scope?: RedemptionScope }
   /** A code the register scans. `text` is the human-readable line under the bars (defaults to `value`). */
-  | { type: "barcode"; symbology: BarcodeSymbology; value: string; text?: string; caption?: string };
+  | { type: "barcode"; symbology: BarcodeSymbology; value: string; text?: string; caption?: string; scope?: RedemptionScope };
 
 /**
  * An action on an offer. v1 has one: save the offer (and, by D2, the
@@ -103,6 +173,13 @@ export interface OfferValidity {
   expiresAt: string;
   /** Draw the "N days left" chip. It disappears once `expiresAt` has passed; there is no "Expired" state. */
   countdown: boolean;
+  /**
+   * v1.1 (1.7.0). When true, a client whose clock is past `expiresAt` does not
+   * draw the offer at all. Absent/false keeps the P0 behaviour (the offer is
+   * drawn, without a chip). The resolver sets it on every non-demo offer and
+   * never emits an offer that has already expired.
+   */
+  hideWhenExpired?: boolean;
 }
 
 export interface OfferCard extends CardBase {
@@ -122,6 +199,8 @@ export interface OfferCard extends CardBase {
   validity?: OfferValidity;
   redemption?: OfferRedemption;
   actions?: CardAction[];
+  /** v1.1. Required when `merchant.ageRestricted`. Drawn under `terms`. */
+  compliance?: CardCompliance;
 }
 
 // ---- cta --------------------------------------------------------------------
@@ -135,12 +214,20 @@ export interface CtaCard extends CardBase {
   /** https only, no credentials. Clients re-check before rendering a link. */
   url: string;
   style: "primary" | "secondary";
+  /** v1.1. Required when `merchant.ageRestricted` and `voice` is `merchant`. */
+  compliance?: CardCompliance;
 }
 
 // ---- savings ----------------------------------------------------------------
 
+/**
+ * Always PapeX's voice (glass), never the merchant's. The 1.7.0 "You saved $X
+ * with a PapeX coupon" card is this type with a `headline`.
+ */
 export interface SavingsCard extends CardBase {
   type: "savings";
+  /** v1.1: one line above the figure, at most 60 code points ("You saved $4.00 with a PapeX coupon"). */
+  headline?: string;
   /** "$11.49", formatted by the resolver. */
   total: string;
   /** "saved today". */
@@ -255,5 +342,7 @@ export interface ResolvedCards {
   configRef?: string;
   /** Facts about the merchant the client needs to enforce eligibility. Never its id. */
   merchant: CardsMerchant;
+  /** v1.1 (1.7.0). Absent, malformed or unknown: `receipt-first`. */
+  layout?: CardsLayout;
   cards: Card[];
 }

@@ -161,7 +161,7 @@
         "title": "$5 off.",
         "redemption": {
           "type": "barcode",
-          "symbology": "qr",
+          "symbology": "pdf417",
           "value": "X"
         }
       },

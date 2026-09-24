@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "sid": "7e57ca4d00000018",
+  "status": "degraded",
+  "merchant": {
+    "partner": false,
+    "ageRestricted": false
+  },
+  "cards": []
+}

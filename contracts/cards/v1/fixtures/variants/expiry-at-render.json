@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "sid": "7e57ca4d0000ff02",
+  "status": "ok",
+  "merchant": {
+    "partner": false,
+    "ageRestricted": false
+  },
+  "layout": {
+    "order": "receipt-first"
+  },
+  "cards": [
+    {
+      "id": "hide-when-expired",
+      "type": "offer",
+      "mode": "live",
+      "valueLabel": "$4",
+      "valueSuffix": "off",
+      "title": "$4 off Bounty Select-A-Size 12=24.",
+      "validity": {
+        "expiresAt": "2026-11-01T06:59:59Z",
+        "countdown": true,
+        "hideWhenExpired": true
+      }
+    },
+    {
+      "id": "p0-expiry",
+      "type": "offer",
+      "mode": "live",
+      "valueLabel": "$4",
+      "valueSuffix": "off",
+      "title": "$4 off Bounty Select-A-Size 12=24.",
+      "validity": {
+        "expiresAt": "2026-11-01T06:59:59Z",
+        "countdown": true
+      }
+    },
+    {
+      "id": "no-validity",
+      "type": "text",
+      "mode": "live",
+      "voice": "papex",
+      "body": "Still here."
+    }
+  ]
+}

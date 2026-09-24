@@ -41,8 +41,9 @@ import {
 } from "./barcode";
 import { countdownDays, endOfUtcDayAfter, formatCountdown, parseExpiresAt } from "./countdown";
 import { demoResolvedCards, projectDemoEnrichment, DEMO_PARTNER_SIDS } from "./demoSource";
-import { normalizeResolvedCards } from "./normalize";
-import { CARD_TYPES, type Card, type ResolvedCards } from "./types";
+import { normalizeResolvedCards, parseCardsResponse } from "./normalize";
+import { buildVariantFiles, testSid, TEST_SID_PREFIX } from "./testVariants";
+import { CAPS_1_7_0, CARD_TYPES, MAX_RESPONSE_BYTES, type Card, type ResolvedCards } from "./types";
 import { safeHttpsUrl } from "./url";
 import { DEMO_RECEIPTS, formatDaysRemaining, getDemoEnrichment, offerDaysRemaining } from "../demoReceipts";
 
@@ -109,6 +110,19 @@ if (process.argv.includes("--update-golden")) {
 }
 
 const demoFixtures = listJson("fixtures/demo");
+
+// v1.1 variants: generated from lib/cards/testVariants.ts, committed as JSON.
+const VARIANT_FILES = buildVariantFiles().files;
+if (process.argv.includes("--update-variants")) {
+  for (const [rel, value] of Object.entries(VARIANT_FILES)) {
+    const path = join(CONTRACT, rel);
+    mkdirSync(resolve(path, ".."), { recursive: true });
+    writeFileSync(path, JSON.stringify(value, null, 2) + "\n");
+  }
+  console.log(`  wrote ${Object.keys(VARIANT_FILES).length} variant/config files`);
+}
+const configSchema = readJson(join(CONTRACT, "merchant-config.schema.json")) as object;
+const validateConfig = new Ajv({ allErrors: true }).compile(configSchema);
 
 /** A minimal valid envelope around some cards, for probing the schema one rule at a time. */
 function envelope(cards: unknown[], merchant = { partner: false, ageRestricted: false }, extra: object = {}) {
@@ -226,7 +240,11 @@ test("schema: barcode values are constrained per symbology", () => {
   assert.ok(validate(envelope([offer({ type: "barcode", symbology: "code128", value: "A".repeat(24) })])));
   assert.equal(validate(envelope([offer({ type: "barcode", symbology: "code128", value: "A".repeat(25) })])), false);
   assert.equal(validate(envelope([offer({ type: "barcode", symbology: "ean13", value: "123" })])), false);
-  assert.equal(validate(envelope([offer({ type: "barcode", symbology: "qr", value: "x" })])), false);
+  // v1.1: qr is a known symbology (<= 80 printable ASCII); pdf417 is still not.
+  assert.ok(validate(envelope([offer({ type: "barcode", symbology: "qr", value: "x" })])), schemaErrors());
+  assert.ok(validate(envelope([offer({ type: "barcode", symbology: "qr", value: "Q".repeat(80) })])), schemaErrors());
+  assert.equal(validate(envelope([offer({ type: "barcode", symbology: "qr", value: "Q".repeat(81) })])), false);
+  assert.equal(validate(envelope([offer({ type: "barcode", symbology: "pdf417", value: "x" })])), false);
 });
 
 // =============================================================================
@@ -321,6 +339,348 @@ test("agreement: the decoder never accepts what the schema rejects, nor rejects 
       assert.equal(validate(envelope([lone], response.merchant)), false, `${f.name}: schema accepts dropped card ${d.id} (${d.reason})`);
     }
   }
+});
+
+// =============================================================================
+// v1.1 (1.7.0): layout, scope, qr, compliance, headline, hideWhenExpired, size
+// =============================================================================
+
+const SID1 = "c0ffee0000000001";
+const offerV11 = (extra: object = {}) => ({ id: "o", type: "offer", mode: "live", valueLabel: "$5", title: "$5 off.", ...extra });
+const LICENCE = { licenseLine: "CA cannabis retailer licence LICENSE_PLACEHOLDER" };
+const AGE = { partner: false, ageRestricted: true };
+const ids = (out: { cards: Card[] }) => out.cards.map((c) => c.id);
+
+test("v1.1 schema: layout, scope, hideWhenExpired, compliance and headline are accepted when well-formed", () => {
+  assert.ok(validate(envelope([text()], undefined, { layout: { order: "cards-first" } })), schemaErrors());
+  assert.ok(validate(envelope([text()], undefined, { layout: { order: "receipt-first" } })), schemaErrors());
+  assert.equal(validate(envelope([text()], undefined, { layout: { order: "coupons-first" } })), false);
+  assert.equal(validate(envelope([text()], undefined, { layout: {} })), false);
+  for (const scope of ["shared", "unique"]) {
+    assert.ok(validate(envelope([offerV11({ redemption: { type: "code", code: "X1", scope } })])), schemaErrors());
+    assert.ok(validate(envelope([offerV11({ redemption: { type: "barcode", symbology: "code128", value: "X1", scope } })])), schemaErrors());
+  }
+  assert.equal(validate(envelope([offerV11({ redemption: { type: "code", code: "X1", scope: "mine" } })])), false);
+  assert.ok(validate(envelope([offerV11({ validity: { expiresAt: "2026-11-01T06:59:59Z", countdown: true, hideWhenExpired: true } })])), schemaErrors());
+  assert.ok(validate(envelope([offerV11({ compliance: LICENCE })])), schemaErrors());
+  assert.equal(validate(envelope([offerV11({ compliance: { licenseLine: "L".repeat(121) } })])), false);
+  const savings = { id: "s", type: "savings", mode: "live", total: "$4.00", totalLabel: "saved" };
+  assert.ok(validate(envelope([{ ...savings, headline: "You saved $4.00 with a PapeX coupon" }])), schemaErrors());
+  assert.equal(validate(envelope([{ ...savings, headline: "S".repeat(61) }])), false);
+});
+
+test("v1.1 schema: an age-restricted merchant's offers and merchant-voice text/cta need a licence line", () => {
+  assert.equal(validate(envelope([offerV11()], AGE)), false);
+  assert.ok(validate(envelope([offerV11({ compliance: LICENCE })], AGE)), schemaErrors());
+  assert.equal(validate(envelope([text({ voice: "merchant" })], AGE)), false);
+  assert.ok(validate(envelope([text({ voice: "merchant", compliance: LICENCE })], AGE)), schemaErrors());
+  assert.ok(validate(envelope([text({ voice: "papex" })], AGE)), schemaErrors());
+  const cta = { id: "c", type: "cta", mode: "live", voice: "merchant", label: "Go", url: "https://papex.app/", style: "primary" };
+  assert.equal(validate(envelope([cta], AGE)), false);
+  assert.ok(validate(envelope([{ ...cta, compliance: LICENCE }], AGE)), schemaErrors());
+  // Not age-restricted: optional.
+  assert.ok(validate(envelope([offerV11(), text({ voice: "merchant" }), cta])), schemaErrors());
+});
+
+test("v1.1 client: layout.order degrades to receipt-first and never costs a card", () => {
+  const order = (layout: unknown) => normalizeResolvedCards(envelope([text()], undefined, layout === undefined ? {} : { layout }), SID1);
+  assert.equal(order({ order: "cards-first" }).layout.order, "cards-first");
+  assert.equal(order({ order: "receipt-first" }).layout.order, "receipt-first");
+  for (const bad of [undefined, null, "cards-first", 7, [], {}, { order: "CARDS-FIRST" }, { order: "coupons-first" }, { order: null }]) {
+    const out = order(bad);
+    assert.equal(out.layout.order, "receipt-first", JSON.stringify(bad));
+    assert.deepEqual(ids(out), ["t"], JSON.stringify(bad));
+  }
+  // A rejected envelope still reports a layout.
+  assert.equal(normalizeResolvedCards(undefined, SID1).layout.order, "receipt-first");
+});
+
+test("v1.1 client: redemption.scope is a hint; unknown is dropped from the card, never the card", () => {
+  const out = normalizeResolvedCards(
+    envelope([
+      offerV11({ id: "a", redemption: { type: "code", code: "X1", scope: "unique" } }),
+      offerV11({ id: "b", redemption: { type: "barcode", symbology: "code128", value: "X1", scope: "shared" } }),
+      offerV11({ id: "c", redemption: { type: "code", code: "X1", scope: "perCustomer" } }),
+      offerV11({ id: "d", redemption: { type: "code", code: "X1", scope: 1 } }),
+    ]),
+    SID1,
+  );
+  assert.deepEqual(ids(out), ["a", "b", "c", "d"]);
+  const scopes = out.cards.map((c) => (c.type === "offer" ? c.redemption?.scope : undefined));
+  assert.deepEqual(scopes, ["unique", "shared", undefined, undefined]);
+});
+
+test("v1.1 client: qr values are 1-80 printable ASCII", () => {
+  const qr = (id: string, value: unknown) => offerV11({ id, redemption: { type: "barcode", symbology: "qr", value } });
+  const out = normalizeResolvedCards(
+    envelope([qr("ok", "https://papex.app/x?y=1"), qr("max", "Q".repeat(80)), qr("long", "Q".repeat(81)), qr("nl", "A\nB"), qr("empty", ""), qr("num", 5), qr("utf", "café")]),
+    SID1,
+  );
+  assert.deepEqual(ids(out), ["ok", "max"]);
+});
+
+test("v1.1 client: compliance fails closed", () => {
+  const cta = (extra: object = {}) => ({ id: "cta", type: "cta", mode: "live", voice: "merchant", label: "Go", url: "https://papex.app/", style: "primary", ...extra });
+  const cards = [
+    offerV11({ id: "offer-ok", compliance: LICENCE }),
+    offerV11({ id: "offer-missing" }),
+    offerV11({ id: "offer-null", compliance: null }),
+    offerV11({ id: "offer-bad-type", compliance: "C10-1" }),
+    offerV11({ id: "offer-empty", compliance: {} }),
+    offerV11({ id: "offer-bidi", compliance: { licenseLine: "Lic \u202E1" } }),
+    text({ id: "mtext-ok", voice: "merchant", compliance: LICENCE }),
+    text({ id: "mtext-missing", voice: "merchant" }),
+    text({ id: "ptext", voice: "papex" }),
+    cta({ id: "cta-ok", compliance: LICENCE }),
+    cta({ id: "cta-missing" }),
+    cta({ id: "pcta", voice: "papex" }),
+  ];
+  assert.deepEqual(ids(normalizeResolvedCards(envelope(cards, AGE), SID1)), ["offer-ok", "mtext-ok", "ptext", "cta-ok", "pcta"]);
+  // Not age-restricted: a missing licence is fine; a MALFORMED one still drops its card.
+  // (Two envelopes: one would hit the 8-card limit.)
+  assert.deepEqual(ids(normalizeResolvedCards(envelope(cards.slice(0, 6)), SID1)), ["offer-ok", "offer-missing", "offer-null"]);
+  assert.deepEqual(ids(normalizeResolvedCards(envelope(cards.slice(6)), SID1)), ["mtext-ok", "mtext-missing", "ptext", "cta-ok", "cta-missing", "pcta"]);
+  const kept = normalizeResolvedCards(envelope([offerV11({ compliance: LICENCE })], AGE), SID1).cards[0];
+  assert.deepEqual(kept.type === "offer" && kept.compliance, LICENCE);
+});
+
+test("v1.1 client: savings headline is optional, at most 60 code points", () => {
+  const s = (id: string, headline: unknown) => ({ id, type: "savings", mode: "live", total: "$4.00", totalLabel: "saved", headline });
+  const out = normalizeResolvedCards(envelope([s("a", "You saved $4.00 with a PapeX coupon"), s("b", null), s("c", "S".repeat(61)), s("d", "  ")]), SID1);
+  assert.deepEqual(ids(out), ["a", "b"]);
+});
+
+test("v1.1 client: hideWhenExpired hides an expired offer only when a clock is given", () => {
+  const v = (hide: unknown) => ({ expiresAt: "2026-11-01T06:59:59Z", countdown: true, hideWhenExpired: hide });
+  const cards = [offerV11({ id: "hide", validity: v(true) }), offerV11({ id: "keep", validity: v(false) }), offerV11({ id: "absent", validity: v(null) })];
+  assert.deepEqual(ids(normalizeResolvedCards(envelope(cards), SID1)), ["hide", "keep", "absent"]);
+  assert.deepEqual(ids(normalizeResolvedCards(envelope(cards), SID1, { now: new Date("2026-11-01T06:59:59.999Z") })), ["hide", "keep", "absent"]);
+  assert.deepEqual(ids(normalizeResolvedCards(envelope(cards), SID1, { now: new Date("2026-11-01T07:00:00Z") })), ["keep", "absent"]);
+  assert.deepEqual(ids(normalizeResolvedCards(envelope(cards), SID1, { now: new Date(NaN) })), ["hide", "keep", "absent"]);
+  assert.deepEqual(ids(normalizeResolvedCards(envelope([offerV11({ validity: v("yes") })]), SID1)), []);
+});
+
+test("v1.1 client: parseCardsResponse caps the body, rejects non-JSON, never throws", () => {
+  const good = JSON.stringify(envelope([text()]));
+  assert.deepEqual(ids(parseCardsResponse(good, SID1)), ["t"]);
+  const pad = (n: number) => {
+    const base = JSON.stringify(envelope([text()])).slice(0, -1);
+    return base + `,"pad":"${"x".repeat(n - base.length - 10)}"}`;
+  };
+  assert.equal(new TextEncoder().encode(pad(MAX_RESPONSE_BYTES)).length, MAX_RESPONSE_BYTES);
+  assert.deepEqual(ids(parseCardsResponse(pad(MAX_RESPONSE_BYTES), SID1)), ["t"]);
+  assert.equal(parseCardsResponse(pad(MAX_RESPONSE_BYTES + 1), SID1).rejected, "oversize");
+  // Multi-byte text over the cap in UTF-8 but not in UTF-16 code units.
+  const wide = JSON.stringify(envelope([text({ body: "é".repeat(400) })]));
+  const wideBody = wide.slice(0, -1) + `,"pad":"${"é".repeat(17_000)}"}`;
+  assert.ok(wideBody.length < MAX_RESPONSE_BYTES * 1.1 && new TextEncoder().encode(wideBody).length > MAX_RESPONSE_BYTES);
+  assert.equal(parseCardsResponse(wideBody, SID1).rejected, "oversize");
+  for (const bad of ["", "{", "null", "<html>", undefined, 42, Buffer.from(good)]) {
+    const out = parseCardsResponse(bad, SID1);
+    assert.deepEqual(out.cards, [], String(bad));
+    assert.equal(out.layout.order, "receipt-first");
+  }
+  assert.equal(parseCardsResponse("{", SID1).rejected, "not json");
+});
+
+test("v1.1 caps: each 1.7.0 surface's token list is exactly what the contract says", () => {
+  assert.deepEqual(CAPS_1_7_0.web.includes("barcode.qr" as never), false, "web has no QR encoder yet");
+  assert.ok(CAPS_1_7_0.clip.includes("barcode.qr") && CAPS_1_7_0.app.includes("barcode.qr"));
+  assert.ok(CAPS_1_7_0.app.includes("save") && !CAPS_1_7_0.clip.includes("save" as never) && !CAPS_1_7_0.web.includes("save" as never));
+  for (const s of ["web", "clip", "app"] as const) {
+    assert.ok(CAPS_1_7_0[s].includes("compliance"), s);
+    for (const t of CAPS_1_7_0[s]) assert.ok(!["emailCapture", "insight", "loyalty"].includes(t), `${s}: ${t}`);
+  }
+});
+
+// =============================================================================
+// VARIANTS (fixtures/variants, INDEX.json) and CONFIG (merchant-config.schema.json)
+// =============================================================================
+
+interface VariantIndex {
+  capsBySurface: Record<string, string>;
+  variants: {
+    sid: string;
+    variant: string;
+    merchantId: string;
+    copyReceiptBlobFrom: string;
+    layout: string;
+    status: string;
+    responses: Record<"web" | "clip" | "app", string>;
+    expectCardIds: Record<"web" | "clip" | "app", string[]>;
+    mustNotAppear?: string[];
+  }[];
+  clientOnly: { file: string; requestSid: string; now: string | null; expectCardIds: string[]; expectCardIdsWithoutClock?: string[]; expectLayout?: string }[];
+}
+const VARIANT_DIR = join(CONTRACT, "fixtures/variants");
+const variantIndex = () => readJson(join(VARIANT_DIR, "INDEX.json")) as VariantIndex;
+
+test("variants: the committed files are exactly what lib/cards/testVariants.ts generates", () => {
+  for (const [rel, value] of Object.entries(VARIANT_FILES)) {
+    assert.equal(readFileSync(join(CONTRACT, rel), "utf8"), JSON.stringify(value, null, 2) + "\n", `${rel} is stale: run --update-variants`);
+  }
+  const onDisk = readdirSync(VARIANT_DIR).map((f) => `fixtures/variants/${f}`).sort();
+  const generated = Object.keys(VARIANT_FILES).filter((k) => k.startsWith("fixtures/variants/")).sort();
+  assert.deepEqual(onDisk, generated, "stray or missing files in fixtures/variants");
+});
+
+test("variants: INDEX sids are 7e57ca4d0000NNNN from 0001, contiguous, test merchants only, never a demo sid", () => {
+  const idx = variantIndex();
+  idx.variants.forEach((v, i) => {
+    assert.equal(v.sid, testSid(i + 1));
+    assert.ok(v.sid.startsWith(TEST_SID_PREFIX) && /^[a-f0-9]{16}$/.test(v.sid));
+    assert.ok(v.merchantId === "test-cards" || v.merchantId === "test-cards-21", v.merchantId);
+    assert.ok(!DEMO_RECEIPTS.has(v.sid));
+    assert.ok(["5ca1e00000000001", "b0de9a0000000001"].includes(v.copyReceiptBlobFrom));
+  });
+  assert.equal(new Set(idx.variants.map((v) => v.variant)).size, idx.variants.length);
+  for (const s of ["web", "clip", "app"] as const) assert.equal(idx.capsBySurface[s], CAPS_1_7_0[s].join(","));
+});
+
+test("variants: every minted response is schema-valid, decodes losslessly, and matches INDEX", () => {
+  const idx = variantIndex();
+  const SURF = ["web", "clip", "app"] as const;
+  for (const v of idx.variants) {
+    for (const s of SURF) {
+      const r = readJson(join(VARIANT_DIR, v.responses[s])) as ResolvedCards;
+      const where = `${v.variant}/${s}`;
+      assert.ok(validate(r), `${where}: ${schemaErrors()}`);
+      assert.equal(r.sid, v.sid, where);
+      // Decoded at a clock inside the test window, every card survives.
+      const out = normalizeResolvedCards(r, v.sid, { now: new Date("2026-10-05T17:00:00Z") });
+      assert.deepEqual(out.dropped, [], `${where}: ${JSON.stringify(out.dropped)}`);
+      assert.deepEqual(ids(out), v.expectCardIds[s], where);
+      if (r.status === "ok" || r.status === "pending") {
+        assert.deepEqual(out.cards, r.cards, `${where}: not lossless`);
+        assert.equal(out.layout.order, v.layout, where);
+        assert.ok(r.cards.length <= 6, `${where}: over the 1.7.0 resolver cap`);
+      }
+      for (const gone of v.mustNotAppear ?? []) assert.ok(!r.cards.some((c) => c.id === gone), `${where}: ${gone}`);
+      // Audience segregation: when the app gets its own cards, no id is shared with web/clip.
+      if (s === "app" && v.responses.app !== v.responses.clip) {
+        for (const id of v.expectCardIds.app) assert.ok(![...v.expectCardIds.web, ...v.expectCardIds.clip].includes(id), `${where}: ${id} shared`);
+      }
+      for (const c of r.cards) {
+        if (c.type === "offer" && c.actions?.length) assert.equal(s, "app", `${where}: save outside the app`);
+        if (c.type === "offer" && c.redemption?.type === "barcode") {
+          assert.ok(CAPS_1_7_0[s].includes(`barcode.${c.redemption.symbology}` as never), `${where}: ${c.redemption.symbology} not in ${s} caps`);
+        }
+        if (r.merchant.ageRestricted && (c.type === "offer" || ((c.type === "text" || c.type === "cta") && c.voice === "merchant"))) {
+          assert.ok(c.compliance?.licenseLine.includes("LICENSE_PLACEHOLDER"), `${where}: ${c.id} lacks the licence line`);
+        }
+      }
+    }
+  }
+});
+
+test("variants: the set covers every 1.7.0 axis", () => {
+  const idx = variantIndex();
+  const seen = new Set<string>();
+  for (const v of idx.variants) {
+    seen.add(`layout:${v.layout}`);
+    seen.add(`status:${v.status}`);
+    for (const s of ["web", "clip", "app"] as const) {
+      const r = readJson(join(VARIANT_DIR, v.responses[s])) as ResolvedCards;
+      if (r.cards.length >= 4) seen.add("four-cards");
+      if (r.cards.length === 1 && r.cards[0].type === "text") seen.add("text-only");
+      for (const c of r.cards) {
+        seen.add(`type:${c.type}`);
+        if (c.type === "offer") {
+          if (c.redemption?.type === "barcode") seen.add(`barcode:${c.redemption.symbology}`);
+          if (c.redemption?.type === "code") seen.add("code-only");
+          if (c.redemption?.scope) seen.add(`scope:${c.redemption.scope}`);
+          seen.add(c.compliance ? "licence:on" : "licence:off");
+          if (c.actions?.length) seen.add("save:app");
+        }
+        if (c.type === "savings" && c.headline) seen.add("savings:headline");
+      }
+    }
+    if (v.mustNotAppear?.length) seen.add("expired-dropped");
+    if (v.expectCardIds.app.join() !== v.expectCardIds.clip.join() && v.variant === "audience") seen.add("audience");
+  }
+  for (const want of [
+    "layout:receipt-first", "layout:cards-first", "status:ok", "status:none", "status:degraded", "status:pending",
+    "barcode:code128", "barcode:qr", "barcode:upca", "code-only", "scope:shared", "scope:unique",
+    "licence:on", "licence:off", "savings:headline", "type:text", "type:cta", "type:savings", "type:offer",
+    "four-cards", "text-only", "expired-dropped", "audience", "save:app",
+  ]) {
+    assert.ok(seen.has(want), `no variant covers ${want}`);
+  }
+});
+
+test("variants: client-only cases decode to exactly their expected ids", () => {
+  for (const c of variantIndex().clientOnly) {
+    const r = readJson(join(VARIANT_DIR, c.file));
+    const out = normalizeResolvedCards(r, c.requestSid, c.now ? { now: new Date(c.now) } : {});
+    assert.deepEqual(ids(out), c.expectCardIds, `${c.file}: ${JSON.stringify(out.dropped)}`);
+    if (c.expectLayout) assert.equal(out.layout.order, c.expectLayout);
+    if (c.expectCardIdsWithoutClock) assert.deepEqual(ids(normalizeResolvedCards(r, c.requestSid)), c.expectCardIdsWithoutClock);
+  }
+  // hostile.json is NOT schema-valid (the server can never send it) ...
+  const hostileJson = readJson(join(VARIANT_DIR, "hostile.json"));
+  assert.equal(validate(hostileJson), false);
+  // ... and every card the decoder dropped on its merits is schema-invalid alone too.
+  const out = normalizeResolvedCards(hostileJson, "7e57ca4d0000ff01");
+  const h = hostileJson as { merchant: object; cards: unknown[] };
+  for (const d of out.dropped) {
+    if (["unknown type", "duplicate id"].includes(d.reason) || d.id === "bad-upca") continue;
+    assert.equal(validate(envelope([h.cards[d.index]], h.merchant as never)), false, `schema accepts ${d.id} (${d.reason})`);
+  }
+  const ok = out.cards.find((c) => c.id === "ok-offer");
+  assert.ok(ok && ok.type === "offer" && ok.redemption && ok.redemption.scope === undefined, "unknown scope must be stripped");
+  // expiry-at-render.json IS schema-valid.
+  assert.ok(validate(readJson(join(VARIANT_DIR, "expiry-at-render.json"))), schemaErrors());
+});
+
+test("config: the two test-merchant configs are schema-valid", () => {
+  for (const f of ["test-cards.json", "test-cards-21.json"]) {
+    assert.ok(validateConfig(readJson(join(CONTRACT, "config-examples", f))), `${f}: ${JSON.stringify(validateConfig.errors)}`);
+  }
+});
+
+test("config: the schema enforces L1 audiences, L2 save, L3 licence, L4 1.7.0 types, L7 debug, L11 expiry", () => {
+  const base = readJson(join(CONTRACT, "config-examples/test-cards.json")) as Record<string, unknown> & { cards: Record<string, unknown>[]; merchant: Record<string, unknown> };
+  const withCard = (card: object) => ({ ...base, cards: [card] });
+  const offerCard = (extra: object = {}) => ({ id: "x", surfaces: ["web", "clip"], type: "offer", offer: "h-bounty-code128", ...extra });
+  assert.ok(validateConfig(withCard(offerCard())), JSON.stringify(validateConfig.errors));
+  // L1
+  assert.equal(validateConfig(withCard(offerCard({ surfaces: ["app", "web"] }))), false);
+  assert.equal(validateConfig(withCard(offerCard({ surfaces: ["app", "clip"] }))), false);
+  assert.ok(validateConfig(withCard(offerCard({ surfaces: ["app", "preview"] }))));
+  // L2
+  const save = { actions: [{ type: "save", label: "Save to PapeX" }] };
+  assert.equal(validateConfig(withCard(offerCard(save))), false);
+  assert.ok(validateConfig(withCard(offerCard({ ...save, surfaces: ["app"] }))), JSON.stringify(validateConfig.errors));
+  // L3
+  const noLicence = { ...base, merchant: { ...base.merchant, ageRestricted: true } };
+  assert.equal(validateConfig(noLicence), false);
+  assert.ok(validateConfig({ ...noLicence, merchant: { ...noLicence.merchant, licenseLine: "CA licence LICENSE_PLACEHOLDER" } }));
+  // L4
+  for (const type of ["emailCapture", "insight", "loyalty", "poll"]) assert.equal(validateConfig(withCard({ id: "x", surfaces: ["web"], type })), false, type);
+  // L7
+  const debug = { forceStatus: [{ sids: [testSid(18)], status: "degraded" }] };
+  assert.ok(validateConfig({ ...base, debug }));
+  assert.equal(validateConfig({ ...base, merchantId: "doobie-nights", debug }), false);
+  assert.equal(validateConfig({ ...base, merchant: { ...base.merchant, test: false }, debug }), false);
+  // L11 + code modes
+  const offers = base.offers as Record<string, Record<string, unknown>>;
+  const tpl = offers["h-bounty-code128"];
+  const withOffer = (o: object) => ({ ...base, offers: { ...offers, t: { ...tpl, ...o } } });
+  assert.equal(validateConfig(withOffer({ validity: { expiresOn: "2026-10-31", validForDays: 14, countdown: true } })), false);
+  assert.equal(validateConfig(withOffer({ validity: { countdown: true } })), false);
+  assert.ok(validateConfig(withOffer({ validity: { validForDays: 14, countdown: true } })));
+  const red = (code: object) => withOffer({ redemption: { type: "barcode", symbology: "code128", code } });
+  assert.ok(validateConfig(red({ mode: "perSid", pool: "p1" })));
+  assert.ok(validateConfig(red({ mode: "template", template: "DN-{sid6}" })));
+  assert.equal(validateConfig(red({ mode: "template", template: "DN-{sid}" })), false);
+  assert.equal(validateConfig(red({ mode: "template", template: "DN-{receipt.total}" })), false);
+  assert.equal(validateConfig(red({ mode: "random" })), false);
+  // Rules: only the v1 facts.
+  const rule = (when: object) => withCard(offerCard({ when }));
+  assert.ok(validateConfig(rule({ all: [{ fact: "device.id", op: "in", value: ["rdh-pilot-01"] }, { fact: "now", op: "between", value: ["2026-10-01T00:00:00Z", "2026-11-01T00:00:00Z"] }] })));
+  assert.ok(validateConfig(rule({ not: { fact: "request.surface", op: "in", value: ["web"] } })));
+  assert.equal(validateConfig(rule({ fact: "receipt.total", op: "gte", value: 10000 })), false);
+  assert.equal(validateConfig(rule({ fact: "device.id", op: "eq", value: "rdh-pilot-01" })), false);
 });
 
 // =============================================================================

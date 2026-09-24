@@ -14,6 +14,11 @@ export function SavingsCardView({ card }: { card: SavingsCard }) {
   return (
     <WithHeading heading={card.heading}>
       <GlassCard emphasis="standard" className="p-6">
+        {card.headline && (
+          <p className="mb-2 text-sm font-medium" style={{ color: T.text }}>
+            {card.headline}
+          </p>
+        )}
         <div className="flex items-baseline gap-2">
           <TrendingDown className="h-5 w-5 shrink-0 self-center" style={{ color: T.success }} strokeWidth={2} />
           <span className="font-barlow text-2xl font-medium" style={{ color: T.success }}>

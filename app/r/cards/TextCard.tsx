@@ -29,6 +29,11 @@ export function TextCardView({ card }: { card: TextCard }) {
       <p className="text-sm leading-relaxed" style={{ color: inkSoft }}>
         {card.body}
       </p>
+      {card.compliance && (
+        <p className="mt-2 text-[11px] leading-relaxed" style={{ color: inkSoft }}>
+          {card.compliance.licenseLine}
+        </p>
+      )}
     </>
   );
 

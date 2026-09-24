@@ -19,6 +19,8 @@
 // EAN/UPC encoder, since CoreImage has none. The module rows below are the
 // reference it should match.
 
+import type { BarcodeSymbology } from "./types";
+
 /** A barcode as a row of modules: `true` is a bar, `false` is a space. Quiet zones included. */
 export interface BarcodeModules {
   modules: boolean[];
@@ -143,8 +145,16 @@ export function encodeUpcA(value: string): BarcodeModules {
   return encodeEan13(`0${value}`);
 }
 
-export function encodeBarcode(symbology: "code128" | "ean13" | "upca", value: string): BarcodeModules {
+/**
+ * `qr` (v1.1) has no web encoder yet, so it throws: inside CardList's guard
+ * that drops the card whole, never a voucher with a hole. The web therefore
+ * does not advertise `barcode.qr` in its caps (types.ts CAPS_1_7_0), and the
+ * server never sends it a QR offer.
+ */
+export function encodeBarcode(symbology: BarcodeSymbology, value: string): BarcodeModules {
   switch (symbology) {
+    case "qr":
+      throw new RangeError("qr: no web encoder yet");
     case "code128":
       return encodeCode128(value);
     case "ean13":

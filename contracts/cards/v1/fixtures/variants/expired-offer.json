@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "sid": "7e57ca4d00000016",
+  "status": "ok",
+  "merchant": {
+    "partner": false,
+    "ageRestricted": false
+  },
+  "layout": {
+    "order": "receipt-first"
+  },
+  "cards": [
+    {
+      "id": "tc-text-16",
+      "mode": "live",
+      "type": "text",
+      "voice": "merchant",
+      "icon": "star",
+      "title": "Thanks for shopping at Hartwell's Market",
+      "body": "See you next time."
+    }
+  ]
+}

@@ -31,6 +31,18 @@
 //   UNKNOWN PROPERTIES ARE IGNORED, and an optional field sent as `null` is
 //   treated as absent (it is what Swift's decodeIfPresent does).
 //
+// v1.1 additions (1.7.0, contracts/cards/v1/README.md "v1.1"):
+//   LAYOUT DEGRADES, NEVER FAILS. `layout.order` missing, malformed or
+//     unknown is `receipt-first`. It never costs a card.
+//   SCOPE IS A HINT. `redemption.scope` outside shared|unique is ignored.
+//   COMPLIANCE FAILS CLOSED. A malformed `compliance` drops its card, and for
+//     an age-restricted merchant an offer (or a merchant-voice text/cta card)
+//     WITHOUT `compliance.licenseLine` is dropped.
+//   EXPIRED AND HIDDEN. Given a clock (`opts.now`), an offer with
+//     `validity.hideWhenExpired` whose `expiresAt` has passed is dropped.
+//   SIZE. `parseCardsResponse` rejects a body over MAX_RESPONSE_BYTES, or one
+//     that is not JSON, before any of the above.
+//
 // The output objects are rebuilt from known keys only, so nothing the source
 // sent beyond the v1 fields survives into the renderer.
 
@@ -39,10 +51,15 @@ import {
   CARD_ICONS,
   CARD_TYPES,
   CARDS_SCHEMA_VERSION,
+  LAYOUT_ORDERS,
   MAX_RENDERED_CARDS,
+  MAX_RESPONSE_BYTES,
+  REDEMPTION_SCOPES,
   type BarcodeSymbology,
   type Card,
   type CardAction,
+  type CardCompliance,
+  type CardsLayout,
   type CardsMerchant,
   type CardType,
   type OfferRedemption,
@@ -64,6 +81,8 @@ export interface NormalizedCards {
   /** `ok`/`pending` when the envelope was accepted; `none` when it rendered nothing by design or by failure. */
   status: "ok" | "pending" | "none";
   merchant: CardsMerchant;
+  /** Always present: `receipt-first` unless the response validly said `cards-first`. */
+  layout: CardsLayout;
   cards: Card[];
   /** Only for `pending`, and only when valid. */
   retryAfterMs?: number;
@@ -76,7 +95,14 @@ export interface NormalizedCards {
 const NO_MERCHANT: CardsMerchant = { partner: false, ageRestricted: false };
 
 function nothing(rejected?: string): NormalizedCards {
-  return { status: "none", merchant: { ...NO_MERCHANT }, cards: [], dropped: [], ...(rejected ? { rejected } : {}) };
+  return {
+    status: "none",
+    merchant: { ...NO_MERCHANT },
+    layout: { order: "receipt-first" },
+    cards: [],
+    dropped: [],
+    ...(rejected ? { rejected } : {}),
+  };
 }
 
 // ---- primitives -----------------------------------------------------------------
@@ -192,12 +218,36 @@ const CARD_ID_RE = /^[a-z0-9][a-z0-9-]{0,47}$/;
 const CODE_RE = /^[\x21-\x7E]{1,32}$/;
 /** 24 characters keeps a Code 128 module above ~1 CSS px in a 430 px column: dense, still scannable. */
 const CODE128_RE = /^[\x20-\x7E]{1,24}$/;
+/** v1.1: a QR payload is at most 80 printable ASCII characters (a code or a short https URL). */
+const QR_RE = /^[\x20-\x7E]{1,80}$/;
 const SID_RE = /^[a-f0-9]{16}$/;
 
 // ---- per-type validators ------------------------------------------------------------
 
 interface CardContext {
   merchant: CardsMerchant;
+  /** When given, offers with `validity.hideWhenExpired` are dropped once expired. */
+  now?: Date;
+}
+
+/** v1.1: `{licenseLine}`, at most 120 code points. Malformed drops the card. */
+function compliance(o: Obj): CardCompliance | undefined {
+  const c = optObj(o, "compliance");
+  if (!c) return undefined;
+  return { licenseLine: reqText(c, "licenseLine", 120) };
+}
+
+/** v1.1: for an age-restricted merchant, merchant speech must carry its licence line. */
+function requireLicense(card: { compliance?: CardCompliance }, ctx: CardContext) {
+  if (ctx.merchant.ageRestricted && !card.compliance) invalid("age-restricted merchant requires compliance.licenseLine");
+}
+
+/** v1.1: a display hint; anything but shared|unique is ignored, never fatal. */
+function scope(o: Obj) {
+  const v = get(o, "scope");
+  return typeof v === "string" && (REDEMPTION_SCOPES as readonly string[]).includes(v)
+    ? (v as (typeof REDEMPTION_SCOPES)[number])
+    : undefined;
 }
 
 function base(o: Obj) {
@@ -210,15 +260,18 @@ function base(o: Obj) {
   };
 }
 
-function textCard(o: Obj): Card {
-  return compact({
+function textCard(o: Obj, ctx: CardContext): Card {
+  const card = compact({
     ...base(o),
     type: "text" as const,
     voice: reqEnum(o, "voice", ["merchant", "papex"] as const),
     icon: optEnum(o, "icon", CARD_ICONS),
     title: optText(o, "title", 120),
     body: reqText(o, "body", 500),
+    compliance: compliance(o),
   });
+  if (card.voice === "merchant") requireLicense(card, ctx);
+  return card;
 }
 
 function redemption(o: Obj): OfferRedemption {
@@ -226,7 +279,7 @@ function redemption(o: Obj): OfferRedemption {
   if (type === "code") {
     const code = get(o, "code");
     if (typeof code !== "string" || !CODE_RE.test(code)) invalid("bad redemption.code");
-    return compact({ type, code, caption: optText(o, "caption", 80) });
+    return compact({ type, code, caption: optText(o, "caption", 80), scope: scope(o) });
   }
   const symbology: BarcodeSymbology = reqEnum(o, "symbology", BARCODE_SYMBOLOGIES);
   const value = get(o, "value");
@@ -236,7 +289,9 @@ function redemption(o: Obj): OfferRedemption {
       ? CODE128_RE.test(value)
       : symbology === "ean13"
         ? isValidEan13(value)
-        : isValidUpcA(value);
+        : symbology === "upca"
+          ? isValidUpcA(value)
+          : QR_RE.test(value);
   if (!ok) invalid("bad redemption.value");
   return compact({
     type,
@@ -244,6 +299,7 @@ function redemption(o: Obj): OfferRedemption {
     value,
     text: optText(o, "text", 80),
     caption: optText(o, "caption", 80),
+    scope: scope(o),
   });
 }
 
@@ -252,7 +308,9 @@ function validity(o: Obj): OfferValidity {
   if (typeof expiresAt !== "string" || parseExpiresAt(expiresAt) == null) invalid("bad validity.expiresAt");
   const countdown = get(o, "countdown");
   if (typeof countdown !== "boolean") invalid("bad validity.countdown");
-  return { expiresAt, countdown };
+  const hide = get(o, "hideWhenExpired");
+  if (hide !== undefined && hide !== null && typeof hide !== "boolean") invalid("bad validity.hideWhenExpired");
+  return compact({ expiresAt, countdown, hideWhenExpired: typeof hide === "boolean" ? hide : undefined });
 }
 
 /** At most this many actions render on one card, counted after unknown actions are skipped. */
@@ -274,10 +332,10 @@ function actions(o: Obj): CardAction[] | undefined {
   return out;
 }
 
-function offerCard(o: Obj): Card {
+function offerCard(o: Obj, ctx: CardContext): Card {
   const v = optObj(o, "validity");
   const r = optObj(o, "redemption");
-  return compact({
+  const card = compact({
     ...base(o),
     type: "offer" as const,
     kicker: optText(o, "kicker", 40),
@@ -289,11 +347,21 @@ function offerCard(o: Obj): Card {
     validity: v ? validity(v) : undefined,
     redemption: r ? redemption(r) : undefined,
     actions: actions(o),
+    compliance: compliance(o),
   });
+  requireLicense(card, ctx);
+  if (ctx.now && card.validity?.hideWhenExpired) {
+    // The countdown chip's own rule (README "Countdown chip"): expired iff
+    // floor(now / 1 s) > expiresAt. An unusable clock hides nothing.
+    const expires = parseExpiresAt(card.validity.expiresAt);
+    const nowSec = Math.floor(ctx.now.getTime() / 1000);
+    if (expires != null && Number.isFinite(nowSec) && nowSec > expires) invalid("expired");
+  }
+  return card;
 }
 
-function ctaCard(o: Obj): Card {
-  return compact({
+function ctaCard(o: Obj, ctx: CardContext): Card {
+  const card = compact({
     ...base(o),
     type: "cta" as const,
     voice: reqEnum(o, "voice", ["merchant", "papex"] as const),
@@ -302,7 +370,10 @@ function ctaCard(o: Obj): Card {
     label: reqText(o, "label", 40),
     url: reqUrl(o, "url"),
     style: reqEnum(o, "style", ["primary", "secondary"] as const),
+    compliance: compliance(o),
   });
+  if (card.voice === "merchant") requireLicense(card, ctx);
+  return card;
 }
 
 function savingsCard(o: Obj): Card {
@@ -313,6 +384,7 @@ function savingsCard(o: Obj): Card {
   return compact({
     ...base(o),
     type: "savings" as const,
+    headline: optText(o, "headline", 60),
     total: reqText(o, "total", 16),
     totalLabel: reqText(o, "totalLabel", 40),
     components,
@@ -410,12 +482,21 @@ const VALIDATORS: Record<CardType, (o: Obj, ctx: CardContext) => Card> = {
 
 // ---- the envelope ------------------------------------------------------------------------
 
+export interface NormalizeOptions {
+  /**
+   * The render clock. When given, an offer with `validity.hideWhenExpired`
+   * whose `expiresAt` has passed is dropped (reason "expired"). Omit it to
+   * decode without a clock (every P0 caller does).
+   */
+  now?: Date;
+}
+
 /**
  * Validate a cards response for `expectedSid`. Never throws.
  */
-export function normalizeResolvedCards(input: unknown, expectedSid: string): NormalizedCards {
+export function normalizeResolvedCards(input: unknown, expectedSid: string, opts: NormalizeOptions = {}): NormalizedCards {
   try {
-    return normalizeUnsafe(input, expectedSid);
+    return normalizeUnsafe(input, expectedSid, opts);
   } catch {
     // Unreachable by construction; here so that "never throws" is a guarantee
     // rather than a claim. Fail closed.
@@ -423,7 +504,42 @@ export function normalizeResolvedCards(input: unknown, expectedSid: string): Nor
   }
 }
 
-function normalizeUnsafe(input: unknown, expectedSid: string): NormalizedCards {
+/**
+ * The whole client pipeline from the raw response body: size cap, JSON parse,
+ * then `normalizeResolvedCards`. Never throws. `body` is the text as received;
+ * its size is measured in UTF-8 bytes.
+ */
+export function parseCardsResponse(body: unknown, expectedSid: string, opts: NormalizeOptions = {}): NormalizedCards {
+  try {
+    if (typeof body !== "string") return nothing("not text");
+    // A UTF-16 length over the cap is over it in UTF-8 too; skip the encode.
+    if (body.length > MAX_RESPONSE_BYTES || new TextEncoder().encode(body).length > MAX_RESPONSE_BYTES) {
+      return nothing("oversize");
+    }
+    let json: unknown;
+    try {
+      json = JSON.parse(body);
+    } catch {
+      return nothing("not json");
+    }
+    return normalizeResolvedCards(json, expectedSid, opts);
+  } catch {
+    return nothing("internal");
+  }
+}
+
+/** v1.1: `layout.order`, degrading to `receipt-first` on anything unexpected. */
+function layoutOf(input: Obj): CardsLayout {
+  const l = get(input, "layout");
+  const order = isObj(l) ? get(l, "order") : undefined;
+  return {
+    order: typeof order === "string" && (LAYOUT_ORDERS as readonly string[]).includes(order)
+      ? (order as CardsLayout["order"])
+      : "receipt-first",
+  };
+}
+
+function normalizeUnsafe(input: unknown, expectedSid: string, opts: NormalizeOptions): NormalizedCards {
   if (!isObj(input)) return nothing("not an object");
   if (get(input, "schemaVersion") !== CARDS_SCHEMA_VERSION) return nothing("unsupported schemaVersion");
 
@@ -464,7 +580,7 @@ function normalizeUnsafe(input: unknown, expectedSid: string): NormalizedCards {
     }
     let card: Card;
     try {
-      card = VALIDATORS[type as CardType](raw as Obj, { merchant });
+      card = VALIDATORS[type as CardType](raw as Obj, { merchant, now: opts.now });
     } catch (err) {
       dropped.push({ index, id, type, reason: err instanceof Invalid ? err.message : "invalid" });
       return;
@@ -481,5 +597,12 @@ function normalizeUnsafe(input: unknown, expectedSid: string): NormalizedCards {
     cards.push(card);
   });
 
-  return { status, merchant, cards, dropped, ...(retryAfterMs != null ? { retryAfterMs } : {}) };
+  return {
+    status,
+    merchant,
+    layout: layoutOf(input),
+    cards,
+    dropped,
+    ...(retryAfterMs != null ? { retryAfterMs } : {}),
+  };
 }

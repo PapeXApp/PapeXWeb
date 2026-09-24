@@ -108,6 +108,11 @@ export function OfferCardView({ card, now }: { card: OfferCard; now: Date }) {
               {card.terms}
             </p>
           )}
+          {card.compliance && (
+            <p className="mt-1.5 text-[11px] leading-relaxed" style={{ color: VOUCHER_INK_SOFT }}>
+              {card.compliance.licenseLine}
+            </p>
+          )}
           {card.redemption && <Redemption redemption={card.redemption} barcode={barcode} />}
           {(card.actions ?? []).map((action, i) =>
             action.type === "save" ? <InertSaveAction key={i} label={action.label} /> : null,

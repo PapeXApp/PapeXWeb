@@ -1,0 +1,631 @@
+{
+  "format": 1,
+  "description": "1.7.0 card variants. Each `sid` is a planned TEST sid (merchant `test-cards` or `test-cards-21`, never a demo or pilot merchant). `responses[surface]` is the exact response for GET /receipt/{sid}/cards?surface=<surface>&schema=1&caps=<CAPS_1_7_0[surface]>, byte for byte except `configRef`. Mint each sid with a byte copy of the receipt blob of `copyReceiptBlobFrom`. `clientOnly` cases are never minted: clients feed the file to their decoder.",
+  "capsBySurface": {
+    "web": "text,offer,cta,savings,disclosure,compliance,barcode.code128,barcode.ean13,barcode.upca",
+    "clip": "text,offer,cta,savings,disclosure,compliance,barcode.code128,barcode.ean13,barcode.upca,barcode.qr",
+    "app": "text,offer,cta,savings,disclosure,compliance,save,barcode.code128,barcode.ean13,barcode.upca,barcode.qr"
+  },
+  "merchants": {
+    "test-cards": {
+      "displayName": "PapeX Test Cards",
+      "ageRestricted": false,
+      "partner": false
+    },
+    "test-cards-21": {
+      "displayName": "PapeX Test Cards 21+",
+      "ageRestricted": true,
+      "partner": false,
+      "licenseLine": "CA cannabis retailer licence LICENSE_PLACEHOLDER"
+    }
+  },
+  "templates": {
+    "hartwells": {
+      "copyBlobFromSid": "5ca1e00000000001",
+      "printedDate": "2026-09-02",
+      "story": "Hartwell's Market (consumer)"
+    },
+    "ellsworth": {
+      "copyBlobFromSid": "b0de9a0000000001",
+      "printedDate": "2026-09-08",
+      "story": "Ellsworth Market (merchant)"
+    }
+  },
+  "codePools": {
+    "tc-pool-01": [
+      "TCP-7Q4X-01",
+      "TCP-7Q4X-02",
+      "TCP-7Q4X-03"
+    ]
+  },
+  "variants": [
+    {
+      "sid": "7e57ca4d00000001",
+      "variant": "rf-offer-code128",
+      "merchantId": "test-cards",
+      "template": "hartwells",
+      "copyReceiptBlobFrom": "5ca1e00000000001",
+      "layout": "receipt-first",
+      "status": "ok",
+      "responses": {
+        "web": "rf-offer-code128.json",
+        "clip": "rf-offer-code128.json",
+        "app": "rf-offer-code128.app.json"
+      },
+      "expectCardIds": {
+        "web": [
+          "tc-offer-1"
+        ],
+        "clip": [
+          "tc-offer-1"
+        ],
+        "app": [
+          "tc-offer-1-app"
+        ]
+      },
+      "purpose": "Receipt-first (the default). One offer, Code 128, shared code."
+    },
+    {
+      "sid": "7e57ca4d00000002",
+      "variant": "cf-offer-code128",
+      "merchantId": "test-cards",
+      "template": "hartwells",
+      "copyReceiptBlobFrom": "5ca1e00000000001",
+      "layout": "cards-first",
+      "status": "ok",
+      "responses": {
+        "web": "cf-offer-code128.json",
+        "clip": "cf-offer-code128.json",
+        "app": "cf-offer-code128.app.json"
+      },
+      "expectCardIds": {
+        "web": [
+          "tc-offer-2"
+        ],
+        "clip": [
+          "tc-offer-2"
+        ],
+        "app": [
+          "tc-offer-2-app"
+        ]
+      },
+      "purpose": "Cards-first: the same offer as 0001, inserted ABOVE the receipt once, with a fade."
+    },
+    {
+      "sid": "7e57ca4d00000003",
+      "variant": "offer-qr",
+      "merchantId": "test-cards",
+      "template": "ellsworth",
+      "copyReceiptBlobFrom": "b0de9a0000000001",
+      "layout": "receipt-first",
+      "status": "ok",
+      "responses": {
+        "web": "offer-qr.web.json",
+        "clip": "offer-qr.json",
+        "app": "offer-qr.app.json"
+      },
+      "expectCardIds": {
+        "web": [],
+        "clip": [
+          "tc-offer-3"
+        ],
+        "app": [
+          "tc-offer-3-app"
+        ]
+      },
+      "purpose": "QR redemption. The web does not advertise barcode.qr in 1.7.0, so web gets status none."
+    },
+    {
+      "sid": "7e57ca4d00000004",
+      "variant": "offer-upca",
+      "merchantId": "test-cards",
+      "template": "ellsworth",
+      "copyReceiptBlobFrom": "b0de9a0000000001",
+      "layout": "receipt-first",
+      "status": "ok",
+      "responses": {
+        "web": "offer-upca.json",
+        "clip": "offer-upca.json",
+        "app": "offer-upca.app.json"
+      },
+      "expectCardIds": {
+        "web": [
+          "tc-offer-4"
+        ],
+        "clip": [
+          "tc-offer-4"
+        ],
+        "app": [
+          "tc-offer-4-app"
+        ]
+      },
+      "purpose": "UPC-A redemption (check digit valid)."
+    },
+    {
+      "sid": "7e57ca4d00000005",
+      "variant": "offer-text-code",
+      "merchantId": "test-cards",
+      "template": "hartwells",
+      "copyReceiptBlobFrom": "5ca1e00000000001",
+      "layout": "receipt-first",
+      "status": "ok",
+      "responses": {
+        "web": "offer-text-code.json",
+        "clip": "offer-text-code.json",
+        "app": "offer-text-code.app.json"
+      },
+      "expectCardIds": {
+        "web": [
+          "tc-offer-5"
+        ],
+        "clip": [
+          "tc-offer-5"
+        ],
+        "app": [
+          "tc-offer-5-app"
+        ]
+      },
+      "purpose": "Text code only, no barcode."
+    },
+    {
+      "sid": "7e57ca4d00000006",
+      "variant": "offer-unique-template",
+      "merchantId": "test-cards",
+      "template": "ellsworth",
+      "copyReceiptBlobFrom": "b0de9a0000000001",
+      "layout": "receipt-first",
+      "status": "ok",
+      "responses": {
+        "web": "offer-unique-template.json",
+        "clip": "offer-unique-template.json",
+        "app": "offer-unique-template.app.json"
+      },
+      "expectCardIds": {
+        "web": [
+          "tc-offer-6"
+        ],
+        "clip": [
+          "tc-offer-6"
+        ],
+        "app": [
+          "tc-offer-6-app"
+        ]
+      },
+      "purpose": "Unique per-sid code, template mode EM10-{sid6}; scope unique."
+    },
+    {
+      "sid": "7e57ca4d00000007",
+      "variant": "offer-unique-pool",
+      "merchantId": "test-cards",
+      "template": "ellsworth",
+      "copyReceiptBlobFrom": "b0de9a0000000001",
+      "layout": "receipt-first",
+      "status": "ok",
+      "responses": {
+        "web": "offer-unique-pool.json",
+        "clip": "offer-unique-pool.json",
+        "app": "offer-unique-pool.app.json"
+      },
+      "expectCardIds": {
+        "web": [
+          "tc-offer-7"
+        ],
+        "clip": [
+          "tc-offer-7"
+        ],
+        "app": [
+          "tc-offer-7-app"
+        ]
+      },
+      "purpose": "Unique per-sid code from pool tc-pool-01 (first code); stable across re-taps; scope unique."
+    },
+    {
+      "sid": "7e57ca4d00000008",
+      "variant": "offer-licence",
+      "merchantId": "test-cards-21",
+      "template": "hartwells",
+      "copyReceiptBlobFrom": "5ca1e00000000001",
+      "layout": "receipt-first",
+      "status": "ok",
+      "responses": {
+        "web": "offer-licence.json",
+        "clip": "offer-licence.json",
+        "app": "offer-licence.app.json"
+      },
+      "expectCardIds": {
+        "web": [
+          "tc-offer-8"
+        ],
+        "clip": [
+          "tc-offer-8"
+        ],
+        "app": [
+          "tc-offer-8-app"
+        ]
+      },
+      "purpose": "Age-restricted merchant: the offer carries compliance.licenseLine (placeholder)."
+    },
+    {
+      "sid": "7e57ca4d00000009",
+      "variant": "offer-no-licence",
+      "merchantId": "test-cards",
+      "template": "hartwells",
+      "copyReceiptBlobFrom": "5ca1e00000000001",
+      "layout": "receipt-first",
+      "status": "ok",
+      "responses": {
+        "web": "offer-no-licence.json",
+        "clip": "offer-no-licence.json",
+        "app": "offer-no-licence.app.json"
+      },
+      "expectCardIds": {
+        "web": [
+          "tc-offer-9"
+        ],
+        "clip": [
+          "tc-offer-9"
+        ],
+        "app": [
+          "tc-offer-9-app"
+        ]
+      },
+      "purpose": "The same copy as 0008 on a NON-restricted merchant: no licence line (layout control for 0008)."
+    },
+    {
+      "sid": "7e57ca4d00000010",
+      "variant": "savings-on",
+      "merchantId": "test-cards",
+      "template": "hartwells",
+      "copyReceiptBlobFrom": "5ca1e00000000001",
+      "layout": "receipt-first",
+      "status": "ok",
+      "responses": {
+        "web": "savings-on.json",
+        "clip": "savings-on.json",
+        "app": "savings-on.app.json"
+      },
+      "expectCardIds": {
+        "web": [
+          "tc-savings-10",
+          "tc-offer-10"
+        ],
+        "clip": [
+          "tc-savings-10",
+          "tc-offer-10"
+        ],
+        "app": [
+          "tc-savings-10-app",
+          "tc-offer-10-app"
+        ]
+      },
+      "purpose": "'You saved $4.00 with a PapeX coupon' savings card ON, above the offer."
+    },
+    {
+      "sid": "7e57ca4d00000011",
+      "variant": "savings-off",
+      "merchantId": "test-cards",
+      "template": "hartwells",
+      "copyReceiptBlobFrom": "5ca1e00000000001",
+      "layout": "receipt-first",
+      "status": "ok",
+      "responses": {
+        "web": "savings-off.json",
+        "clip": "savings-off.json",
+        "app": "savings-off.app.json"
+      },
+      "expectCardIds": {
+        "web": [
+          "tc-offer-11"
+        ],
+        "clip": [
+          "tc-offer-11"
+        ],
+        "app": [
+          "tc-offer-11-app"
+        ]
+      },
+      "purpose": "Savings card OFF: the control for 0010."
+    },
+    {
+      "sid": "7e57ca4d00000012",
+      "variant": "text-only",
+      "merchantId": "test-cards",
+      "template": "ellsworth",
+      "copyReceiptBlobFrom": "b0de9a0000000001",
+      "layout": "receipt-first",
+      "status": "ok",
+      "responses": {
+        "web": "text-only.json",
+        "clip": "text-only.json",
+        "app": "text-only.app.json"
+      },
+      "expectCardIds": {
+        "web": [
+          "tc-text-12"
+        ],
+        "clip": [
+          "tc-text-12"
+        ],
+        "app": [
+          "tc-text-12-app"
+        ]
+      },
+      "purpose": "A single merchant-voice text card."
+    },
+    {
+      "sid": "7e57ca4d00000013",
+      "variant": "cta",
+      "merchantId": "test-cards",
+      "template": "ellsworth",
+      "copyReceiptBlobFrom": "b0de9a0000000001",
+      "layout": "receipt-first",
+      "status": "ok",
+      "responses": {
+        "web": "cta.json",
+        "clip": "cta.json",
+        "app": "cta.app.json"
+      },
+      "expectCardIds": {
+        "web": [
+          "tc-cta-13"
+        ],
+        "clip": [
+          "tc-cta-13"
+        ],
+        "app": [
+          "tc-cta-13-app"
+        ]
+      },
+      "purpose": "A single CTA card (https, allowlisted host papex.app)."
+    },
+    {
+      "sid": "7e57ca4d00000014",
+      "variant": "four-cards",
+      "merchantId": "test-cards",
+      "template": "ellsworth",
+      "copyReceiptBlobFrom": "b0de9a0000000001",
+      "layout": "receipt-first",
+      "status": "ok",
+      "responses": {
+        "web": "four-cards.json",
+        "clip": "four-cards.json",
+        "app": "four-cards.app.json"
+      },
+      "expectCardIds": {
+        "web": [
+          "tc-savings-14",
+          "tc-offer-14",
+          "tc-text-14",
+          "tc-cta-14"
+        ],
+        "clip": [
+          "tc-savings-14",
+          "tc-offer-14",
+          "tc-text-14",
+          "tc-cta-14"
+        ],
+        "app": [
+          "tc-savings-14-app",
+          "tc-offer-14-app",
+          "tc-text-14-app",
+          "tc-cta-14-app"
+        ]
+      },
+      "purpose": "Four cards, receipt-first. Order = array order."
+    },
+    {
+      "sid": "7e57ca4d00000015",
+      "variant": "cf-four-cards",
+      "merchantId": "test-cards",
+      "template": "ellsworth",
+      "copyReceiptBlobFrom": "b0de9a0000000001",
+      "layout": "cards-first",
+      "status": "ok",
+      "responses": {
+        "web": "cf-four-cards.json",
+        "clip": "cf-four-cards.json",
+        "app": "cf-four-cards.app.json"
+      },
+      "expectCardIds": {
+        "web": [
+          "tc-savings-15",
+          "tc-offer-15",
+          "tc-text-15",
+          "tc-cta-15"
+        ],
+        "clip": [
+          "tc-savings-15",
+          "tc-offer-15",
+          "tc-text-15",
+          "tc-cta-15"
+        ],
+        "app": [
+          "tc-savings-15-app",
+          "tc-offer-15-app",
+          "tc-text-15-app",
+          "tc-cta-15-app"
+        ]
+      },
+      "purpose": "Four cards, cards-first."
+    },
+    {
+      "sid": "7e57ca4d00000016",
+      "variant": "expired-offer",
+      "merchantId": "test-cards",
+      "template": "hartwells",
+      "copyReceiptBlobFrom": "5ca1e00000000001",
+      "layout": "receipt-first",
+      "status": "ok",
+      "responses": {
+        "web": "expired-offer.json",
+        "clip": "expired-offer.json",
+        "app": "expired-offer.app.json"
+      },
+      "expectCardIds": {
+        "web": [
+          "tc-text-16"
+        ],
+        "clip": [
+          "tc-text-16"
+        ],
+        "app": [
+          "tc-text-16-app"
+        ]
+      },
+      "mustNotAppear": [
+        "tc-offer-expired-16"
+      ],
+      "purpose": "Config has an offer that expired 2026-09-15: the server drops it; only the text card arrives."
+    },
+    {
+      "sid": "7e57ca4d00000017",
+      "variant": "status-none",
+      "merchantId": "test-cards",
+      "template": "hartwells",
+      "copyReceiptBlobFrom": "5ca1e00000000001",
+      "layout": "receipt-first",
+      "status": "none",
+      "responses": {
+        "web": "status-none.json",
+        "clip": "status-none.json",
+        "app": "status-none.json"
+      },
+      "expectCardIds": {
+        "web": [],
+        "clip": [],
+        "app": []
+      },
+      "purpose": "No card matches this sid: status none."
+    },
+    {
+      "sid": "7e57ca4d00000018",
+      "variant": "status-degraded",
+      "merchantId": "test-cards",
+      "template": "hartwells",
+      "copyReceiptBlobFrom": "5ca1e00000000001",
+      "layout": "receipt-first",
+      "status": "degraded",
+      "responses": {
+        "web": "status-degraded.json",
+        "clip": "status-degraded.json",
+        "app": "status-degraded.json"
+      },
+      "expectCardIds": {
+        "web": [],
+        "clip": [],
+        "app": []
+      },
+      "purpose": "Forced degraded (test-merchant debug hook): no cards, receipt unchanged."
+    },
+    {
+      "sid": "7e57ca4d00000019",
+      "variant": "status-pending",
+      "merchantId": "test-cards",
+      "template": "hartwells",
+      "copyReceiptBlobFrom": "5ca1e00000000001",
+      "layout": "receipt-first",
+      "status": "pending",
+      "responses": {
+        "web": "status-pending.json",
+        "clip": "status-pending.json",
+        "app": "status-pending.app.json"
+      },
+      "expectCardIds": {
+        "web": [
+          "tc-text-19"
+        ],
+        "clip": [
+          "tc-text-19"
+        ],
+        "app": [
+          "tc-text-19-app"
+        ]
+      },
+      "purpose": "Forced pending: a fact-free card still renders; clients may re-fetch ONCE after retryAfterMs."
+    },
+    {
+      "sid": "7e57ca4d00000020",
+      "variant": "audience",
+      "merchantId": "test-cards",
+      "template": "ellsworth",
+      "copyReceiptBlobFrom": "b0de9a0000000001",
+      "layout": "receipt-first",
+      "status": "ok",
+      "responses": {
+        "web": "audience.json",
+        "clip": "audience.json",
+        "app": "audience.app.json"
+      },
+      "expectCardIds": {
+        "web": [
+          "tc-aud-offer-web-20"
+        ],
+        "clip": [
+          "tc-aud-offer-web-20"
+        ],
+        "app": [
+          "tc-aud-offer-app-20"
+        ]
+      },
+      "purpose": "Audience segregation: ONE offer template, two card ids. web/clip get tc-aud-offer-web; the app gets tc-aud-offer-app with Save."
+    },
+    {
+      "sid": "7e57ca4d00000021",
+      "variant": "cf-licence-two-cards",
+      "merchantId": "test-cards-21",
+      "template": "hartwells",
+      "copyReceiptBlobFrom": "5ca1e00000000001",
+      "layout": "cards-first",
+      "status": "ok",
+      "responses": {
+        "web": "cf-licence-two-cards.json",
+        "clip": "cf-licence-two-cards.json",
+        "app": "cf-licence-two-cards.app.json"
+      },
+      "expectCardIds": {
+        "web": [
+          "tc-offer-21",
+          "tc-text-21"
+        ],
+        "clip": [
+          "tc-offer-21",
+          "tc-text-21"
+        ],
+        "app": [
+          "tc-offer-21-app",
+          "tc-text-21-app"
+        ]
+      },
+      "purpose": "The Doobie-like case in coupon-first mode: offer + merchant text, both with the licence line."
+    }
+  ],
+  "clientOnly": [
+    {
+      "file": "hostile.json",
+      "requestSid": "7e57ca4d0000ff01",
+      "now": null,
+      "expectLayout": "receipt-first",
+      "expectCardIds": [
+        "ok-offer",
+        "papex-text"
+      ],
+      "expectScopeOnOkOffer": null,
+      "purpose": "Malformed/hostile set for an AGE-RESTRICTED merchant. Survivors: ok-offer (its unknown scope ignored) and papex-text. Unknown layout -> receipt-first. Everything else is dropped: offer/merchant text without licence, bidi/over-long/non-object licence, over-long and control-char QR, bad UPC check digit, non-boolean hideWhenExpired, javascript: CTA, 61-char savings headline, non-partner emailCapture, unknown type (skipped), duplicate id."
+    },
+    {
+      "file": "expiry-at-render.json",
+      "requestSid": "7e57ca4d0000ff02",
+      "now": "2026-11-01T07:00:00Z",
+      "expectCardIds": [
+        "p0-expiry",
+        "no-validity"
+      ],
+      "expectCardIdsWithoutClock": [
+        "hide-when-expired",
+        "p0-expiry",
+        "no-validity"
+      ],
+      "purpose": "hideWhenExpired: at a clock 1 s past expiresAt the flagged offer is not drawn; the unflagged one keeps P0 behaviour (drawn, no chip). At 2026-11-01T06:59:59Z both still show, chip 'Last day'."
+    }
+  ]
+}

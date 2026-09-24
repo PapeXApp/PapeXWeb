@@ -47,6 +47,11 @@ export function CtaCardView({ card }: { card: CtaCard }) {
       >
         {card.label}
       </a>
+      {card.compliance && (
+        <p className="mt-2 text-[11px] leading-relaxed" style={{ color: merchant ? VOUCHER_INK_SOFT : T.textSecondary }}>
+          {card.compliance.licenseLine}
+        </p>
+      )}
     </>
   );
 

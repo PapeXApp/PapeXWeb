@@ -1,0 +1,180 @@
+{
+  "configFormat": 1,
+  "merchantId": "test-cards-21",
+  "merchant": {
+    "displayName": "PapeX Test Cards 21+",
+    "timezone": "America/Los_Angeles",
+    "enabled": true,
+    "test": true,
+    "partner": false,
+    "ageRestricted": true,
+    "licenseLine": "CA cannabis retailer licence LICENSE_PLACEHOLDER"
+  },
+  "layout": {
+    "order": "receipt-first",
+    "overrides": [
+      {
+        "when": {
+          "fact": "sid",
+          "op": "in",
+          "value": [
+            "7e57ca4d00000021"
+          ]
+        },
+        "order": "cards-first"
+      }
+    ]
+  },
+  "links": {
+    "ctaHostAllowlist": [
+      "papex.app"
+    ]
+  },
+  "offers": {
+    "d-5off30": {
+      "kicker": "Next visit",
+      "valueLabel": "$5",
+      "valueSuffix": "off",
+      "qualifier": "On $30+",
+      "title": "$5 off your next purchase of $30 or more.",
+      "terms": "Valid through Oct 31, 2026. 21+ only; valid ID required. One per customer. Not valid with other offers. TEST COUPON: not redeemable.",
+      "validity": {
+        "expiresOn": "2026-10-31",
+        "countdown": true,
+        "hideWhenExpired": true
+      },
+      "redemption": {
+        "type": "barcode",
+        "symbology": "code128",
+        "code": {
+          "mode": "static",
+          "value": "LATENITE5"
+        },
+        "caption": "Scan at the register"
+      }
+    }
+  },
+  "cards": [
+    {
+      "id": "tc-offer-8",
+      "surfaces": [
+        "web",
+        "clip"
+      ],
+      "priority": 10,
+      "when": {
+        "fact": "sid",
+        "op": "in",
+        "value": [
+          "7e57ca4d00000008"
+        ]
+      },
+      "type": "offer",
+      "offer": "d-5off30",
+      "heading": "An offer from Late Night Test Dispensary"
+    },
+    {
+      "id": "tc-offer-8-app",
+      "surfaces": [
+        "app"
+      ],
+      "priority": 10,
+      "when": {
+        "fact": "sid",
+        "op": "in",
+        "value": [
+          "7e57ca4d00000008"
+        ]
+      },
+      "type": "offer",
+      "offer": "d-5off30",
+      "heading": "An offer from Late Night Test Dispensary",
+      "actions": [
+        {
+          "type": "save",
+          "label": "Save to PapeX"
+        }
+      ]
+    },
+    {
+      "id": "tc-offer-21",
+      "surfaces": [
+        "web",
+        "clip"
+      ],
+      "priority": 10,
+      "when": {
+        "fact": "sid",
+        "op": "in",
+        "value": [
+          "7e57ca4d00000021"
+        ]
+      },
+      "type": "offer",
+      "offer": "d-5off30",
+      "heading": "An offer from Late Night Test Dispensary"
+    },
+    {
+      "id": "tc-text-21",
+      "surfaces": [
+        "web",
+        "clip"
+      ],
+      "priority": 20,
+      "when": {
+        "fact": "sid",
+        "op": "in",
+        "value": [
+          "7e57ca4d00000021"
+        ]
+      },
+      "type": "text",
+      "voice": "merchant",
+      "icon": "clock",
+      "title": "Open late, every night",
+      "body": "Thanks for visiting. We're open until 2 AM."
+    },
+    {
+      "id": "tc-offer-21-app",
+      "surfaces": [
+        "app"
+      ],
+      "priority": 10,
+      "when": {
+        "fact": "sid",
+        "op": "in",
+        "value": [
+          "7e57ca4d00000021"
+        ]
+      },
+      "type": "offer",
+      "offer": "d-5off30",
+      "heading": "An offer from Late Night Test Dispensary",
+      "actions": [
+        {
+          "type": "save",
+          "label": "Save to PapeX"
+        }
+      ]
+    },
+    {
+      "id": "tc-text-21-app",
+      "surfaces": [
+        "app"
+      ],
+      "priority": 20,
+      "when": {
+        "fact": "sid",
+        "op": "in",
+        "value": [
+          "7e57ca4d00000021"
+        ]
+      },
+      "type": "text",
+      "voice": "merchant",
+      "icon": "clock",
+      "title": "Open late, every night",
+      "body": "Thanks for visiting. We're open until 2 AM."
+    }
+  ]
+}

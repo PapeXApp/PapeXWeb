@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "sid": "7e57ca4d00000012",
+  "status": "ok",
+  "merchant": {
+    "partner": false,
+    "ageRestricted": false
+  },
+  "layout": {
+    "order": "receipt-first"
+  },
+  "cards": [
+    {
+      "id": "tc-text-12",
+      "mode": "live",
+      "type": "text",
+      "voice": "merchant",
+      "icon": "bag",
+      "heading": "From Ellsworth Market",
+      "title": "Thanks for stopping by",
+      "body": "Fresh Dungeness crab is back at the seafood counter this week. Ask for a taste."
+    }
+  ]
+}

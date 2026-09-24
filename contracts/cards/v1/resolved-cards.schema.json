@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://papex.app/contracts/cards/v1/resolved-cards.schema.json",
   "title": "PapeX receipt cards: resolved response, format v1",
-  "description": "What GET /receipt/{sid}/cards returns: the finished, fully templated card list for one receipt. Clients only render it. Client rules (unknown type skipped, fail closed, length counting, countdown) are in contracts/cards/v1/README.md. Frozen 2026-09-22: additive changes only; removing or renaming anything, or changing a meaning, is schemaVersion 2.",
+  "description": "What GET /receipt/{sid}/cards returns: the finished, fully templated card list for one receipt. Clients only render it. Client rules (unknown type skipped, fail closed, length counting, countdown) are in contracts/cards/v1/README.md. Frozen 2026-09-22; v1.1 additions (1.7.0, 2026-09-23): layout, redemption.scope, qr, validity.hideWhenExpired, compliance.licenseLine, savings.headline. Additive changes only; removing or renaming anything, or changing a meaning, is schemaVersion 2.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -53,6 +53,22 @@
         "ageRestricted": {
           "type": "boolean",
           "description": "Sells age-restricted goods: email capture must carry an age affirmation."
+        }
+      }
+    },
+    "layout": {
+      "description": "v1.1. Where the card stack sits relative to the receipt. Clients treat a missing, malformed or unknown value as receipt-first (it never costs a card).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "order"
+      ],
+      "properties": {
+        "order": {
+          "enum": [
+            "receipt-first",
+            "cards-first"
+          ]
         }
       }
     },
@@ -160,6 +176,71 @@
                   "ageAffirmationLabel"
                 ]
               }
+            }
+          }
+        }
+      }
+    },
+    {
+      "description": "v1.1. An age-restricted merchant's offers, and its merchant-voice text and cta cards, must carry compliance.licenseLine.",
+      "if": {
+        "properties": {
+          "merchant": {
+            "properties": {
+              "ageRestricted": {
+                "const": true
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "cards": {
+            "items": {
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "type": {
+                        "const": "offer"
+                      }
+                    },
+                    "required": [
+                      "type"
+                    ]
+                  },
+                  "then": {
+                    "required": [
+                      "compliance"
+                    ]
+                  }
+                },
+                {
+                  "if": {
+                    "properties": {
+                      "type": {
+                        "enum": [
+                          "text",
+                          "cta"
+                        ]
+                      },
+                      "voice": {
+                        "const": "merchant"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "voice"
+                    ]
+                  },
+                  "then": {
+                    "required": [
+                      "compliance"
+                    ]
+                  }
+                }
+              ]
             }
           }
         }
@@ -345,6 +426,9 @@
               },
               "caption": {
                 "$ref": "#/definitions/text80"
+              },
+              "scope": {
+                "$ref": "#/definitions/redemptionScope"
               }
             }
           }
@@ -372,7 +456,8 @@
                 "enum": [
                   "code128",
                   "ean13",
-                  "upca"
+                  "upca",
+                  "qr"
                 ]
               },
               "value": {
@@ -383,6 +468,9 @@
               },
               "caption": {
                 "$ref": "#/definitions/text80"
+              },
+              "scope": {
+                "$ref": "#/definitions/redemptionScope"
               }
             },
             "allOf": [
@@ -430,6 +518,22 @@
                   "properties": {
                     "value": {
                       "pattern": "^[0-9]{12}$"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "symbology": {
+                      "const": "qr"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "value": {
+                      "pattern": "^[\\x20-\\x7E]{1,80}$"
                     }
                   }
                 }
@@ -489,6 +593,9 @@
         },
         "body": {
           "$ref": "#/definitions/text500"
+        },
+        "compliance": {
+          "$ref": "#/definitions/compliance"
         }
       }
     },
@@ -550,6 +657,10 @@
             },
             "countdown": {
               "type": "boolean"
+            },
+            "hideWhenExpired": {
+              "type": "boolean",
+              "description": "v1.1. When true a client past expiresAt does not draw the offer. The resolver never emits an already-expired offer."
             }
           }
         },
@@ -562,6 +673,9 @@
           "items": {
             "$ref": "#/definitions/saveAction"
           }
+        },
+        "compliance": {
+          "$ref": "#/definitions/compliance"
         }
       }
     },
@@ -617,11 +731,14 @@
             "primary",
             "secondary"
           ]
+        },
+        "compliance": {
+          "$ref": "#/definitions/compliance"
         }
       }
     },
     "savingsCard": {
-      "description": "What this basket saved, as a ledger.",
+      "description": "What this basket saved, as a ledger. Always PapeX's voice (glass).",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -646,6 +763,10 @@
         },
         "type": {
           "const": "savings"
+        },
+        "headline": {
+          "$ref": "#/definitions/text60",
+          "description": "v1.1. One line above the figure: 'You saved $4.00 with a PapeX coupon'. Savings is always PapeX's voice."
         },
         "total": {
           "$ref": "#/definitions/text16"
@@ -1053,6 +1174,26 @@
             "$ref": "#/definitions/disclosureCard"
           }
         }
+      ]
+    },
+    "compliance": {
+      "description": "v1.1. The legally required line under a merchant's promotional content (e.g. a cannabis licence number). Rendered verbatim, muted. Required on every offer, and on every merchant-voice text/cta card, when merchant.ageRestricted is true (see the envelope rule).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "licenseLine"
+      ],
+      "properties": {
+        "licenseLine": {
+          "$ref": "#/definitions/text120"
+        }
+      }
+    },
+    "redemptionScope": {
+      "description": "v1.1 display hint: shared = one code for everyone; unique = issued to this receipt. The code is already resolved for this sid. Clients ignore an unknown value.",
+      "enum": [
+        "shared",
+        "unique"
       ]
     }
   }
