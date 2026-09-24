@@ -1,137 +1,141 @@
-'use client'
+// app/blog/page.tsx
+//
+// The blog index on the redesign shell (Web 2.1, S3). A Server Component:
+// posts are read on the server (Firestore REST, app/blog/_lib/posts.ts) and
+// the page is ISR'd, so crawlers get real titles and links in the HTML
+// instead of the old client-only skeleton. The only client islands are the
+// admin "new post" button and the device-matched "Get the app" link.
 
-import { useState, useEffect } from "react"
-import Image from "next/image"
-import Link from "next/link"
-import { ArrowRight, Calendar, Clock } from "lucide-react"
-import { CreateBlogModal } from "@/components/CreateBlogModal"
-import { FramerPageShell } from "@/components/framer/framer-page-shell"
-import { BtnPlane } from "@/components/framer/btn-plane"
-import { blogService, BlogPost } from "@/lib/blogServiceFree"
+import type { Metadata } from 'next'
+import Link from 'next/link'
+import { SiteShell } from '@/components/brand/site-shell'
+import { FlowGround } from '@/components/paths/shared/FlowGround'
+import { FlowSection } from '@/components/paths/shared/FlowSection'
+import { SectionLabel } from '@/components/paths/shared/SectionLabel'
+import { BlogImage } from '@/components/blog/BlogImage'
+import { BlogCta } from '@/components/blog/BlogCta'
+import { SiteFooter } from '@/components/brand/site-footer'
+import { LazyBlogAdminCreate } from '@/components/blog/AdminIslands'
+import { formatPostDate } from '@/components/blog/format'
+import { DEFAULT_OG_IMAGE } from '@/components/blog/image'
+import styles from '@/components/blog/blog.module.css'
+import { listPublishedPosts, type PostSummary } from './_lib/posts'
 
-function sanitizeImageUrl(imageUrl: string | undefined): string {
-  if (!imageUrl) return "/blog/blog_image.png"
-  if (imageUrl.includes("localhost") || imageUrl.includes("127.0.0.1")) return "/blog/blog_image.png"
-  if (imageUrl.startsWith("https://") || imageUrl.startsWith("http://") || imageUrl.startsWith("/")) return imageUrl
-  if (imageUrl.startsWith("data:image/")) return imageUrl
-  return "/blog/blog_image.png"
+// Keep in step with BLOG_REVALIDATE_SECONDS (Next reads this literal statically).
+export const revalidate = 60
+
+const TITLE = 'Blog | PapeX'
+const DESCRIPTION =
+  'Stories and updates from the PapeX team on digital receipts, sustainability and what happens after checkout.'
+
+export const metadata: Metadata = {
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: { canonical: 'https://papex.app/blog' },
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://papex.app/blog',
+    siteName: 'PapeX',
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630, alt: 'PapeX' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    site: '@papex_receipts',
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [DEFAULT_OG_IMAGE],
+  },
 }
 
-function formatDate(date: BlogPost["createdAt"]) {
-  if (!date) return ""
-  if (typeof date === "object" && date !== null && "toDate" in date && typeof date.toDate === "function") {
-    return date.toDate().toLocaleDateString()
+async function loadPosts(): Promise<PostSummary[]> {
+  try {
+    return await listPublishedPosts()
+  } catch (error) {
+    // A Firestore outage shouldn't take the page (or a build) down; the
+    // empty state covers it and the next revalidation retries.
+    console.error('[blog] could not load posts:', error)
+    return []
   }
-  if (date instanceof Date) return date.toLocaleDateString()
-  return new Date(date as string | number).toLocaleDateString()
 }
 
-export default function BlogPage() {
-  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([])
-  const [loading, setLoading] = useState(true)
-
-  const fetchBlogs = async () => {
-    try {
-      setLoading(true)
-      const firebaseBlogs = await blogService.getPublishedBlogs()
-      setBlogPosts(firebaseBlogs)
-    } catch (error) {
-      console.error("Error fetching blogs:", error)
-      setBlogPosts([])
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchBlogs()
-  }, [])
+export default async function BlogPage() {
+  const posts = await loadPosts()
 
   return (
-    <FramerPageShell>
-      <div className="framer-container subpage-inner">
-        <header className="subpage-header">
-          <p className="section-label">Blog</p>
-          <h1 className="section-title">Insights from the PapeX team.</h1>
-          <p className="section-intro">
-            Stories and updates on digital receipts, sustainability, and building better expense workflows.
-          </p>
-        </header>
+    <SiteShell path="page">
+      <FlowGround initial="light">
+        <FlowSection ground="light" className={styles.top}>
+          <div className={styles.wrap}>
+            <header className={styles.head}>
+              <SectionLabel>Blog</SectionLabel>
+              <h1 className={`rd-display ${styles.title}`}>Insights from the PapeX team.</h1>
+              <p className={styles.lead}>
+                Stories and updates on digital receipts, sustainability, and what happens after checkout.
+              </p>
+            </header>
 
-        {loading ? (
-          <div className="blog-post-grid">
-            {[...Array(6)].map((_, index) => (
-              <div key={index} className="blog-skeleton">
-                <div className="blog-skeleton-media" />
-                <div className="blog-skeleton-body">
-                  <div className="blog-skeleton-line short" />
-                  <div className="blog-skeleton-line medium" />
-                  <div className="blog-skeleton-line" />
-                </div>
+            {posts.length === 0 ? (
+              <div className={styles.empty} role="status">
+                <h2 className={styles.emptyTitle}>No posts yet.</h2>
+                <p className={styles.emptyBody}>
+                  We&rsquo;re writing the first ones now. Check back soon.
+                </p>
               </div>
-            ))}
+            ) : (
+              <ul className={styles.grid}>
+                {posts.map((post, i) => {
+                  const date = formatPostDate(post.createdAt)
+                  return (
+                    <li key={post.id}>
+                      <Link href={`/blog/${post.slug}`} className={styles.card}>
+                        <div className={styles.cardMedia}>
+                          <BlogImage
+                            src={post.image}
+                            alt=""
+                            sizes="(min-width: 1100px) 360px, (min-width: 700px) 50vw, 100vw"
+                            priority={i < 3}
+                          />
+                        </div>
+                        <div className={styles.cardBody}>
+                          <div className={styles.meta}>
+                            {date && <time dateTime={post.createdAt ?? undefined}>{date}</time>}
+                            {date && post.readTime && (
+                              <span className={styles.metaDot} aria-hidden="true">
+                                ·
+                              </span>
+                            )}
+                            {post.readTime && <span>{post.readTime}</span>}
+                          </div>
+                          <h2 className={styles.cardTitle}>{post.title}</h2>
+                          {post.excerpt && <p className={styles.cardExcerpt}>{post.excerpt}</p>}
+                          <span className={styles.cardMore}>
+                            Read more <span aria-hidden="true">→</span>
+                          </span>
+                        </div>
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
           </div>
-        ) : (
-          <div className="blog-post-grid">
-            {blogPosts.map((post) => (
-              <Link key={post.id} href={`/blog/${post.slug}`} className="group h-full">
-                <article className="blog-post-card">
-                  <div className="blog-post-media">
-                    {post.image && post.image.trim() !== "" ? (
-                      <Image
-                        src={sanitizeImageUrl(post.image)}
-                        alt={post.title}
-                        width={400}
-                        height={400}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-sm text-[#605f5f]">
-                        Blog image
-                      </div>
-                    )}
-                  </div>
+        </FlowSection>
 
-                  <div className="blog-post-body">
-                    <div className="blog-post-meta">
-                      <span className="blog-meta-pill">
-                        <Calendar className="h-3 w-3" />
-                        {formatDate(post.createdAt)}
-                      </span>
-                      <span className="blog-meta-pill">
-                        <Clock className="h-3 w-3" />
-                        {post.readTime}
-                      </span>
-                    </div>
-
-                    <h2>{post.title}</h2>
-                    <p>{post.excerpt}</p>
-
-                    <span className="blog-read-more">
-                      Read more
-                      <ArrowRight className="h-4 w-4" />
-                    </span>
-                  </div>
-                </article>
-              </Link>
-            ))}
-          </div>
-        )}
-
-        <div className="subpage-cta">
-          <div className="subpage-cta-card">
-            <h2>Stay updated</h2>
-            <p>
-              Join our community for the latest on digital receipts, sustainability, and product updates.
-            </p>
-            <Link href="/waitlist" className="btn-download">
-              <BtnPlane />
-              Join our newsletter
-            </Link>
-          </div>
-        </div>
-      </div>
-      <CreateBlogModal onBlogCreated={fetchBlogs} />
-    </FramerPageShell>
+        <BlogCta />
+        {/* The footer is the page's navy tail, inside the flow (2026-09-22):
+            it declares ground="navy" like any other section, so the last light
+            section crossfades into it instead of hitting a hard navy edge.
+            `inFlow` makes it paint no background and take --flow-* ink.
+            Mirrors components/paths/customer/index.tsx on purpose — the 2.1
+            merge swaps all three mounts to FlowGround's `footer` prop. */}
+        <FlowSection ground="navy">
+          <SiteFooter inFlow />
+        </FlowSection>
+      </FlowGround>
+      <LazyBlogAdminCreate />
+    </SiteShell>
   )
 }
