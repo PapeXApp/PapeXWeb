@@ -116,7 +116,7 @@ export default async function BlogPostPage({ params }: Props) {
   return (
     <SiteShell path="page">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: articleJsonLd(post) }} />
-      <FlowGround initial="light">
+      <FlowGround initial="light" footer={<SiteFooter inFlow />}>
         <FlowSection ground="light" className={styles.top}>
           <article>
             <header className={styles.article}>
@@ -152,15 +152,6 @@ export default async function BlogPostPage({ params }: Props) {
         </FlowSection>
 
         <BlogCta />
-        {/* The footer is the page's navy tail, inside the flow (2026-09-22):
-            it declares ground="navy" like any other section, so the last light
-            section crossfades into it instead of hitting a hard navy edge.
-            `inFlow` makes it paint no background and take --flow-* ink.
-            Mirrors components/paths/customer/index.tsx on purpose — the 2.1
-            merge swaps all three mounts to FlowGround's `footer` prop. */}
-        <FlowSection ground="navy">
-          <SiteFooter inFlow />
-        </FlowSection>
       </FlowGround>
     </SiteShell>
   )

@@ -27,7 +27,8 @@ export function Features() {
   return (
     <FlowSection
       ground="navy"
-      index="04"
+      index="05"
+      id="features"
       className={`${styles.screen} ${styles.rhythm}`}
       style={{ padding: "var(--section-pad) clamp(20px,5vw,56px)" }}
     >
@@ -35,7 +36,7 @@ export function Features() {
           first row share one left edge. */}
       <div className="w-full" style={{ maxWidth: 1150, margin: "0 auto" }}>
         <Reveal variant="up">
-          <SectionLabel index="04">{featuresContent.eyebrow}</SectionLabel>
+          <SectionLabel index="05">{featuresContent.eyebrow}</SectionLabel>
           <WordReveal
             as="h2"
             className="max-w-[20ch] [font-family:var(--font-display)] font-bold text-[length:var(--fs-h2)] leading-[1.03] tracking-[-.02em]"
@@ -64,7 +65,7 @@ export function Features() {
               }}
             >
               <div style={{ order: mirrored ? 2 : 1 }}>
-                <SectionLabel index={`04.${index + 1}`} style={{ marginBottom: 16 }}>
+                <SectionLabel index={`05.${index + 1}`} style={{ marginBottom: 16 }}>
                   {row.eyebrow}
                 </SectionLabel>
                 <h3

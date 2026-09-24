@@ -44,9 +44,31 @@
     <priority>0.8</priority>
   </url>
 
-  <!-- BLOG POSTS: one <url> per published post goes here, as
-       https://papex.app/blog/<slug> (changefreq monthly, priority 0.7).
-       The blog task (S3) reports the live slugs; add them at merge. -->
+  <!-- Blog posts (published slugs, 2026-09-24). Add one <url> per new post. -->
+  <url>
+    <loc>https://papex.app/blog/your-receipt-might-contain-more-personal-information-than-you-think</loc>
+    <lastmod>2026-09-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://papex.app/blog/the-hidden-cost-of-paper-receipts-what-they-are-really-costing-us</loc>
+    <lastmod>2026-09-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://papex.app/blog/your-inbox-was-never-meant-to-store-receipts</loc>
+    <lastmod>2026-09-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://papex.app/blog/the-history-of-receipts-from-handwritten-notes-to-digital-revolution</loc>
+    <lastmod>2026-09-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
 
   <!-- Support -->
   <url>

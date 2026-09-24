@@ -141,7 +141,6 @@ function saleBytes(spec: SaleSpec): Uint8Array {
   out.push(0x0a)
   out.push(0x1b, 0x61, 0x01)
   line("Thanks for stopping in!")
-  line("nookcafe.com")
   out.push(0x1d, 0x56, 0x00)
   return new Uint8Array(out)
 }

@@ -267,7 +267,7 @@ export const howItWorksContent = {
     {
       number: "03",
       title: "Save it to PapeX",
-      body: "Save it to the free PapeX app and it's searchable forever.",
+      body: "Save it to the free PapeX app and it's always searchable.",
     },
   ],
 };

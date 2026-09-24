@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { APP_STORE_URL } from "@/components/brand/links";
 import { Reveal, WordReveal } from "@/components/motion";
 import { FlowSection } from "../shared/FlowSection";
 import { PointerLitGroup } from "../shared/PointerLit";
 import { SectionLabel } from "../shared/SectionLabel";
 import { heroContent, personasContent, type PersonaId } from "./content";
+import { useStoreUrl } from "./Hero";
 import styles from "./personas.module.css";
 
 /** Tried casual-first so it wins ties by design — the middle ground / safest read. */
@@ -45,7 +45,7 @@ function scoreAnswers(answers: (number | null)[]): PersonaId {
 }
 
 /**
- * 03 Personas — the page's FIRST navy beat (Nico, 2026-09-23: "this is when it
+ * 04 Personas (quiz) — the page's FIRST navy beat (Nico, 2026-09-23: "this is when it
  * should change to blue for the first time").
  *
  * One question at a time: a progress bar ("Question 1 of 3" + three steps),
@@ -58,6 +58,8 @@ function scoreAnswers(answers: (number | null)[]): PersonaId {
  * state and the orange CTA, which are elevated fills with their own navy text.
  */
 export function Personas() {
+  // App Store by default; Google Play once the UA says Android (same hook as the hero CTA).
+  const storeUrl = useStoreUrl();
   const questions = personasContent.questions;
   const questionCount = questions.length;
 
@@ -153,10 +155,10 @@ export function Personas() {
   const question = isResult ? null : questions[step];
 
   return (
-    <FlowSection ground="navy" index="03" className={styles.section}>
+    <FlowSection ground="navy" index="04" className={styles.section}>
       <div className={styles.inner}>
         <Reveal variant="up" style={{ textAlign: "center" }}>
-          <SectionLabel index="03">{personasContent.eyebrow}</SectionLabel>
+          <SectionLabel index="04">{personasContent.eyebrow}</SectionLabel>
           <WordReveal
             as="h2"
             className="mx-auto max-w-[24ch] [font-family:var(--font-display)] font-bold text-[length:var(--fs-h2)] leading-[1.03] tracking-[-.02em]"
@@ -252,7 +254,7 @@ export function Personas() {
                     <p className={styles.resultBody}>{result.body}</p>
                   </div>
                   <div className={styles.resultActions}>
-                    <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" className={styles.cta}>
+                    <a href={storeUrl} target="_blank" rel="noopener noreferrer" className={styles.cta}>
                       {heroContent.ctaLabel}
                     </a>
                     <span className={styles.ctaSub}>{heroContent.ctaSubtext}</span>

@@ -92,42 +92,6 @@ export const tapToRetain = {
   tokens: { receipt: "Receipt", coupon: "Coupon" },
 } as const
 
-export const whyMerchants = {
-  eyebrow: "Why switch",
-  heading: "Every reason to switch. None to say no.",
-  // The four lines printed on the receipt in FoldReceipt.tsx (title = the
-  // item name, value = its amount; `value` is also the React key, so keep
-  // the four unique). `body` and `isLead` are not rendered by the scene
-  // today; they stay as the long-form version of each claim.
-  cards: [
-    {
-      value: "$0",
-      title: "Free",
-      body: "The PapeX device, the install and support are free today. Take advantage while it lasts.",
-      isLead: true,
-    },
-    {
-      value: "1 printer",
-      title: "Works with your POS",
-      body: "Works with most point of sale systems: the PapeX device is added as one more printer.",
-      isLead: false,
-    },
-    {
-      value: "1 tap",
-      title: "Customers get it",
-      body: "One tap of their phone and the receipt opens. No app needed to get it.",
-      isLead: false,
-    },
-    {
-      // "0 in the bin" overflowed the printed slip's width at every size.
-      value: "0 binned",
-      title: "Receipts they keep",
-      body: "A digital receipt doesn't fade, tear or end up in the trash.",
-      isLead: false,
-    },
-  ],
-} as const
-
 export const marquee = {
   durationSeconds: 32,
   phrases: [
@@ -195,31 +159,6 @@ export const rdhDevice = {
     },
   ],
   specs: ["Wi-Fi", "Network printer", "Status light"],
-} as const
-
-export const dashboard = {
-  // No longer its own section (Web 2.1): this copy is the final act of the
-  // receipt scene (section 03) (FoldReceipt.tsx / DashboardPreview.tsx). The unused
-  // "Coming soon" pill + notify-form strings went with DashboardNotifyForm.
-  eyebrow: "Included, free",
-  heading: "A dashboard for your digital receipts.",
-  lead: "Every receipt the PapeX device sends is searchable the moment it lands. See what's selling, when you're busy, and how many customers are taking the digital copy.",
-  dashboardAlt:
-    "The PapeX merchant dashboard, showing transaction count, gross, average ticket and tap rate, with charts of busiest hours and days and a ranked list of top items.",
-  columns: [
-    {
-      title: "Every receipt, searchable",
-      body: "Filter by amount, item, date or the last 4 digits on the receipt. Open any receipt exactly as the customer saw it.",
-    },
-    {
-      title: "Know your busiest hours",
-      body: "Volume by hour and by weekday, plus the items that actually move. Staff to the real curve.",
-    },
-    {
-      title: "Watch your devices",
-      body: "Every PapeX device and when it last checked in, so a quiet register never goes unnoticed.",
-    },
-  ],
 } as const
 
 export const demo = {

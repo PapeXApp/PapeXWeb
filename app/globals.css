@@ -193,11 +193,3 @@ body {
     transform: translateX(0);
   }
 }
-
-/* Blog content specific styles - reduce br tag spacing */
-.blog-content br {
-  line-height: 0.1;
-  margin: 0;
-  padding: 0;
-  font-size: 0.3em;
-}

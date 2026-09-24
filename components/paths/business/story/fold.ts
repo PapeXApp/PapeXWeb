@@ -1,5 +1,5 @@
 // The paper-airplane fold, as data. Ported unchanged from the 2026-09-22
-// FoldReceipt.tsx (see code/.claude/plans/2026-09-22-business-receipt-scroll-fold.md
+// FoldReceipt.tsx, deleted in Web 2.1 B5 (see code/.claude/plans/2026-09-22-business-receipt-scroll-fold.md
 // for why every key is the same shape and why the flap rounds are written out):
 // only the exports are new. story/RetainStory.tsx drives it on a shorter clock.
 

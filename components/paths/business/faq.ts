@@ -45,8 +45,9 @@ export const businessFaq: FaqItem[] = [
     // does PapeX make money?" questions are ONE visible item, answered with
     // "It's free today. Take advantage while it lasts." + free device/install.
     // Never mention future paid profiles or coupons (the earlier Q1 draft did;
-    // it is superseded and intentionally not kept here).
-    q: "How much does PapeX cost, and how does it make money?",
+    // it is superseded and intentionally not kept here). Question trimmed to
+    // the cost alone at the 2.1 merge (Nico).
+    q: "How much does PapeX cost?",
     a: "It's free today. The PapeX device is free, and so is the install. Take advantage while it lasts.",
   },
   {

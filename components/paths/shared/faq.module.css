@@ -1,5 +1,5 @@
 /* ==========================================================================
- * FAQ accordion — shared by /customers (07) and /business (06).
+ * FAQ accordion — shared by /customers (08) and /business (06).
  *
  * The section paints NO background (FlowSection rule): every ink is a
  * --flow-* colour, so the whole thing follows the ground crossfade on either
@@ -21,6 +21,8 @@
 
 .section {
   position: relative;
+  /* #faq links land below the fixed nav (was the path wrappers' scroll-mt-[100px]). */
+  scroll-margin-top: 100px;
   padding: var(--section-pad-y) var(--section-pad-x);
   --gap-title: clamp(20px, 2.4vw, 36px);
   --gap-body: clamp(28px, 3.2vw, 48px);

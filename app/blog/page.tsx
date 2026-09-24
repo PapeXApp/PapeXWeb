@@ -66,7 +66,7 @@ export default async function BlogPage() {
 
   return (
     <SiteShell path="page">
-      <FlowGround initial="light">
+      <FlowGround initial="light" footer={<SiteFooter inFlow />}>
         <FlowSection ground="light" className={styles.top}>
           <div className={styles.wrap}>
             <header className={styles.head}>
@@ -125,15 +125,6 @@ export default async function BlogPage() {
         </FlowSection>
 
         <BlogCta />
-        {/* The footer is the page's navy tail, inside the flow (2026-09-22):
-            it declares ground="navy" like any other section, so the last light
-            section crossfades into it instead of hitting a hard navy edge.
-            `inFlow` makes it paint no background and take --flow-* ink.
-            Mirrors components/paths/customer/index.tsx on purpose — the 2.1
-            merge swaps all three mounts to FlowGround's `footer` prop. */}
-        <FlowSection ground="navy">
-          <SiteFooter inFlow />
-        </FlowSection>
       </FlowGround>
       <LazyBlogAdminCreate />
     </SiteShell>

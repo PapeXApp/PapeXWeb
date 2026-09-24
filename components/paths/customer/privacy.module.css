@@ -79,6 +79,18 @@
   color: var(--flow-fg-2);
 }
 
+.inlineLink {
+  font-weight: 600;
+  color: var(--flow-fg);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.inlineLink:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
 /* --- What a tap never collects --------------------------------------------- */
 
 .never {

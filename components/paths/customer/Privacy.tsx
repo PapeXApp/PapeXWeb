@@ -9,12 +9,13 @@ import { SectionLabel } from "../shared/SectionLabel"
 import styles from "./privacy.module.css"
 
 /**
- * /customers section 04 — "Your receipt, not your identity." (spec 2026-09-24
- * §3.2 row 04). Light ground, between Features (navy) and the Quiz (navy).
+ * /customers section 06 — "Your receipt, not your identity." (spec 2026-09-24
+ * §3.2). Light ground, between Features (05, navy) and Get it (07, navy).
  *
  * Every claim here is sourced:
  *   - a tap collects no personal info or card details → /support
  *   - receipts only ever show the last 4 digits of the card → /pci
+ *   - "Never touches card data" (Nico's line, 2.1 merge) links to /pci
  *   - you can delete receipts and your account in the app → spec §2 Q6
  * The list is titled "What a tap never collects", not "What we never collect":
  * the app itself does hold an account (sign-in), so only the TAP can truthfully
@@ -61,6 +62,12 @@ export function Privacy({ eyebrowIndex }: { eyebrowIndex: string }) {
             </p>
             <p className={styles.body}>
               Save it to the PapeX app and it&apos;s yours: delete a receipt, or your whole account, any time.
+            </p>
+            <p className={styles.body}>
+              Never touches card data.{" "}
+              <Link href="/pci" className={styles.inlineLink}>
+                How we handle payments
+              </Link>
             </p>
           </Reveal>
 

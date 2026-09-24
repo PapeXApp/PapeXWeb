@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { FlowGround } from "../shared/FlowGround";
-import { FlowSection } from "../shared/FlowSection";
+import { Faq } from "../shared/Faq";
 import { SiteFooter } from "@/components/brand/site-footer";
 import { Hero } from "./Hero";
 import { Problem } from "./Problem";
@@ -11,6 +11,8 @@ import { Personas } from "./Personas";
 import { Features } from "./Features";
 import { HowItWorks } from "./HowItWorks";
 import { Vision } from "./Vision";
+import { Privacy } from "./Privacy";
+import { customerFaq, customerFaqHeading } from "./faq";
 import styles from "./customer.module.css";
 
 /**
@@ -20,25 +22,24 @@ import styles from "./customer.module.css";
  * FlowGround crossfades ONE page-level ground between them (see
  * components/paths/shared/flow.module.css).
  *
- * Web 2.1 FINAL ORDER (Nico, 2026-09-24 — ledger "LOCKED PAGE ORDER" as
- * finalised by the lead). Show WHAT first, then answer the visitor's next
- * question, in the order they ask it:
- *   01 Hero                         light
- *   02 How it works (walkthrough)   light  (the hero cue scrolls here)
- *      ribbon                       (no ground of its own)
- *   03 Quiz — "Is it for me?"       NAVY
- *   04 Problem — "Why does it matter?" light
- *   05 Features — "What else can I do?" NAVY   id="features"
- *   06 Privacy                      light  (SLOT: task C3)
- *   07 Get it — Vision + Download   NAVY
- *   08 FAQ                          light  (SLOT: task C3)   id="faq"
- *      footer                       NAVY
- * Navy never sits next to navy — BUT only once C3's Privacy and FAQ fill
- * their slots. Until then 05→07 and 07→footer are navy-on-navy.
+ * Web 2.1 FINAL ORDER (Nico, 2026-09-24, merge wiring). Show WHAT first,
+ * then answer the visitor's next question, in the order they ask it:
+ *   01 Hero                              light
+ *   02 How it works (walkthrough)        light  (the hero cue scrolls here)
+ *      ribbon                            (no ground of its own)
+ *   03 Problem — "Why does it matter?"   light
+ *   04 Quiz — "Is it for me?"            NAVY
+ *   05 Features — "What else can I do?"  NAVY   id="features"
+ *   06 Privacy                           light
+ *   07 Get it — Vision + Download        NAVY
+ *   08 FAQ                               light  id="faq"
+ *      footer                            NAVY   (FlowGround's footer slot,
+ *                                                outside <main>)
+ * 04→05 is navy next to navy by Nico's order; everything else alternates.
  *
- * The [NN] eyebrows live inside each section file: Personas (03), Problem
- * (04) and Features (05) are owned by other tasks, so their numbers are set
- * there, not here.
+ * The [NN] eyebrows live inside each section file (or are passed as
+ * `eyebrowIndex` for the shared Faq and Privacy); keep them in step with
+ * this list.
  *
  * `initial="light"` is the hero's colour and MUST match the fork's bottom half.
  *
@@ -71,34 +72,16 @@ export function CustomerPath() {
 
   return (
     <div className={styles.path}>
-      <FlowGround initial="light">
+      <FlowGround initial="light" footer={<SiteFooter inFlow />}>
         <Hero />
         <HowItWorks />
         <MarqueeBand />
-        <Personas />
         <Problem />
-        {/* `id="features"` is the footer's "Features" link target (spec
-            §3.5). It sits on a plain block wrapper because Features.tsx is
-            owned by another task; a block (not display:contents) so the
-            browser has a box to scroll to. */}
-        <div id="features">
-          <Features />
-        </div>
-        {/* SLOT C3: <Privacy /> from ./Privacy */}
+        <Personas />
+        <Features />
+        <Privacy eyebrowIndex="06" />
         <Vision />
-        {/* `id="faq"` reserves the anchor (footer "FAQ" link + the hero's
-            "Questions?" link). When C3's component fills the slot it carries
-            id="faq" itself — drop this wrapper's id then, never keep two. */}
-        <div id="faq">
-          {/* SLOT C3: <Faq id="faq" items={customerFaq} /> */}
-        </div>
-        {/* The footer is the page's navy tail, inside the flow (2026-09-22):
-            it declares ground="navy" like any other section, so the last light
-            section crossfades into it instead of hitting a hard navy edge.
-            `inFlow` makes it paint no background and take --flow-* ink. */}
-        <FlowSection ground="navy">
-          <SiteFooter inFlow />
-        </FlowSection>
+        <Faq id="faq" eyebrowIndex="08" ground="light" heading={customerFaqHeading} items={customerFaq} />
       </FlowGround>
     </div>
   );

@@ -44,7 +44,6 @@ export function demoReceiptBytes(): Uint8Array {
   out.push(0x0a);
   out.push(0x1b, 0x61, 0x01); // ESC a 1  centre
   line("Thanks for stopping in!");
-  line("nookcafe.com");
   out.push(0x1d, 0x56, 0x00); // GS V 0   cut
 
   return new Uint8Array(out);

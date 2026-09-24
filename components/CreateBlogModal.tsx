@@ -109,7 +109,7 @@ export function CreateBlogModal({ onBlogCreated }: CreateBlogModalProps) {
   }
 
   const insertLink = () => {
-    const url = prompt('Enter the URL:\n• For external sites: www.apple.com, https://google.com\n• For internal pages: /about, /contact, /waitlist')
+    const url = prompt('Enter the URL:\n• For external sites: www.apple.com, https://google.com\n• For internal pages: /about, /contact')
     if (url) {
       const linkText = prompt('Enter the link text:') || url
       insertTextAtCursor(`[${linkText}](${url})`)
