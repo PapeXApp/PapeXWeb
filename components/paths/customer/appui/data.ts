@@ -199,7 +199,7 @@ export const ADD_ROWS: ListRow[] = [
   {
     id: "add-hardware",
     merchant: "Copperpeg Hardware",
-    initial: "I",
+    initial: "C",
     amount: "$41.07",
     group: "Yesterday",
     date: "Sep 22",
@@ -254,7 +254,7 @@ export const ADD_ROWS: ListRow[] = [
  */
 export const DETAIL_RECEIPT = {
   merchant: "COPPERPEG HARDWARE",
-  initial: "I",
+  initial: "C",
   logoBg: "linear-gradient(160deg,#c77a1c,#7a4308)",
   address: "48 Demo Street, San Francisco, CA",
   date: "2026-09-22 • 16:44",
@@ -326,7 +326,7 @@ export const STORE_TILES: StoreTileData[] = [
   {
     id: "hardware",
     name: "Copperpeg Hardware",
-    initial: "I",
+    initial: "C",
     category: "Hardware",
     cover: "linear-gradient(120deg,#b86d14,#6e3c06)",
     mark: "linear-gradient(160deg,#c77a1c,#7a4308)",
