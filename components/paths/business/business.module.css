@@ -658,91 +658,92 @@
 }
 
 /* ==========================================================================
-   ACT 3 — the dashboard (was section 05). The laptop that act 2 opened docks
-   into `.frInfoSlot`, an EMPTY box in this layout: FoldReceipt.tsx measures
-   the slot and moves the whole stage onto it with one transform. The copy and
-   columns are real content (DashboardPreview.tsx) faded in from scroll.
+   ACT 3 — the dashboard (was section 05), stacked: laptop on top, info right
+   under it. The laptop act 2 formed opens into `.frInfoSlot`, an EMPTY box at
+   the top of this layout: FoldReceipt.tsx measures the slot and moves the
+   whole stage onto it with one transform, in step with the lid opening,
+   while the copy and columns rise in below. The slot is `flex: 1`, so it
+   takes exactly the height the info leaves: laptop + info always fit one
+   screen, and the laptop's top is the slot's top, which clears the nav.
    Client-only, over the pinned screen; nothing here exists when unpinned.
    ========================================================================== */
 .frInfo {
   position: absolute;
   inset: 0;
   z-index: 5;
-  /* clip, not hidden: a phone's layout can be taller than the pin until the
-     act scrolls it up, and nothing may paint past the pinned screen */
+  /* clip, not hidden: only a screen too short for the slot's minimum can
+     overflow, and nothing may paint past the pinned screen */
   overflow: clip;
   pointer-events: none;
 }
 .frInfoInner {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  min-height: 100%;
-  /* clear the floating nav at the top */
-  padding: clamp(76px, 11svh, 104px) 0 clamp(24px, 5svh, 48px);
+  align-items: center;
+  gap: clamp(18px, 2.6svh, 32px);
+  height: 100%;
+  /* top: clears the floating nav (~56px on a phone, ~70px on desktop) */
+  padding: clamp(84px, 11svh, 104px) 0 clamp(20px, 4svh, 44px);
   will-change: transform;
 }
-.frInfoGrid {
-  display: grid;
-  width: 100%;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-areas: "slot" "copy" "cols";
-  gap: var(--gap-body, 40px);
-}
 .frInfoSlot {
-  grid-area: slot;
-  justify-self: center;
-  width: min(100%, 520px);
-  /* the open laptop's own box: 72cqw x (45 lid + 3 deck) = 3:2 */
-  aspect-ratio: 3 / 2;
+  flex: 1 1 0;
+  min-height: 150px;
+  width: 100%;
+  /* wider than this and the laptop would outgrow the info column under it */
+  max-width: 880px;
 }
 .frInfoCopy {
-  grid-area: copy;
+  flex: none;
+  width: 100%;
+  text-align: center;
+}
+.frInfoCopy h2 {
+  margin-inline: auto;
+}
+.frInfoCopy p {
+  margin-inline: auto;
 }
 .frInfoCols {
-  grid-area: cols;
-}
-@media (min-width: 821px) {
-  .frInfoGrid {
-    grid-template-columns: minmax(0, 56fr) minmax(0, 44fr);
-    grid-template-areas: "slot copy" "cols cols";
-    column-gap: clamp(30px, 4vw, 60px);
-    align-items: center;
-  }
-  /* As wide as the column, but never so tall that slot + gap + columns
-     overflows the screen: ~360px is the nav clearance, the gap and the
-     columns' row. */
-  .frInfoSlot {
-    width: min(100%, calc((100svh - 360px) * 1.5));
-  }
+  flex: none;
+  width: 100%;
 }
 
 /* The three feature columns — shared by act 3 and the static fallback. */
 .dashCols {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: clamp(20px, 3vw, 44px);
+  /* tight on phones: the three columns stack under the laptop and all of it
+     has to fit one pinned screen */
+  gap: 14px;
 }
 @media (min-width: 821px) {
   .dashCols {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(24px, 3vw, 44px);
   }
 }
 
-/* Reduced motion / no JS: the scene's finished frame, then this block. */
+/* Reduced motion / no JS: the scene's finished frame, then this block —
+   the same stacked order as act 3: the screenshot, then the info under it. */
 .dashStatic {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--gap-body, 40px);
   margin-top: calc(var(--gap-body, 40px) * 1.5);
 }
-.dashStaticTop {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--gap-body, 40px);
-  align-items: center;
-  margin-bottom: var(--gap-body, 40px);
+.dashStaticShot {
+  width: 100%;
+  max-width: 880px;
 }
-@media (min-width: 821px) {
-  .dashStaticTop {
-    grid-template-columns: minmax(0, 56fr) minmax(0, 44fr);
-    column-gap: clamp(30px, 4vw, 60px);
-  }
+.dashStatic > * {
+  width: 100%;
+}
+.dashStaticCopy {
+  text-align: center;
+}
+.dashStaticCopy h2,
+.dashStaticCopy p {
+  margin-inline: auto;
 }

@@ -23,15 +23,16 @@ import styles from "./business.module.css"
  *   0.56 – 0.80  the slip FOLDS: corner flaps, then edge flaps, then in half
  *   0.80 – 0.90  the wings open: the paper's own outline becomes the mark
  *   0.90 – 1.00  the plane flies into the bin (lid pops at 0.97)
- * Act 2: printer + bin merge into one slab, squash to a line, and the line
- *   opens as a laptop showing the merchant dashboard.
- * Act 3 (Web 2.1 — this used to be a separate section 05 three screens
- *   further down, showing the same screenshot a second time): the laptop
- *   docks into an empty slot of the dashboard layout and the dashboard's copy
- *   and three feature columns come in around it (DashboardPreview.tsx). If
- *   that layout is taller than the pinned screen (phones), the last stretch of
- *   the act scrolls it up inside the pin, laptop included, so the release
- *   hands the visitor a finished frame.
+ * Act 2: printer + bin merge into one slab and squash to a line.
+ * Act 3 (Web 2.1 — the dashboard used to be a separate section 05 three
+ *   screens further down, showing the same screenshot a second time): the
+ *   line OPENS as a laptop, and as the lid rises the whole laptop settles up
+ *   and shrinks into an empty slot at the top of a stacked layout, while the
+ *   dashboard's heading, intro and three feature columns rise in directly
+ *   underneath it (DashboardPreview.tsx). Reveal and explanation are one
+ *   beat: no peek now, read later. The slot is flex-sized to whatever height
+ *   the info leaves, so laptop + info fit one screen; only a screen too short
+ *   for the slot's minimum falls back to scrolling the stack up in the pin.
  *
  * The fold is real: three flap panels turn over their crease lines in 3D
  * (`rotate3d` about the crease, under a `perspective` on .frPaper), carrying a
@@ -62,14 +63,15 @@ type Phase = "idle" | "print" | "shift" | "fold" | "plane" | "fly" | "done" | "m
 
 /**
  * Scroll budget per act, in viewport heights of actual scrolling (the runway
- * is the pinned viewport plus these). Acts 1 and 2 keep exactly the distance
- * they had at the old 430vh runway (0.77 and 0.23 of its 330vh of scroll).
- * Act 3 is new, but it replaces the old dashboard section (~1300px, ~145vh at
- * 1440x900), so the page is ~85vh SHORTER than before the merge.
+ * is the pinned viewport plus these). Act 1 keeps exactly the distance it had
+ * at the old 430vh runway (0.77 of its 330vh of scroll); act 2 keeps its
+ * converge -> line beats (0.6 of the old 76vh). Act 3 carries the lid opening
+ * (it used to end act 2) plus the dashboard info that replaced section 05
+ * (~1300px, ~145vh at 1440x900): runway 470vh, the page ~100vh shorter.
  */
 const ACT1_VH = 254
-const ACT2_VH = 76
-const ACT3_VH = 60
+const ACT2_VH = 46
+const ACT3_VH = 70
 const SCROLL_VH = ACT1_VH + ACT2_VH + ACT3_VH
 /** Total runway height: the pinned viewport plus the scroll budget. */
 const RUNWAY_VH = 100 + SCROLL_VH
@@ -83,16 +85,16 @@ const RUNWAY_VH = 100 + SCROLL_VH
 const ACT1_END = ACT1_VH / SCROLL_VH
 const ACT2_END = (ACT1_VH + ACT2_VH) / SCROLL_VH
 /** Act 3, as fractions of its own stretch. */
-const I_DOCK = 0.4 // the laptop has reached its slot
-// the copy waits until the laptop has mostly cleared the right-hand column
-const I_COPY = [0.24, 0.5] // heading + lead fade/rise in
-const I_COLS = [0.36, 0.62] // the three feature columns follow
-const I_SCROLL = [0.58, 0.92] // overflow scroll (phones only), then a hold
+// the lid opens AND the laptop settles into its slot over the same stretch
+const I_OPEN = 0.5
+// the info rises in under the lid as it opens, from about halfway up — by
+// then the laptop has climbed clear of the info's top edge
+const I_COPY = [0.3, 0.62] // heading + lead fade/rise in
+const I_COLS = [0.4, 0.72] // the three feature columns follow
+const I_SCROLL = [0.72, 0.9] // overflow fallback (too-short screens only), then a hold
 /** Act 2, as fractions of its own stretch (ACT1_END..ACT2_END). */
-const M_CONVERGE = 0.35
-const M_MERGE = 0.5
-const M_LINE = 0.6
-const M_OPEN = 0.95
+const M_CONVERGE = 0.583
+const M_MERGE = 0.833
 
 /** Segment boundaries on act 1's own 0..1 progress. */
 /* The feed is the longest beat on purpose: it is the only one carrying the
@@ -431,7 +433,9 @@ export function FoldReceipt() {
       d.s = s
       d.tx = sx + sr.width / 2 - s * (lx + lw / 2) - stageEl.offsetLeft
       d.ty = sy + sr.height / 2 - s * (ly + lh / 2) - stageEl.offsetTop
-      d.overflow = Math.max(0, innerEl.offsetHeight - info.clientHeight)
+      // The slot flexes to whatever the info leaves, down to its min-height;
+      // only below that does the stack overflow the pin (and act 3 scroll it).
+      d.overflow = Math.max(0, innerEl.scrollHeight - innerEl.clientHeight, innerEl.offsetHeight - info.clientHeight)
     }
 
     const setPhaseOnce = (next: Phase) => {
@@ -675,8 +679,10 @@ export function FoldReceipt() {
       const c = seg(m, 0, M_CONVERGE)
       const conv = ease(c)
       const mrg = ease(seg(m, M_CONVERGE, M_MERGE))
-      const line = ease(seg(m, M_MERGE, M_LINE))
-      const open = ease(seg(m, M_LINE, M_OPEN))
+      const line = ease(seg(m, M_MERGE, 1))
+      // act 3's first beat: the lid opens (see section 7)
+      const ai = seg(p, ACT2_END, 1)
+      const open = ease(seg(ai, 0, I_OPEN))
       set(rig, "--rig-t", (shift * (1 - conv)).toFixed(4), "rig")
       // Two objects gliding together, not one falling: the printer takes the
       // shallow end of the arc (x eased, y quadratic so it leaves slowly), the
@@ -710,14 +716,13 @@ export function FoldReceipt() {
       set(deckRef.current, "--deck-h", `${(0.8 + 2.2 * open).toFixed(2)}cqw`, "deckH")
       set(deckRef.current, "--deck-o", line.toFixed(3), "deckO")
 
-      // --- 7. ACT 3: the laptop docks into the dashboard layout --------------
+      // --- 7. ACT 3: the laptop opens into the top of the dashboard stack ----
       // One transform on the stage (origin 0 0) carries the whole laptop from
-      // where it opened to the slot the layout left for it: every point moves
-      // on a straight line, and the scale lerps with it. The copy and columns
-      // rise in beside it. On a phone the layout is taller than the pin, so
-      // its last stretch scrolls it up — the laptop rides along (`shift`).
-      const ai = seg(p, ACT2_END, 1)
-      const dk = ease(seg(ai, 0, I_DOCK))
+      // where the line formed to the slot the layout left for it, IN STEP with
+      // the lid opening (same progress, `open`): every point moves on a
+      // straight line and the scale lerps with it. The info rises in under it.
+      // `shift` is only non-zero on a screen too short for the stack.
+      const dk = open
       const dg = dock.current
       const tx = dg.tx
       const ty = dg.ty
@@ -746,7 +751,7 @@ export function FoldReceipt() {
       setPhaseOnce(
         ai > 0
           ? "info"
-          : m >= M_LINE
+          : m >= M_MERGE
           ? "dash"
           : m > 0
           ? "merge"
@@ -987,23 +992,21 @@ export function FoldReceipt() {
           )}
         </div>
 
-        {/* ACT 3's layout. Client-only (like the flaps), so the document holds
-            one copy of the dashboard copy at a time: this one when pinned,
-            DashboardStatic below otherwise. The slot is empty on purpose —
-            the laptop in the stage above flies into it. Opacity-only hiding,
+        {/* ACT 3's layout, stacked: slot, copy, columns. Client-only (like
+            the flaps), so the document holds one copy of the dashboard copy at
+            a time: this one when pinned, DashboardStatic below otherwise. The
+            slot is empty on purpose — the laptop in the stage opens into it. Opacity-only hiding,
             so the copy stays in the accessibility tree before it fades in. */}
         {pinned && (
           <div className={styles.frInfo} ref={infoRef}>
             <div className={styles.frInfoInner} ref={infoInnerRef}>
-              <div className={styles.frInfoGrid}>
-                <div aria-hidden="true" className={styles.frInfoSlot} ref={slotRef} />
-                <DashboardCopy className={styles.frInfoCopy} ref={copyRef} style={{ opacity: 0 }} />
-                <DashboardColumns
-                  className={cn(styles.dashCols, styles.frInfoCols)}
-                  ref={colsRef}
-                  style={{ opacity: 0 }}
-                />
-              </div>
+              <div aria-hidden="true" className={styles.frInfoSlot} ref={slotRef} />
+              <DashboardCopy className={styles.frInfoCopy} ref={copyRef} style={{ opacity: 0 }} />
+              <DashboardColumns
+                className={cn(styles.dashCols, styles.frInfoCols)}
+                ref={colsRef}
+                style={{ opacity: 0 }}
+              />
             </div>
           </div>
         )}
