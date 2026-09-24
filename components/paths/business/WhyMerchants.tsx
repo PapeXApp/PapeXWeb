@@ -1,38 +1,44 @@
 import { Reveal, ScrollLit } from "@/components/motion"
 import { FlowSection } from "../shared/FlowSection"
 import { SectionLabel } from "../shared/SectionLabel"
-import { whyMerchants } from "./content"
-import { FoldReceipt } from "./FoldReceipt"
-import styles from "./business.module.css"
+import { story } from "./story"
+import { RetainStory } from "./story/RetainStory"
+import s from "./story.module.css"
 
-// 3.2 "Why merchants love PapeX" — the four numeric claims ($0 / 1 port /
-// 1 tap / 0 rolls) used to sit in a static 2x2 `wcard` grid. They are now the
-// line items on a receipt that prints, then folds into the PapeX plane and
-// flies into the bin (FoldReceipt.tsx owns all of it, so the claims have
-// exactly one source in content.ts). There is nothing under it: the receipt
-// is the section — and since Web 2.1 its scene ends on the merchant dashboard
-// (the old section 05), so the dashboard's copy lives here too.
+// /business section 03, "Tap to Retain" (Web 2.1 FINAL PAGE ORDER, B5).
+// One scroll story answers both "how does it work?" and "what do I, and my
+// customers, get?": a paper receipt prints and is trashed, the same receipt
+// goes to the PapeX device and opens on a customer's phone with one tap, and
+// a spark carries it onto the merchant dashboard, whose info rises in last.
+// It replaces the old fold-receipt scene AND the separate "What your
+// customers see" section. The scene is story/RetainStory.tsx; copy is
+// story.ts. The export keeps its old name because business/index.tsx
+// (B1's file) mounts it.
 //
-// The heading is still this path's one ScrollLit statement: its words light up
-// as it scrolls through.
+// The heading stays this path's ScrollLit statement, in flow above the
+// runway (a view-timeline freezes inside a sticky pin). B1's index.tsx wraps
+// this section in <div id="how"> and keeps the calculator SLOT after it, so
+// neither lives here.
 export function WhyMerchants() {
   return (
-    <FlowSection
-      ground="light"
-      index="02"
-      className={`${styles.rhythm} px-[clamp(20px,5vw,56px)] py-[var(--section-pad-y)]`}
-    >
+    <FlowSection ground="light" index="03" className={s.section}>
       <div className="mx-auto max-w-[1150px]">
         <Reveal>
-          <SectionLabel index="02">{whyMerchants.eyebrow}</SectionLabel>
+          <SectionLabel index="03">{story.eyebrow}</SectionLabel>
           <ScrollLit
             as="h2"
-            text={whyMerchants.heading}
+            text={story.heading}
             className="max-w-[18ch] text-[length:var(--fs-h2)] font-bold leading-[1.04] tracking-[-.02em] [font-family:var(--font-display)]"
           />
+          <p
+            className="mt-[var(--gap-title)] max-w-[52ch] text-[16px] leading-[1.5] min-[821px]:text-[length:var(--fs-lead)]"
+            style={{ color: "var(--flow-fg-2)" }}
+          >
+            {story.lead}
+          </p>
         </Reveal>
 
-        <FoldReceipt />
+        <RetainStory />
       </div>
     </FlowSection>
   )
