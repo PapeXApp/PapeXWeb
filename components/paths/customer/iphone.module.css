@@ -1,8 +1,8 @@
 /* ==========================================================================
  * iPHONE — the one device every phone on /customers is drawn in (hero,
  * the "Once it's yours" shots, the How-it-works walk). Web redesign 2.1,
- * 2026-09-23. Replaces the .wp* chrome in customer.module.css, which is left
- * in place (another task owns that sheet) but is no longer referenced.
+ * 2026-09-23. Replaced the old .wpFrame chrome in customer.module.css (deleted
+ * at the 2.1 merge; only the share sheet .wpSheet and page dots remain there).
  *
  * Nico, looking at the 2.0 hero: "It looks like an Android phone and an
  * Android operating system. This should be an iPhone." Then: the grey
@@ -472,7 +472,6 @@
   /* a real <button> (keyboard + assistive tech): reset the UA look */
   -webkit-appearance: none;
   appearance: none;
-  line-height: 1.2;
   border: 0;
   border-radius: 999px;
   background: #00121d;

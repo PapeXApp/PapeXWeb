@@ -757,11 +757,6 @@ html[data-fork-skip] .rd-fork {
   inherits: true;
   initial-value: rgba(245, 245, 245, 0.09);
 }
-@property --flow-tick {
-  syntax: "<color>";
-  inherits: true;
-  initial-value: rgba(245, 245, 245, 0.32);
-}
 
 /* --- Reduced motion ------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {

@@ -2,32 +2,6 @@
 // Copy is polished-but-provisional (per docs/design/forked-landing/README.md → "Fidelity").
 // Keep all strings here so the sections stay markup-only.
 
-export interface ReceiptLineItem {
-  label: string;
-  amount: string;
-}
-
-export interface ReceiptData {
-  merchant: string;
-  dateLabel: string;
-  statusChip: string;
-  items: ReceiptLineItem[];
-  total: string;
-}
-
-/** The Blue Bottle Coffee receipt reused by the hero phone and the how-it-works phone. */
-export const receipt: ReceiptData = {
-  merchant: "Blue Bottle Coffee",
-  dateLabel: "Jul 22, 2026 · 8:41 AM",
-  statusChip: "TAPPED",
-  items: [
-    { label: "Cappuccino", amount: "$5.25" },
-    { label: "Almond croissant", amount: "$4.75" },
-    { label: "Tax", amount: "$0.90" },
-  ],
-  total: "$10.90",
-};
-
 export const heroContent = {
   eyebrow: "Digital receipts, one tap away",
   headline: "The last receipt you'll ever lose.",
@@ -35,7 +9,6 @@ export const heroContent = {
   ctaLabel: "Download the app",
   ctaSubtext: "Free on the App Store",
   scrollCue: "Scroll",
-  tapZoneLabel: "Tap to receive",
 };
 
 /** The hero's live receipt demo — hint copy per state, and the tappable phone's a11y label. */
@@ -46,8 +19,6 @@ export const demoContent = {
   /* The reader is the primary tap target now (2026-09-22): the hero's story is
      "tap the PapeX device", and nothing happens until the visitor taps IT. */
   deviceLabel: "Tap the PapeX reader to receive a receipt",
-  idleTitle: "Tap to receive",
-  idleSubtitle: "Tap the reader below. No app needed to get the receipt.",
   /* The idle prompt ON the phone (2.1, 2026-09-23): an iOS Live Activity on
      the lock screen, so the locked phone never reads as blank and points at
      the device. The device's own chip says the same thing from below. */
@@ -65,16 +36,12 @@ export const demoContent = {
   resetLabel: "Reset",
   saveLabel: "Save to PapeX",
   savedLabel: "Saved",
-  barLabel: "Receipt",
   sectionTitles: {
     // "Items Purchased" is the heading the clip and the app both print.
     items: "Items Purchased",
-    info: "Receipt Information",
     original: "Original receipt",
   },
   sourceLabel: "RDH Receipt",
-  infoSourceLabel: "PapeX RDH · NFC tap",
-  decoderMissing: "Receipt decoder did not load.",
 };
 
 export type ProblemCardId = "print" | "forest" | "proof";
@@ -247,7 +214,6 @@ export const featuresContent = {
 export const howItWorksContent = {
   eyebrow: "How it works",
   headline: "Get started in three taps.",
-  mobileHeadline: "Get started in three taps.",
   phoneAriaLabel: "Step through how PapeX works",
   /** Cue line under the phone, one per step — index 2's "Replay" is bold in the design. */
   cues: [
@@ -270,8 +236,6 @@ export const howItWorksContent = {
       number: "01",
       title: "Tap at checkout",
       body: "Hold your phone to any PapeX device at the register. No app required.",
-      mobileTitle: "Tap at checkout",
-      mobileBody: "Hold your phone to any PapeX device. No app required.",
       phoneHeadline: "Ready to tap",
       phoneSubline: "Hold your phone to the device",
     },
@@ -279,31 +243,23 @@ export const howItWorksContent = {
       number: "02",
       title: "Receipt appears instantly",
       body: "Your digital receipt lands on your phone the moment you tap.",
-      mobileTitle: "Receipt appears",
-      mobileBody: "Instantly on your phone, the moment you tap.",
       phoneCaption: "Delivered the instant you tapped",
     },
     {
       number: "03",
       title: "Saved & organized",
       body: "Download the app to keep, search and categorize everything automatically.",
-      mobileTitle: "Save & organize",
-      mobileBody: "Download the app to keep, search and categorize everything.",
     },
   ],
 };
 
-// Shaped like a real PapeXV2 receipts list: an initial for the logo circle, a
-// "category · date" meta line, and an `unreviewed` flag that draws the orange
-// left bar on exactly one row — in the app most rows have already been seen.
+// Merchant seeds for the appui receipt rows (appui/data.ts owns the rest of
+// each row: dates, provenance, the unreviewed flag — see app-reference.md).
 export const receiptsListContent = {
-  title: "Receipts",
-  searchPlaceholder: "Search receipts",
-  avatarInitial: "N",
   rows: [
-    { merchant: "Blue Bottle Coffee", initial: "B", category: "Dining", date: "Today", amount: "$10.90", unreviewed: true },
-    { merchant: "Whole Foods Market", initial: "W", category: "Groceries", date: "Yesterday", amount: "$63.40", unreviewed: false },
-    { merchant: "Uber", initial: "U", category: "Gas & auto", date: "Mon", amount: "$18.20", unreviewed: false },
+    { merchant: "Blue Bottle Coffee", initial: "B", category: "Dining", amount: "$10.90" },
+    { merchant: "Whole Foods Market", initial: "W", category: "Groceries", amount: "$63.40" },
+    { merchant: "Uber", initial: "U", category: "Gas & auto", amount: "$18.20" },
   ],
 };
 
@@ -317,8 +273,6 @@ export const proofContent = {
     { value: 0, label: "apps to download first" },
     { value: 2, label: "ways to open it: iPhone instantly, any phone in the browser" },
   ],
-  // No press row until we have outlets we can name. Nico supplies the logos.
-  pressLogoSlots: 0,
 };
 
 export const visionContent = {
@@ -326,5 +280,4 @@ export const visionContent = {
   headline: "A world where every receipt is useful, and none of them are wasted.",
   body: "We're modernizing the most ignored moment of every purchase. Less paper, less waste, and receipts that finally work for you.",
   primaryCta: "Download the app",
-  secondaryCta: "Get the RDH",
 };

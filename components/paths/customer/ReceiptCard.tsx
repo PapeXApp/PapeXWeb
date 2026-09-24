@@ -2,6 +2,7 @@ import type { MouseEvent as ReactMouseEvent } from "react";
 import { cn } from "@/lib/utils";
 import type { ReceiptSummary } from "@/lib/receiptSummary";
 import { ClipTopBar, StatusBar } from "./appui";
+import { receiptMoment } from "./appui/Clip";
 import { demoContent } from "./content";
 import { DemoReceiptView } from "./DemoReceiptView";
 import styles from "./customer.module.css";
@@ -33,8 +34,10 @@ export function ClipReceiptScreen({
 }) {
   return (
     <>
-      {/* The clip is a full-screen app: it carries iOS's status bar. */}
-      <StatusBar time="7:12" />
+      {/* The clip is a full-screen app: it carries iOS's status bar. Its clock
+          is the receipt's own time (receiptMoment), the same derivation the
+          lock screen uses, so the tap and the receipt never disagree. */}
+      <StatusBar time={receiptMoment(summary.dateline).time} />
       <ClipTopBar />
       <div className={cn(styles.acScroll, className)}>
         <DemoReceiptView summary={summary} />

@@ -17,8 +17,8 @@ import styles from "./customer.module.css";
  *     words (proofContent in content.ts), no new claims. Section numbering
  *     closes up: this was [07], it is [06].
  *   - "Get the RDH" is gone: customers don't buy the reader. "Download the
- *     app" is the only CTA (visionContent.secondaryCta is no longer read;
- *     content.ts belongs to another task, so the key is left for cleanup).
+ *     app" is the only CTA (visionContent.secondaryCta was deleted at the
+ *     2.1 merge).
  *   - A full screen from 821px (`styles.screen`), content centred in it.
  */
 export function Vision() {

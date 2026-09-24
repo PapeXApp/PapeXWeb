@@ -219,20 +219,6 @@
   transform: scale(0.97);
 }
 
-.personaCard {
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s, background 0.2s, border-color 0.2s;
-}
-
-.personaCard:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 24px 50px rgba(0, 18, 29, 0.12);
-}
-
-.personaCardSelected:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 26px 55px rgba(235, 113, 0, 0.22);
-}
-
 /* ==========================================================================
  * Hero live receipt demo — tap the phone, it bows onto the RDH, a REAL
  * receipt (lib/escpos.ts + lib/receiptSummary.ts, see NfcPhone.tsx) decodes
@@ -301,7 +287,7 @@
   --phone-w: calc(var(--phone-h) * 393 / 852);
 
   /* The hero no longer draws its own device. It renders <PhoneChrome> — the
-     SAME component and the same .wpFrame/.wpScreen/.wpIsland/.wpHomeBar CSS as
+     SAME component and the same iPhone chrome (iphone.module.css) as
      the walkthrough and the Features shots — and only tells it how tall to be.
      Before 2026-09-22 the hero had a private .demoShell/.demoNotch/.demoScreen
      copy, which is how the two phones drifted into different corner radii,
@@ -353,7 +339,7 @@
    The private .demoShell / .demoScreen / .demoNotch rules that used to sit
    here were deleted on 2026-09-22: they were a second, slightly different
    iPhone (fatter bezel, 0.155/0.124 radii, its own island maths) drawn
-   beside the walkthrough's. Chrome changes belong in .wpFrame below. */
+   beside the walkthrough's. Chrome changes belong in iphone.module.css. */
 
 /* The reader is now the demo's PRIMARY tap target (2026-09-22): the hero's
    story is "tap the PapeX device", so the device is what you tap. It is a
@@ -767,254 +753,6 @@
 }
 
 /* ==========================================================================
- * Personas — three-question quiz (12 options, keeper/casual/non scoring).
- * ========================================================================== */
-
-.quiz {
-  max-width: 760px;
-  margin: clamp(30px, 3.6vw, 48px) auto 0;
-  position: relative;
-  min-height: 330px;
-}
-.quizCard {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(14px);
-  transition: opacity 0.4s ease, transform 0.4s ease;
-}
-.quizCardOn {
-  opacity: 1;
-  pointer-events: auto;
-  transform: none;
-  position: relative;
-}
-.quizNumber {
-  font-family: var(--font-label);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--orange);
-  text-align: center;
-  margin-bottom: 10px;
-}
-.quizPrompt {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: clamp(22px, 2.6vw, 30px);
-  line-height: 1.25;
-  color: var(--navy);
-  text-align: center;
-  max-width: 24ch;
-  margin: 0 auto;
-}
-/* The game's own hint line — read even by people who skip the intro copy. */
-.quizHint {
-  margin: 8px auto 22px;
-  font-family: var(--font-label);
-  font-size: 11.5px;
-  font-weight: 500;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  text-align: center;
-  color: var(--flow-fg-3, rgba(0, 18, 29, 0.46));
-}
-.quizOpts {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 12px;
-}
-.quizOpt {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  text-align: left;
-  cursor: pointer;
-  font: inherit;
-  font-size: 15px;
-  line-height: 1.45;
-  color: var(--navy);
-  background: #fff;
-  border: 1.5px solid var(--hairline-3);
-  border-radius: 14px;
-  padding: 16px 18px;
-  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s, background 0.2s;
-}
-.quizOpt:hover {
-  border-color: var(--orange);
-  transform: translateY(-2px);
-  box-shadow: 0 14px 30px rgba(235, 113, 0, 0.14);
-}
-.quizOpt:active {
-  transform: translateY(0) scale(0.98);
-  box-shadow: none;
-}
-.quizOpt:disabled {
-  cursor: default;
-  pointer-events: none;
-}
-.quizOpt:focus-visible {
-  outline: none;
-  border-color: var(--orange);
-  box-shadow: 0 0 0 3px rgba(235, 113, 0, 0.28);
-}
-.quizOptLabel {
-  flex: 1;
-}
-/* A radio dot at rest; fills orange with a check the instant it's the
-   answer that was tapped, so the click reads as a choice, not a no-op. */
-.quizOptDot {
-  position: relative;
-  flex: 0 0 auto;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  border: 1.5px solid var(--hairline-3);
-  transition: border-color 0.2s ease, background 0.2s ease;
-}
-.quizOpt:hover .quizOptDot {
-  border-color: var(--orange);
-}
-.quizOptDot::after {
-  content: "";
-  position: absolute;
-  left: 4px;
-  top: 6px;
-  width: 8px;
-  height: 4px;
-  border-left: 1.5px solid #fff;
-  border-bottom: 1.5px solid #fff;
-  transform: rotate(-45deg);
-  opacity: 0;
-  transition: opacity 0.15s ease;
-}
-.quizOptSelected,
-.quizOptSelected:hover {
-  border-color: var(--orange);
-  background: rgba(235, 113, 0, 0.08);
-  box-shadow: 0 14px 30px rgba(235, 113, 0, 0.18);
-}
-.quizOptSelected .quizOptDot {
-  border-color: var(--orange);
-  background: var(--orange);
-}
-.quizOptSelected .quizOptDot::after {
-  opacity: 1;
-}
-.quizSteps {
-  display: flex;
-  justify-content: center;
-  gap: 7px;
-  margin-top: 26px;
-}
-.quizPip {
-  width: 26px;
-  height: 4px;
-  border-radius: 2px;
-  background: rgba(0, 18, 29, 0.13);
-  transition: background 0.3s;
-}
-.quizPipOn {
-  background: var(--orange);
-}
-.quizResults {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
-  gap: 16px;
-  align-items: stretch;
-}
-.quizResult {
-  position: relative;
-  background: #fff;
-  border: 1.5px solid var(--hairline-3);
-  border-radius: 18px;
-  padding: 26px 22px;
-  text-align: left;
-  opacity: 0.66;
-  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.35s ease, box-shadow 0.35s ease,
-    opacity 0.35s ease;
-}
-.quizResultYou {
-  opacity: 1;
-  border-color: var(--orange);
-  border-width: 2.5px;
-  transform: translateY(-12px) scale(1.045);
-  box-shadow: 0 28px 58px rgba(235, 113, 0, 0.22);
-  z-index: 2;
-  /* The payoff: the winning card doesn't just sit there emphasized, it lands. */
-  animation: quizWin 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-@keyframes quizWin {
-  0% {
-    opacity: 0.4;
-    transform: translateY(-4px) scale(0.94);
-  }
-  65% {
-    transform: translateY(-14px) scale(1.06);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(-12px) scale(1.045);
-  }
-}
-.quizTag {
-  position: absolute;
-  top: -11px;
-  left: 22px;
-  background: var(--orange);
-  color: var(--navy);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  padding: 4px 11px;
-  border-radius: 999px;
-  opacity: 0;
-  transform: translateY(4px);
-  transition: opacity 0.35s ease, transform 0.35s ease;
-}
-.quizResultYou .quizTag {
-  opacity: 1;
-  transform: none;
-}
-.quizResultEyebrow {
-  font-family: var(--font-label);
-  font-size: 11.5px;
-  letter-spacing: 0.1em;
-  color: var(--orange);
-  text-transform: uppercase;
-}
-.quizResultTitle {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 20px;
-  color: var(--navy);
-  margin-top: 9px;
-  line-height: 1.2;
-}
-.quizResultBody {
-  margin-top: 9px;
-  font-size: 14.5px;
-  line-height: 1.5;
-  color: var(--body-on-light-2);
-}
-.quizRestart {
-  margin-top: 24px;
-  cursor: pointer;
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--orange);
-  background: none;
-  border: none;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-/* ==========================================================================
  * How it works — two-click walkthrough (replaces the 300vh pinned scroll on
  * this path; components/motion/PinnedSequence.tsx stays in the repo, just
  * unused here).
@@ -1222,11 +960,7 @@
   .demoTilt,
   .walkTilt,
   .acLayer,
-  .rdhLed,
-  .quizCard,
-  .quizResult,
-  .quizResultYou,
-  .quizTag {
+  .rdhLed {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
@@ -1476,203 +1210,6 @@
 }
 
 /* ==========================================================================
- * WALK PHONE — the "How it works" device.
- *
- * Rebuilt 2026-09-09. The old one was a rounded rectangle with a notch and a
- * screen full of invented UI; it read as a cheap mock-up rather than the app.
- * Everything here is measured against the real thing:
- *
- *   - iPhone 15/16 proportions (393 x 852pt) and concentric corner radii.
- *   - A Dynamic Island, not a notch.
- *   - A real iOS status bar: time, cellular, Wi-Fi, battery.
- *   - The app's own palette from PapeXV2/theme/tokens.ts, and its screen
- *     furniture from docs/design/prd-execution/screenshots (large title,
- *     letterspaced section label, 40pt circular row icon, trailing chevron).
- *   - The iOS 26 Liquid Glass tab bar: a capsule INSET from the screen edges
- *     and floating OVER the content, which is what PapeXV2 actually ships
- *     (app/(tabs)/_layout.tsx uses NativeTabs precisely to get it).
- *
- * --wp-u scales the whole interior. The app's numbers are points on a 393pt
- * screen; this phone is far narrower, so a raw px reading would be enormous.
- * ========================================================================== */
-
-.wpFrame {
-  /* Overridable by a parent via --wp-size, so the same device can be reused at
-     a different scale (the Features rows render it smaller than How It Works
-     does) without forking the component. */
-  --wp-h: var(--wp-size, min(560px, 62vh));
-  /* 393 x 852pt = 19.5:9, the iPhone 14 Pro..17 screen. Do not decouple these
-     two: the whole point of the 2026-09-22 rebuild is that the silhouette is
-     an iPhone's, not a generic slab's. */
-  --wp-w: calc(var(--wp-h) * 393 / 852);
-  --wp-u: calc(var(--wp-w) / 355);
-
-  /* THREE layers, because geometry alone was not enough (Nico: "the phone
-     doesn't look any more like Apple"). A flat grey slab with the screen
-     butted straight against it is the Android-reference-device look. A Pro
-     iPhone is: a brushed TITANIUM band, then a BLACK bezel ring, then the
-     screen — and it is that black margin between metal and pixels that does
-     most of the work. */
-  --wp-band: calc(var(--wp-w) * 0.022);
-  --wp-bezel: calc(var(--wp-w) * 0.026);
-  /* The frame corner is visibly rounder than the display corner on Pro
-     models, so these are NOT concentric. CSS has circular corners only, so
-     this approximates Apple's continuous curve rather than reproducing it. */
-  --wp-screen-r: calc(var(--wp-w) * 0.12);
-  --wp-frame-r: calc(var(--wp-w) * 0.19);
-
-  position: relative;
-  width: max-content;
-  padding: var(--wp-band);
-  border-radius: var(--wp-frame-r);
-  /* Brushed titanium: bright at the top-left corner, dark through the middle,
-     bright again at the bottom-right — a band catches light twice, a slab
-     once. */
-  background: linear-gradient(
-    160deg,
-    #b9bec6 0%,
-    #7f858f 30%,
-    #4a4f58 55%,
-    #8a9099 80%,
-    #c4c9d0 100%
-  );
-  /* The machined edge: 1px lit top-left, 1px shadowed bottom-right. */
-  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.55),
-    inset -1px -1px 0 rgba(0, 0, 0, 0.45),
-    0 2px 5px rgba(0, 18, 29, 0.4), 0 30px 64px rgba(0, 18, 29, 0.34);
-}
-
-/* Layer (b): the black bezel ring the display sits inside. */
-.wpBezel {
-  position: relative;
-  padding: var(--wp-bezel);
-  border-radius: calc(var(--wp-frame-r) - var(--wp-band));
-  background: #050607;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
-}
-
-/* Layer (d): side buttons, OUTSIDE the silhouette — mute switch + volume up
-   and down on the left, the longer side button on the right. Three elements
-   on the left means the mute switch gets its own gap, which is the giveaway
-   an iPhone has and nothing else does. */
-.wpFrame::before,
-.wpFrame::after {
-  content: "";
-  position: absolute;
-  width: calc(var(--wp-w) * 0.012);
-  border-radius: calc(var(--wp-w) * 0.012);
-  background: linear-gradient(160deg, #c4c9d0, #6b707a 45%, #a7adb6);
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.3);
-  pointer-events: none;
-}
-.wpFrame::before {
-  left: calc(var(--wp-w) * -0.009);
-  top: calc(var(--wp-h) * 0.105);
-  height: calc(var(--wp-h) * 0.27);
-  /* mute switch | gap | volume up | gap | volume down */
-  background: linear-gradient(
-    180deg,
-    #b3b8c0 0 13%,
-    transparent 13% 30%,
-    #b3b8c0 30% 60%,
-    transparent 60% 67%,
-    #b3b8c0 67% 100%
-  );
-}
-.wpFrame::after {
-  right: calc(var(--wp-w) * -0.009);
-  top: calc(var(--wp-h) * 0.185);
-  height: calc(var(--wp-h) * 0.115);
-}
-
-/* Layer (e): the pane of glass. A single diagonal reflection across the top
-   third — without it the screen reads as a printed panel, not glass. */
-.wpGlare {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  border-radius: inherit;
-  background: linear-gradient(115deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 45%);
-  z-index: 12;
-}
-
-.wpScreen {
-  position: relative;
-  width: var(--wp-w);
-  height: var(--wp-h);
-  border-radius: var(--wp-screen-r);
-  overflow: hidden;
-  /* The appui kit's unit: 1 iPhone POINT on a 393pt-wide screen. Every value
-     in appui.module.css is then the real number read off the captures. */
-  /* Floor keeps the drawn UI legible on a small phone; below ~0.55 the type
-     stops being readable, above it the header pill and Select collide in the
-     narrow Features cells. */
-  --u: max(0.55px, calc(var(--wp-w) / 393));
-  background: #00121d;
-  /* The app's ground is not flat navy — it carries a warm lift behind the
-     header, which is what the screenshots show. */
-  background-image: radial-gradient(120% 62% at 78% -8%, rgba(235, 113, 0, 0.14), transparent 62%),
-    radial-gradient(90% 50% at 8% 4%, rgba(96, 166, 214, 0.08), transparent 60%);
-}
-
-/* The Dynamic Island: 27% of the screen's width, 3.6% of its height, pure
-   black, 1.3% down from the top edge. Getting this pill wrong — too tall, too
-   short, or hung off the top edge as a notch — is the loudest "this is not an
-   iPhone" tell there is. */
-.wpIsland {
-  position: absolute;
-  top: calc(var(--wp-h) * 0.013);
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(var(--wp-w) * 0.27);
-  height: calc(var(--wp-h) * 0.036);
-  background: #000;
-  border-radius: 999px;
-  z-index: 9;
-}
-/* The front camera: a small grey lens dot inside the right end of the pill. */
-.wpIsland::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  right: calc(9 * var(--u));
-  width: calc(10 * var(--u));
-  height: calc(10 * var(--u));
-  border-radius: 999px;
-  transform: translateY(-50%);
-  background: radial-gradient(circle at 34% 30%, #3b444f 0%, #1a2028 55%, #0b0e12 100%);
-}
-
-/* The lock glyph iOS shows in the LEFT end of the island while the phone is
-   locked (app-media/reference/clip-lockscreen-card.png). It is a CHILD of the
-   island, not a sibling: the screen layers below (.acLayer / .wpScene) each
-   make their own stacking context, so a glyph drawn from the lock screen
-   would be painted underneath the island however high its z-index. */
-.wpIslandLock {
-  position: absolute;
-  top: 50%;
-  left: calc(17 * var(--u));
-  width: calc(12 * var(--u));
-  height: calc(12 * var(--u));
-  transform: translateY(-50%);
-  color: rgba(255, 255, 255, 0.92);
-}
-
-/* --- home indicator ------------------------------------------------------ */
-/* Real numbers again: 140 x 5pt, 8pt off the bottom edge. */
-.wpHomeBar {
-  position: absolute;
-  bottom: calc(8 * var(--u));
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(140 * var(--u));
-  height: calc(5 * var(--u));
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.32);
-  z-index: 11;
-}
-
-/* ==========================================================================
  * APP CLIP CARD — the bits of appui/Clip.tsx that belong to the INTERACTION
  * rather than to the shared kit. They live here (not appui.module.css) so the
  * clip's card can gain a real button and a prompt glow without touching the
@@ -1743,27 +1280,6 @@
   .clipViewPulse::after { animation: none; }
 }
 
-/* --- screen switching ---------------------------------------------------- */
-.wpScene {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  transform: translateX(14px);
-  transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
-  pointer-events: none;
-}
-/* The App Clip screen (bar / scroll / action) is a column, not an overlay. */
-.wpSceneClip {
-  display: flex;
-  flex-direction: column;
-}
-.wpSceneOn {
-  opacity: 1;
-  transform: none;
-  pointer-events: auto;
-}
-
 /* --- page dots: the swipe affordance ------------------------------------- */
 .wpDots {
   display: flex;
@@ -1782,10 +1298,6 @@
 .wpDotOn {
   width: 20px;
   background: var(--orange);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .wpScene { transition: none; }
 }
 
 /* ==========================================================================
