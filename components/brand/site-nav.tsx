@@ -8,9 +8,7 @@
 // between bubbles (see .rd-nav in styles/papex-brand.css).
 //
 // Nav link set (Web 2.1 spec §3.5): Home · For Customers · For Businesses ·
-// Blog · Contact. The spec's fifth item is "About us" (/about); a later task
-// renames it and adds the /contact → /about redirect, so until then it stays
-// "Contact" → /contact, a real route, rather than a link that 404s.
+// Blog · About us. /contact redirects to /about (next.config.ts, S2).
 //
 // CTA per page: the fork keeps "Get started"; /customers gets "Download the
 // app", matched to the visitor's device (useStoreUrl below); /business gets
@@ -43,7 +41,7 @@ const LINKS: NavLink[] = [
   { href: '/customers', label: 'For Customers', choice: 'customer' },
   { href: '/business', label: 'For Businesses', choice: 'business' },
   { href: '/blog', label: 'Blog' },
-  { href: '/contact', label: 'Contact' },
+  { href: '/about', label: 'About us' },
 ]
 
 /** The App Store or Google Play link for the visitor's device.

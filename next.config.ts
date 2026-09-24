@@ -39,6 +39,7 @@ const nextConfig: NextConfig = {
     return [
       { source: '/pos-calculator', destination: '/business', permanent: false },
       { source: '/waitlist', destination: '/', permanent: false },
+      { source: '/contact', destination: '/about', permanent: false },
     ];
   },
   async headers() {

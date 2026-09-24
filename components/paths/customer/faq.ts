@@ -44,9 +44,7 @@ export const customerFaq: FaqItem[] = [
     a: "Your receipt stays open until you close it or save it to PapeX.",
   },
   {
-    // TODO(S2): /about doesn't exist yet; point this at /about once it ships
-    // (S2 adds the /contact -> /about redirect, so /contact keeps working).
     q: "Who's behind PapeX?",
-    a: "A small team on a mission to make every receipt useful, and none of them wasted. [Meet us and get in touch](/contact).",
+    a: "A small team on a mission to make every receipt useful, and none of them wasted. [Meet us and get in touch](/about).",
   },
 ]

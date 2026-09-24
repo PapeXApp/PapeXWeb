@@ -102,9 +102,9 @@
     <priority>0.3</priority>
   </url>
 
-  <!-- Contact (becomes /about in a later task: update this URL then) -->
+  <!-- About us (was /contact; redirects there now, next.config.ts) -->
   <url>
-    <loc>https://papex.app/contact</loc>
+    <loc>https://papex.app/about</loc>
     <lastmod>2026-09-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>

@@ -57,7 +57,7 @@ const COLUMNS: { title: string; links: { href: string; label: string }[] }[] = [
     links: [
       { href: '/support', label: 'Support' },
       { href: '/pci', label: 'PCI Docs' },
-      { href: '/contact', label: 'Contact' },
+      { href: '/about', label: 'About us' },
     ],
   },
 ]
