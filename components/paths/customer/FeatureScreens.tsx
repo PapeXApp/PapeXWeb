@@ -1,4 +1,4 @@
-import { ReceiptDetailScreen, ReceiptsScreen } from "./appui";
+import { ReceiptDetailScreen, ReceiptsScreen, SEARCH_QUERY, SEARCH_ROWS } from "./appui";
 import { PhoneChrome } from "./WalkPhone";
 import styles from "./customer.module.css";
 
@@ -12,24 +12,28 @@ import styles from "./customer.module.css";
  * product, and they stay sharp at any size.
  *
  * Rebuilt 2026-09-22 against app-media/reference/: both screens now come from
- * `./appui`, the same kit the hero phone and the walkthrough use.
+ * `./appui`, the same kit the hero phone and the walkthrough use. Audited
+ * 2026-09-23 against PapeXV2's code (docs/design/app-reference.md).
  */
 
 /**
  * Wraps a screen in the device and crops it against the cell's bottom edge.
  *
- * `sheetLift` is only for screens whose content is anchored to the bottom of
- * the device (the share sheet, and the tab bar / FAB of a full app screen).
- * The crop takes roughly 40cqh off the bottom, so anything pinned there is
- * off-frame; lifting it by that much puts it back on the visible edge.
+ * THE CROP IS HONEST (2026-09-23, Nico: "no inconsistencies, like a FAB in the
+ * middle of the screen"). The screen inside is laid out exactly as the app
+ * lays it out — FAB 89pt above the device's bottom edge, tab bar and share
+ * sheet flush to it — and the cell simply cuts the device off. Whatever sits
+ * below the cut is not shown; nothing is lifted to "ride" the crop line.
+ * (This replaces the old `sheetLift` / `tabLift` props, which moved the FAB,
+ * the tab bar and the share sheet up to the cut and left the FAB floating
+ * mid-screen — a place the app never puts it. See
+ * docs/design/app-reference.md.)
  */
 function Shot({
   children,
-  sheetLift,
   slot,
 }: {
   children: React.ReactNode;
-  sheetLift?: string;
   /** app-media slot whose real capture, if imported, replaces the drawn screen. */
   slot: string;
 }) {
@@ -39,10 +43,7 @@ function Shot({
     // takes its navy bed there (customer.module.css). If the section ever
     // goes back to light, drop this to the default `data-lit=""`.
     <div className={styles.featShot} data-lit="dark" style={{ aspectRatio: "4 / 3" }}>
-      <div
-        className={styles.featShotPhone}
-        style={sheetLift ? ({ "--wp-sheet-lift": sheetLift } as React.CSSProperties) : undefined}
-      >
+      <div className={styles.featShotPhone}>
         <PhoneChrome mediaSlot={slot}>{children}</PhoneChrome>
       </div>
     </div>
@@ -50,28 +51,27 @@ function Shot({
 }
 
 /**
- * Row 1 — the real Receipts screen, mid-search. An empty search field would
- * say nothing about the feature this row is selling, so the query is typed
- * with the caret still blinking.
+ * Row 1 — the real Receipts tab after a search for "blue": the query sits in
+ * the field with its clear button, the keyboard is down, and the list holds
+ * only receipts that match (search FILTERS). The whole tab is drawn — FAB and
+ * tab bar included, at their real spots — and the crop cuts them off.
  */
 export function ReceiptListShot() {
   return (
-    <Shot slot="receipts-search" sheetLift="38cqh">
-      {/* NO TAB BAR (2026-09-22, Nico). This cell crops the device, so the
-          phone has no visible bottom edge — a floating five-tab capsule
-          parked mid-frame reads as a rendering bug, not as chrome. The FAB
-          stays and rides the crop line (--appui-lift): it is a free-floating
-          button in the app too, so it looks right anywhere on the screen. */}
-      <ReceiptsScreen query="blue" tabLift="38cqh" tabBar={false} />
+    <Shot slot="receipts-search">
+      <ReceiptsScreen query={SEARCH_QUERY} rows={SEARCH_ROWS} />
     </Shot>
   );
 }
 
 /**
- * Row 2 — a receipt DETAIL screen (where sharing actually starts: the People
- * field), with iOS's own share sheet rising over it. Sheet anatomy is iOS's:
- * dimmed backdrop, translucent blurred material, document header, the
- * AirDrop/app row, then the action list.
+ * Row 2 — a receipt DETAIL screen with iOS's own share sheet over it. In the
+ * app this sheet comes from the ••• menu's Export (a PDF of the receipt,
+ * receiptDetail.tsx `handleShare` -> `Sharing.shareAsync`), so nothing on the
+ * screen behind it is focused. Sheet anatomy is iOS's: dimmed backdrop,
+ * translucent material, document header, the AirDrop/app row, the action
+ * list. The sheet sits flush to the device bottom, where iOS puts it; the
+ * cell's crop shows its top and cuts the rest.
  */
 const SHARE_APPS = [
   { label: "AirDrop", bg: "linear-gradient(180deg,#3E8BFF,#1F63E8)" },
@@ -84,10 +84,10 @@ const SHARE_ACTIONS = ["Copy", "Save to Files", "Print"];
 
 export function ShareSheetShot() {
   return (
-    <Shot slot="share-sheet" sheetLift="40cqh">
+    <Shot slot="share-sheet">
       {/* The receipt stays visible behind the sheet — that's what makes it
           read as a sheet presented over the app rather than its own screen. */}
-      <ReceiptDetailScreen peopleFocused />
+      <ReceiptDetailScreen />
 
       <div className={styles.wpDim} aria-hidden="true" />
 
@@ -99,7 +99,7 @@ export function ShareSheetShot() {
               United States Postal Service
             </span>
             <span className={styles.wpSheetSub} style={{ display: "block" }}>
-              PapeX receipt &middot; PDF
+              PDF Document
             </span>
           </span>
           <span aria-hidden="true" className={styles.wpSheetClose}>&times;</span>
