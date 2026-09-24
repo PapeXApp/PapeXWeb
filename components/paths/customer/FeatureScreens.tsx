@@ -34,9 +34,10 @@ function Shot({
   slot: string;
 }) {
   return (
-    // "dark" was for the navy panel this cell used to sit on; the card is
-    // light now (2026-09-10), so the default (lighter) pointer-glow variant
-    // matches — same as the light-ground quiz options in Personas.tsx.
+    // "dark" is the pointer-glow variant for a card on navy: the Features
+    // section has been on the NAVY ground since 2026-09-22, and .featShot
+    // takes its navy bed there (customer.module.css). If the section ever
+    // goes back to light, drop this to the default `data-lit=""`.
     <div className={styles.featShot} data-lit="dark" style={{ aspectRatio: "4 / 3" }}>
       <div
         className={styles.featShotPhone}
