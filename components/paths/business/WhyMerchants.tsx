@@ -10,7 +10,8 @@ import styles from "./business.module.css"
 // line items on a receipt that prints, then folds into the PapeX plane and
 // flies into the bin (FoldReceipt.tsx owns all of it, so the claims have
 // exactly one source in content.ts). There is nothing under it: the receipt
-// is the section.
+// is the section — and since Web 2.1 its scene ends on the merchant dashboard
+// (the old section 05), so the dashboard's copy lives here too.
 //
 // The heading is still this path's one ScrollLit statement: its words light up
 // as it scrolls through.

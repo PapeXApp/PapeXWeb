@@ -6,19 +6,20 @@ import { WhyMerchants } from "./WhyMerchants"
 import { MarqueeBand } from "./MarqueeBand"
 import { HowItWorks } from "./HowItWorks"
 import { RdhDevice } from "./RdhDevice"
-import { DashboardPreview } from "./DashboardPreview"
 import { DemoForm } from "./DemoForm"
 
 // The "For Business" (merchant) homepage — Screen 3 of the forked-landing
 // redesign (docs/design/forked-landing/README.md, sections 3.1-3.7).
-// Section order: hero -> why -> ribbon -> how -> RDH -> dashboard -> demo.
+// Section order: hero -> why (ending on the dashboard) -> ribbon -> how -> RDH -> demo.
 // Sections declare a ground; FlowGround crossfades one page-level ground
 // between them (components/paths/shared/flow.module.css):
-//   Hero navy · Why light · ribbon · How LIGHT · RDH NAVY · Dashboard navy ·
-//   Demo light · footer navy
-// Three flips, not five (2026-09-22): navy, light, light, navy, navy, light,
-// navy. Why+How are one light stretch, RDH+Dashboard one navy block, so the
-// page turns deliberately instead of strobing section by section.
+//   Hero navy · Why light (its scroll scene ends on the dashboard) · ribbon ·
+//   How LIGHT · RDH NAVY · Demo light · footer navy
+// Why+How are one light stretch, so the page turns deliberately instead of
+// strobing section by section. The dashboard stopped being its own navy
+// section in Web 2.1: the receipt scene already ends on a laptop showing the
+// same screenshot, so its copy became that scene's final act (FoldReceipt.tsx,
+// DashboardPreview.tsx) and the demo form is now section 05.
 // `initial="navy"` is the hero's colour and MUST match the fork's top half.
 export function BusinessPath() {
   return (
@@ -28,7 +29,6 @@ export function BusinessPath() {
       <MarqueeBand />
       <HowItWorks />
       <RdhDevice />
-      <DashboardPreview />
       <DemoForm />
       {/* The footer is the page's navy tail, inside the flow (2026-09-22):
           it declares ground="navy" like any other section, so the last light

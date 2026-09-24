@@ -21,6 +21,11 @@ import styles from "./business.module.css"
 // pinned to exactly four columns >= 821px (auto-fit could drop to three and
 // break the one-row read) and the numerals/step type are scaled up so the
 // extra height is spent on the content, not on margins.
+//
+// Scaled again in Web 2.1: it still measured ~580 of 900px, so the heading
+// takes the path's display size (--fs-h1-merchant, as the demo ask does), the
+// dots grow 72 -> 96px, step bodies read at lead size, and the header ->
+// timeline gap is the path's --gap-body x2.5. Same content, ~80% of a screen.
 export function HowItWorks() {
   return (
     <FlowSection
@@ -28,12 +33,12 @@ export function HowItWorks() {
       index="03"
       className={`${styles.screen} px-[clamp(20px,5vw,56px)] py-[var(--section-pad-y)]`}
     >
-      <div className="mx-auto max-w-[1100px]">
-        <Reveal className="max-w-[760px]">
+      <div className="mx-auto w-full max-w-[1150px]">
+        <Reveal className="max-w-[820px]">
           <SectionLabel index="03">{howItWorks.eyebrow}</SectionLabel>
           <WordReveal
             as="h2"
-            className="text-[length:var(--fs-h2)] font-bold leading-[1.04] tracking-[-.02em] [font-family:var(--font-display)]"
+            className="text-[length:var(--fs-h1-merchant)] font-bold leading-[1.03] tracking-[-.02em] [font-family:var(--font-display)]"
           >
             {howItWorks.heading}
           </WordReveal>
@@ -42,11 +47,11 @@ export function HowItWorks() {
           </p>
         </Reveal>
 
-        <div className="mt-[calc(var(--gap-body)*2)] grid grid-cols-1 gap-[clamp(24px,3vw,34px)] min-[821px]:grid-cols-4">
+        <div className="mt-[calc(var(--gap-body)*2.5)] grid grid-cols-1 gap-[clamp(24px,3vw,34px)] min-[821px]:grid-cols-4">
           {howItWorks.steps.map((step, index) => (
             <Reveal key={step.number} as="div" delay={index * 0.08} className={`${styles.rmapNode} pt-1`}>
               <div
-                className="relative z-[2] flex h-[72px] w-[72px] items-center justify-center rounded-full text-[26px] font-bold"
+                className="relative z-[2] flex h-[72px] w-[72px] items-center justify-center rounded-full text-[26px] font-bold min-[821px]:h-[96px] min-[821px]:w-[96px] min-[821px]:text-[34px]"
                 style={{
                   background: "var(--flow-ground)",
                   border: "1.5px solid var(--orange)",
@@ -63,7 +68,10 @@ export function HowItWorks() {
               >
                 {step.title}
               </h3>
-              <p className="mt-[var(--gap-list)] max-w-[26ch] text-[16.5px] leading-[1.55]" style={{ color: "var(--flow-fg-2)" }}>
+              <p
+                className="mt-[calc(var(--gap-list)*.6)] max-w-[24ch] text-[16.5px] leading-[1.55] min-[821px]:text-[length:var(--fs-lead)]"
+                style={{ color: "var(--flow-fg-2)" }}
+              >
                 {step.body}
               </p>
             </Reveal>
