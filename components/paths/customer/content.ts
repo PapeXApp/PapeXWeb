@@ -2,13 +2,31 @@
 // Copy is polished-but-provisional (per docs/design/forked-landing/README.md → "Fidelity").
 // Keep all strings here so the sections stay markup-only.
 
+/**
+ * The id of the section the hero's "How does that work?" cue scrolls to.
+ * ONE constant on purpose: the page order is still being settled, so the cue
+ * and its target (HowItWorks.tsx puts this id on its section) read the same
+ * value — repoint the cue by moving the id, never by editing the cue.
+ */
+export const HOW_IT_WORKS_ANCHOR = "how-it-works";
+
+/** The customer FAQ's id (index.tsx reserves it for task C3's FAQ). The
+ *  hero's quiet "Questions?" link jumps here. */
+export const FAQ_ANCHOR = "faq";
+
 export const heroContent = {
   eyebrow: "Digital receipts, one tap away",
   headline: "The last receipt you'll ever lose.",
-  lead: "Tap your phone at checkout. Your receipt appears instantly: saved, searchable, and yours forever. No paper, no app required to start.",
+  // Web 2.1 (spec §3.2): "no app to GET it, the free app to KEEP it" — the old
+  // "saved… forever. No app required" line contradicted the Download button
+  // right under it.
+  lead: "Tap your phone at checkout and your receipt appears. No app needed to get it — the free PapeX app keeps every one.",
   ctaLabel: "Download the app",
-  ctaSubtext: "Free on the App Store",
-  scrollCue: "Scroll",
+  // True of both listings (lib/storeLinks.ts). Also shown under the quiz
+  // result's CTA (Personas.tsx).
+  ctaSubtext: "Free · iPhone & Android",
+  howCue: "How does that work?",
+  faqCue: "Questions?",
 };
 
 /** The hero's live receipt demo — hint copy per state, and the tappable phone's a11y label. */
@@ -18,7 +36,7 @@ export const demoContent = {
   phoneStartLabel: "Tap your phone on the PapeX device to receive a receipt",
   /* The reader is the primary tap target now (2026-09-22): the hero's story is
      "tap the PapeX device", and nothing happens until the visitor taps IT. */
-  deviceLabel: "Tap the PapeX reader to receive a receipt",
+  deviceLabel: "Tap the PapeX device to receive a receipt",
   /* The idle prompt ON the phone (2.1, 2026-09-23): an iOS Live Activity on
      the lock screen, so the locked phone never reads as blank and points at
      the device. The device's own chip says the same thing from below. */
@@ -41,7 +59,8 @@ export const demoContent = {
     items: "Items Purchased",
     original: "Original receipt",
   },
-  sourceLabel: "RDH Receipt",
+  // Never "RDH" or "reader" to shoppers (spec §3.5 — one device name).
+  sourceLabel: "PapeX receipt",
 };
 
 export type ProblemCardId = "print" | "forest" | "proof";
@@ -58,7 +77,9 @@ export interface ProblemCard {
 
 export const problemContent = {
   eyebrow: "The problem",
-  headline: "Paper receipts fade. So does the money you could get back.",
+  // Web 2.1 final order (Nico, 2026-09-24): this section answers the
+  // visitor's "Why does it matter?", and the flip cards are the answer.
+  headline: "Why does it matter?",
   // SOURCED 2026-09-10. Every figure traces to a named source, shown on the card.
   // Rejected on purpose: "256B receipts" (a garbled 256,300-TONS figure, not a
   // count — no traceable receipt count exists), "10M trees" (2013 blog, no
@@ -96,14 +117,9 @@ export const problemContent = {
 
 export const marqueeContent = {
   durationSeconds: 30,
-  phrases: [
-    "One tap, done.",
-    "No paper.",
-    "No app to receive.",
-    "Saved forever.",
-    "Fully searchable.",
-    "Zero waste.",
-  ],
+  // Web 2.1 (spec §3.2): "Saved forever" removed; "Less paper", not "Zero
+  // paper" — the store's printer can keep printing.
+  phrases: ["One tap.", "No app to receive.", "iPhone & Android.", "Free.", "Less paper."],
 };
 
 export type PersonaId = "keeper" | "casual" | "non";
@@ -213,12 +229,14 @@ export const featuresContent = {
 
 export const howItWorksContent = {
   eyebrow: "How it works",
-  headline: "Get started in three taps.",
+  // Web 2.1: step 2 is NOT a tap — the receipt opens by itself — so the old
+  // "three taps" headline is gone.
+  headline: "No app to get it. The free app to keep it.",
   phoneAriaLabel: "Step through how PapeX works",
   /** Cue line under the phone, one per step — index 2's "Replay" is bold in the design. */
   cues: [
-    "Tap the phone on the reader",
-    "Tap again to put it away",
+    "Tap the phone on the PapeX device",
+    "It opened by itself. Tap to save it to PapeX",
     "That's it: saved, searchable, yours.",
   ],
   replayLabel: "Replay",
@@ -226,8 +244,8 @@ export const howItWorksContent = {
    *  the other way through, and a tap on the last step moves on to the next
    *  section instead of replaying — hence "Continue". */
   scrollCues: [
-    "Scroll, or tap the phone on the reader",
-    "Keep scrolling, or tap to put it away",
+    "Scroll, or tap the phone on the PapeX device",
+    "It opened by itself. Keep scrolling to save it",
     "That's it: saved, searchable, yours.",
   ],
   continueLabel: "Continue",
@@ -235,31 +253,38 @@ export const howItWorksContent = {
     {
       number: "01",
       title: "Tap at checkout",
-      body: "Hold your phone to any PapeX device at the register. No app required.",
+      body: "Hold your phone to the PapeX device at the register. No app needed.",
       phoneHeadline: "Ready to tap",
       phoneSubline: "Hold your phone to the device",
     },
     {
       number: "02",
-      title: "Receipt appears instantly",
-      body: "Your digital receipt lands on your phone the moment you tap.",
-      phoneCaption: "Delivered the instant you tapped",
+      title: "It opens",
+      // Spec §6a (Android): Android taps too; it opens in the browser.
+      body: "On iPhone it opens instantly. On Android it opens in the browser. Nothing to install.",
+      phoneCaption: "Opened the instant you tapped",
     },
     {
       number: "03",
-      title: "Saved & organized",
-      body: "Download the app to keep, search and categorize everything automatically.",
+      title: "Save it to PapeX",
+      body: "Save it to the free PapeX app and it's searchable forever.",
     },
   ],
 };
 
 // Merchant seeds for the appui receipt rows (appui/data.ts owns the rest of
 // each row: dates, provenance, the unreviewed flag — see app-reference.md).
+//
+// INVENTED names only — no real merchants on the site (Web 2.1). The café
+// must keep "blue" in its name: appui/data.ts searches the list for
+// SEARCH_QUERY = "blue", and the app only ever shows rows that match the
+// query. Categories are PapeXV2's defaults (constants/receiptCategories.ts);
+// a ride is "Travel", not "Gas & auto".
 export const receiptsListContent = {
   rows: [
-    { merchant: "Blue Bottle Coffee", initial: "B", category: "Dining", amount: "$10.90" },
-    { merchant: "Whole Foods Market", initial: "W", category: "Groceries", amount: "$63.40" },
-    { merchant: "Uber", initial: "U", category: "Gas & auto", amount: "$18.20" },
+    { merchant: "Bluewick Coffee", initial: "B", category: "Dining", amount: "$10.90" },
+    { merchant: "Greenleaf Market", initial: "G", category: "Groceries", amount: "$63.40" },
+    { merchant: "Cityhop Rides", initial: "C", category: "Travel", amount: "$18.20" },
   ],
 };
 
@@ -268,9 +293,12 @@ export const proofContent = {
   // pilot: one NFC tap; the App Clip needs no install; iPhone opens the App
   // Clip and every other phone gets the /r web page. Swap for real pilot
   // numbers once they exist — never back to invented counters.
+  //
+  // Web 2.1: "0 apps to download first" sat directly above a Download button.
+  // The true fact is narrower: no app is needed to RECEIVE it.
   counters: [
-    { value: 1, label: "tap to get your receipt" },
-    { value: 0, label: "apps to download first" },
+    { value: 1, label: "tap to get it" },
+    { value: 0, label: "apps needed to receive it" },
     { value: 2, label: "ways to open it: iPhone instantly, any phone in the browser" },
   ],
 };

@@ -1,12 +1,46 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import type { MouseEvent } from "react";
 import { ChildStagger, Magnetic, Ripple, Spotlight, WordReveal } from "@/components/motion";
-import { APP_STORE_URL } from "@/components/brand/links";
+import { APP_STORE_URL, PLAY_STORE_URL, platformFromUserAgent } from "@/lib/storeLinks";
 import { FlowSection } from "../shared/FlowSection";
 import { SectionLabel } from "../shared/SectionLabel";
-import { heroContent } from "./content";
+import { FAQ_ANCHOR, HOW_IT_WORKS_ANCHOR, heroContent } from "./content";
 import { NfcPhone } from "./NfcPhone";
 import styles from "./customer.module.css";
+
+/**
+ * The store listing to lead with, matched to the visitor's device: Google Play
+ * on Android, the App Store everywhere else (iPhone, iPad and desktop — the
+ * default). Used by every "Download the app" button on this page.
+ *
+ * The server can't see the device, so SSR and the first client render both
+ * use the App Store (no hydration mismatch) and Android swaps after mount.
+ * A hint, never a gate: both listings are live (lib/storeLinks.ts).
+ */
+export function useStoreUrl(): string {
+  const [url, setUrl] = useState(APP_STORE_URL);
+  useEffect(() => {
+    if (platformFromUserAgent(navigator.userAgent) === "android") setUrl(PLAY_STORE_URL);
+  }, []);
+  return url;
+}
+
+/** The hero cues' click: a smooth scroll to the link's own `#id` target (an
+ *  instant jump under reduced motion). The href carries the hash, so without
+ *  JS — or if the target isn't on the page — it is an ordinary in-page link. */
+function scrollToHash(event: MouseEvent<HTMLAnchorElement>) {
+  const id = event.currentTarget.hash.slice(1);
+  const target = id ? document.getElementById(id) : null;
+  if (!target) return;
+  event.preventDefault();
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  window.scrollTo({
+    top: Math.round(target.getBoundingClientRect().top + window.scrollY),
+    behavior: reduce ? "auto" : "smooth",
+  });
+}
 
 /**
  * 2.1 Hero — LIGHT. The signature "last receipt you'll ever lose" moment.
@@ -21,6 +55,7 @@ import styles from "./customer.module.css";
  * receipt inside it keeps the App Clip palette on purpose.
  */
 export function Hero() {
+  const storeUrl = useStoreUrl();
   return (
     <FlowSection
       ground="light"
@@ -81,7 +116,9 @@ export function Hero() {
             >
               {heroContent.lead}
             </p>
-            <div className="flex flex-wrap items-center" style={{ marginTop: "var(--gap-body)", gap: 14 }}>
+            {/* CTA, then its reassurance line UNDER it (Web 2.1), then the
+                "How does that work?" cue. */}
+            <div className="flex flex-col items-start" style={{ marginTop: "var(--gap-body)", gap: 10 }}>
               <Magnetic className={styles.ctaMagnetic}>
                 {/* Navy ripple: it's the press feedback ON the orange button,
                     so it's right on either ground. The Ripple is the pill
@@ -90,7 +127,7 @@ export function Hero() {
                     exactly — see .ctaPill in customer.module.css. */}
                 <Ripple variant="navy" className={`overflow-hidden rounded-full ${styles.ctaPill}`}>
                   <a
-                    href={APP_STORE_URL}
+                    href={storeUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className={styles.ctaButton}
@@ -111,43 +148,33 @@ export function Hero() {
                   </a>
                 </Ripple>
               </Magnetic>
-              <span style={{ fontSize: 14, color: "var(--flow-fg-3)" }}>{heroContent.ctaSubtext}</span>
+              <span style={{ fontSize: 14, color: "var(--flow-fg-3)", paddingLeft: 4 }}>
+                {heroContent.ctaSubtext}
+              </span>
+            </div>
+            {/* Show WHAT first, then invite the "how?" (Nico, Web 2.1). One
+                cue at every width — it replaced the foot-of-screen "Scroll"
+                cue, which was hidden below 821px. The arrow keeps that cue's
+                bob. Targets: HOW_IT_WORKS_ANCHOR / FAQ_ANCHOR in content.ts. */}
+            <div
+              className="flex flex-wrap items-center"
+              style={{ marginTop: "clamp(22px,3vh,34px)", columnGap: 26, rowGap: 12 }}
+            >
+              <a href={`#${HOW_IT_WORKS_ANCHOR}`} onClick={scrollToHash} className={styles.howCue}>
+                <span>{heroContent.howCue}</span>
+                <span aria-hidden="true" className={styles.howCueArrow}>
+                  <span className={styles.arrowBob}>↓</span>
+                </span>
+              </a>
+              {/* Quieter second door: straight to the FAQ (Web 2.1). */}
+              <a href={`#${FAQ_ANCHOR}`} onClick={scrollToHash} className={styles.faqCue}>
+                {heroContent.faqCue}
+              </a>
             </div>
           </ChildStagger>
         </div>
 
         <NfcPhone />
-      </div>
-
-      {/* The original cue: the word plus a hairline, at the foot of the
-          screen. From 821px the hero's 100px bottom padding (styles.hero)
-          keeps the demo's hint row ~28px above it, so the two never read as
-          one caption line; below 821px it is hidden (see .heroCue). */}
-      <div
-        aria-hidden="true"
-        className={`absolute flex flex-col items-center ${styles.heroCue}`}
-        style={{
-          bottom: 22,
-          left: "50%",
-          transform: "translateX(-50%)",
-          fontFamily: "var(--font-label)",
-          fontSize: 11,
-          letterSpacing: ".2em",
-          textTransform: "uppercase",
-          color: "var(--flow-fg-3)",
-          gap: 8,
-          zIndex: 2,
-        }}
-      >
-        {heroContent.scrollCue}
-        <span
-          className={styles.arrowBob}
-          style={{
-            width: 1,
-            height: 26,
-            background: "linear-gradient(var(--flow-fg-2), transparent)",
-          }}
-        />
       </div>
     </FlowSection>
   );

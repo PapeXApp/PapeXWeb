@@ -155,8 +155,10 @@
    like /business's hero. --hero-pt is read by .demoStage's phone budget, so
    the padding and the phone size can never disagree about how much of the
    screen is left. From 821px: the top clears the 94px nav band (the phone's
-   top used to sit under it), and the 100px bottom keeps the scroll cue on a
-   line of its own below the demo's hint row. Phones keep the old values. */
+   top used to sit under it), and the 100px bottom once kept the foot "Scroll"
+   cue clear of the demo's hint row. That cue is gone (Web 2.1 — see .howCue);
+   the padding stays because the phone's height budget and the screen's
+   centring were tuned with it. Phones keep the old values. */
 .hero {
   --hero-pt: clamp(80px, 10vh, 112px);
   padding: var(--hero-pt) clamp(20px, 5vw, 56px) 52px;
@@ -168,15 +170,80 @@
   }
 }
 
-/* The hero's scroll cue only makes sense while the hero is exactly one screen
-   tall, which is only true from 821px up (`.screen`). Below that the stacked
-   copy + demo run past the fold, and the absolutely positioned cue landed on
-   top of the demo's hint row. 767 -> 820 on 2026-09-23 to match the site's
-   820/821 split. */
-@media (max-width: 820px) {
-  .heroCue {
-    display: none;
-  }
+/* The hero's "How does that work? ↓" cue (Web 2.1). It replaced the
+   foot-of-screen "Scroll" cue (.heroCue, absolutely positioned and hidden
+   below 821px because it landed on the demo's hint row): this one sits in the
+   copy column, in flow, so it shows at every width. Label type = the section
+   eyebrows' mono; the arrow keeps the old cue's bob inside a hairline ring
+   that warms to orange on hover. ChildStagger writes `transform` and
+   `transition` inline on the cue row, so every hover motion lives on the
+   ring, never on the row. .faqCue is the quieter second door to #faq. */
+.howCue {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  width: max-content;
+  max-width: 100%;
+  font-family: var(--font-label);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--flow-fg-2);
+  text-decoration: none;
+  cursor: pointer;
+}
+.howCue:hover {
+  color: var(--flow-fg);
+}
+.howCue:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 5px;
+  border-radius: 999px;
+}
+.howCueArrow {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  /* --flow-hair (9%) is tuned for full-bleed rules and vanishes on a 34px
+     ring; a quarter of the ground's own ink follows the crossfade the same way. */
+  border: 1px solid color-mix(in srgb, var(--flow-fg) 24%, transparent);
+  color: var(--orange);
+  font-family: var(--font-display);
+  font-size: 16px;
+  letter-spacing: 0;
+  transition:
+    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.25s ease,
+    border-color 0.25s ease;
+}
+.howCueArrow > span {
+  display: inline-block;
+}
+.faqCue {
+  font-size: 14px;
+  color: var(--flow-fg-3);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--flow-fg) 25%, transparent);
+  text-underline-offset: 4px;
+  transition: color 0.2s ease, text-decoration-color 0.2s ease;
+}
+.faqCue:hover {
+  color: var(--flow-fg);
+  text-decoration-color: var(--orange);
+}
+.faqCue:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.howCue:hover .howCueArrow {
+  transform: translateY(3px) scale(1.06);
+  border-color: var(--orange);
+  background-color: rgba(235, 113, 0, 0.1);
 }
 
 /* Hover treatments — kept as CSS-module classes since inline styles can't express :hover. */

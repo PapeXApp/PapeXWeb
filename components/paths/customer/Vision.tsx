@@ -1,13 +1,14 @@
+"use client";
+
 import { Magnetic, Reveal, Ripple, ScrollLit } from "@/components/motion";
-import { APP_STORE_URL } from "@/components/brand/links";
 import { FlowSection } from "../shared/FlowSection";
 import { SectionLabel } from "../shared/SectionLabel";
 import { proofContent, visionContent } from "./content";
+import { useStoreUrl } from "./Hero";
 import styles from "./customer.module.css";
 
 /**
- * 2.8 Vision + CTA — navy, the page's closing screen (flows straight into the
- * navy footer). The statement is the path's one ScrollLit line: its words
+ * 2.8 Vision + CTA — navy, the "Get it" screen before the FAQ. The statement is the path's one ScrollLit line: its words
  * light up as it scrolls through the viewport.
  *
  * 2026-09-23 (Nico): this is now the ONE close of the page.
@@ -20,18 +21,25 @@ import styles from "./customer.module.css";
  *     app" is the only CTA (visionContent.secondaryCta was deleted at the
  *     2.1 merge).
  *   - A full screen from 821px (`styles.screen`), content centred in it.
+ *   - Web 2.1 final order: this is [07] "Get it", followed by the light FAQ
+ *     [08], so it no longer runs straight into the navy footer.
+ *
+ * Web 2.1: the facts say what is true — 0 apps needed to RECEIVE it (the old
+ * "0 apps to download first" sat right above a Download button) — and the
+ * Download button is device-matched like the hero's (useStoreUrl).
  */
 export function Vision() {
+  const storeUrl = useStoreUrl();
   return (
     <FlowSection
       ground="navy"
-      index="06"
+      index="07"
       className={`${styles.screen} ${styles.rhythm}`}
       style={{ padding: "var(--section-pad) clamp(20px,5vw,56px)" }}
     >
       <div className="w-full" style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
         <Reveal variant="up">
-          <SectionLabel index="06">{visionContent.eyebrow}</SectionLabel>
+          <SectionLabel index="07">{visionContent.eyebrow}</SectionLabel>
           <ScrollLit
             as="h2"
             text={visionContent.headline}
@@ -92,7 +100,7 @@ export function Vision() {
                 customer.module.css for why. */}
             <Ripple variant="navy" className={`overflow-hidden rounded-full ${styles.ctaPill}`}>
               <a
-                href={APP_STORE_URL}
+                href={storeUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={styles.ctaButton}

@@ -18,14 +18,28 @@ import styles from "./customer.module.css";
  *
  * Sections no longer paint their own bands. Each declares a ground and
  * FlowGround crossfades ONE page-level ground between them (see
- * components/paths/shared/flow.module.css). One swap, not five (2026-09-10):
- *   01 Hero light · 02 Problem light · ribbon · 03 Personas light ·
- *   04 Features NAVY · 05 HowItWorks light · 06 Vision navy · footer navy
- * Three flips, not one (2026-09-22): the app-shot section takes a dark beat in
- * the middle of the light run, then the page closes navy through the footer,
- * which now rides inside the flow as a navy FlowSection (see below).
- * 2026-09-23: the "At a glance" section (Proof, was 06) is gone — its three
- * facts moved into Vision, which is now the one closing screen (06).
+ * components/paths/shared/flow.module.css).
+ *
+ * Web 2.1 FINAL ORDER (Nico, 2026-09-24 — ledger "LOCKED PAGE ORDER" as
+ * finalised by the lead). Show WHAT first, then answer the visitor's next
+ * question, in the order they ask it:
+ *   01 Hero                         light
+ *   02 How it works (walkthrough)   light  (the hero cue scrolls here)
+ *      ribbon                       (no ground of its own)
+ *   03 Quiz — "Is it for me?"       NAVY
+ *   04 Problem — "Why does it matter?" light
+ *   05 Features — "What else can I do?" NAVY   id="features"
+ *   06 Privacy                      light  (SLOT: task C3)
+ *   07 Get it — Vision + Download   NAVY
+ *   08 FAQ                          light  (SLOT: task C3)   id="faq"
+ *      footer                       NAVY
+ * Navy never sits next to navy — BUT only once C3's Privacy and FAQ fill
+ * their slots. Until then 05→07 and 07→footer are navy-on-navy.
+ *
+ * The [NN] eyebrows live inside each section file: Personas (03), Problem
+ * (04) and Features (05) are owned by other tasks, so their numbers are set
+ * there, not here.
+ *
  * `initial="light"` is the hero's colour and MUST match the fork's bottom half.
  *
  * Screens, not sections (2026-09-23): from 821px every section here is at
@@ -59,12 +73,25 @@ export function CustomerPath() {
     <div className={styles.path}>
       <FlowGround initial="light">
         <Hero />
-        <Problem />
+        <HowItWorks />
         <MarqueeBand />
         <Personas />
-        <Features />
-        <HowItWorks />
+        <Problem />
+        {/* `id="features"` is the footer's "Features" link target (spec
+            §3.5). It sits on a plain block wrapper because Features.tsx is
+            owned by another task; a block (not display:contents) so the
+            browser has a box to scroll to. */}
+        <div id="features">
+          <Features />
+        </div>
+        {/* SLOT C3: <Privacy /> from ./Privacy */}
         <Vision />
+        {/* `id="faq"` reserves the anchor (footer "FAQ" link + the hero's
+            "Questions?" link). When C3's component fills the slot it carries
+            id="faq" itself — drop this wrapper's id then, never keep two. */}
+        <div id="faq">
+          {/* SLOT C3: <Faq id="faq" items={customerFaq} /> */}
+        </div>
         {/* The footer is the page's navy tail, inside the flow (2026-09-22):
             it declares ground="navy" like any other section, so the last light
             section crossfades into it instead of hitting a hard navy edge.
