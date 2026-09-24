@@ -472,7 +472,6 @@ export function FoldReceipt() {
       const fold = foldRef.current
       const plane = planeRef.current
       if (!scene || !paper || !fold || !plane) return
-      const cq = scene.clientWidth / 100
       // Act 1's own progress. Everything from here to the flight reads `q`;
       // only the laptop act below reads the raw `p`.
       const q = clamp01(p / ACT1_END)
@@ -581,9 +580,11 @@ export function FoldReceipt() {
       // --- 3b. the flap panels ---------------------------------------------
       // rotate3d's axis is read in the element's own PIXEL space, so the crease
       // direction has to be built from the live box, not from percentages.
-      const boxW = paper.offsetWidth
-      const boxH = fold.offsetHeight || 1
       const side = ROUNDS[activeRound] // undefined on rounds 2/3 — flaps idle
+      // Layout reads only while a flap is actually turning (fold rounds 0/1):
+      // outside them the flaps are idle and nothing needs the box.
+      const boxW = side ? paper.offsetWidth : 0
+      const boxH = side ? fold.offsetHeight || 1 : 1
       for (let n = 0; n < 2; n++) {
         const flap = flapRefs.current[n]
         const face = flapFaceRefs.current[n]
@@ -650,7 +651,14 @@ export function FoldReceipt() {
       if (fly <= 0) {
         set(paper, "transform", wings > 0 ? `rotate(${launch.toFixed(2)}deg)` : "none", "paperT")
         set(paper, "opacity", "1", "paperO")
+      } else if (fly >= 1) {
+        // Landed: the paper is fully faded (opacity (1 - fly) / 0.12 = 0), so
+        // its final transform is invisible. Skip the flight's layout reads
+        // for the whole of acts 2-3; scrolling back below fly=1 re-enters the
+        // branch below and rewrites the transform (the `set` cache is keyed).
+        set(paper, "opacity", "0", "paperO")
       } else {
+        const cq = scene.clientWidth / 100
         const bin = binRef.current
         // The rig is `inset: 0` inside the scene, so its UNtransformed left is
         // the scene's left — the difference is exactly how far it has shifted.
@@ -712,8 +720,9 @@ export function FoldReceipt() {
       set(slabRef.current, "--slab-h", `${(22 - 10 * mrg - 11.2 * line).toFixed(2)}cqw`, "slabH")
       set(slabRef.current, "--slab-o", (mrg * (1 - line)).toFixed(3), "slabO")
       set(deckRef.current, "--deck-w", w, "deckW")
-      // the line thickens into a real deck as the lid rises
-      set(deckRef.current, "--deck-h", `${(0.8 + 2.2 * open).toFixed(2)}cqw`, "deckH")
+      // the line thickens into a real deck as the lid rises: 0.8cqw -> 3cqw,
+      // as a scaleY of the deck's fixed 3cqw box (compositor-only, no layout)
+      set(deckRef.current, "--deck-s", ((0.8 + 2.2 * open) / 3).toFixed(4), "deckS")
       set(deckRef.current, "--deck-o", line.toFixed(3), "deckO")
 
       // --- 7. ACT 3: the laptop opens into the top of the dashboard stack ----

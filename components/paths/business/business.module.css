@@ -605,10 +605,14 @@
 .frDeck {
   position: absolute;
   left: 50%;
-  bottom: calc(var(--lap-base) - var(--deck-h, 3cqw));
+  /* Fixed 3cqw box hanging from the base line; how thick it LOOKS is a scaleY
+     about its top (back) edge, written per frame as --deck-s (0.27 -> 1).
+     Animating `height` here was a layout write on every act-3 frame. */
+  bottom: calc(var(--lap-base) - 3cqw);
   width: var(--deck-w, 72cqw);
-  height: var(--deck-h, 3cqw);
-  transform: translateX(-50%);
+  height: 3cqw;
+  transform: translateX(-50%) scaleY(var(--deck-s, 1));
+  transform-origin: 50% 0;
   clip-path: polygon(2.5% 0, 97.5% 0, 100% 100%, 0 100%);
   background: linear-gradient(180deg, #46525f, #222c36);
   opacity: var(--deck-o, 0);
