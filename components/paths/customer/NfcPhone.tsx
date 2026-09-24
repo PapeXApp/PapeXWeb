@@ -7,6 +7,7 @@ import { parseEscPos } from "@/lib/escpos";
 import { summarizeReceipt } from "@/lib/receiptSummary";
 import { cn } from "@/lib/utils";
 import { ClipLockScreen, ClipReading } from "./appui";
+import { receiptMoment } from "./appui/Clip";
 import { demoContent } from "./content";
 import { demoReceiptBytes } from "./demoReceipt";
 import { ClipReceiptScreen } from "./ReceiptCard";
@@ -77,6 +78,9 @@ export function NfcPhone() {
     const receipt = parseEscPos(demoReceiptBytes());
     return summarizeReceipt(receipt.lines);
   }, []);
+  /* The lock screen's date + clock come from the decoded receipt, so the
+     phone is always tapped on the day (and at the time) the receipt printed. */
+  const moment = useMemo(() => receiptMoment(summary.dateline), [summary]);
 
   /** Beat 1 — the reader was tapped (pointer, Enter or Space). */
   function tapDevice() {
@@ -162,12 +166,13 @@ export function NfcPhone() {
                 pulse={!prefersReduced}
                 onView={openClip}
                 prompt={demoContent.lockPrompt}
+                moment={moment}
               />
             </div>
 
             {/* 2. the clip launching */}
             <div className={cn(styles.acLayer, demo === "reading" && styles.acLayerOn)}>
-              <ClipReading />
+              <ClipReading time={moment.time} />
             </div>
 
             {/* 3. the receipt. Taps inside it belong to the receipt —

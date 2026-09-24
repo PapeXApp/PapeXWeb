@@ -146,6 +146,52 @@ function CameraGlyph() {
 /** Copy for the lock screen's idle Live Activity. */
 export type LockPrompt = { title: string; body: string };
 
+/** What the lock screen shows: "Mon Jun 8" over "10:24". */
+export type ReceiptMoment = { date: string; time: string };
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/** Only for a receipt with no parseable date/time. The demo receipt has both. */
+const FALLBACK_MOMENT: ReceiptMoment = { date: "Mon Jun 8", time: "10:24" };
+
+/**
+ * The moment the phone was tapped = the moment the receipt printed, read off
+ * the DECODED receipt (`summarizeReceipt(...).dateline`, e.g.
+ * "Jun 8, 2026 • 10:24 AM"), so the lock screen can never show a different
+ * day than the receipt it is about to open (2.1, 2026-09-24, Nico). Accepts
+ * the three date shapes lib/receiptSummary recognises. The weekday is computed
+ * in UTC from the calendar date, so no timezone can shift it. iOS's lock-screen
+ * clock is 12-hour with no AM/PM, hence "10:24".
+ */
+export function receiptMoment(dateline?: string): ReceiptMoment {
+  if (!dateline) return FALLBACK_MOMENT;
+  let y: number | undefined;
+  let m: number | undefined;
+  let d: number | undefined;
+  const named = /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+(\d{1,2})(?:,?\s*(\d{4}))?/i.exec(dateline);
+  const iso = /\b(\d{4})-(\d{2})-(\d{2})\b/.exec(dateline);
+  const us = /\b(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})\b/.exec(dateline);
+  if (named) {
+    m = MONTHS.findIndex((mo) => mo.toLowerCase() === named[1].slice(0, 3).toLowerCase());
+    d = Number(named[2]);
+    y = named[3] ? Number(named[3]) : undefined;
+  } else if (iso) {
+    [y, m, d] = [Number(iso[1]), Number(iso[2]) - 1, Number(iso[3])];
+  } else if (us) {
+    const yy = Number(us[3]);
+    [m, d, y] = [Number(us[1]) - 1, Number(us[2]), yy < 100 ? 2000 + yy : yy];
+  }
+  let date = FALLBACK_MOMENT.date;
+  if (m !== undefined && m >= 0 && m < 12 && d) {
+    const day = `${MONTHS[m]} ${d}`;
+    date = y ? `${WEEKDAYS[new Date(Date.UTC(y, m, d)).getUTCDay()]} ${day}` : day;
+  }
+  const t = /\b(\d{1,2}):(\d{2})\b/.exec(dateline);
+  const time = t ? `${Number(t[1]) % 12 || 12}:${t[2]}` : FALLBACK_MOMENT.time;
+  return { date, time };
+}
+
 /**
  * The locked iPhone.
  *
@@ -167,11 +213,14 @@ export function ClipLockScreen({
   pulse = false,
   onView,
   prompt,
+  moment = FALLBACK_MOMENT,
 }: {
   card?: boolean;
   pulse?: boolean;
   onView?: () => void;
   prompt?: LockPrompt;
+  /** Date + clock, from receiptMoment() of the receipt this tap opens. */
+  moment?: ReceiptMoment;
 }) {
   const view = onView ? (
     <button
@@ -195,8 +244,8 @@ export function ClipLockScreen({
       <Wallpaper />
       <StatusBar time="" />
       <div className={ip.clock} aria-hidden="true">
-        <div className={ip.date}>Tue Sep 22</div>
-        <div className={ip.time}>7:12</div>
+        <div className={ip.date}>{moment.date}</div>
+        <div className={ip.time}>{moment.time}</div>
       </div>
 
       {prompt ? (
@@ -298,10 +347,17 @@ export function IslandLockGlyph() {
   );
 }
 
-export function ClipReading({ label = "Reading your receipt" }: { label?: string }) {
+export function ClipReading({
+  label = "Reading your receipt",
+  time = FALLBACK_MOMENT.time,
+}: {
+  label?: string;
+  /** Status-bar clock — pass receiptMoment(...).time so it matches the lock screen. */
+  time?: string;
+}) {
   return (
     <div className={s.reading}>
-      <StatusBar time="7:12" />
+      <StatusBar time={time} />
       <PapeXMark className={s.readingMark} />
       <div className={s.readingLabel}>{label}</div>
       <div className={s.readingTrack} aria-hidden="true">
