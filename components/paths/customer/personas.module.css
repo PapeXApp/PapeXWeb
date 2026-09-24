@@ -1,0 +1,544 @@
+/* ==========================================================================
+ * 03 Personas — the one-question-at-a-time quiz (2026-09-23, Web 2.1 T7).
+ *
+ * The page's FIRST navy beat. Ink rule (components/paths/shared/flow.module.css):
+ * anything that sits on the ground takes --flow-fg / --flow-fg-2 so it
+ * crossfades with the ground; surfaces that belong to the ground (answer
+ * cards, result card, progress track) are MIXED from --flow-fg, so they
+ * crossfade too and can never end up navy-on-navy mid-swap. The only fixed
+ * colours are the elevated orange fills (picked answer, CTA, tag) and the
+ * navy text on them — orange #EB7100 vs navy #00121D is 6.2:1.
+ *
+ * --flow-fg-3 is NOT used for text here: on navy it composites to ~4.4:1,
+ * below AA for body-size text. Hints and sub-lines use --flow-fg-2 (~7.9:1).
+ *
+ * Motion is transform + opacity only; prefers-reduced-motion removes all of it
+ * (bottom of file) and the flow — pick, beat, advance — stays identical.
+ * ========================================================================== */
+
+.section {
+  /* The same three internal gaps /business uses (business.module.css
+     `.screen`), so this section breathes like the rest of the redesign. */
+  --gap-title: clamp(20px, 2.4vw, 36px);
+  --gap-body: clamp(28px, 3.2vw, 48px);
+  --gap-list: clamp(12px, 1.4vw, 16px);
+
+  /* Ground-derived surfaces. The rgba lines are the navy values, for any
+     browser without color-mix(). */
+  --q-surface: rgba(245, 245, 245, 0.06);
+  --q-surface: color-mix(in srgb, var(--flow-fg) 6%, transparent);
+  --q-surface-hover: rgba(245, 245, 245, 0.1);
+  --q-surface-hover: color-mix(in srgb, var(--flow-fg) 10%, transparent);
+  --q-edge: rgba(245, 245, 245, 0.36);
+  --q-edge: color-mix(in srgb, var(--flow-fg) 36%, transparent);
+  --q-track: rgba(245, 245, 245, 0.18);
+  --q-track: color-mix(in srgb, var(--flow-fg) 18%, transparent);
+
+  padding: var(--section-pad-y) var(--section-pad-x);
+}
+
+/* Desktop: the section owns one screen and centres in it, like /business's
+   `.screen`. Below 821px it stacks and scrolls (same breakpoint). */
+@media (min-width: 821px) {
+  .section {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 100svh;
+  }
+}
+
+.inner {
+  width: 100%;
+  max-width: var(--section-max);
+  margin: 0 auto;
+}
+
+.intro {
+  margin: var(--gap-title) auto 0;
+  max-width: 46ch;
+  font-size: var(--fs-lead);
+  line-height: 1.55;
+  color: var(--flow-fg-2);
+}
+
+.quiz {
+  max-width: 780px;
+  margin: var(--gap-body) auto 0;
+}
+
+/* --- Progress ------------------------------------------------------------- */
+
+.progress {
+  margin-bottom: var(--gap-body);
+}
+.progressRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+}
+.progressText {
+  font-family: var(--font-label);
+  font-size: var(--fs-eyebrow);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--flow-fg);
+  font-variant-numeric: tabular-nums;
+}
+.steps {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.stepSeg {
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--q-track);
+  overflow: hidden;
+}
+/* The fill is its own layer scaled on X, so filling a step is a transform. */
+.stepSeg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--orange);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.45s var(--ease-out-expo), opacity 0.3s ease;
+}
+.stepCurrent::after {
+  transform: scaleX(0.4);
+  opacity: 0.8;
+}
+.stepDone::after {
+  transform: scaleX(1);
+  opacity: 1;
+}
+
+/* --- Back ----------------------------------------------------------------- */
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin-left: -12px;
+  padding: 0 14px 0 12px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--flow-fg);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, opacity 0.25s ease, transform 0.25s ease;
+}
+.back:hover {
+  background: var(--q-surface-hover);
+}
+.back:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 2px;
+}
+.backArrow {
+  display: inline-block;
+  transition: transform 0.25s var(--ease-out-expo);
+}
+.back:hover .backArrow {
+  transform: translateX(-3px);
+}
+/* Question 1: nothing to go back to. Kept in the layout so the progress
+   row never jumps when the button appears. */
+.backHidden {
+  opacity: 0;
+  transform: translateX(-6px);
+  pointer-events: none;
+}
+
+/* --- The question panel ---------------------------------------------------- */
+
+.stage {
+  position: relative;
+}
+@media (min-width: 821px) {
+  /* Tall enough for either the question or the result, so the centred
+     screen doesn't shift up and down between steps. */
+  .stage {
+    min-height: 420px;
+  }
+}
+
+.panel {
+  text-align: center;
+}
+.enterForward {
+  animation: quizEnterForward 0.5s var(--ease-out-expo) both;
+}
+.enterBack {
+  animation: quizEnterBack 0.5s var(--ease-out-expo) both;
+}
+@keyframes quizEnterForward {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes quizEnterBack {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.prompt {
+  max-width: 26ch;
+  margin: 0 auto;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(22px, 2.6vw, 32px);
+  line-height: 1.22;
+  color: var(--flow-fg);
+}
+/* Focus lands here programmatically after each step (so keyboard users don't
+   lose their place); it's a heading, not a control, so no ring. */
+.prompt:focus,
+.resultTitle:focus {
+  outline: none;
+}
+.hint {
+  margin: 10px auto 0;
+  font-family: var(--font-label);
+  font-size: var(--fs-eyebrow);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--flow-fg-2);
+}
+
+/* --- Answers --------------------------------------------------------------- */
+
+.options {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--gap-list);
+  margin-top: var(--gap-title);
+  text-align: left;
+}
+@media (min-width: 640px) {
+  .options {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 64px;
+  padding: 14px 16px;
+  border: 1.5px solid var(--q-edge);
+  border-radius: var(--r-16);
+  background: var(--q-surface);
+  color: var(--flow-fg);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease, opacity 0.3s ease,
+    transform 0.25s var(--ease-out-expo), box-shadow 0.25s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .option:hover {
+    border-color: var(--orange);
+    background: var(--q-surface-hover);
+    transform: translateY(-2px);
+  }
+}
+.option:active {
+  transform: scale(0.98);
+}
+.option:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 3px;
+}
+.optionLabel {
+  flex: 1;
+}
+.optionLetter {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border: 1.5px solid var(--q-edge);
+  border-radius: 10px;
+  font-family: var(--font-label);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--flow-fg);
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+/* The check: a circle that pops in on the picked card only. */
+.optionCheck {
+  position: relative;
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--navy);
+  opacity: 0;
+  transform: scale(0.4);
+  transition: opacity 0.2s ease, transform 0.35s var(--ease-out-expo);
+}
+.optionCheck::after {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 7px;
+  width: 10px;
+  height: 5px;
+  border-left: 2px solid var(--orange);
+  border-bottom: 2px solid var(--orange);
+  transform: rotate(-45deg);
+}
+
+/* Picked: an elevated orange card with its own navy text (6.2:1). */
+.optionSelected,
+.optionSelected:hover {
+  border-color: var(--orange);
+  background: var(--orange);
+  color: var(--navy);
+  box-shadow: 0 14px 34px rgba(235, 113, 0, 0.32);
+}
+.optionSelected .optionLetter {
+  border-color: var(--navy);
+  background: var(--navy);
+  color: var(--orange);
+}
+.optionSelected .optionCheck {
+  opacity: 1;
+  transform: none;
+}
+.optionsPending .optionSelected {
+  animation: quizPicked 0.42s var(--ease-out-expo) both;
+}
+@keyframes quizPicked {
+  0% {
+    transform: scale(0.97);
+  }
+  55% {
+    transform: scale(1.025);
+  }
+  100% {
+    transform: none;
+  }
+}
+/* During the beat the other answers step back so the pick is unmistakable. */
+.optionsPending .option:not(.optionSelected) {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* --- Result ------------------------------------------------------------------ */
+
+.resultPanel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.resultCard {
+  position: relative;
+  width: 100%;
+  max-width: 620px;
+  padding: clamp(28px, 2.8vw, 34px) clamp(22px, 3vw, 40px) clamp(22px, 2.4vw, 30px);
+  border: 2px solid var(--orange);
+  border-radius: var(--r-card);
+  background: var(--q-surface);
+  box-shadow: 0 28px 60px rgba(235, 113, 0, 0.18);
+  animation: quizLand 0.6s var(--ease-out-expo) both;
+}
+@keyframes quizLand {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.94);
+  }
+  65% {
+    opacity: 1;
+    transform: translateY(-3px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+.resultTag {
+  position: absolute;
+  top: -13px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 5px 13px;
+  border-radius: 999px;
+  background: var(--orange);
+  color: var(--navy);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.resultEyebrow {
+  font-family: var(--font-label);
+  font-size: var(--fs-eyebrow);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--orange);
+}
+.resultTitle {
+  margin: 12px auto 0;
+  max-width: 22ch;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(24px, 2.8vw, 34px);
+  line-height: 1.18;
+  color: var(--flow-fg);
+}
+.resultBody {
+  margin: 12px auto 0;
+  max-width: 48ch;
+  font-size: var(--fs-lead);
+  line-height: 1.55;
+  color: var(--flow-fg-2);
+}
+
+.resultActions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: clamp(20px, 2vw, 28px);
+}
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 0 32px;
+  border-radius: 999px;
+  background: var(--orange);
+  color: var(--navy);
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: var(--sh-cta);
+  transition: transform 0.35s var(--ease-out-expo), box-shadow 0.25s ease, background-color 0.2s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .cta:hover {
+    background: var(--orange-hover);
+    box-shadow: var(--sh-cta-hover);
+    transform: translateY(-2px);
+  }
+}
+.cta:active {
+  transform: scale(0.97);
+}
+.cta:focus-visible {
+  outline: 3px solid var(--flow-fg);
+  outline-offset: 3px;
+}
+.ctaSub {
+  font-size: 14px;
+  color: var(--flow-fg-2);
+}
+
+.retake {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin-top: 6px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--flow-fg);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--orange);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.retake:hover {
+  background: var(--q-surface-hover);
+}
+.retake:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 2px;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --- Reduced motion: same flow, no movement ------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  .enterForward,
+  .enterBack,
+  .resultCard,
+  .optionsPending .optionSelected {
+    animation: none;
+  }
+  .option,
+  .optionCheck,
+  .back,
+  .backArrow,
+  .stepSeg::after,
+  .cta,
+  .retake {
+    transition: none;
+  }
+  .option:hover,
+  .option:active,
+  .cta:hover,
+  .cta:active,
+  .back:hover .backArrow {
+    transform: none;
+  }
+  .optionCheck,
+  .backHidden {
+    transform: none;
+  }
+}
