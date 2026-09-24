@@ -51,6 +51,14 @@ const inputStyle = {
   color: "var(--ink)",
 }
 
+// Visible labels since Web 2.1 (they were sr-only, with the same words as
+// placeholders). A label that stays put reads better than a placeholder that
+// vanishes on the first keystroke, and it is what gives the full-screen form
+// its height instead of padding. Labels sit on the page ground, so they take
+// --flow-* ink; the inputs themselves are white elevated surfaces.
+const labelClass = "text-[14px] font-semibold leading-[1.2] tracking-[.01em]"
+const labelStyle = { color: "var(--flow-fg-2)" }
+
 function validate(fields: DemoFormState): Errors {
   const errors: Errors = {}
 
@@ -135,7 +143,7 @@ export function DemoForm() {
     <FlowSection
       id="demo"
       ground="light"
-      index="06"
+      index="05"
       /* A full screen since 2026-09-22 ("screens, not sections"): it measured
          454px at 1440x900, so the demo ask shared a viewport with the
          dashboard columns above it. `styles.screen` gives it >= 100svh with
@@ -145,10 +153,10 @@ export function DemoForm() {
     >
       <Reveal
         as="div"
-        className="mx-auto grid w-full max-w-[1000px] grid-cols-1 items-start gap-[clamp(30px,5vw,70px)] min-[821px]:grid-cols-2 min-[821px]:items-center"
+        className="mx-auto grid w-full max-w-[1100px] grid-cols-1 items-start gap-[clamp(30px,5vw,70px)] min-[821px]:grid-cols-2 min-[821px]:items-center"
       >
         <div>
-          <SectionLabel index="06">{demo.eyebrow}</SectionLabel>
+          <SectionLabel index="05">{demo.eyebrow}</SectionLabel>
           <h2
             className="text-[length:var(--fs-h1-merchant)] font-bold leading-[1.03] tracking-[-.02em]"
             style={{ fontFamily: "var(--font-display)" }}
@@ -180,14 +188,13 @@ export function DemoForm() {
               {status === "error" ? statusMessage : ""}
             </p>
 
-            <div className="grid gap-1.5">
-              <Label htmlFor="demo-fullName" className="sr-only">
+            <div className="grid gap-2">
+              <Label htmlFor="demo-fullName" className={labelClass} style={labelStyle}>
                 Your name
               </Label>
               <Input
                 id="demo-fullName"
                 name="fullName"
-                placeholder="Your name"
                 autoComplete="name"
                 value={fields.fullName}
                 onChange={handleChange}
@@ -208,14 +215,13 @@ export function DemoForm() {
               )}
             </div>
 
-            <div className="grid gap-1.5">
-              <Label htmlFor="demo-businessName" className="sr-only">
+            <div className="grid gap-2">
+              <Label htmlFor="demo-businessName" className={labelClass} style={labelStyle}>
                 Business name
               </Label>
               <Input
                 id="demo-businessName"
                 name="businessName"
-                placeholder="Business name"
                 autoComplete="organization"
                 value={fields.businessName}
                 onChange={handleChange}
@@ -236,15 +242,14 @@ export function DemoForm() {
               )}
             </div>
 
-            <div className="grid gap-1.5">
-              <Label htmlFor="demo-email" className="sr-only">
+            <div className="grid gap-2">
+              <Label htmlFor="demo-email" className={labelClass} style={labelStyle}>
                 Email
               </Label>
               <Input
                 id="demo-email"
                 name="email"
                 type="email"
-                placeholder="Email"
                 autoComplete="email"
                 value={fields.email}
                 onChange={handleChange}
@@ -266,15 +271,14 @@ export function DemoForm() {
             </div>
 
             <div className="grid grid-cols-1 gap-[var(--gap-list)] min-[481px]:grid-cols-2 min-[821px]:grid-cols-1">
-              <div className="grid gap-1.5">
-                <Label htmlFor="demo-phone" className="sr-only">
+              <div className="grid gap-2">
+                <Label htmlFor="demo-phone" className={labelClass} style={labelStyle}>
                   Phone
                 </Label>
                 <Input
                   id="demo-phone"
                   name="phone"
                   type="tel"
-                  placeholder="Phone"
                   autoComplete="tel"
                   value={fields.phone}
                   onChange={handleChange}
@@ -293,14 +297,13 @@ export function DemoForm() {
                   </p>
                 )}
               </div>
-              <div className="grid gap-1.5">
-                <Label htmlFor="demo-posSystem" className="sr-only">
+              <div className="grid gap-2">
+                <Label htmlFor="demo-posSystem" className={labelClass} style={labelStyle}>
                   POS system
                 </Label>
                 <Input
                   id="demo-posSystem"
                   name="posSystem"
-                  placeholder="POS system"
                   value={fields.posSystem}
                   onChange={handleChange}
                   onBlur={handleBlur}

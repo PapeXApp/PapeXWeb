@@ -5,7 +5,8 @@ import { useEffect, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
 import { PlaneMark } from "@/components/brand/plane-mark"
 import { useSafeReducedMotion } from "@/components/motion/useSafeReducedMotion"
-import { whyMerchants } from "./content"
+import { dashboard, whyMerchants } from "./content"
+import { DashboardColumns, DashboardCopy, DashboardStatic } from "./DashboardPreview"
 import styles from "./business.module.css"
 
 /**
@@ -14,13 +15,23 @@ import styles from "./business.module.css"
  *
  * The section is a tall runway with a `position: sticky` 100vh stage (same
  * mechanism as components/motion/PinnedSequence.tsx). One scroll progress
- * value `p` drives the whole scene:
+ * value `p` drives the whole scene, in three acts (budgets in ACT*_VH below):
  *
+ * Act 1, on its own 0..1 progress `q`:
  *   0.00 – 0.46  the slip feeds DOWN out of a centred printer
  *   0.46 – 0.56  printer + slip shift LEFT, the bin slides in from the right
  *   0.56 – 0.80  the slip FOLDS: corner flaps, then edge flaps, then in half
  *   0.80 – 0.90  the wings open: the paper's own outline becomes the mark
  *   0.90 – 1.00  the plane flies into the bin (lid pops at 0.97)
+ * Act 2: printer + bin merge into one slab, squash to a line, and the line
+ *   opens as a laptop showing the merchant dashboard.
+ * Act 3 (Web 2.1 — this used to be a separate section 05 three screens
+ *   further down, showing the same screenshot a second time): the laptop
+ *   docks into an empty slot of the dashboard layout and the dashboard's copy
+ *   and three feature columns come in around it (DashboardPreview.tsx). If
+ *   that layout is taller than the pinned screen (phones), the last stretch of
+ *   the act scrolls it up inside the pin, laptop included, so the release
+ *   hands the visitor a finished frame.
  *
  * The fold is real: three flap panels turn over their crease lines in 3D
  * (`rotate3d` about the crease, under a `perspective` on .frPaper), carrying a
@@ -47,20 +58,37 @@ import styles from "./business.module.css"
  * it keeps that finished frame, with no runway at all.
  */
 
-type Phase = "idle" | "print" | "shift" | "fold" | "plane" | "fly" | "done" | "merge" | "dash"
-
-/** Extra scroll runway, in viewport heights, on top of the pinned viewport. */
-const RUNWAY_VH = 430
+type Phase = "idle" | "print" | "shift" | "fold" | "plane" | "fly" | "done" | "merge" | "dash" | "info"
 
 /**
- * Act 1 (print -> fold -> fly) now occupies the first 0.77 of the runway and
- * act 2 (the merge into a laptop) the rest. Rather than re-tune seven
- * constants, `draw` computes `q = p / ACT1_END` and act 1 reads `q`: every
- * boundary below still means exactly what it meant, and 0.77 * 430vh is the
- * same scroll distance act 1 had at 330vh.
+ * Scroll budget per act, in viewport heights of actual scrolling (the runway
+ * is the pinned viewport plus these). Acts 1 and 2 keep exactly the distance
+ * they had at the old 430vh runway (0.77 and 0.23 of its 330vh of scroll).
+ * Act 3 is new, but it replaces the old dashboard section (~1300px, ~145vh at
+ * 1440x900), so the page is ~85vh SHORTER than before the merge.
  */
-const ACT1_END = 0.77
-/** Act 2, as fractions of the stretch after ACT1_END. */
+const ACT1_VH = 254
+const ACT2_VH = 76
+const ACT3_VH = 60
+const SCROLL_VH = ACT1_VH + ACT2_VH + ACT3_VH
+/** Total runway height: the pinned viewport plus the scroll budget. */
+const RUNWAY_VH = 100 + SCROLL_VH
+
+/**
+ * Rather than re-tune seven act-1 constants, `draw` computes
+ * `q = p / ACT1_END` and act 1 reads `q`: every boundary below still means
+ * exactly what it meant. Act 2 reads `m` over ACT1_END..ACT2_END, act 3 reads
+ * `i` over ACT2_END..1.
+ */
+const ACT1_END = ACT1_VH / SCROLL_VH
+const ACT2_END = (ACT1_VH + ACT2_VH) / SCROLL_VH
+/** Act 3, as fractions of its own stretch. */
+const I_DOCK = 0.4 // the laptop has reached its slot
+// the copy waits until the laptop has mostly cleared the right-hand column
+const I_COPY = [0.24, 0.5] // heading + lead fade/rise in
+const I_COLS = [0.36, 0.62] // the three feature columns follow
+const I_SCROLL = [0.58, 0.92] // overflow scroll (phones only), then a hold
+/** Act 2, as fractions of its own stretch (ACT1_END..ACT2_END). */
 const M_CONVERGE = 0.35
 const M_MERGE = 0.5
 const M_LINE = 0.6
@@ -311,6 +339,15 @@ export function FoldReceipt() {
   const deckRef = useRef<HTMLDivElement>(null)
   const lidRef = useRef<HTMLDivElement>(null)
   const printerRef = useRef<HTMLDivElement>(null)
+  const groundRef = useRef<HTMLSpanElement>(null)
+  // act 3: the pin, the stage that docks, and the dashboard layout around it
+  const pinRef = useRef<HTMLDivElement>(null)
+  const stageRef = useRef<HTMLDivElement>(null)
+  const infoRef = useRef<HTMLDivElement>(null)
+  const infoInnerRef = useRef<HTMLDivElement>(null)
+  const slotRef = useRef<HTMLDivElement>(null)
+  const copyRef = useRef<HTMLDivElement>(null)
+  const colsRef = useRef<HTMLDivElement>(null)
   const creaseRefs = useRef<(SVGLineElement | null)[]>([])
   const shadeRefs = useRef<(SVGPolygonElement | null)[]>([])
   // Three flap panels, never more: [0] and [1] are the left/right flaps and are
@@ -327,6 +364,12 @@ export function FoldReceipt() {
   const phaseRef = useRef<Phase>("idle")
   /** The slip's natural height in px — what "fully fed" means, measured. */
   const sheetH = useRef(0)
+  /**
+   * Act 3's docking move, measured (never guessed): the stage transform that
+   * lands the open laptop exactly on the layout's empty slot, and how far the
+   * layout overflows the pinned screen. Re-measured on every resize.
+   */
+  const dock = useRef({ tx: 0, ty: 0, s: 1, overflow: 0, shift: 0 })
 
   // `useSafeReducedMotion` answers `false` until hydration, so this can flip
   // back off one tick in — the cleanup below puts the resting frame back.
@@ -348,9 +391,45 @@ export function FoldReceipt() {
     const planeEl = planeRef.current
     const lapEl = lapRef.current
     const printerEl = printerRef.current
+    const stageEl = stageRef.current
+    const innerEl = infoInnerRef.current
+    const groundEl = groundRef.current
 
     const measure = () => {
       sheetH.current = sheetRef.current?.offsetHeight ?? 0
+
+      // --- act 3 geometry ------------------------------------------------
+      // The open laptop's box in the stage's own (untransformed) px, read
+      // from the lid's layout box (offset* ignore its rotateX): the lid, plus
+      // the 3cqw deck under it (see the ACT 2 block in the CSS). Its position
+      // differs per scene shape (--lap-base), so it is measured, not assumed.
+      const pin = pinRef.current
+      const scene = sceneRef.current
+      const lid = lidRef.current
+      const slot = slotRef.current
+      const info = infoRef.current
+      if (!pin || !stageEl || !scene || !lid || !slot || !info || !innerEl) return
+      const cq = stageEl.clientWidth / 100
+      const lw = lid.offsetWidth
+      const lh = lid.offsetHeight + 3 * cq
+      const lx = scene.offsetLeft + lid.offsetLeft
+      const ly = scene.offsetTop + lid.offsetTop
+      // The slot is read with getBoundingClientRect, which includes the
+      // layout's own overflow shift — add it back to get its resting spot.
+      const pr = pin.getBoundingClientRect()
+      const sr = slot.getBoundingClientRect()
+      const d = dock.current
+      const sx = sr.left - pr.left
+      const sy = sr.top - pr.top + d.shift
+      const s = Math.min(sr.width / lw, sr.height / lh) || 1
+      // The stage scales about its own top-left (transform-origin 0 0). Its
+      // own offset in the pin is subtracted per frame in `draw` instead: the
+      // hint line under it can wrap as its text changes, which moves the
+      // stage without resizing anything an observer would see.
+      d.s = s
+      d.tx = sx + sr.width / 2 - s * (lx + lw / 2)
+      d.ty = sy + sr.height / 2 - s * (ly + lh / 2)
+      d.overflow = Math.max(0, innerEl.offsetHeight - info.clientHeight)
     }
 
     const setPhaseOnce = (next: Phase) => {
@@ -590,7 +669,7 @@ export function FoldReceipt() {
       // into a navy slab, squash the slab to a line, then hinge the lid up to
       // reveal the dashboard. `--rig-t` simply runs back to 0, which is the
       // same journey the printer made on the way out, in reverse.
-      const m = seg(p, ACT1_END, 1)
+      const m = seg(p, ACT1_END, ACT2_END)
       const c = seg(m, 0, M_CONVERGE)
       const conv = ease(c)
       const mrg = ease(seg(m, M_CONVERGE, M_MERGE))
@@ -600,12 +679,14 @@ export function FoldReceipt() {
       // Two objects gliding together, not one falling: the printer takes the
       // shallow end of the arc (x eased, y quadratic so it leaves slowly), the
       // bin the other (y eased out), and both shrink to 0.6 on the way in.
-      set(printerEl, "--pr-x", `${(-8 * conv).toFixed(2)}cqw`, "prX")
-      set(printerEl, "--pr-y", `${(52 * c * c).toFixed(2)}cqw`, "prY")
+      // Progress only: how far each journey goes is per scene shape, in CSS
+      // (--pr-dx/dy, --bin-dx/dy on .frScene).
+      set(printerEl, "--pr-k", conv.toFixed(4), "prK")
+      set(printerEl, "--pr-q", (c * c).toFixed(4), "prQ")
       set(printerEl, "--pr-s", (1 - 0.4 * conv).toFixed(4), "prS")
       set(printerEl, "opacity", (1 - mrg).toFixed(3), "prO")
-      set(binEl, "--bin-x", `${(-38 * conv).toFixed(2)}cqw`, "binX")
-      set(binEl, "--bin-y", `${(-10.4 * (1 - (1 - c) * (1 - c))).toFixed(2)}cqw`, "binY")
+      set(binEl, "--bin-k", conv.toFixed(4), "binK")
+      set(binEl, "--bin-q", (1 - (1 - c) * (1 - c)).toFixed(4), "binQ")
       set(binEl, "--bin-s", (1 - 0.4 * conv).toFixed(4), "binS")
       set(binEl, "--bin-o", (1 - mrg).toFixed(3), "binO")
       // NOTHING of the laptop paints before the merge. A lid at rotateX(-90)
@@ -627,8 +708,44 @@ export function FoldReceipt() {
       set(deckRef.current, "--deck-h", `${(0.8 + 2.2 * open).toFixed(2)}cqw`, "deckH")
       set(deckRef.current, "--deck-o", line.toFixed(3), "deckO")
 
+      // --- 7. ACT 3: the laptop docks into the dashboard layout --------------
+      // One transform on the stage (origin 0 0) carries the whole laptop from
+      // where it opened to the slot the layout left for it: every point moves
+      // on a straight line, and the scale lerps with it. The copy and columns
+      // rise in beside it. On a phone the layout is taller than the pin, so
+      // its last stretch scrolls it up — the laptop rides along (`shift`).
+      const ai = seg(p, ACT2_END, 1)
+      const dk = ease(seg(ai, 0, I_DOCK))
+      const dg = dock.current
+      // offsetLeft/Top ignore transforms, so these are the stage's resting spot
+      const tx = dg.tx - (stageEl?.offsetLeft ?? 0)
+      const ty = dg.ty - (stageEl?.offsetTop ?? 0)
+      const shiftPx = ease(seg(ai, I_SCROLL[0], I_SCROLL[1])) * dg.overflow
+      dg.shift = shiftPx
+      set(
+        stageEl,
+        "transform",
+        dk > 0
+          ? `translate(${(tx * dk).toFixed(1)}px, ${(ty * dk - shiftPx).toFixed(1)}px) scale(${(1 + (dg.s - 1) * dk).toFixed(4)})`
+          : "none",
+        "stageT",
+      )
+      set(innerEl, "transform", `translateY(${(-shiftPx).toFixed(1)}px)`, "infoT")
+      // The desk the printer and bin stood on is the scene's, and the scene
+      // is clipped: carried along by the dock it reads as a grey box under
+      // the columns. The laptop sits on the page from here on.
+      set(groundRef.current, "opacity", (1 - dk).toFixed(3), "groundO")
+      const copyIn = ease(seg(ai, I_COPY[0], I_COPY[1]))
+      const colsIn = ease(seg(ai, I_COLS[0], I_COLS[1]))
+      set(copyRef.current, "opacity", copyIn.toFixed(3), "copyO")
+      set(copyRef.current, "transform", `translateY(${(28 * (1 - copyIn)).toFixed(1)}px)`, "copyT")
+      set(colsRef.current, "opacity", colsIn.toFixed(3), "colsO")
+      set(colsRef.current, "transform", `translateY(${(28 * (1 - colsIn)).toFixed(1)}px)`, "colsT")
+
       setPhaseOnce(
-        m >= M_LINE
+        ai > 0
+          ? "info"
+          : m >= M_LINE
           ? "dash"
           : m > 0
           ? "merge"
@@ -672,6 +789,9 @@ export function FoldReceipt() {
     const ro = new ResizeObserver(onResize)
     if (sceneRef.current) ro.observe(sceneRef.current)
     if (sheetRef.current) ro.observe(sheetRef.current)
+    // act 3's slot and layout move with the viewport's height, not just width
+    if (infoInnerRef.current) ro.observe(infoInnerRef.current)
+    if (pinRef.current) ro.observe(pinRef.current)
     return () => {
       window.removeEventListener("scroll", onScroll)
       window.removeEventListener("resize", onResize)
@@ -682,6 +802,8 @@ export function FoldReceipt() {
       // clear them one by one, or the visitor is left with a slip of height 0
       // and a plane sitting on top of it. Properties, not removeAttribute:
       // the plane's `opacity: 0` comes from JSX and must survive.
+      stageEl?.style.removeProperty("transform")
+      groundEl?.style.removeProperty("opacity")
       paperEl?.style.removeProperty("--feed-h")
       shadowEl?.style.removeProperty("opacity")
       rig?.style.removeProperty("--rig-t")
@@ -703,10 +825,10 @@ export function FoldReceipt() {
       className={styles.frRunway}
       style={pinned ? { height: `${RUNWAY_VH}vh` } : undefined}
     >
-      <div className={cn(styles.frPin, pinned && styles.frPinSticky)}>
-        <div className={styles.frStage}>
+      <div className={cn(styles.frPin, pinned && styles.frPinSticky)} ref={pinRef}>
+        <div className={styles.frStage} ref={stageRef}>
           <div className={styles.frScene} ref={sceneRef}>
-            <span aria-hidden="true" className={styles.frGround} />
+            <span aria-hidden="true" className={styles.frGround} ref={groundRef} />
 
             {/* printer + slip travel together: the rig is what shifts left. */}
             <div className={styles.frRig} ref={rigRef}>
@@ -833,10 +955,10 @@ export function FoldReceipt() {
               <div className={styles.frLid} ref={lidRef}>
                 <Image
                   src="/product/merchant-dashboard.png"
-                  alt="The PapeX merchant dashboard"
+                  alt={dashboard.dashboardAlt}
                   width={2880}
                   height={1800}
-                  sizes="70vw"
+                  sizes="(max-width: 820px) 100vw, 70vw"
                   className={styles.frScreen}
                 />
               </div>
@@ -861,7 +983,33 @@ export function FoldReceipt() {
             </p>
           )}
         </div>
+
+        {/* ACT 3's layout. Client-only (like the flaps), so the document holds
+            one copy of the dashboard copy at a time: this one when pinned,
+            DashboardStatic below otherwise. The slot is empty on purpose —
+            the laptop in the stage above flies into it. Opacity-only hiding,
+            so the copy stays in the accessibility tree before it fades in. */}
+        {pinned && (
+          <div className={styles.frInfo} ref={infoRef}>
+            <div className={styles.frInfoInner} ref={infoInnerRef}>
+              <div className={styles.frInfoGrid}>
+                <div aria-hidden="true" className={styles.frInfoSlot} ref={slotRef} />
+                <DashboardCopy className={styles.frInfoCopy} ref={copyRef} style={{ opacity: 0 }} />
+                <DashboardColumns
+                  className={cn(styles.dashCols, styles.frInfoCols)}
+                  ref={colsRef}
+                  style={{ opacity: 0 }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Reduced motion, no JS, and the server's HTML: the scene rests on its
+          finished slip-and-bin frame and never shows the laptop, so the
+          dashboard comes as a plain block with the screenshot as an image. */}
+      {!pinned && <DashboardStatic />}
     </div>
   )
 }

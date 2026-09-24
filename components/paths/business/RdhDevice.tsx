@@ -22,69 +22,80 @@ import styles from "./business.module.css"
 // bullets (--fs-lead) all grew. The spec strip under the bullets is NOT new
 // copy: "USB", "serial" and "Ethernet" are the ports named verbatim in the
 // first bullet, set as a row so the port story is readable at a glance.
+// Web 2.1: the heading moved above the device/bullets row (see below), so the
+// row can take the device at full column width.
 export function RdhDevice() {
   return (
     <FlowSection ground="navy" index="04" className={`${styles.screen} px-[clamp(20px,5vw,56px)] py-[var(--section-pad-y)]`}>
-      {/* The spec's fixed 1fr/1fr grid needs an explicit single-column
-          collapse below the 820px breakpoint. */}
-      <div className="mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-[clamp(30px,5vw,70px)] max-[820px]:grid-cols-1 min-[821px]:grid-cols-[58fr_42fr]">
-        <Reveal variant="mask" className="flex items-center justify-center py-[clamp(12px,2vw,24px)]">
-          <Image
-            src="/product/rdh-device.svg"
-            alt={rdhDevice.deviceAlt}
-            width={700}
-            height={570}
-            className="h-auto w-full max-w-[700px]"
-            style={{ filter: "drop-shadow(0 26px 44px rgba(0,0,0,.45))" }}
-          />
-        </Reveal>
-
+      <div className="mx-auto w-full max-w-[1200px]">
+        {/* The heading spans the screen above the device/bullets row (Web
+            2.1): as the right column's first line it capped the whole row at
+            the device's height and left the screen ~35% empty. */}
         <Reveal as="div">
           <SectionLabel index="04">{rdhDevice.eyebrow}</SectionLabel>
           <h2
-            className="text-[length:var(--fs-h2)] font-bold leading-[1.04] tracking-[-.02em]"
+            className="max-w-[24ch] text-[length:var(--fs-h2)] font-bold leading-[1.04] tracking-[-.02em]"
             style={{ fontFamily: "var(--font-display)" }}
           >
             {rdhDevice.heading}
           </h2>
-          <div className="mt-[var(--gap-body)] grid gap-[var(--gap-list)]">
-            {rdhDevice.points.map((point) => (
-              <div key={point} className="flex items-start gap-3.5">
+        </Reveal>
+
+        <div className="mt-[var(--gap-body)] grid grid-cols-1 items-center gap-[clamp(30px,5vw,70px)] min-[821px]:grid-cols-[56fr_44fr]">
+          <Reveal variant="mask" className="flex items-center justify-center">
+            <Image
+              src="/product/rdh-device.svg"
+              alt={rdhDevice.deviceAlt}
+              width={700}
+              height={570}
+              // Width-led, but never so tall that heading + device overflow
+              // a short desktop screen (~300px is the label, heading, gap and
+              // the section's padding).
+              className="h-auto w-full max-w-[700px] object-contain min-[821px]:max-h-[calc(100svh-300px)]"
+              style={{ filter: "drop-shadow(0 26px 44px rgba(0,0,0,.45))" }}
+            />
+          </Reveal>
+
+          <Reveal as="div">
+            <div className="grid gap-[var(--gap-list)]">
+              {rdhDevice.points.map((point) => (
+                <div key={point} className="flex items-start gap-3.5">
+                  <span aria-hidden="true" className="text-[22px] font-bold leading-[1.35]" style={{ color: "var(--orange)" }}>
+                    →
+                  </span>
+                  <span className="text-[length:var(--fs-lead)] leading-[1.5]" style={{ color: "var(--flow-fg-2)" }}>
+                    {point}
+                  </span>
+                </div>
+              ))}
+              <div className="flex items-start gap-3.5">
                 <span aria-hidden="true" className="text-[22px] font-bold leading-[1.35]" style={{ color: "var(--orange)" }}>
                   →
                 </span>
                 <span className="text-[length:var(--fs-lead)] leading-[1.5]" style={{ color: "var(--flow-fg-2)" }}>
-                  {point}
+                  {rdhDevice.complianceText}{" "}
+                  <Link href="/pci" className="cursor-pointer" style={{ color: "var(--orange)" }}>
+                    {rdhDevice.complianceLinkLabel}
+                  </Link>
+                  .
                 </span>
               </div>
-            ))}
-            <div className="flex items-start gap-3.5">
-              <span aria-hidden="true" className="text-[22px] font-bold leading-[1.35]" style={{ color: "var(--orange)" }}>
-                →
-              </span>
-              <span className="text-[length:var(--fs-lead)] leading-[1.5]" style={{ color: "var(--flow-fg-2)" }}>
-                {rdhDevice.complianceText}{" "}
-                <Link href="/pci" className="cursor-pointer" style={{ color: "var(--orange)" }}>
-                  {rdhDevice.complianceLinkLabel}
-                </Link>
-                .
-              </span>
             </div>
-          </div>
 
-          {/* Spec strip — the ports already named in the first bullet, set as
-              a scannable row. No new claim, no new copy in content.ts. */}
-          <div
-            className="mt-[var(--gap-body)] flex flex-wrap items-center gap-x-4 gap-y-2 border-t pt-[var(--gap-list)] text-[13px] font-semibold uppercase tracking-[.16em]"
-            style={{ borderColor: "var(--flow-hair)", color: "var(--flow-fg-3)", fontFamily: "var(--font-label)" }}
-          >
-            <span>USB</span>
-            <span aria-hidden="true" style={{ color: "var(--orange)" }}>·</span>
-            <span>Serial</span>
-            <span aria-hidden="true" style={{ color: "var(--orange)" }}>·</span>
-            <span>Ethernet</span>
-          </div>
-        </Reveal>
+            {/* Spec strip — the ports already named in the first bullet, set as
+                a scannable row. No new claim, no new copy in content.ts. */}
+            <div
+              className="mt-[var(--gap-body)] flex flex-wrap items-center gap-x-4 gap-y-2 border-t pt-[var(--gap-list)] text-[13px] font-semibold uppercase tracking-[.16em]"
+              style={{ borderColor: "var(--flow-hair)", color: "var(--flow-fg-3)", fontFamily: "var(--font-label)" }}
+            >
+              <span>USB</span>
+              <span aria-hidden="true" style={{ color: "var(--orange)" }}>·</span>
+              <span>Serial</span>
+              <span aria-hidden="true" style={{ color: "var(--orange)" }}>·</span>
+              <span>Ethernet</span>
+            </div>
+          </Reveal>
+        </div>
       </div>
     </FlowSection>
   )

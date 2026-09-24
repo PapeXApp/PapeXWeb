@@ -11,8 +11,8 @@
 // specified (README "Screen 3: Business / Merchant Path", 3.1-3.7) has no
 // numeral stat callouts, press/merchant logo strips, or testimonial slots —
 // so there is nothing of that kind to mark here. The one illustrative
-// UI element in this path is the "Coming soon" merchant dashboard (3.6),
-// which is explicitly labelled as such below and in DashboardPreview.tsx.
+// UI element in this path used to be a "Coming soon" dashboard placeholder;
+// the dashboard is now a real screenshot, so there is nothing to mark.
 
 export const hero = {
   eyebrow: "For business",
@@ -110,20 +110,14 @@ export const rdhDevice = {
 } as const
 
 export const dashboard = {
-  // `pill`/`emailPlaceholder`/`ctaLabel`/`placeholderLabel` are kept even
-  // though DashboardPreview.tsx no longer renders them (the "Coming soon"
-  // pill and notify form are gone per the prototype delta) — they still back
-  // DashboardNotifyForm.tsx, which stays in the tree unused rather than
-  // deleted, matching this path's additive-only rule.
-  pill: "Coming soon",
+  // No longer its own section (Web 2.1): this copy is the final act of the
+  // receipt scene in 02 (FoldReceipt.tsx / DashboardPreview.tsx). The unused
+  // "Coming soon" pill + notify-form strings went with DashboardNotifyForm.
   eyebrow: "Included, free",
   heading: "A dashboard for your digital receipts.",
   lead: "Every receipt the RDH sends is searchable the moment it lands. See what's selling, when you're busy, and how many customers are taking the digital copy.",
   dashboardAlt:
     "The PapeX merchant dashboard, showing transaction count, gross, average ticket and tap rate, with charts of busiest hours and days and a ranked list of top items.",
-  placeholderLabel: "[ merchant dashboard mockup ]",
-  emailPlaceholder: "Work email",
-  ctaLabel: "Notify me",
   columns: [
     {
       title: "Every receipt, searchable",
