@@ -1368,7 +1368,9 @@
 }
 
 /* ==========================================================================
- * FEATURE SCREENS — the two "Once it's yours" app shots.
+ * FEATURE SCREENS — the four "Once it's yours" app shots (Web 2.1: Find,
+ * Add, Share, Deals; the iOS share-sheet shot and its .wpSheet rules were
+ * retired with the old two-row layout).
  *
  * These two cells used to be literal TODO boxes: a 45-degree stripe pattern
  * with "[ app screen: receipt list + search ]" set in Courier. They were left
@@ -1428,135 +1430,332 @@
   transform: translateY(4%);
 }
 
-/* --- iOS share sheet ------------------------------------------------------ */
-.wpDim {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 12;
+/* The Add shot shows the BOTTOM of the device (the open FAB lives there), so
+   it is the one cell cropped at its TOP edge instead: the device aligns to
+   the cell's bottom, with the same small air gap mirrored. */
+.featShotCropTop {
+  align-items: flex-end;
 }
-.wpSheet {
-  position: absolute;
-  left: calc(6 * var(--wp-u));
-  right: calc(6 * var(--wp-u));
-  /* A real iOS sheet is flush to the bottom of the DEVICE. In a cell that crops
-     the device (see .featShotPhone) that bottom is off-frame, so a flush sheet
-     loses its action list. --wp-sheet-lift raises it to the crop line instead:
-     the viewer never sees the device bottom, so a sheet flush to the visible
-     edge still reads exactly right. 0 everywhere the device isn't cropped. */
-  bottom: calc(6 * var(--wp-u) + var(--wp-sheet-lift, 0px));
-  z-index: 13;
-  border-radius: calc(26 * var(--wp-u));
-  padding: calc(10 * var(--wp-u)) 0 calc(10 * var(--wp-u));
-  /* iOS sheets are a translucent material over the dimmed screen, not a solid
-     panel — the blur is what makes it read as iOS rather than a modal div. */
-  background: rgba(46, 48, 54, 0.82);
-  backdrop-filter: blur(26px) saturate(180%);
-  -webkit-backdrop-filter: blur(26px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.5);
-  display: flex;
-  flex-direction: column;
-  gap: calc(10 * var(--wp-u));
-}
-.wpSheetHead {
-  display: flex;
-  align-items: center;
-  gap: calc(10 * var(--wp-u));
-  padding: calc(4 * var(--wp-u)) calc(14 * var(--wp-u)) calc(10 * var(--wp-u));
-  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
-}
-.wpSheetThumb {
-  width: calc(38 * var(--wp-u));
-  height: calc(46 * var(--wp-u));
-  border-radius: calc(5 * var(--wp-u));
-  background: #f4f4f2;
-  flex: 0 0 auto;
-  position: relative;
-  overflow: hidden;
-}
-/* Three ruled lines so the thumbnail reads as a receipt, not a blank card. */
-.wpSheetThumb::after {
-  content: "";
-  position: absolute;
-  left: 18%;
-  right: 18%;
-  top: 26%;
-  height: calc(2 * var(--wp-u));
-  border-radius: 2px;
-  background: #b9bec4;
-  box-shadow: 0 calc(7 * var(--wp-u)) 0 #cfd3d8, 0 calc(14 * var(--wp-u)) 0 #cfd3d8;
-}
-.wpSheetTitle {
-  font-size: calc(15 * var(--wp-u));
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.95);
-}
-.wpSheetSub {
-  font-size: calc(12.5 * var(--wp-u));
-  color: rgba(255, 255, 255, 0.55);
-  margin-top: calc(2 * var(--wp-u));
-}
-.wpSheetClose {
-  margin-left: auto;
-  width: calc(26 * var(--wp-u));
-  height: calc(26 * var(--wp-u));
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(13 * var(--wp-u));
-  flex: 0 0 auto;
-}
-.wpShareRow {
-  display: flex;
-  gap: calc(16 * var(--wp-u));
-  padding: 0 calc(14 * var(--wp-u)) calc(8 * var(--wp-u));
-  overflow: hidden;
-}
-.wpShareApp {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: calc(6 * var(--wp-u));
-  flex: 0 0 auto;
-  width: calc(56 * var(--wp-u));
-  text-align: center;
-}
-.wpShareIcon {
-  width: calc(54 * var(--wp-u));
-  height: calc(54 * var(--wp-u));
-  border-radius: 999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.wpShareLabel {
-  font-size: calc(11 * var(--wp-u));
-  color: rgba(255, 255, 255, 0.72);
-  line-height: 1.2;
-}
-.wpSheetActions {
-  margin: 0 calc(10 * var(--wp-u));
-  border-radius: calc(14 * var(--wp-u));
-  background: rgba(255, 255, 255, 0.07);
-  overflow: hidden;
-}
-.wpSheetAction {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: calc(11 * var(--wp-u)) calc(14 * var(--wp-u));
-  font-size: calc(14.5 * var(--wp-u));
-  color: rgba(255, 255, 255, 0.92);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-}
-.wpSheetAction:last-child { border-bottom: none; }
-.wpActionGlyph {
-  width: calc(18 * var(--wp-u));
-  height: calc(18 * var(--wp-u));
-  color: rgba(255, 255, 255, 0.72);
+.featShotCropTop .featShotPhone {
+  transform: translateY(-4%);
 }
 
+/* "Demo data" — every shot's rows are invented (copy gate rule 11). A quiet
+   mono caption in the cell's corner, off the phone. */
+.featDemo {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  z-index: 2;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-family: var(--font-label);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+  background: rgba(0, 18, 29, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  pointer-events: none;
+}
+.featShotCropTop .featDemo {
+  bottom: auto;
+  top: 10px;
+}
+/* Narrow cells: the phone nearly fills the width, so the caption shrinks to
+   stay clear of the bezel. */
+@container (max-width: 420px) {
+  .featDemo {
+    right: 6px;
+    padding: 2px 6px;
+    font-size: 8.5px;
+  }
+}
+
+/* --- Add: the OPEN FAB (PapeXV2 components/ui/FloatingFAB.tsx) -----------
+ * Drawn over the tab's closed FAB at the identical spot: 48pt, right 16,
+ * bottom 89. Open = the + rotated -135deg, i.e. an x. The three 44pt chips
+ * sit to its LEFT: right = 16 + 48 + 6, centred on the FAB's middle
+ * (bottom 89 + (48 - 44) / 2 = 91), 8pt apart, orange with a navy glyph. The
+ * app draws no backdrop behind them. Colours are literal: this sits beside
+ * the appui .screen, not inside it, so its --acc/--navy don't reach here. */
+.fabOpen {
+  position: absolute;
+  right: calc(16 * var(--u));
+  bottom: calc(89 * var(--u));
+  width: calc(48 * var(--u));
+  height: calc(48 * var(--u));
+  border-radius: 999px;
+  background: #eb7100;
+  border: calc(2 * var(--u)) solid rgba(255, 255, 255, 0.12);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  box-shadow: 0 calc(8 * var(--u)) calc(16 * var(--u)) rgba(0, 0, 0, 0.3);
+}
+.fabOpen::before,
+.fabOpen::after {
+  content: "";
+  position: absolute;
+  background: #00121d;
+  border-radius: calc(1.2 * var(--u));
+  transform: rotate(-135deg);
+}
+.fabOpen::before {
+  width: calc(16.4 * var(--u));
+  height: calc(2.4 * var(--u));
+}
+.fabOpen::after {
+  width: calc(2.4 * var(--u));
+  height: calc(16.4 * var(--u));
+}
+.fabChips {
+  position: absolute;
+  right: calc(70 * var(--u));
+  bottom: calc(91 * var(--u));
+  display: flex;
+  gap: calc(8 * var(--u));
+  z-index: 10;
+}
+.fabChip {
+  width: calc(44 * var(--u));
+  height: calc(44 * var(--u));
+  border-radius: 999px;
+  background: #eb7100;
+  color: #00121d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 calc(4 * var(--u)) calc(10 * var(--u)) rgba(0, 0, 0, 0.28);
+}
+.fabChipGlyph {
+  width: calc(22 * var(--u));
+  height: calc(22 * var(--u));
+}
+
+/* --- Deals: the Stores tab grid (PapeXV2 components/coupons/StoreTile.tsx) -
+ * 2 columns, 16pt edges, 12pt gutter, starting 16pt under the one-line
+ * header's search field (173). A tile: radius 18 (radii.lg), hairline
+ * colors.border, the card frost over the navy bed; min-height 236. */
+.stGrid {
+  position: absolute;
+  inset: 0;
+  padding: calc(173 * var(--u)) calc(16 * var(--u)) 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-content: start;
+  gap: calc(12 * var(--u));
+  overflow: hidden;
+}
+.stTile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(236 * var(--u));
+  border-radius: calc(18 * var(--u));
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  overflow: hidden;
+  background: linear-gradient(
+      128deg,
+      rgba(255, 255, 255, 0.062) 0%,
+      rgba(255, 255, 255, 0.026) 50%,
+      rgba(255, 255, 255, 0.062) 100%
+    ),
+    linear-gradient(rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.055)), #00121d;
+}
+/* The 72pt brand banner; the category eyebrow sits 11pt in, clear of the
+   heart (40pt right inset). */
+.stCover {
+  height: calc(72 * var(--u));
+  flex: 0 0 auto;
+  padding: calc(11 * var(--u)) calc(40 * var(--u)) 0 calc(12 * var(--u));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+/* typography.eyebrow: IBM Plex Mono Medium 11, 0.88 tracking, caps. The web
+   kit's mono is the site's label face. */
+.stEyebrow {
+  display: block;
+  font-family: var(--font-label);
+  font-size: calc(11 * var(--u));
+  line-height: calc(16 * var(--u));
+  font-weight: 500;
+  letter-spacing: calc(0.88 * var(--u));
+  text-transform: uppercase;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Body: 12pt insets, 36pt top (half the 56pt mark + 8). */
+.stBody {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  padding: calc(36 * var(--u)) calc(12 * var(--u)) calc(12 * var(--u));
+}
+.stName {
+  font-size: calc(16 * var(--u));
+  line-height: calc(20 * var(--u));
+  min-height: calc(40 * var(--u));
+  font-weight: 600;
+  letter-spacing: calc(-0.2 * var(--u));
+  color: rgba(255, 255, 255, 0.9);
+}
+.stMeta {
+  display: flex;
+  flex-direction: column;
+  margin: calc(2 * var(--u)) 0 calc(12 * var(--u));
+  min-height: calc(36 * var(--u));
+  font-size: calc(13 * var(--u));
+  line-height: calc(18 * var(--u));
+}
+.stOffer {
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+}
+.stSub {
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.64);
+}
+.stOpen {
+  color: #34c759;
+}
+.stFooter {
+  margin-top: auto;
+  padding-top: calc(8 * var(--u));
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+  display: flex;
+  align-items: center;
+  gap: calc(4 * var(--u));
+  font-size: calc(13 * var(--u));
+  line-height: calc(18 * var(--u));
+  font-weight: 500;
+  color: #eb7100;
+}
+.stFooterNone {
+  color: rgba(255, 255, 255, 0.45);
+}
+.stTag {
+  width: calc(13 * var(--u));
+  height: calc(13 * var(--u));
+  flex: 0 0 auto;
+}
+/* The store's app-icon mark straddling the banner's lower edge: 56pt with a
+   3pt navy "cut-out" ring, the icon's continuous-corner radius. */
+.stMark {
+  position: absolute;
+  top: calc(44 * var(--u));
+  left: calc(12 * var(--u));
+  width: calc(56 * var(--u));
+  height: calc(56 * var(--u));
+  padding: calc(3 * var(--u));
+  border-radius: calc(14.2 * var(--u));
+  background: #00121d;
+  box-sizing: border-box;
+}
+.stMarkInner {
+  width: 100%;
+  height: 100%;
+  border-radius: calc(11.2 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(24 * var(--u));
+  font-weight: 600;
+  color: #fff;
+}
+/* The favorite heart: a 32pt clear glass disc centred in a 44pt corner
+   target (6pt in), 18pt glyph — orange-filled when the store is a favorite. */
+.stHeart {
+  position: absolute;
+  top: calc(6 * var(--u));
+  right: calc(6 * var(--u));
+  width: calc(32 * var(--u));
+  height: calc(32 * var(--u));
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(10px) saturate(160%);
+  -webkit-backdrop-filter: blur(10px) saturate(160%);
+  box-shadow: inset 0 calc(1 * var(--u)) calc(1.5 * var(--u)) calc(-0.5 * var(--u)) rgba(255, 255, 255, 0.35);
+}
+.stHeartGlyph {
+  width: calc(18 * var(--u));
+  height: calc(18 * var(--u));
+}
+
+/* ==========================================================================
+ * FEATURES ROWS — Web 2.1: four rows, ordered by the quiz (personaStore.ts).
+ * ========================================================================== */
+
+/* "Picked for you, a Keeper" — only after the quiz. Space is held before it
+   so the rows never jump down when the label appears. */
+.featPicked {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-family: var(--font-label);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--flow-fg);
+  border: 1px solid rgba(235, 113, 0, 0.55);
+  background: rgba(235, 113, 0, 0.12);
+  transition: opacity 0.4s ease;
+}
+.featPicked::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--orange, #eb7100);
+}
+.featPickedHidden {
+  opacity: 0;
+  visibility: hidden;
+}
+/* The live features a row covers, as small tags under its line. */
+.featTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: var(--gap-title);
+  padding: 0;
+  list-style: none;
+}
+.featTag {
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--flow-fg-2);
+  border: 1px solid color-mix(in srgb, var(--flow-fg) 18%, transparent);
+}
+/* The benefit line swaps with the persona: a short fade, keyed in React. */
+.featLine {
+  animation: featLineIn 0.45s ease both;
+}
+@keyframes featLineIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .featLine {
+    animation: none;
+  }
+  .featPicked {
+    transition: none;
+  }
+}

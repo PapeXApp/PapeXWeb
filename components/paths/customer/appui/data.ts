@@ -16,7 +16,16 @@ import { receiptsListContent } from "../content";
  *
  * Logo colours are invented brand-ish hues behind a monogram — never a real
  * merchant mark (Nico's rule for the site).
+ *
+ * INVENTED PEOPLE AND GROUPS TOO (Web 2.1): no real person, group or merchant
+ * appears in a mockup. The one sharer is "Jordan Reyes" and the one group is
+ * "Housemates", used consistently across the screens.
  */
+
+/** The invented person every "shared" mockup names. */
+export const DEMO_PERSON = "Jordan Reyes";
+/** The invented shared group every mockup names. */
+export const DEMO_GROUP = "Housemates";
 
 export type OriginGlyph = "scan" | "mail" | "people" | "share";
 
@@ -79,7 +88,7 @@ export const LIST_ROWS: ListRow[] = [
     date: "Jun 7",
     category: whole.category,
     sharedBy: true,
-    source: " Bruno Courbage in House PapeX",
+    source: ` ${DEMO_PERSON} in ${DEMO_GROUP}`,
     glyph: "people",
     tone: "sharedIn",
     logoBg: "linear-gradient(160deg,#4b7f52,#24512e)",
@@ -117,7 +126,7 @@ export const SEARCH_ROWS: ListRow[] = [
     group: "September 22, 2026",
     date: "Sep 22",
     category: blue.category,
-    source: "Scanned by you • The Core Four",
+    source: `Scanned by you • ${DEMO_GROUP}`,
     glyph: "share",
     tone: "sharedOut",
     logoBg: BLUE_BG,
@@ -151,28 +160,189 @@ export const SEARCH_ROWS: ListRow[] = [
 ];
 
 /**
- * The receipt DETAIL screen's content — the USPS receipt from
- * app-media/reference/app-receipt-detail-usps-{top,bottom}.webp.
+ * The Features "Add" shot: the Receipts tab with no query, newest first, its
+ * top rows fresh from the two ways to ADD a receipt that the tap doesn't
+ * cover — a scanned paper one ("Scanned by you", scan ring) and a forwarded
+ * email one ("Email by you", mail ring). New receipts arrive unreviewed.
+ * The shot crops the device's TOP, so the rows that matter sit low enough to
+ * show above the open FAB. Invented merchants only.
+ */
+export const ADD_ROWS: ListRow[] = [
+  {
+    id: "add-grocer",
+    merchant: whole.merchant,
+    initial: whole.initial,
+    amount: whole.amount,
+    group: "Today",
+    date: "Sep 23",
+    category: whole.category,
+    source: "Scanned by you",
+    glyph: "scan",
+    tone: "own",
+    logoBg: "linear-gradient(160deg,#4b7f52,#24512e)",
+    unreviewed: true,
+  },
+  {
+    id: "add-pharmacy",
+    merchant: "Mossbrook Pharmacy",
+    initial: "M",
+    amount: "$12.85",
+    group: "Today",
+    date: "Sep 23",
+    category: "Health & pharmacy",
+    source: "Email by you",
+    glyph: "mail",
+    tone: "own",
+    logoBg: "linear-gradient(160deg,#c2476a,#7a1f3b)",
+    unreviewed: true,
+  },
+  {
+    id: "add-hardware",
+    merchant: "Ironleaf Hardware",
+    initial: "I",
+    amount: "$41.07",
+    group: "Yesterday",
+    date: "Sep 22",
+    category: "Household",
+    source: "Scanned by you",
+    glyph: "scan",
+    tone: "own",
+    logoBg: "linear-gradient(160deg,#c77a1c,#7a4308)",
+  },
+  {
+    id: "add-ride",
+    merchant: uber.merchant,
+    initial: uber.initial,
+    amount: uber.amount,
+    group: "Yesterday",
+    date: "Sep 22",
+    category: uber.category,
+    source: "Email by you",
+    glyph: "mail",
+    tone: "own",
+    logoBg: "linear-gradient(160deg,#3b434e,#161a20)",
+  },
+  {
+    id: "add-coffee",
+    merchant: blue.merchant,
+    initial: blue.initial,
+    amount: blue.amount,
+    group: "Yesterday",
+    date: "Sep 22",
+    category: blue.category,
+    source: "Tapped by you",
+    glyph: "scan",
+    tone: "own",
+    logoBg: BLUE_BG,
+  },
+];
+
+/**
+ * The receipt DETAIL screen's content for the Features "Share" shot. An
+ * INVENTED hardware receipt (it used to be a real USPS receipt from a
+ * capture, with the post office's real address — no real merchants on the
+ * site). The address names a demo street on purpose.
  *
- * `sharedWith` is load-bearing: the store card's "Shared" tag renders only
- * when the receipt's `sharedWith` list is non-empty (receiptDetail.tsx
- * `receiptIsSharedOut`), and that same list is what the Receipt Sharing card
- * summarises ("Shared with <name>"). Showing the tag over an empty "Not shared"
- * card is a contradiction the app cannot produce.
+ * The two sharing cards are the point of the shot, and both read from here:
+ *   - `sharedGroup` -> the Shared Group card: "Shared with <group>", filled
+ *     people glyph, blue rim (receiptDetail.tsx sharingTriggerContent; the
+ *     rim appears once the receipt is in a group, app-reference.md §6.7);
+ *   - `sharedWith` -> the Receipt Sharing card ("Shared with <name>") AND the
+ *     store card's "Shared" tag, which renders only when that list is
+ *     non-empty (receiptDetail.tsx `receiptIsSharedOut`). Showing the tag over
+ *     an empty "Not shared" card is a contradiction the app cannot produce.
  */
 export const DETAIL_RECEIPT = {
-  merchant: "UNITED STATES POSTAL SERVICE",
-  initial: "U",
-  address: "910 D St, San Rafael, Ca, 94901-9991",
-  date: "2026-09-23 • 16:44",
+  merchant: "IRONLEAF HARDWARE",
+  initial: "I",
+  logoBg: "linear-gradient(160deg,#c77a1c,#7a4308)",
+  address: "48 Demo Street, San Francisco, CA",
+  date: "2026-09-22 • 16:44",
   /** `${sourceEmoji} ${sourceLabel} Receipt` (receiptDetail.tsx). */
   sourceLine: "📷 Scanned Receipt",
-  sharedWith: "Bruno Courbage",
+  sharedGroup: DEMO_GROUP as string | undefined,
+  sharedWith: DEMO_PERSON,
   items: [
-    { name: "USPS Grnd Advtg", qty: "×1", price: "$5.49" },
-    { name: "New York, NY 10002", qty: "×1", price: "$26.05" },
+    { name: "Cordless drill", qty: "×1", price: "$33.58" },
+    { name: "Wood screws, 100 pk", qty: "×1", price: "$7.49" },
   ],
-  subtotal: "$31.54",
-  total: "$31.54",
+  subtotal: "$41.07",
+  total: "$41.07",
   payment: "VISA",
 };
+
+/**
+ * The Features "Deals" shot: the Stores tab's 2-column grid of store tiles
+ * (components/coupons/StoreTile.tsx). Per tile, top to bottom: a 72pt brand
+ * banner with the category eyebrow, the store's app-icon mark straddling its
+ * lower edge, the glass heart top-right (filled = a favorite), the name, the
+ * offer lines — the lead coupon's title + "Expires <date>", or, with no
+ * coupon, "Open · closes <time>" — and a footer "N coupons" in orange ("No
+ * coupons yet" muted). Coupons on a tile are the SHOPPER's own (earned or
+ * scanned), never invented promotions shown as the store's. Invented stores
+ * and demo offers only; the shot is captioned as demo data.
+ */
+export interface StoreTileData {
+  id: string;
+  name: string;
+  initial: string;
+  category: string;
+  /** The banner's brand field. */
+  cover: string;
+  /** The app-icon mark's fill. */
+  mark: string;
+  favorite?: boolean;
+  offer?: string;
+  expiry?: string;
+  /** Shown only without an offer: "Open" (green) + detail. */
+  openDetail?: string;
+  coupons: number;
+}
+
+export const STORE_TILES: StoreTileData[] = [
+  {
+    id: "coffee",
+    name: blue.merchant,
+    initial: blue.initial,
+    category: "Coffee",
+    cover: "linear-gradient(120deg,#1f5fae,#0d3a73)",
+    mark: BLUE_BG,
+    favorite: true,
+    offer: "$1 off any drink",
+    expiry: "Expires Oct 4",
+    coupons: 2,
+  },
+  {
+    id: "grocer",
+    name: whole.merchant,
+    initial: whole.initial,
+    category: "Grocery",
+    cover: "linear-gradient(120deg,#3f7a48,#1d4a27)",
+    mark: "linear-gradient(160deg,#4b7f52,#24512e)",
+    offer: "10% off produce",
+    expiry: "Expires Oct 12",
+    coupons: 1,
+  },
+  {
+    id: "hardware",
+    name: "Ironleaf Hardware",
+    initial: "I",
+    category: "Hardware",
+    cover: "linear-gradient(120deg,#b86d14,#6e3c06)",
+    mark: "linear-gradient(160deg,#c77a1c,#7a4308)",
+    favorite: true,
+    openDetail: "closes 7 PM",
+    coupons: 0,
+  },
+  {
+    id: "pharmacy",
+    name: "Mossbrook Pharmacy",
+    initial: "M",
+    category: "Pharmacy",
+    cover: "linear-gradient(120deg,#b23f60,#6e1a34)",
+    mark: "linear-gradient(160deg,#c2476a,#7a1f3b)",
+    offer: "$5 off $25",
+    expiry: "Expires Oct 18",
+    coupons: 1,
+  },
+];
