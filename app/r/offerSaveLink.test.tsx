@@ -1,6 +1,6 @@
 // app/r/offerSaveLink.test.tsx
 //
-// The offer-card "Save in the PapeX app" link on `/r?sid=` (lib/offerSaveLink.ts,
+// The offer-card "Open in PapeX to save" link on `/r?sid=` (lib/offerSaveLink.ts,
 // app/r/cards/WebCards.tsx). Standalone tsx script (see package.json):
 //   npm run test:offerSaveLinkRender
 //
@@ -31,6 +31,13 @@
 //     offer card (iOS-only — see lib/offerSaveLink.ts for why).
 //   - OFFER_SAVE_LINK=1 on a demo sid: absent (mayFetchWebCards already
 //     excludes demo sids from the cards call entirely).
+//   - THE COPY IS "Open in PapeX to save", never the rid save-link's "Save
+//     in the PapeX app" — confirmed against PapeXV2 origin/release/1.7.0
+//     that opening this link already completes the save (the #19 auto-save
+//     effect on receiptDetail's `below` RdhTapCards mount,
+//     services/rdhCards/autoSave.ts + RdhTapCards.tsx:163-181), so promising
+//     a further in-app Save step would be dishonest. See
+//     lib/offerSaveLink.ts for the citations.
 
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -61,7 +68,11 @@ const ROOT = resolve(__dirname, "../..");
 const VARIANTS = join(ROOT, "contracts/cards/v1/fixtures/variants");
 const readVariant = (f: string) => readFileSync(join(VARIANTS, f), "utf8");
 
-const LINK_TEXT = "Save in the PapeX app";
+const LINK_TEXT = "Open in PapeX to save";
+// The rid save-link's own copy (app/r/sharedReceiptView.tsx) — this module
+// must never render it, since the two callers describe genuinely different
+// in-app behaviour (see this file's header comment).
+const RID_LINK_TEXT = "Save in the PapeX app";
 const OFFER_SID_RECEIPT_FIRST = "7e57ca4d00000001"; // rf-offer-code128, hartwells, receipt-first
 const OFFER_SID_CARDS_FIRST = "7e57ca4d00000002"; // cf-offer-code128, hartwells, cards-first
 const TEXT_ONLY_SID = "7e57ca4d00000012"; // text-only, ellsworth — no offer card
@@ -146,6 +157,7 @@ async function main() {
     await withEnv("1", async () => {
       const html = await renderSid(OFFER_SID_RECEIPT_FIRST, "hartwells", cardsBody(readVariant("rf-offer-code128.json")));
       assert.ok(html.includes(LINK_TEXT), "link text missing");
+      assert.ok(!html.includes(RID_LINK_TEXT), "must use the offer-save copy, not the rid save-link's copy");
       assert.ok(html.includes(`href="${EXPECT_HREF(OFFER_SID_RECEIPT_FIRST)}"`), html);
       const stackEnd = html.indexOf("</svg>"); // the offer's barcode, inside the stack
       const linkAt = html.indexOf(LINK_TEXT);

@@ -25,6 +25,18 @@
 // Nothing about that path changes here — this is a web-renderer-only
 // feature, no cards-contract change, no app change.
 //
+// IT ACTUALLY SAVES WITH NO FURTHER TAP. #19 auto-save
+// (services/rdhCards/autoSave.ts) files any live, unexpired offer carrying
+// a `save` action into the owner's wallet automatically, fire-and-forget,
+// the first time receiptDetail's cards load after a claim — wired in the
+// `below` mount's effect (components/rdhCards/RdhTapCards.tsx:163-181,
+// mounted at app/receiptDetail.tsx:4227), which is exactly the mount that
+// runs right after this link's hand-off completes its claim. That is why
+// app/r/ui.tsx's SaveInAppLink is called here with the label
+// "Open in PapeX to save" (app/r/cards/WebCards.tsx), not "Save in the
+// PapeX app" (the rid caller's label, where an explicit in-app tap is
+// still required) — opening this link is the whole action.
+//
 // THE URL is the SAME ONE SaveToPapex's iOS CTA already uses:
 // lib/storeLinks.ts's `rdhUniversalLink(sid)` ->
 // `https://links.papex.app/rdh?sid=<sid>`. Confirmed against

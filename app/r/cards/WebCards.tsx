@@ -27,6 +27,15 @@
 // flag-off / non-iOS case) renders exactly what shipped before this file
 // knew about save links — byte-identical, checked by
 // app/r/offerSaveLink.test.tsx against the existing parity/cards goldens.
+//
+// COPY: "Open in PapeX to save", not "Save in the PapeX app" — confirmed
+// against PapeXV2 origin/release/1.7.0 that opening this link IS the whole
+// action. The app's #19 auto-save (services/rdhCards/autoSave.ts, wired in
+// RdhTapCards.tsx's `below`-mount effect) files any live, unexpired offer
+// with a `save` action into the owner's wallet automatically, the first
+// time receiptDetail's cards load after this hand-off's claim completes —
+// no further tap. See lib/offerSaveLink.ts / app/r/ui.tsx's SaveInAppLink
+// doc comment for the full citation trail.
 
 import type { NormalizedCards } from "@/lib/cards/normalize";
 import type { LayoutOrder } from "@/lib/cards/types";
@@ -51,7 +60,7 @@ export function WebCardStack({
   return (
     <>
       <CardList cards={cards} now={now} className={entering ? styles.enter : undefined} />
-      {showSaveLink ? <SaveInAppLink href={saveLinkHref!} /> : null}
+      {showSaveLink ? <SaveInAppLink href={saveLinkHref!} label="Open in PapeX to save" /> : null}
     </>
   );
 }
