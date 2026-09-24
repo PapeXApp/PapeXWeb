@@ -46,7 +46,7 @@ export const personaFeatureLines: Record<PersonaId, Record<FeatureKey, string>> 
  * The Keeper / The Casual / The Non-Keeper). Never shown before the quiz.
  */
 export const pickedForYouLabel: Record<PersonaId, string> = {
-  keeper: "Picked for you, a Keeper",
-  casual: "Picked for you, a Casual keeper",
-  non: "Picked for you, a Non-Keeper",
+  keeper: "Picked for you: The Keeper",
+  casual: "Picked for you: The Casual",
+  non: "Picked for you: The Non-Keeper",
 };

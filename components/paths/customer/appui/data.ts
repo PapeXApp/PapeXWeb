@@ -198,7 +198,7 @@ export const ADD_ROWS: ListRow[] = [
   },
   {
     id: "add-hardware",
-    merchant: "Ironleaf Hardware",
+    merchant: "Copperpeg Hardware",
     initial: "I",
     amount: "$41.07",
     group: "Yesterday",
@@ -253,7 +253,7 @@ export const ADD_ROWS: ListRow[] = [
  *     an empty "Not shared" card is a contradiction the app cannot produce.
  */
 export const DETAIL_RECEIPT = {
-  merchant: "IRONLEAF HARDWARE",
+  merchant: "COPPERPEG HARDWARE",
   initial: "I",
   logoBg: "linear-gradient(160deg,#c77a1c,#7a4308)",
   address: "48 Demo Street, San Francisco, CA",
@@ -325,7 +325,7 @@ export const STORE_TILES: StoreTileData[] = [
   },
   {
     id: "hardware",
-    name: "Ironleaf Hardware",
+    name: "Copperpeg Hardware",
     initial: "I",
     category: "Hardware",
     cover: "linear-gradient(120deg,#b86d14,#6e3c06)",
