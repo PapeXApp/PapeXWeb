@@ -8,7 +8,7 @@
  *
  *   --flow-ground  the page colour (background of .flow)
  *   --flow-fg      text colour     --flow-fg-2 body text   --flow-fg-3 faint
- *   --flow-hair    rails + ribbon hairlines                --flow-tick crosshairs
+ *   --flow-hair    ribbon hairlines
  *
  * These are registered with @property in styles/papex-brand.css, so they
  * TRANSITION as colours. Text colour moves in lockstep with the ground, which
@@ -16,9 +16,9 @@
  * is still on screen, and if its text kept its own tone it would sit
  * invisible on the new ground. Following the ground, it never does.
  *
- * The depth kit (aurora, grain, watermark, rails) is rendered ONCE here, not
- * per section, so every section gets exactly the same treatment and none can
- * be accidentally bare. Everything in the kit is aria-hidden,
+ * The depth kit (aurora, grain, travelling plane watermark) is rendered ONCE
+ * here, not per section, so every section gets exactly the same treatment
+ * and none can be accidentally bare. Everything in the kit is aria-hidden,
  * pointer-events:none, and painted beneath the content.
  *
  * No JS animation loop anywhere in this file: the only motion is CSS
@@ -28,16 +28,16 @@
  * ========================================================================== */
 
 .flow {
-  /* The guide rails sit at the edges of a 1240px column — outside every
-     section's content max-width (1080-1150px), so they always run in the
-     gutter. Percentages resolve against the full-width element using it. */
-  --rail-x: max(16px, calc(50% - 620px));
+  /* The ribbon's hairlines sit at the edges of a 1240px column — outside
+     every section's content max-width (1080-1150px), so they always run in
+     the gutter. Percentages resolve against the full-width element using it. */
+  --gutter-x: max(16px, calc(50% - 620px));
 
   position: relative;
   isolation: isolate;
   background-color: var(--flow-ground);
   color: var(--flow-fg);
-  transition-property: --flow-ground, --flow-fg, --flow-fg-2, --flow-fg-3, --flow-hair, --flow-tick;
+  transition-property: --flow-ground, --flow-fg, --flow-fg-2, --flow-fg-3, --flow-hair;
   transition-duration: 700ms;
   transition-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
@@ -47,7 +47,6 @@
   --flow-fg-2: rgba(0, 18, 29, 0.66);
   --flow-fg-3: rgba(0, 18, 29, 0.46);
   --flow-hair: rgba(0, 18, 29, 0.09);
-  --flow-tick: rgba(0, 18, 29, 0.32);
 }
 .flow[data-ground="navy"] {
   --flow-ground: #00121d;
@@ -55,7 +54,6 @@
   --flow-fg-2: rgba(245, 245, 245, 0.66);
   --flow-fg-3: rgba(245, 245, 245, 0.46);
   --flow-hair: rgba(245, 245, 245, 0.09);
-  --flow-tick: rgba(245, 245, 245, 0.32);
 }
 
 .content {
@@ -64,10 +62,10 @@
 }
 
 /* --- The kit container -----------------------------------------------------
-   Absolute over the whole flow (so the rails run its full height), with a
-   sticky viewport-sized child for the layers that should stay on screen.
-   `overflow: clip`, not hidden: hidden would make this the sticky child's
-   scroll container and the layer would never stick. */
+   Absolute over the whole flow, with a sticky viewport-sized child for the
+   layers that should stay on screen. `overflow: clip`, not hidden: hidden
+   would make this the sticky child's scroll container and the layer would
+   never stick. */
 .kit {
   position: absolute;
   inset: 0;
@@ -260,94 +258,8 @@
   }
 }
 
-/* --- Guide rails ------------------------------------------------------------
-   Two 1px verticals at the column edges, full page height. Faded in below the
-   nav so they don't run behind the glass bubbles, and out before the footer. */
-/* TEMPORARY (Nico, 2026-09-10): guide rails stay for now — remove later. */
-.rails {
-  position: absolute;
-  inset: 0;
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 200px, #000 calc(100% - 140px), transparent);
-  mask-image: linear-gradient(to bottom, transparent 0, #000 200px, #000 calc(100% - 140px), transparent);
-}
-.rail {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: var(--flow-hair);
-}
-.railL {
-  left: var(--rail-x);
-}
-.railR {
-  right: var(--rail-x);
-}
-
-/* --- Section boundary marks (FlowSection) -----------------------------------
-   A crosshair on each rail exactly at the section's top edge, plus the
-   section index just inside the left rail. Both live in the gutter. */
 .section {
   position: relative;
-}
-.bound {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 0;
-  pointer-events: none;
-}
-.cross {
-  position: absolute;
-  top: -6px;
-  width: 13px;
-  height: 13px;
-}
-.cross::before,
-.cross::after {
-  content: "";
-  position: absolute;
-  background: var(--flow-tick);
-}
-.cross::before {
-  left: 6px;
-  top: 0;
-  width: 1px;
-  height: 13px;
-}
-.cross::after {
-  top: 6px;
-  left: 0;
-  width: 13px;
-  height: 1px;
-}
-.crossL {
-  left: calc(var(--rail-x) - 6px);
-}
-.crossR {
-  right: calc(var(--rail-x) - 6px);
-}
-.idx {
-  position: absolute;
-  top: 18px;
-  left: calc(var(--rail-x) + 12px);
-  font-family: var(--font-label);
-  font-size: 10.5px;
-  font-weight: 500;
-  line-height: 1;
-  letter-spacing: 0.14em;
-  color: var(--flow-fg-3);
-  font-variant-numeric: tabular-nums;
-}
-
-/* Below ~900px the gutters are too narrow for rails; the index lives on in
-   each section's bracketed label instead. */
-@media (max-width: 899px) {
-  .rails,
-  .bound {
-    display: none;
-  }
 }
 
 /* --- Section label: "[02] The problem" ---------------------------------- */
@@ -371,11 +283,11 @@
 }
 
 /* --- Ribbon (was the full-bleed orange marquee band) -----------------------
-   Spans rail to rail so its hairlines close the frame the rails draw; the
-   text track is edge-masked so phrases dissolve instead of being cut. */
+   Inset to the same gutter column as the rest of the page; the text track is
+   edge-masked so phrases dissolve instead of being cut. */
 .ribbon {
   position: relative;
-  padding: 0 var(--rail-x);
+  padding: 0 var(--gutter-x);
 }
 .ribbonBand {
   border-top: 1px solid var(--flow-hair);

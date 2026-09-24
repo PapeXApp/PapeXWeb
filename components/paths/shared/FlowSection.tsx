@@ -11,13 +11,10 @@ export type Ground = "light" | "navy"
  *
  * `data-nav-theme` is derived from the same value so the nav's glass probe
  * (components/brand/use-glass-theme.ts) keeps working unchanged.
- *
- * `index` draws the boundary mark: a crosshair on each guide rail at the
- * section's top edge plus the index in the gutter. Omit it on the hero —
- * there is no boundary above the first section.
  */
 export function FlowSection({
   ground,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- accepted so callers passing a section index need no edits; no longer rendered
   index,
   id,
   className,
@@ -39,13 +36,6 @@ export function FlowSection({
       className={cn(styles.section, className)}
       style={style}
     >
-      {index ? (
-        <div aria-hidden="true" className={styles.bound}>
-          <i className={cn(styles.cross, styles.crossL)} />
-          <i className={cn(styles.cross, styles.crossR)} />
-          <span className={styles.idx}>{index}</span>
-        </div>
-      ) : null}
       {children}
     </section>
   )
