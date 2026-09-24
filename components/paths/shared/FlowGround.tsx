@@ -22,14 +22,38 @@ const MIDDLE_BAND = "-49% 0px -49% 0px"
  * `initial` is rendered on the server so first paint is already the hero's
  * colour — the fork's commit animation depends on that continuity.
  *
- * The site footer now lives INSIDE this component as the final navy
- * FlowSection (see each path's index.tsx), so it is observed like any other
- * section and the last light section crossfades into it. The
- * `document.querySelector('.rd-footer')` fallback below is kept only for the
- * legacy mount shape; when the footer is in-flow it is already in `sections`
- * and `observe()` on the same node is a no-op.
+ * Landmarks (2026-09-24, docs/design/footer-landmark.md): FlowGround owns the
+ * page's `<main>`. SiteShell does NOT render one around a FlowGround page, so
+ * the footer can sit inside this component (and so inside the colour
+ * crossfade) while staying OUTSIDE `<main>`:
+ *
+ *   .flow > .content > main   (the sections)
+ *                    > div[data-ground="navy"] > footer.rd-footer
+ *
+ * Pass the footer through the `footer` prop. It is wrapped in a plain `div`,
+ * not a FlowSection: a `<footer>` inside `<section>` (or `<main>`) is not a
+ * contentinfo landmark, so the wrapper must not be sectioning content. The
+ * wrapper still carries `data-ground="navy"`, so the observer below treats
+ * it like any other section and the last light section crossfades into it.
+ *
+ * Backward compatible: a page that still passes the footer as the last child
+ * (inside a navy FlowSection) keeps working exactly as before; its footer is
+ * just still inside `<main>` until the page moves it to the slot. The
+ * `document.querySelector('.rd-footer')` fallback below is kept for a footer
+ * mounted outside the flow; when the footer is inside, it is already covered
+ * by `sections` and the fallback stays null.
  */
-export function FlowGround({ initial, children }: { initial: Ground; children: ReactNode }) {
+export function FlowGround({
+  initial,
+  footer,
+  children,
+}: {
+  initial: Ground
+  /** The site footer (`<SiteFooter inFlow />`). Rendered after `<main>`, so it
+   *  is the page's contentinfo landmark but still rides the ground crossfade. */
+  footer?: ReactNode
+  children: ReactNode
+}) {
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -88,7 +112,14 @@ export function FlowGround({ initial, children }: { initial: Ground; children: R
           <div className={styles.grain} />
         </div>
       </div>
-      <div className={styles.content}>{children}</div>
+      <div className={styles.content}>
+        <main>{children}</main>
+        {footer && (
+          <div data-ground="navy" data-nav-theme="dark" className={styles.section}>
+            {footer}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
