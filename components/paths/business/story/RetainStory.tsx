@@ -71,9 +71,25 @@ import s from "../story.module.css"
  * shift is a measured constant, so the flight is right on the first frame.
  */
 
-/** Scroll budget in viewport heights; the runway adds the pinned 100vh. */
+/** Scroll budget in viewport heights for the story itself. */
 const SCROLL_VH = 300
-const RUNWAY_VH = 100 + SCROLL_VH
+/**
+ * After the story ends, the open laptop + dashboard stay pinned for this much
+ * more scroll before the page releases them and scrolls on (round 2: "the
+ * dashboard will stay open").
+ */
+const DWELL_VH = 20
+/** The runway: the pinned viewport, the story, then the dwell. */
+const RUNWAY_VH = 100 + SCROLL_VH + DWELL_VH
+/**
+ * HYSTERESIS. Once the story has fully opened it LATCHES: a small scroll up,
+ * or scrolling inside the dashboard, changes nothing. Only after scrolling up
+ * this far past the point where it latched does it let go, and from there
+ * the story is scroll-linked again, closing in reverse. One constant, in vh.
+ */
+const REVERSE_VH = 28
+/** Easing time-constant for the catch-up across a latch change (ms). */
+const CATCH_TAU_MS = 110
 
 /** Beat boundaries on the overall progress `p`. */
 const T = {
@@ -119,8 +135,6 @@ const T = {
   colsB: 0.95,
   custA: 0.9,
   custB: 0.965,
-  scrollA: 0.95,
-  scrollB: 0.99,
 } as const
 
 /** Act 1's own clock (fractions of 0..T.act1), the old scene's beats, compressed. */
@@ -176,6 +190,8 @@ export function RetainStory() {
   // Client-only: the server renders the static story (see StaticStory.tsx).
   const [pinned, setPinned] = useState(false)
   const [phase, setPhase] = useState<Phase>("idle")
+  // true while the story is latched open: the dashboard is usable
+  const [live, setLive] = useState(false)
   const summary = useDemoReceipt()
   const moment = receiptMoment(summary.dateline)
 
@@ -222,6 +238,7 @@ export function RetainStory() {
   const copyRef = useRef<HTMLDivElement>(null)
   const colsRef = useRef<HTMLDivElement>(null)
   const custRef = useRef<HTMLDivElement>(null)
+  const tailRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setPinned(!reduced)
@@ -272,7 +289,6 @@ export function RetainStory() {
       dockTy: 0,
       dockS: 1,
       overflow: 0,
-      shift: 0,
       runTop: 0,
       runTotal: 0,
     }
@@ -399,12 +415,17 @@ export function RetainStory() {
       const pr = pin.getBoundingClientRect()
       const sr = slot.getBoundingClientRect()
       const sx = sr.left - pr.left
-      const sy = sr.top - pr.top + M.shift
+      const sy = sr.top - pr.top
       const sc = Math.min(sr.width / bw, sr.height / bh) || 1
       M.dockS = sc
       M.dockTx = sx + sr.width / 2 - sc * (bx + bw / 2) - stage.offsetLeft
       M.dockTy = sy + sr.height / 2 - sc * (by + bh / 2) - stage.offsetTop
+      // A screen too short for laptop + info: the info simply continues below
+      // the pin (never scrolled up inside it, which would push the open
+      // dashboard under the nav), and a spacer after the runway gives it
+      // room, so it scrolls up with the page once the dwell ends.
       M.overflow = Math.max(0, inner.scrollHeight - inner.clientHeight, inner.offsetHeight - info.clientHeight)
+      if (tailRef.current) tailRef.current.style.height = `${Math.ceil(M.overflow)}px`
     }
 
     // Every write goes through set(): unchanged values are dropped, and the
@@ -493,18 +514,19 @@ export function RetainStory() {
         const o = V_CREASE + n * 5
         const alpha = v(o + 4) * creaseOut
         op(el, alpha, `cO${n}`)
-        if (alpha > 0) set(el, "clip-path", lineQuad(v(o), v(o + 1), v(o + 2), v(o + 3)), `cC${n}`)
+        // geometry is written even while invisible, so the frame at any p is
+        // the same whatever path (scrub, jump, latch catch-up) led to it; the
+        // write cache makes the unchanged ones free
+        set(el, "clip-path", lineQuad(v(o), v(o + 1), v(o + 2), v(o + 3)), `cC${n}`)
       }
       for (let n = 0; n < 2; n++) {
         const el = shadeRefs.current[n]
         const o = V_SHADE + n * 9
         const alpha = v(o + 8) * creaseOut
         op(el, alpha, `sO${n}`)
-        if (alpha > 0) {
-          const pts: number[][] = []
-          for (let k = 0; k < 4; k++) pts.push([+v(o + k * 2).toFixed(2), +v(o + k * 2 + 1).toFixed(2)])
-          set(el, "clip-path", poly(pts), `sC${n}`)
-        }
+        const pts: number[][] = []
+        for (let k = 0; k < 4; k++) pts.push([+v(o + k * 2).toFixed(2), +v(o + k * 2 + 1).toFixed(2)])
+        set(el, "clip-path", poly(pts), `sC${n}`)
       }
 
       // the flap panels, turning over their creases in 3D
@@ -514,7 +536,12 @@ export function RetainStory() {
         const face = flapFaceRefs.current[n]
         if (!flap || !face) continue
         if (!side) {
+          // idle (fold rounds 2-3 and after): a fixed resting pose, so the
+          // invisible panel never carries history from how p got here
           op(flap, 0, `fO${n}`)
+          set(flap, "transform", "none", `fT${n}`)
+          set(face, "clip-path", poly(ROUNDS[1][n === 0 ? "left" : "right"]), `fC${n}`)
+          op(flapShadeRefs.current[n], 0, `fS${n}`)
           continue
         }
         const axis = n === 0 ? side.axisL : side.axisR
@@ -547,6 +574,7 @@ export function RetainStory() {
         set(half, "transform", `translateZ(1px) rotateY(${(180 - 145 * wings).toFixed(2)}deg)`, "hT")
       } else {
         op(half, 0, "hO")
+        set(half, "transform", "translateZ(1px) rotateY(0deg)", "hT")
       }
       op(planeRef.current, clamp01((q - (Q.foldB + 0.02)) / 0.07) * 0.7, "plane")
 
@@ -684,17 +712,14 @@ export function RetainStory() {
       // ---- value: dock the row, raise the info ------------------------------
       const ai = seg(p, T.dockA, 1)
       const dk = ease(seg(p, T.dockA, T.dockB))
-      const shiftPx = ease(seg(p, T.scrollA, T.scrollB)) * M.overflow
-      M.shift = shiftPx
       set(
         stage,
         "transform",
         dk > 0
-          ? `translate(${(M.dockTx * dk).toFixed(1)}px, ${(M.dockTy * dk - shiftPx).toFixed(1)}px) scale(${(1 + (M.dockS - 1) * dk).toFixed(4)})`
+          ? `translate(${(M.dockTx * dk).toFixed(1)}px, ${(M.dockTy * dk).toFixed(1)}px) scale(${(1 + (M.dockS - 1) * dk).toFixed(4)})`
           : "none",
         "stageT",
       )
-      set(infoInnerRef.current, "transform", `translateY(${(-shiftPx).toFixed(1)}px)`, "infoT")
       op(groundRef.current, 1 - dk, "ground")
       op(groupRef.current, M.dockGroup ? 1 : 1 - ease(seg(p, T.dockA, T.dockA + 0.05)), "grpO")
       op(hintRef.current, 1 - ease(seg(p, T.dockA, T.dockA + 0.04)), "hint")
@@ -727,12 +752,53 @@ export function RetainStory() {
       )
     }
 
+    // ---- the latch -------------------------------------------------------
+    // `live` is the story's scroll progress; `shown` is the progress actually
+    // drawn. They are the same number except (a) while LATCHED, when `shown`
+    // is held at the fully-open end state, and (b) for the few hundred ms of
+    // an eased catch-up right after the latch engages or lets go, so the
+    // switch never snaps. Everything else stays a pure function of scroll.
+    const P_LATCH = T.custB
+    const P_RELEASE = P_LATCH - REVERSE_VH / SCROLL_VH
+    let latched = false
+    let catching = false
+    let shown = -1
+    let lastT = 0
+    let isLive = false
+    const runway = runwayRef.current
+    const setLiveOnce = (next: boolean) => {
+      if (isLive === next) return
+      isLive = next
+      setLive(next)
+      // for tests / debugging only: a state flag, written on change, not per frame
+      if (runway) runway.dataset.live = next ? "1" : "0"
+    }
+
     let raf: number | null = null
-    const update = () => {
+    const update = (now: number) => {
       raf = null
       // No layout read here either: where the runway sits on the page and how
       // far it scrolls are measured; the frame only needs scrollY.
-      draw(M.runTotal > 0 ? clamp01((window.scrollY - M.runTop) / M.runTotal) : 0)
+      const raw = M.runTotal > 0 ? clamp01((window.scrollY - M.runTop) / M.runTotal) : 0
+      const live = Math.min(1, (raw * (SCROLL_VH + DWELL_VH)) / SCROLL_VH)
+      const wasLatched = latched
+      if (!latched && live >= P_LATCH) latched = true
+      else if (latched && live < P_RELEASE) latched = false
+      const target = latched ? 1 : live
+      if (shown < 0) shown = target // first frame: no catch-up from nowhere
+      else if (latched !== wasLatched) catching = true
+      if (catching) {
+        const dt = Math.min(64, Math.max(0, now - lastT))
+        shown += (target - shown) * (1 - Math.exp(-dt / CATCH_TAU_MS))
+        if (Math.abs(target - shown) < 0.0015) catching = false
+      }
+      if (!catching) shown = target
+      lastT = now
+      draw(shown)
+      if (runway) runway.dataset.settled = catching ? "0" : "1"
+      setLiveOnce(latched && !catching)
+      // the catch-up is the only thing that animates without a scroll event
+      if (catching && raf === null) raf = requestAnimationFrame(update)
     }
     const onScroll = () => {
       if (raf === null) raf = requestAnimationFrame(update)
@@ -745,7 +811,7 @@ export function RetainStory() {
     }
 
     measure()
-    update()
+    update(performance.now())
     window.addEventListener("scroll", onScroll, { passive: true })
     window.addEventListener("resize", onResize)
     const ro = new ResizeObserver(onResize)
@@ -767,6 +833,7 @@ export function RetainStory() {
   if (!pinned) return <StaticStory />
 
   return (
+    <>
     <div ref={runwayRef} className={s.runway} style={{ height: `${RUNWAY_VH}vh` }}>
       {/* The story for assistive tech: the scene itself is decorative. */}
       <ol className="sr-only">
@@ -776,13 +843,15 @@ export function RetainStory() {
       </ol>
 
       <div className={s.pin} ref={pinRef}>
-        {/* inert: the art is decorative (the <ol> above tells the story), and
-            the reused clip receipt carries a <summary> that must not take focus */}
-        <div className={s.stage} ref={stageRef} aria-hidden="true" inert>
-          <span className={s.ground} ref={groundRef} />
+        {/* Every piece of art is decorative (the <ol> above tells the story)
+            and inert — the reused clip receipt carries a <summary> that must
+            never take focus. The one exception is the laptop's dashboard,
+            which becomes a real, focusable UI while the story is latched. */}
+        <div className={s.stage} ref={stageRef}>
+          <span className={s.ground} ref={groundRef} aria-hidden="true" />
 
           {/* ---- act 1: printer + slip travel together as the rig ---- */}
-          <div className={s.rig} ref={rigRef}>
+          <div className={s.rig} ref={rigRef} aria-hidden="true" inert>
             <div className={s.feedClip}>
               <div className={s.paper} ref={paperRef}>
                 <span className={s.paperShadow} ref={shadowRef} />
@@ -847,13 +916,22 @@ export function RetainStory() {
             <Printer busy={phase === "print"} ref={printerRef} />
           </div>
 
-          <Bin landed={phase === "landed"} ref={binRef} />
+          <div aria-hidden="true" inert className="contents">
+            <Bin landed={phase === "landed"} ref={binRef} />
+          </div>
 
           {/* ---- the laptop, on the left (final layout) ---- */}
-          <div className={s.laptop} ref={laptopRef}>
+          <div
+            className={s.laptop}
+            ref={laptopRef}
+            aria-hidden={!live}
+            inert={!live}
+            role={live ? "region" : undefined}
+            aria-label={live ? story.laptopLabel : undefined}
+          >
             <div className={s.lid} ref={lidRef}>
               <div className={s.screen}>
-                <Dashboard summary={summary} />
+                <Dashboard live={live} />
                 <span className={s.screenDim} ref={dimRef} />
               </div>
             </div>
@@ -865,7 +943,7 @@ export function RetainStory() {
 
           {/* ---- phone + device, on the right (final layout); the group's
                  pre-slide pose is a transform from measured numbers ---- */}
-          <div className={s.group} ref={groupRef}>
+          <div className={s.group} ref={groupRef} aria-hidden="true" inert>
             <div className={s.device}>
               <span className={s.deviceGlow} ref={glowRef} />
               <span className={s.slab} ref={slabRef} />
@@ -901,7 +979,7 @@ export function RetainStory() {
           </div>
 
           {/* ---- the spark ---- */}
-          <div className={s.spark}>
+          <div className={s.spark} aria-hidden="true">
             <span className={s.launch} ref={launchRef} />
             {Array.from({ length: SPARK_N }, (_, i) => (
               <span
@@ -935,5 +1013,8 @@ export function RetainStory() {
         </div>
       </div>
     </div>
+    {/* room for info that runs past a short screen (height set by measure()) */}
+    <div ref={tailRef} aria-hidden="true" />
+    </>
   )
 }

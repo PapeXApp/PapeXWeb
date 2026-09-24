@@ -77,7 +77,9 @@
   /* the group's move from its tap pose to its final spot (cqw / scale) */
   --g-post-x: 29;
   --g-post-y: 0;
-  --g-post-s: 1;
+  /* a touch smaller once the laptop arrives, so the docked row is led by
+     the laptop's height and the dashboard docks as big as possible */
+  --g-post-s: 0.82;
   /* 1: the value beat docks laptop + phone + device; 0: the laptop only */
   --dock-group: 1;
 }
@@ -559,7 +561,9 @@
   position: absolute;
   inset: 0;
   z-index: 7;
-  overflow: clip;
+  /* sideways only: on a screen too short for laptop + info the info runs on
+     below the pin (a spacer after the runway makes the room) */
+  overflow-x: clip;
   pointer-events: none;
 }
 .infoInner {
@@ -573,7 +577,9 @@
 }
 .slot {
   flex: 1 1 0;
-  min-height: 170px;
+  /* the dashboard is usable at the end, so it gets at least half the screen;
+     what doesn't fit of the info continues below the pin */
+  min-height: max(170px, 50svh);
   width: 100%;
 }
 .infoCopy {
@@ -654,102 +660,139 @@
   color: var(--flow-fg-3);
 }
 
-/* --- the dashboard on the laptop (mock of app/merchant/insights) ------------- */
-/* In cqw of .screen / .staticScreen (16:10 -> 100 x 62.5), in the dashboard's
-   own palette (app/merchant/ui/tokens.ts). CSS defaults = the FILLED screen.
-   Sized for a screen 300-600px wide: bigger and sparser than the real page,
-   so it still reads at mockup scale. */
+/* --- the dashboard on the laptop (a working demo of app/merchant) ---------- */
+/* Lives in .screen / .staticScreen (container, 16:10). ONE size knob:
+   --dash-fs, the base font in cqw of the screen; everything inside is in em,
+   so the whole UI scales with the laptop and a phone can bump one number.
+   The dashboard's own palette (app/merchant/ui/tokens.ts). CSS defaults are
+   the FILLED screen: the scene drives the delivery, reduced motion shows it
+   as is. */
+@property --story-dash-u {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 1px;
+}
+@property --story-dash-ac {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 1px;
+}
 .dash {
+  --dash-fs: 2.5cqw;
   position: absolute;
   inset: 0;
-  display: grid;
-  grid-template-columns: 15cqw minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
+  gap: 0.7em;
+  padding: 1.1em 1.2em;
+  overflow: hidden;
   background: #181a20;
   color: #f4f4f4;
   font-family: var(--font-ui);
+  font-size: var(--dash-fs);
   font-weight: 500;
-  line-height: 1.2;
+  line-height: 1.25;
   text-align: left;
 }
-.dashSide {
-  padding: 3cqw 1.6cqw;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
-  font-size: 1.6cqw;
+.dash button,
+.dash input,
+.dash select {
+  font: inherit;
+  color: inherit;
+}
+.dash button {
+  cursor: pointer;
+}
+.dash :focus-visible {
+  outline: 2px solid #fb8500;
+  outline-offset: 1px;
+}
+.dash [hidden] {
+  display: none !important;
+}
+.dashTop {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.9em;
 }
 .dashBrand {
   display: flex;
   align-items: center;
-  gap: 0.6cqw;
-  margin-bottom: 3.2cqw;
-  font-size: 2.3cqw;
+  gap: 0.3em;
+  font-size: 1.15em;
   font-weight: 600;
 }
 .dashBrand i {
-  width: 0.9cqw;
-  height: 0.9cqw;
-  border-radius: 0.2cqw;
+  width: 0.4em;
+  height: 0.4em;
+  border-radius: 0.1em;
   background: #fb8500;
 }
 .dashBrand small {
-  font-size: 1.05cqw;
+  font-size: 0.55em;
   letter-spacing: 0.08em;
   color: #9aa1a8;
 }
-.dashNav {
+.dashTabs {
   display: flex;
-  align-items: center;
-  gap: 0.8cqw;
-  padding: 0.8cqw 0.8cqw;
-  margin: 0 -0.8cqw 0.7cqw;
-  border-radius: 0.9cqw;
+  gap: 0.2em;
+  padding: 0.18em;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.06);
+}
+.dashTabs button {
+  padding: 0.3em 0.85em;
+  border: 0;
+  border-radius: 99px;
+  background: none;
   color: #c4c7cc;
-  white-space: nowrap;
 }
-.dashNav i {
-  flex: none;
-  width: 1.3cqw;
-  height: 1.3cqw;
-  border-radius: 0.3cqw;
-  border: 1.5px solid currentColor;
-  opacity: 0.6;
-}
-.dashNavOn {
+.dashTabs .dashTabOn {
+  background: rgba(255, 255, 255, 0.12);
   color: #fff;
-  background: rgba(255, 255, 255, 0.07);
 }
-.dashMain {
+.dashDemo {
+  margin-left: auto;
+  padding: 0.2em 0.6em;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 99px;
+  font-size: 0.72em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9aa1a8;
+}
+.dashPanel {
+  flex: 1 1 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 1.8cqw;
-  padding: 3cqw 3cqw 2.6cqw;
-  min-width: 0;
+  gap: 0.7em;
 }
-.dashTop {
+.dashHead {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 2cqw;
-}
-.dashTitle {
-  font-size: 3.4cqw;
+  gap: 1em;
 }
 .dashSub {
-  margin-top: 0.4cqw;
-  font-size: 1.5cqw;
+  font-size: 0.85em;
   font-weight: 400;
   color: #c4c7cc;
 }
 .dashRanges {
   display: flex;
   flex: none;
-  padding: 0.35cqw;
+  padding: 0.15em;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 99px;
-  font-size: 1.4cqw;
+  font-size: 0.82em;
 }
-.dashRanges span {
-  padding: 0.55cqw 1.3cqw;
+.dashRanges button {
+  padding: 0.25em 0.8em;
+  border: 0;
   border-radius: 99px;
+  background: none;
   color: #c4c7cc;
 }
 .dashRanges .dashRangeOn {
@@ -759,21 +802,20 @@
 .dashTiles {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1.3cqw;
+  gap: 0.55em;
 }
 .dashTile,
 .dashCard {
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 1.5cqw;
+  border-radius: 0.6em;
   background: rgba(20, 26, 36, 0.6);
 }
 .dashTile {
-  padding: 1.5cqw 1.6cqw;
-  min-height: 11cqw;
+  padding: 0.55em 0.65em;
 }
 .dashLabel,
 .dashCardTitle {
-  font-size: 1.25cqw;
+  font-size: 0.68em;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #9aa1a8;
@@ -781,9 +823,9 @@
 }
 .dashValueBox {
   position: relative;
-  height: 4.2cqw;
-  margin-top: 0.8cqw;
-  font-size: 3.4cqw;
+  height: 1.35em;
+  margin-top: 0.2em;
+  font-size: 1.45em;
 }
 .dashValueEmpty,
 .dashValue {
@@ -797,70 +839,90 @@
   opacity: 0;
 }
 .dashNote {
-  margin-top: 0.3cqw;
-  font-size: 1.15cqw;
+  font-size: 0.62em;
   font-weight: 400;
   color: #c4c7cc;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .dashRow {
   flex: 1 1 0;
   min-height: 0;
   display: grid;
   grid-template-columns: 1.15fr 1fr;
-  gap: 1.3cqw;
+  gap: 0.55em;
 }
 .dashCard {
   display: flex;
   flex-direction: column;
-  padding: 1.6cqw 1.8cqw;
+  padding: 0.6em 0.7em;
   min-height: 0;
 }
 .dashCardTitle {
-  margin-bottom: 1.2cqw;
+  margin-bottom: 0.45em;
 }
 .dashBars {
+  position: relative;
   flex: 1 1 0;
   display: flex;
   align-items: stretch;
-  gap: 0.28cqw;
-  min-height: 0;
+  gap: 0.1em;
+  min-height: 2.5em;
 }
 .dashBarSlot {
   position: relative;
   flex: 1 1 0;
-  border: 1px solid rgba(251, 133, 0, 0.4);
-  border-radius: 0.4cqw;
+  padding: 0;
+  border: 1px solid rgba(251, 133, 0, 0.35);
+  border-radius: 0.18em;
+  background: none;
+}
+.dashBarBtn:hover,
+.dashBarBtn:focus-visible {
+  border-color: #fb8500;
 }
 .dashBar {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  height: 100%;
   background: rgba(251, 133, 0, 0.62);
   border-top: 2px solid #fb8500;
   transform-origin: 50% 100%;
 }
+.dashTip {
+  position: absolute;
+  bottom: calc(100% + 0.35em);
+  left: 50%;
+  z-index: 2;
+  transform: translateX(-50%);
+  padding: 0.3em 0.55em;
+  border-radius: 0.35em;
+  background: #f4f4f4;
+  color: #181a20;
+  font-size: 0.72em;
+  white-space: nowrap;
+  pointer-events: none;
+}
 .dashAxis {
   display: flex;
   justify-content: space-between;
-  margin-top: 0.7cqw;
-  font-size: 1.1cqw;
+  margin-top: 0.3em;
+  font-size: 0.62em;
   color: #9aa1a8;
 }
 .dashItem {
   display: grid;
-  grid-template-columns: 1.6cqw 13cqw minmax(0, 1fr) 1.6cqw;
+  grid-template-columns: 0.8em minmax(0, 6.6em) minmax(0, 1fr) 1em;
   align-items: center;
-  gap: 1cqw;
-  margin-top: 1.25cqw;
-  font-size: 1.5cqw;
+  gap: 0.45em;
+  margin-top: 0.4em;
+  font-size: 0.82em;
 }
 .dashItemRank,
 .dashItemQty {
   color: #9aa1a8;
-  font-size: 1.3cqw;
 }
 .dashItemQty {
   text-align: right;
@@ -871,7 +933,7 @@
   white-space: nowrap;
 }
 .dashItemTrack {
-  height: 0.8cqw;
+  height: 0.35em;
   border-radius: 99px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.06);
@@ -887,27 +949,32 @@
   flex: none;
   display: flex;
   align-items: center;
-  gap: 1.2cqw;
-  padding: 1.3cqw 1.6cqw;
+  gap: 0.55em;
+  width: 100%;
+  padding: 0.5em 0.7em;
   border: 1px solid rgba(251, 133, 0, 0.55);
-  border-radius: 1.3cqw;
+  border-radius: 0.55em;
   background: rgba(251, 133, 0, 0.12);
-  font-size: 1.6cqw;
+  font-size: 0.85em;
+  text-align: left;
+}
+.dashToast:hover {
+  background: rgba(251, 133, 0, 0.2);
 }
 .dashToastDot {
   flex: none;
-  width: 1cqw;
-  height: 1cqw;
+  width: 0.5em;
+  height: 0.5em;
   border-radius: 50%;
   background: #fb8500;
-  box-shadow: 0 0 1cqw #fb8500;
+  box-shadow: 0 0 0.5em #fb8500;
 }
 .dashToastLead {
   flex: none;
   color: #fb8500;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  font-size: 1.25cqw;
+  font-size: 0.8em;
 }
 .dashToastText {
   flex: 1;
@@ -920,13 +987,141 @@
   flex: none;
   font-weight: 600;
 }
-.dashToastTag {
+.dashToastTag,
+.dashSaleTag {
   flex: none;
-  padding: 0.3cqw 0.9cqw;
+  padding: 0.12em 0.5em;
   border-radius: 99px;
   background: rgba(0, 136, 234, 0.18);
   color: #7fc4ec;
-  font-size: 1.2cqw;
+  font-size: 0.78em;
+}
+/* --- Receipts view --- */
+.dashFilters {
+  flex: none;
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 1fr);
+  gap: 0.4em;
+  font-size: 0.85em;
+}
+.dashFilters input,
+.dashFilters select {
+  min-width: 0;
+  height: 2em;
+  padding: 0 0.6em;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 0.5em;
+  background: rgba(20, 26, 36, 0.8);
+}
+.dashFilters input::placeholder {
+  color: #6b7280;
+}
+.dashListHead {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  font-size: 0.75em;
+  color: #9aa1a8;
+}
+.dashChip {
+  padding: 0.1em 0.6em;
+  border: 1px solid rgba(251, 133, 0, 0.6);
+  border-radius: 99px;
+  background: rgba(251, 133, 0, 0.12);
+  color: #fb8500;
+}
+.dashList {
+  flex: 1 1 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+}
+.dashSale {
+  display: grid;
+  grid-template-columns: 7.2em minmax(0, 1fr) 3.4em 5em 3.8em;
+  align-items: center;
+  gap: 0.5em;
+  width: 100%;
+  padding: 0.45em 0.5em;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: none;
+  font-size: 0.85em;
+  text-align: left;
+}
+.dashSale:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.dashSaleWhen,
+.dashSaleCard {
+  color: #9aa1a8;
+  white-space: nowrap;
+}
+.dashSaleWhat {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dashSaleTag {
+  justify-self: start;
+}
+.dashSaleTagOff {
+  background: rgba(255, 255, 255, 0.07);
+  color: #9aa1a8;
+}
+.dashSaleAmt {
+  text-align: right;
+  font-weight: 600;
+}
+.dashEmpty {
+  padding: 1.2em 0.5em;
+  font-size: 0.85em;
+  color: #9aa1a8;
+}
+/* --- a receipt, as the customer saw it: the App Clip's own receipt view,
+   in a sheet inside the laptop. The kit sizes itself in --u / --ac-u, set
+   here through registered lengths so they reach it as px. --- */
+.dashSheet {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  background: rgba(10, 12, 16, 0.94);
+  /* the clip's receipt is phone-scale UI: ~half the screen wide here */
+  --story-dash-u: 0.125cqw;
+  --story-dash-ac: 0.142cqw;
+  --u: var(--story-dash-u);
+  --ac-u: var(--story-dash-ac);
+}
+.dashSheetBar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1em;
+  padding: 0.55em 0.9em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.85em;
+  color: #c4c7cc;
+}
+.dashSheetBar button {
+  width: 1.8em;
+  height: 1.8em;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 1.1em;
+  line-height: 1;
+}
+.dashSheetBody {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0.8em 24%;
 }
 
 /* --- reduced motion / no JS / server HTML ------------------------------------ */
@@ -1008,6 +1203,14 @@
   border-radius: 14px;
   background: #181a20;
 }
+/* the still laptop is wider than the docked one: a smaller base size */
+.staticScreen .dash {
+  --dash-fs: 1.75cqw;
+}
+.staticScreen .dashSheet {
+  --story-dash-u: 0.1cqw;
+  --story-dash-ac: 0.114cqw;
+}
 .staticDeck {
   width: 108%;
   height: 16px;
@@ -1075,18 +1278,22 @@
     top: 84cqw;
     width: 40cqw;
   }
+  /* a 4:3 screen on phones: room for the dashboard at a legible size */
   .laptop {
     left: 5cqw;
-    top: 93.75cqw;
+    top: 84cqw;
     width: 90cqw;
-    height: 60.75cqw;
+    height: 71.5cqw;
   }
   .lid {
-    height: 56.25cqw;
+    height: 67.5cqw;
   }
   .deck {
-    top: 56.25cqw;
+    top: 67.5cqw;
     height: 4cqw;
+  }
+  .staticScreen {
+    aspect-ratio: 4 / 3;
   }
   .dot {
     width: 2.2cqw;
@@ -1098,8 +1305,24 @@
     height: 3.2cqw;
     margin: -1.6cqw 0 0 -1.6cqw;
   }
+  /* the docked laptop gets most of a phone screen; the info continues below */
   .slot {
-    min-height: 26svh;
+    min-height: 36svh;
+  }
+  /* the docked laptop is ~310px wide here: one bigger base size, and the
+     receipt sheet uses the full width */
+  .dash {
+    --dash-fs: 3cqw;
+  }
+  .dashSheetBody {
+    padding: 0.6em 4%;
+  }
+  .staticScreen .dash {
+    --dash-fs: 3.1cqw;
+  }
+  .dashSheet {
+    --story-dash-u: 0.23cqw;
+    --story-dash-ac: 0.26cqw;
   }
   /* the pinned info must fit one phone screen under the docked laptop: the
      lead repeats the beat line just above it, so it goes (the static

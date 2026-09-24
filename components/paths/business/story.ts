@@ -78,14 +78,15 @@ export const storyDashboard = {
   },
 } as const
 
-/** Labels inside the drawn dashboard on the laptop (a mock of app/merchant/insights). */
+/** Labels inside the dashboard on the laptop (a working demo of app/merchant). */
 export const storyScreen = {
   brand: "papex",
   brandTag: "MERCHANT",
-  nav: ["Transactions", "Insights", "Intelligence", "Devices"],
+  demoTag: "Demo data",
   title: "Insights",
+  receiptsTab: "Receipts",
   subtitle: "How business is trending, at a glance.",
-  ranges: ["Today", "7 days", "30 days"],
+  ranges: ["Today", "7 days"],
   tiles: {
     count: "Transactions",
     gross: "Gross",
@@ -97,4 +98,12 @@ export const storyScreen = {
   topItems: "Top items",
   newReceipt: "New receipt",
   tapped: "Tapped",
+  printed: "Paper only",
+  searchPlaceholder: "Search item or receipt #",
+  last4Placeholder: "Card last 4",
+  minPlaceholder: "Min $",
+  dateLabel: "Date",
+  allDates: "All dates",
+  noMatch: "No receipts match these filters.",
+  asSeen: "as your customer saw it",
 } as const

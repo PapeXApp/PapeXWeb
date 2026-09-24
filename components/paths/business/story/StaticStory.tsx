@@ -12,7 +12,8 @@ import { SlipBody } from "./Slip"
 import s from "../story.module.css"
 
 /**
- * The story with no motion: what the server renders, what a no-JS visitor
+ * The story with no motion (the dashboard here is the live, interactive demo
+ * straight away): what the server renders, what a no-JS visitor
  * keeps, and what `prefers-reduced-motion` gets instead of the pinned scene.
  * Same three moments, stacked — the paper receipt, the phone with the same
  * receipt on it at the PapeX device, and the dashboard it lands on — then the
@@ -67,7 +68,7 @@ export function StaticStory() {
       <figure className={cn(s.staticStep, s.staticDash)}>
         <div className={s.staticLaptop} role="img" aria-label={story.laptopLabel}>
           <div className={s.staticScreen}>
-            <Dashboard summary={summary} />
+            <Dashboard live />
           </div>
           <div className={s.staticDeck} aria-hidden="true" />
         </div>
