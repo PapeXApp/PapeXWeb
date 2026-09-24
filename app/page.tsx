@@ -13,17 +13,42 @@ import { SiteShell } from '@/components/brand/site-shell'
 import { ForkGate } from '@/components/brand/fork-gate'
 import { FORK_SKIP_SCRIPT } from '@/lib/pathChoice'
 
+// Keyword first, brand as the suffix. openGraph + twitter are spelled out in
+// full here: Next replaces (does not deep-merge) the layout's openGraph and
+// twitter objects per page, so leaving either out would drop the image or
+// fall back to the layout's old title.
+// Title and description are Nico's approved Web 2.1 SEO copy (2026-09-24,
+// .claude/plans/2026-09-24-web-2.1-headline-psychology.md §4 + brainstorm
+// §8c). The same text is used for OpenGraph and Twitter so a shared link
+// matches the search result. Title ≤60 chars, description ≤155.
+const TITLE = 'Digital Receipts, One Tap at Checkout | PapeX'
+const DESCRIPTION =
+  'Tap your phone at checkout and your receipt opens. Shoppers keep every receipt in the free PapeX app. Stores get a free digital receipt device.'
+const OG_IMAGE = {
+  url: 'https://papex.app/og-image-v2.png',
+  width: 1200,
+  height: 630,
+  alt: 'PapeX digital receipts: a phone showing a receipt beside a pile of paper receipts',
+  type: 'image/png',
+}
+
 export const metadata: Metadata = {
-  title: 'PapeX | Never Lose a Receipt Again',
-  description:
-    'PapeX turns every checkout into a digital receipt. Choose your path: digital receipts for customers, or free receipt hardware for your business.',
+  title: TITLE,
+  description: DESCRIPTION,
   alternates: { canonical: 'https://papex.app' },
   openGraph: {
     type: 'website',
     url: 'https://papex.app',
-    title: 'PapeX | Never Lose a Receipt Again',
-    description:
-      'PapeX turns every checkout into a digital receipt. Choose your path: digital receipts for customers, or free receipt hardware for your business.',
+    siteName: 'PapeX',
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [OG_IMAGE],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [OG_IMAGE.url],
   },
 }
 

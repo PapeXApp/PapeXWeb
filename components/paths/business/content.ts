@@ -43,13 +43,16 @@ import { SALES_PHONE, SALES_PHONE_HREF } from "@/components/brand/links"
 // safe? (device) · 05 How do I get it? (setup -> demo) · 06 FAQ.
 
 export const hero = {
-  // "What is this?" -> "This is Tap to Retain."
-  eyebrow: "This is Tap to Retain",
-  // Nico, round 2: "Zero paper" is true once the merchant switches the paper
-  // printer off, which is their call — so it MUST ship with `paperLine`
-  // directly under the lead. Drop the pairing and this becomes "Less paper."
-  heading: "Modern checkout. Zero paper.",
+  // "What is this?" (Nico, 2026-09-24): the offer and the category lead the
+  // H1, and it repeats the fork's business line so the promise carries
+  // through. "Tap to Retain" stays as the eyebrow, next to the brand. No
+  // "coupons" here: merchant-sent coupons are still "Coming soon".
+  eyebrow: "Tap to Retain, by PapeX",
+  heading: "Free digital receipts for your store.",
   lead: "A free PapeX device (RDH, Receipt Data Hub) joins your POS as a printer. Customers tap their phone for a digital receipt; you get a dashboard of every sale.",
+  // Nico's approved paper wording (§6a round 2). No longer a required pair
+  // (the H1 no longer says "Zero paper"), kept as the hero's sub-line. If
+  // "Zero paper" ever returns to the hero, it must ship with this line.
   paperLine: "Go paper-free: switch off the printer whenever you're ready.",
   ctaLabel: "Request a demo",
   phoneLabel: "or call",

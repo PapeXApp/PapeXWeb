@@ -65,8 +65,8 @@ export function Hero() {
           >
             {hero.lead}
           </p>
-          {/* Nico, round 2: "Zero paper" in the H1 is only allowed with this
-              line under it. Keep them together. */}
+          {/* Nico's approved paper line. If "Zero paper" ever returns to the
+              H1, it is only allowed with this line under it. */}
           <p
             className="mt-[calc(var(--gap-title)*.5)] max-w-[46ch] text-[length:var(--fs-lead)] font-semibold leading-[1.5]"
             style={{ color: "var(--flow-fg)" }}
