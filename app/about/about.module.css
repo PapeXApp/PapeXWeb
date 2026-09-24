@@ -1,0 +1,193 @@
+/*
+ * /about on the redesign shell (Web 2.1, S2).
+ *
+ * Same pattern as /blog: SiteShell path="page" + a FlowGround that starts
+ * light, so page-level text uses var(--flow-fg|fg-2|fg-3) (never a fixed
+ * navy) — it has to stay readable while the ground crossfades into the navy
+ * in-flow footer. Elevated surfaces (the white team/contact cards) keep their
+ * own fixed colours. Rhythm = --section-pad-y; headings = .rd-display.
+ */
+
+.top {
+  padding-top: calc(94px + var(--section-pad-y));
+}
+
+.wrap {
+  width: 100%;
+  max-width: 1150px;
+  margin: 0 auto;
+  padding: 0 clamp(20px, 5vw, 56px);
+}
+
+/* --- Header ------------------------------------------------------------- */
+.head {
+  max-width: 680px;
+  margin-bottom: clamp(36px, 4vw, 56px);
+}
+.title {
+  font-size: var(--fs-h1-customer);
+  color: var(--flow-fg);
+  margin: 0;
+}
+.lead {
+  margin: clamp(16px, 2vw, 24px) 0 0;
+  font-size: var(--fs-lead);
+  line-height: 1.55;
+  color: var(--flow-fg-2);
+  max-width: 56ch;
+}
+
+/* --- Team groups ---------------------------------------------------------- */
+.group {
+  margin-bottom: clamp(36px, 4.4vw, 56px);
+}
+.group:last-of-type {
+  margin-bottom: clamp(28px, 3.2vw, 44px);
+}
+.groupTitle {
+  margin: 0 0 clamp(16px, 1.8vw, 22px);
+  font-family: var(--font-label);
+  font-size: 12.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--orange);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gap-cards);
+}
+@media (min-width: 620px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 980px) {
+  .grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: clamp(20px, 2vw, 26px) clamp(14px, 1.6vw, 20px);
+  background: var(--white);
+  color: var(--navy);
+  border: 1px solid var(--on-light-border);
+  border-radius: var(--r-card-sm);
+  transition:
+    transform var(--dur-hover, 240ms) var(--ease-out-expo, ease),
+    box-shadow var(--dur-hover, 240ms) ease;
+}
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--sh-card-hover);
+}
+
+.avatarPhoto {
+  width: 92px;
+  height: 92px;
+  margin-bottom: 16px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--hairline-1);
+  position: relative;
+}
+.avatarPhoto img {
+  object-fit: cover;
+}
+
+.avatarInitials {
+  width: 92px;
+  height: 92px;
+  margin-bottom: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--navy);
+  background-image: linear-gradient(160deg, var(--navy) 0%, var(--navy-700) 100%);
+  color: var(--offwhite);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 26px;
+  letter-spacing: 0.02em;
+}
+
+.name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 1.25;
+  color: var(--navy);
+}
+.role {
+  display: block;
+  margin-top: 4px;
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--on-light-text);
+}
+.linkedin {
+  margin-top: 12px;
+  font-family: var(--font-label);
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--orange) !important;
+}
+.linkedin:hover {
+  text-decoration: underline;
+}
+
+/* --- Contact block --------------------------------------------------------- */
+.contactSection {
+  padding-bottom: var(--section-pad-y);
+}
+.contactCard {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: clamp(28px, 4vw, 48px);
+  background: var(--white);
+  color: var(--navy);
+  border: 1px solid var(--on-light-border);
+  border-radius: var(--r-card);
+  text-align: center;
+}
+.contactTitle {
+  margin: 0;
+  font-size: var(--fs-h3);
+  color: var(--navy);
+}
+.contactBody {
+  max-width: 480px;
+  margin: 14px auto 0;
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  color: var(--on-light-text);
+}
+.contactRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(12px, 2vw, 28px);
+  margin-top: clamp(20px, 2.4vw, 28px);
+  font-size: 15.5px;
+}
+.contactLink {
+  color: var(--navy) !important;
+  font-weight: 600;
+  transition: color var(--dur-hover, 240ms) ease;
+}
+.contactLink:hover {
+  color: var(--orange) !important;
+}
+.contactCta {
+  margin-top: clamp(20px, 2.4vw, 28px);
+}
