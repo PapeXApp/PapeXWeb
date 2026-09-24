@@ -14,9 +14,9 @@
 // Link set (Web 2.1 spec §3.5). The Platform column deep-links to sections on
 // the path homes: #features and #faq on /customers, #setup and #faq on
 // /business (the #features/#setup/#faq ids land with the /customers and
-// /business tasks). Waitlist and POS Calculator are no longer linked; both
-// routes still exist (their fate is an open question for Nico), they are
-// just not promoted from here.
+// /business tasks). Waitlist and POS Calculator are no longer linked: both
+// now redirect (next.config.ts, 307: /waitlist → /, /pos-calculator →
+// /business). The page code stays in the repo.
 //
 // `inFlow` (2026-09-22): on the two path homes the footer is rendered INSIDE
 // FlowGround, so it joins the page's ground crossfade instead of being a flat

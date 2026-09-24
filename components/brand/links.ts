@@ -22,8 +22,10 @@ export function storeUrlFor(platform: Platform): string {
 }
 
 export const SUPPORT_EMAIL = 'support@papex.app'
-export const SALES_PHONE = '415-261-8675'
-export const SALES_PHONE_HREF = 'tel:+14152618675'
+// The site's one phone number (Nico, 2026-09-24: 415-261-8610). Import it from
+// here rather than retyping it, so a change is one edit.
+export const SALES_PHONE = '415-261-8610'
+export const SALES_PHONE_HREF = 'tel:+14152618610'
 
 // Social slots. No confirmed profile URLs yet: Nico will fill these in. A chip
 // only renders in the footer once its URL here is non-empty, so an empty slot

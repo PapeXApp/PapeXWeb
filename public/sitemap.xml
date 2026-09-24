@@ -4,7 +4,7 @@
   site runs with trailingSlash:false and every canonical omits it.
 
   Deliberately NOT listed:
-    /waitlist, /pos-calculator  kept as routes, no longer promoted
+    /waitlist, /pos-calculator  redirected (307) in next.config.ts
     /survey                     not linked from the site
     /r, /rdh                    per-receipt pages; /r is also Disallowed in robots.txt
     /merchant                   merchant.papex.app dashboard, 404 on papex.app by design
