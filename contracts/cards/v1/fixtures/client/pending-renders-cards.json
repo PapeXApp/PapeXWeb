@@ -1,0 +1,28 @@
+{
+  "description": "pending renders whatever fact-free cards it carries.",
+  "requestSid": "c0ffee0000000100",
+  "response": {
+    "schemaVersion": 1,
+    "sid": "c0ffee0000000100",
+    "status": "pending",
+    "merchant": {
+      "partner": false,
+      "ageRestricted": false
+    },
+    "cards": [
+      {
+        "id": "a",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Card a."
+      }
+    ],
+    "retryAfterMs": 15000
+  },
+  "expect": {
+    "cardIds": [
+      "a"
+    ]
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "sid": "c0ffee0000000004",
+  "status": "ok",
+  "merchant": {
+    "partner": false,
+    "ageRestricted": false
+  },
+  "cards": [
+    {
+      "id": "ean-coupon",
+      "type": "offer",
+      "mode": "preview",
+      "valueLabel": "25%",
+      "valueSuffix": "off",
+      "title": "25% off one item in the bakery.",
+      "redemption": {
+        "type": "barcode",
+        "symbology": "ean13",
+        "value": "4006381333931",
+        "text": "4 006381 333931"
+      }
+    },
+    {
+      "id": "upc-coupon",
+      "type": "offer",
+      "mode": "preview",
+      "valueLabel": "$1",
+      "valueSuffix": "off",
+      "title": "$1 off a gallon of milk.",
+      "redemption": {
+        "type": "barcode",
+        "symbology": "upca",
+        "value": "036000291452"
+      }
+    }
+  ]
+}

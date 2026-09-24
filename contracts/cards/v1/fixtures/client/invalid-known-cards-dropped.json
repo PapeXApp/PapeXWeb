@@ -1,0 +1,225 @@
+{
+  "description": "Known types that fail validation are dropped whole; the valid card between them renders.",
+  "requestSid": "c0ffee0000000100",
+  "response": {
+    "schemaVersion": 1,
+    "sid": "c0ffee0000000100",
+    "status": "ok",
+    "merchant": {
+      "partner": false,
+      "ageRestricted": false
+    },
+    "cards": [
+      {
+        "id": "offer-no-value",
+        "type": "offer",
+        "mode": "live",
+        "title": "Missing valueLabel."
+      },
+      {
+        "id": "too-long",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      },
+      {
+        "id": "loyalty-no-note",
+        "type": "loyalty",
+        "mode": "live",
+        "programName": "Rewards"
+      },
+      {
+        "id": "cta-javascript",
+        "type": "cta",
+        "mode": "live",
+        "voice": "papex",
+        "label": "Go",
+        "url": "javascript:alert(1)",
+        "style": "primary"
+      },
+      {
+        "id": "cta-http",
+        "type": "cta",
+        "mode": "live",
+        "voice": "papex",
+        "label": "Go",
+        "url": "http://example.com/",
+        "style": "primary"
+      },
+      {
+        "id": "cta-userinfo",
+        "type": "cta",
+        "mode": "live",
+        "voice": "papex",
+        "label": "Go",
+        "url": "https://papex.app@evil.example/",
+        "style": "primary"
+      },
+      {
+        "id": "cta-data",
+        "type": "cta",
+        "mode": "live",
+        "voice": "papex",
+        "label": "Go",
+        "url": "data:text/html,<script>alert(1)</script>",
+        "style": "primary"
+      },
+      {
+        "id": "keep",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Card keep."
+      },
+      {
+        "id": "bidi-title",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Card bidi-title.",
+        "title": "Pay \u202Eevil\u202C here"
+      },
+      {
+        "id": "control-char",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Line one\nline two"
+      },
+      {
+        "id": "whitespace-body",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "   "
+      },
+      {
+        "id": "bad-voice",
+        "type": "text",
+        "mode": "live",
+        "voice": "narrator",
+        "body": "Card bad-voice."
+      },
+      {
+        "id": "bad-icon",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Card bad-icon.",
+        "icon": "skull"
+      },
+      {
+        "id": "long-heading",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Card long-heading.",
+        "heading": "hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh"
+      },
+      {
+        "id": "Bad_ID",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Card Bad_ID."
+      },
+      {
+        "id": "wrong-mode",
+        "type": "text",
+        "mode": "draft",
+        "voice": "papex",
+        "body": "x"
+      },
+      {
+        "id": "bad-expiry",
+        "type": "offer",
+        "mode": "live",
+        "valueLabel": "$5",
+        "title": "$5 off.",
+        "validity": {
+          "expiresAt": "2026-02-30T23:59:59Z",
+          "countdown": true
+        }
+      },
+      {
+        "id": "fractional-expiry",
+        "type": "offer",
+        "mode": "live",
+        "valueLabel": "$5",
+        "title": "$5 off.",
+        "validity": {
+          "expiresAt": "2026-10-01T23:59:59.000Z",
+          "countdown": true
+        }
+      },
+      {
+        "id": "bad-symbology",
+        "type": "offer",
+        "mode": "live",
+        "valueLabel": "$5",
+        "title": "$5 off.",
+        "redemption": {
+          "type": "barcode",
+          "symbology": "pdf417",
+          "value": "X"
+        }
+      },
+      {
+        "id": "bad-check-digit",
+        "type": "offer",
+        "mode": "live",
+        "valueLabel": "$5",
+        "title": "$5 off.",
+        "redemption": {
+          "type": "barcode",
+          "symbology": "ean13",
+          "value": "4006381333932"
+        }
+      },
+      {
+        "id": "bad-save-label",
+        "type": "offer",
+        "mode": "live",
+        "valueLabel": "$5",
+        "title": "$5 off.",
+        "actions": [
+          {
+            "type": "save"
+          }
+        ]
+      },
+      {
+        "id": "insight-no-evidence",
+        "type": "insight",
+        "mode": "live",
+        "headline": "h",
+        "body": "b",
+        "evidence": []
+      },
+      {
+        "id": "fraction-over-one",
+        "type": "loyalty",
+        "mode": "live",
+        "programName": "R",
+        "note": "n",
+        "progress": {
+          "fraction": 1.5,
+          "text": "t"
+        }
+      },
+      {
+        "id": "number-as-text",
+        "type": "savings",
+        "mode": "live",
+        "total": 6.5,
+        "totalLabel": "saved"
+      }
+    ]
+  },
+  "expect": {
+    "cardIds": [
+      "keep"
+    ]
+  }
+}

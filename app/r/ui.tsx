@@ -20,8 +20,15 @@
 // properties can't cleanly express a mask-composite recipe as inline
 // style, so that one piece is a real stylesheet rather than inline props.
 //
-// All server components except where noted — SaveToPapex.tsx and
-// RetryButton.tsx are their own "use client" islands, imported here.
+// Every component in this file is a server component, and nothing here may
+// import a client island — same rule as chrome.tsx, for the same reason.
+// `CtaRow`, the one piece that renders SaveToPapex (a "use client" island
+// pulling in the Firebase auth SDK), lives in ./CtaRow.tsx; Next includes
+// every client entry point reachable from a page's module graph whether it
+// renders or not, so keeping it out of here is what lets the demo routes,
+// app/rdh and app/merchant/tx/[sid] import these cards without shipping
+// sign-in JS they never run. The island-free CTA (`DemoCtaRow`, below) is
+// therefore safe to keep here.
 
 import type { ReactNode } from "react";
 import { AlertTriangle, Clock, FlaskConical, SearchX } from "lucide-react";
@@ -32,9 +39,9 @@ import {
   extractLastFour,
   PAYMENT_METHOD_STYLES,
 } from "@/lib/receiptSummary";
-import SaveToPapex from "./SaveToPapex";
 import styles from "./glass.module.css";
 import { GlassCard, S, Shell, T } from "./chrome";
+import { DecodedText } from "@/components/DecodedText";
 import { APP_STORE_URL, PLAY_STORE_URL, type Platform } from "@/lib/storeLinks";
 
 // Re-exported so `from "./ui"` keeps working for callers that want the
@@ -211,16 +218,22 @@ export function StateCard({
 // URI, so there's no network fetch to optimize away either way, and
 // next/image's remote-loader machinery doesn't apply to embedded data.
 
+// Renders `headerDataUri` (ink-bounds-trimmed), not `dataUri` (the raw,
+// untrimmed decode) — real captures showed the mark's ink is often
+// asymmetrically off-center within its own declared canvas on both axes,
+// which read as "the logo is off-center" even though this card's own flex
+// container centers the box around it perfectly. See lib/escpos.ts's
+// DecodedLogo.headerDataUri doc comment for the numbers.
 function LogoBlock({ logo }: { logo: DecodedLogo }) {
   return (
     <div className="flex justify-center">
       <GlassCard emphasis="none" className="flex max-w-[240px] items-center justify-center px-6 py-5" radius={20}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={logo.dataUri}
+          src={logo.headerDataUri}
           alt="Merchant logo"
-          width={logo.widthPx}
-          height={logo.heightPx}
+          width={logo.headerWidthPx}
+          height={logo.headerHeightPx}
           className="h-auto w-full max-h-[120px]"
           style={{ imageRendering: "pixelated" }}
         />
@@ -325,29 +338,51 @@ function monogram(name?: string): string {
 export function MerchantHeaderCard({
   summary,
   isSample = false,
+  logo,
 }: {
   summary: ReceiptSummary;
   isSample?: boolean;
+  /**
+   * Decoded merchant logo, if any — see lib/escpos.ts. When present, its
+   * `avatarDataUri` (trimmed to the mark's own ink bounds, recolored dark
+   * for this circle's white fill) replaces the letter monogram. Falls back
+   * to the monogram whenever there's no inline logo: no raster in the
+   * stream, an NV/stored-logo reference (bitmap bytes not in this capture),
+   * or a decode failure — all collapse to `logo` being undefined upstream
+   * (app/r/page.tsx), so this component only needs one check. Never set on
+   * the sample/demo path, so the sample keeps today's monogram unconditionally.
+   */
+  logo?: DecodedLogo;
 }) {
   const { merchantName, addressLines, dateline } = summary;
   return (
     <GlassCard emphasis="standard" className="p-6">
       <div className="flex items-center gap-4">
         <div
-          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-white"
+          className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white"
           style={{ border: `2px solid ${T.orange}` }}
         >
-          <span className="text-xl font-medium" style={{ color: T.navy }}>
-            {monogram(merchantName)}
-          </span>
+          {logo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={logo.avatarDataUri}
+              alt=""
+              className="h-full w-full object-contain p-1.5"
+              style={{ imageRendering: "pixelated" }}
+            />
+          ) : (
+            <span className="text-xl font-medium" style={{ color: T.navy }}>
+              {monogram(merchantName)}
+            </span>
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <h1 className="font-barlow truncate text-2xl font-medium" style={{ color: T.text }}>
-            {merchantName ?? "Your receipt"}
+            {merchantName ? <DecodedText text={merchantName} /> : "Your receipt"}
           </h1>
           {addressLines.length > 0 && (
             <p className="mt-0.5 truncate text-sm" style={{ color: T.textMuted }}>
-              {addressLines.join(", ")}
+              <DecodedText text={addressLines.join(", ")} />
             </p>
           )}
           {dateline && (
@@ -390,7 +425,7 @@ export function ItemsCard({ summary }: { summary: ReceiptSummary }) {
               }
             >
               <span className="font-barlow min-w-0 flex-1 truncate text-base font-medium" style={{ color: T.text }}>
-                {item.name}
+                <DecodedText text={item.name} />
               </span>
               <div className="flex shrink-0 flex-col items-end">
                 {item.qty > 1 && (
@@ -697,7 +732,7 @@ export function ReceiptView({
         </div>
       )}
       {logo && <LogoBlock logo={logo} />}
-      {hasStructure && <MerchantHeaderCard summary={summary} isSample={isSample} />}
+      {hasStructure && <MerchantHeaderCard summary={summary} isSample={isSample} logo={logo} />}
       {hasStructure && <ItemsCard summary={summary} />}
       {hasStructure && <TotalsCard summary={summary} isSample={isSample} />}
       {/* Skipped when there is no text at all — an empty, permanently-open
@@ -754,19 +789,96 @@ export function AppCta({ platform }: { platform: Platform }) {
   );
 }
 
-export function CtaRow({
-  sid,
-  isSample,
-  platform,
-}: {
-  sid?: string;
-  isSample: boolean;
-  platform: Platform;
-}) {
+// ---- "Save in the PapeX app" (rid save-link, issue #23 S4) ---------------------
+//
+// A second, small link under AppCta on `/r?rid=` (peer-to-peer shared
+// receipts only — see app/r/sharedReceiptView.tsx, the only caller) that
+// hands an iOS Safari visitor to `https://links.papex.app/r?rid=...&save=1`,
+// a cross-host universal link the installed app intercepts and completes the
+// save for (see lib/ridSaveLink.ts for the URL contract and the flag it sits
+// behind). Android and desktop visitors get nothing here — see that module's
+// doc comment for why.
+//
+// Server component: a plain <a>, no client JS, same as AppCta above.
+export function SaveInAppLink({ href }: { href: string }) {
+  return (
+    <p className="text-center text-xs" style={{ color: S.textMuted }}>
+      <a
+        href={href}
+        className="font-medium underline underline-offset-2"
+        style={{ color: T.orange }}
+      >
+        Save in the PapeX app
+      </a>
+    </p>
+  );
+}
+
+/**
+ * The CTA row for a receipt that must not offer a claim: "Get PapeX" and
+ * nothing else.
+ *
+ * Used by the demo routes (app/r/demo, app/demo/r) and by CtaRow's `isDemo`
+ * branch, so both URLs that can surface a demo receipt render the identical
+ * footer.
+ *
+ * Deliberately NOT a disabled "Save to PapeX" button. The disabled variant
+ * SaveToPapex renders for `isSample` is captioned "Nothing to save — this is
+ * a sample receipt", which is the SampleFrame/DemoBanner voice — full-strength
+ * marking built for lib/receiptState.ts's `/r?demo=1` fallback, where a
+ * customer might mistake fabricated content for their own purchase. A demo
+ * tag is a different risk (see DemoDisclosure below), and regardless of
+ * whether a given demo's data is invented or real-seeded, claiming is
+ * single-owner per sid — so the Save button here is an action that can fail
+ * in front of an audience either way, and at a booth the action we actually
+ * want is "install PapeX", not "sign into an account you don't have to save
+ * a receipt you didn't buy."
+ *
+ * Lives here, in the island-free half of this segment, so a demo route can
+ * render a CTA without pulling SaveToPapex (and the Firebase auth SDK behind
+ * it) into its module graph at all — see the note at the top of CtaRow.tsx.
+ */
+export function DemoCtaRow({ platform }: { platform: Platform }) {
   return (
     <div className="mt-2 flex flex-col items-center gap-4">
-      <SaveToPapex sid={sid} isSample={isSample} isIOS={platform === "ios"} />
       <AppCta platform={platform} />
     </div>
+  );
+}
+
+// ---- Demo-data disclosure ------------------------------------------------------
+//
+// One quiet caption for a receipt whose store, prices, and promotions were
+// INVENTED for this demo — Hartwell's Market and Ellsworth Market, driven by
+// `DemoReceiptEnrichment.fabricated` (lib/demoReceipts.ts) via
+// `formatDemoDisclosure`. The Sunset Leaf bench tag sets neither and renders
+// nothing here, because it really is real seeded data from a real
+// provisioned merchant.
+//
+// DELIBERATELY NOT SampleFrame / DemoBanner (above in this file). Those exist
+// to protect a customer from mistaking fabricated content for THEIR OWN real
+// purchase (lib/receiptState.ts's `/r?demo=1` sample) — a repeating
+// watermark, a dashed border and a pinned banner are proportionate to that
+// risk. Nobody tapping a demo tag at a booth thinks Hartwell's Market printed
+// for their own purchase; the risk here is an investor, reporter, or grocer
+// assuming Hartwell's is a real chain, and one calm sentence answers that
+// completely. The full-strength treatment's visual weight would read as the
+// company hedging on its own demo, which is the opposite of the point.
+//
+// PLACEMENT (app/r/demo/page.tsx): directly under the receipt, above the
+// value layer — after the structured card a screenshot at a loud booth is
+// most likely to already include, before the pitch resumes below. That is
+// what keeps this reading as a footnote rather than a disclaimer up front.
+// Sits on the page background with no card, same treatment as AppCta below.
+//
+// Since cards P0 the demo routes draw this line as the first receipt card (a
+// `disclosure` card, app/r/cards/DisclosureCard.tsx, identical markup), and
+// this component is the reference app/r/cards/cards.test.tsx checks it against.
+
+export function DemoDisclosure({ text }: { text: string }) {
+  return (
+    <p className="px-1 text-center text-xs" style={{ color: S.textMuted }}>
+      {text}
+    </p>
   );
 }

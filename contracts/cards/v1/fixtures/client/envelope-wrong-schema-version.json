@@ -1,0 +1,25 @@
+{
+  "description": "FAIL CLOSED: schemaVersion other than 1 renders nothing.",
+  "requestSid": "c0ffee0000000100",
+  "response": {
+    "schemaVersion": 2,
+    "sid": "c0ffee0000000100",
+    "status": "ok",
+    "merchant": {
+      "partner": false,
+      "ageRestricted": false
+    },
+    "cards": [
+      {
+        "id": "a",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Card a."
+      }
+    ]
+  },
+  "expect": {
+    "cardIds": []
+  }
+}

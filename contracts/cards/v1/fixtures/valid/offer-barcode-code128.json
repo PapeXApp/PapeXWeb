@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "sid": "c0ffee0000000003",
+  "status": "ok",
+  "merchant": {
+    "partner": false,
+    "ageRestricted": false
+  },
+  "cards": [
+    {
+      "id": "bogo-coffee",
+      "type": "offer",
+      "mode": "live",
+      "kicker": "This week",
+      "valueLabel": "BOGO",
+      "qualifier": "No minimum",
+      "title": "Buy one bag of house coffee, get one free.",
+      "terms": "Valid through Sunday. Limit one per customer.",
+      "validity": {
+        "expiresAt": "2026-09-28T06:59:59Z",
+        "countdown": false
+      },
+      "redemption": {
+        "type": "barcode",
+        "symbology": "code128",
+        "value": "EXM-BOGO-0926",
+        "caption": "Scan at the register"
+      }
+    }
+  ]
+}

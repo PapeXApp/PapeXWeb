@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "sid": "7e57ca4d00000004",
+  "status": "ok",
+  "merchant": {
+    "partner": false,
+    "ageRestricted": false
+  },
+  "layout": {
+    "order": "receipt-first"
+  },
+  "cards": [
+    {
+      "id": "tc-offer-4-app",
+      "type": "offer",
+      "mode": "live",
+      "heading": "An offer from Ellsworth Market",
+      "kicker": "Next visit",
+      "valueLabel": "$10",
+      "valueSuffix": "off",
+      "qualifier": "On $75+",
+      "title": "$10 off your next purchase of $75 or more at Ellsworth Market.",
+      "terms": "Valid through Oct 31, 2026. Limit one per customer. Excludes alcohol, tobacco, pharmacy, gift cards, lottery, CRV and bag fees. TEST COUPON: not redeemable.",
+      "validity": {
+        "expiresAt": "2026-11-01T06:59:59Z",
+        "countdown": true,
+        "hideWhenExpired": true
+      },
+      "redemption": {
+        "type": "barcode",
+        "symbology": "upca",
+        "value": "042100005264",
+        "caption": "Scan at the register",
+        "scope": "shared"
+      },
+      "actions": [
+        {
+          "type": "save",
+          "label": "Save to PapeX"
+        }
+      ]
+    }
+  ]
+}

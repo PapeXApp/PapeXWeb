@@ -38,6 +38,7 @@ import { summarizeReceipt, hasStructure as computeHasStructure, type ReceiptSumm
 import { GlassCard, ReceiptView } from "@/app/r/ui";
 import { LoadingBlock, EmptyState, ErrorBanner, ApproximateCaveat, PaymentChip, ConfidencePill, ParseFailedPill, ImageOnlyPill } from "../../ui/primitives";
 import { T } from "../../ui/tokens";
+import { DecodedText } from "@/components/DecodedText";
 
 interface ParsedReceipt {
   summary: ReceiptSummary;
@@ -193,7 +194,7 @@ export default function TransactionDetailPage() {
               <ErrorBanner message="This receipt couldn't be parsed. Showing the raw captured text below." />
               <GlassCard>
                 <pre className="overflow-x-auto whitespace-pre-wrap font-mono text-xs" style={{ color: T.textSecondary }}>
-                  {detail.rawText}
+                  <DecodedText text={detail.rawText} />
                 </pre>
               </GlassCard>
             </>
@@ -222,7 +223,7 @@ export default function TransactionDetailPage() {
           ) : (
             <GlassCard>
               <pre className="overflow-x-auto whitespace-pre-wrap font-mono text-xs" style={{ color: T.textSecondary }}>
-                {detail.rawText}
+                <DecodedText text={detail.rawText} />
               </pre>
             </GlassCard>
           )}

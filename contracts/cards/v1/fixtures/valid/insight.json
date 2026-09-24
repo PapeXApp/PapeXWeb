@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "sid": "c0ffee0000000008",
+  "status": "ok",
+  "merchant": {
+    "partner": false,
+    "ageRestricted": false
+  },
+  "cards": [
+    {
+      "id": "best-price",
+      "type": "insight",
+      "mode": "preview",
+      "heading": "A message from PapeX",
+      "kicker": "From your own receipts",
+      "headline": "You just paid your lowest price yet on olive oil.",
+      "body": "You've bought this exact bottle four times in the past year. You usually pay about $11.99. Today it was $7.99.",
+      "evidence": [
+        {
+          "label": "Purchases",
+          "value": "4 in the last 12 months"
+        },
+        {
+          "label": "You usually pay",
+          "value": "$11.99"
+        },
+        {
+          "label": "Today, here",
+          "value": "$7.99"
+        }
+      ],
+      "footnote": "Compared against the identical product only, from receipts you captured."
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "sid": "7e57ca4d00000009",
+  "status": "ok",
+  "merchant": {
+    "partner": false,
+    "ageRestricted": false
+  },
+  "layout": {
+    "order": "receipt-first"
+  },
+  "cards": [
+    {
+      "id": "tc-offer-9",
+      "type": "offer",
+      "mode": "live",
+      "heading": "An offer from Late Night Test Dispensary",
+      "kicker": "Next visit",
+      "valueLabel": "$5",
+      "valueSuffix": "off",
+      "qualifier": "On $30+",
+      "title": "$5 off your next purchase of $30 or more.",
+      "terms": "Valid through Oct 31, 2026. 21+ only; valid ID required. One per customer. Not valid with other offers. TEST COUPON: not redeemable.",
+      "validity": {
+        "expiresAt": "2026-11-01T06:59:59Z",
+        "countdown": true,
+        "hideWhenExpired": true
+      },
+      "redemption": {
+        "type": "barcode",
+        "symbology": "code128",
+        "value": "LATENITE5",
+        "caption": "Scan at the register",
+        "scope": "shared"
+      }
+    }
+  ]
+}

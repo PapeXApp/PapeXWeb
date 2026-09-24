@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "sid": "b0de9a0000000001",
+  "status": "ok",
+  "configRef": "demo-registry",
+  "merchant": {
+    "partner": true,
+    "ageRestricted": false
+  },
+  "cards": [
+    {
+      "id": "demo-disclosure",
+      "type": "disclosure",
+      "mode": "preview",
+      "text": "Ellsworth Market is a store created for this demo; its prices and promotions are invented."
+    },
+    {
+      "id": "demo-savings",
+      "type": "savings",
+      "mode": "preview",
+      "heading": "Savings",
+      "total": "$4.00",
+      "totalLabel": "saved today",
+      "components": [
+        {
+          "label": "Tide Original HE Liquid 92 oz",
+          "amount": "$3.00"
+        },
+        {
+          "label": "Romaine Hearts 3ct",
+          "amount": "$1.00"
+        }
+      ]
+    },
+    {
+      "id": "demo-loyalty",
+      "type": "loyalty",
+      "mode": "preview",
+      "heading": "Rewards",
+      "programName": "Ellsworth Rewards",
+      "earned": "+68 pts",
+      "balance": {
+        "value": "1,180",
+        "label": "points"
+      },
+      "balanceWorth": "worth $10",
+      "progress": {
+        "fraction": 0.9,
+        "text": "20 points from your next $2 reward (1,200 pts)."
+      },
+      "note": "PapeX tracks your points. Redeem them at the register like always."
+    },
+    {
+      "id": "demo-insight",
+      "type": "insight",
+      "mode": "preview",
+      "heading": "A message from PapeX",
+      "kicker": "From your own receipts",
+      "headline": "Ellsworth Market came in $3.00 under your usual Tide price.",
+      "body": "Tide Original HE Liquid 92 oz / 64 loads — you've bought this exact bottle five times in the last 12 months. Your typical price is $18.99. Ellsworth Market's was $15.99. Same bottle, same size, same formula. Just a lower shelf price.",
+      "evidence": [
+        {
+          "label": "Purchases",
+          "value": "5 in the last 12 months"
+        },
+        {
+          "label": "You usually pay",
+          "value": "$18.99"
+        },
+        {
+          "label": "Your previous best",
+          "value": "$17.49"
+        },
+        {
+          "label": "Today, here",
+          "value": "$15.99"
+        }
+      ],
+      "footnote": "Compared against the identical pack only, from receipts you captured."
+    },
+    {
+      "id": "demo-offer",
+      "type": "offer",
+      "mode": "preview",
+      "heading": "An offer from Ellsworth Market",
+      "kicker": "Next visit",
+      "valueLabel": "$10",
+      "valueSuffix": "off",
+      "qualifier": "On $75+",
+      "title": "$10 off your next purchase of $75 or more at Ellsworth Market.",
+      "terms": "Valid for 42 days from purchase. Limit one per customer. Excludes alcohol, tobacco, pharmacy, gift cards, lottery, CRV and bag fees.",
+      "validity": {
+        "expiresAt": "2026-10-20T23:59:59Z",
+        "countdown": true
+      },
+      "actions": [
+        {
+          "type": "save",
+          "label": "Save this offer"
+        }
+      ]
+    },
+    {
+      "id": "demo-email-capture",
+      "type": "emailCapture",
+      "mode": "preview",
+      "kicker": "Stay in touch",
+      "consentLabel": "Share my email with Ellsworth Market so they can send me offers like this one.",
+      "consentNote": "You can turn this off any time in PapeX.",
+      "consent": {
+        "textId": "demo-share-email",
+        "textVersion": 1
+      }
+    }
+  ]
+}

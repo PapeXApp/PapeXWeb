@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "sid": "c0ffee0000000009",
+  "status": "ok",
+  "merchant": {
+    "partner": true,
+    "ageRestricted": false
+  },
+  "cards": [
+    {
+      "id": "stay-in-touch",
+      "type": "emailCapture",
+      "mode": "preview",
+      "kicker": "Stay in touch",
+      "consentLabel": "Share my email with Example Market so they can send me offers like this one.",
+      "consentNote": "You can turn this off any time in PapeX.",
+      "consent": {
+        "textId": "example-share-email",
+        "textVersion": 1
+      }
+    }
+  ]
+}

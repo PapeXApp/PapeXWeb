@@ -1,0 +1,138 @@
+/* app/r/voucher.module.css
+ *
+ * The voucher-ticket silhouette for the merchant's offer, reimplemented in
+ * CSS from PapeXV2/components/coupons/CouponArtwork.tsx (799 lines of
+ * react-native-svg). Same vocabulary, different substrate: a rounded panel
+ * with semicircular notches bitten out of the side edges, a dashed
+ * perforation across the bite line, a stub below it, and the deal figure set
+ * large in the field with a small qualifier under it.
+ *
+ * WHY IT LOOKS NOTHING LIKE THE GLASS CARDS AROUND IT — AND MUST NOT
+ *
+ * The offer is the MERCHANT's speech; the price insight above it is PapeX's.
+ * Comparative-advertising liability attaches to the offer, not to the
+ * observation, so the contract allocates them to different parties and the UI
+ * has to make that allocation visible. This is the UI expression of that
+ * split, and it is not decoration: everything else on the page is dark
+ * translucent glass carrying the PapeX mark, and this one block is opaque
+ * warm paint carrying the merchant's terms. Nobody has to be told which voice
+ * is which.
+ *
+ * OPAQUE PAINT, NOT GLASS — the same rule CouponArtwork's own header records.
+ * The notches have to be real bites that show the page through them, which
+ * they cannot be if the ticket is itself translucent, and three stacked
+ * translucent pieces show a doubled-alpha hairline at every seam.
+ *
+ * INK: navy (#00121D) on the orange ramp. Contrast ~5.2:1, comfortably over
+ * the 3.0 minimum PapeXV2/components/coupons/brandContrast.ts sets for text
+ * on a brand field (a previous defect there shipped white-on-yellow at 1.4).
+ * White ink on this ramp measures ~2.7 and is not available.
+ *
+ * HOW THE NOTCHES ARE CUT
+ * Two elements, not one: `.field` masks a quarter-circle out of each of its
+ * BOTTOM corners and `.stub` masks one out of each of its TOP corners. At the
+ * seam the two quarters meet and read as one semicircular bite per side —
+ * and because each element only ever masks its own edge, the bite lands at
+ * the seam no matter how tall either half's content grows. A single-element
+ * version would need the perforation's y-offset as a hard-coded number, which
+ * is a layout bug waiting for the first long exclusions line.
+ *
+ * DEGRADATION: the whole mask lives inside an @supports. A browser without
+ * mask-composite gets a plain rounded two-part card — no notches, every word
+ * still there, nothing overlapping. That is the right failure: without the
+ * guard, an unsupported composite makes the mask layers ADD rather than
+ * INTERSECT and the ticket loses most of its paint.
+ *
+ * No bitmap assets, by the same rule the rest of this segment follows: this
+ * page is served to a stranger on conference Wi-Fi and everything on it
+ * should be a vector the HTML already carries.
+ */
+
+.ticket {
+  display: flex;
+  flex-direction: column;
+  /* drop-shadow, not box-shadow: box-shadow is drawn from the border box and
+     would trace a rectangle around a silhouette that has bites taken out of
+     it. drop-shadow follows the alpha channel the mask produces. */
+  filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.28));
+}
+
+.field,
+.stub {
+  position: relative;
+  /* The merchant's field. A three-stop warm ramp, matching CouponArtwork's
+     gradient treatment; opaque at every stop (see the header). */
+  background-image: linear-gradient(135deg, #ff9a3c 0%, #eb7100 55%, #c85e00 100%);
+  background-color: #eb7100;
+}
+
+.field {
+  border-radius: 20px 20px 0 0;
+}
+
+.stub {
+  border-radius: 0 0 20px 20px;
+}
+
+/* The perforation. A 1px dashed hairline in the ink colour, inset past the
+   notches so it starts and stops where the paper would actually tear.
+   Drawn on the stub rather than as its own element so it cannot pick up a
+   stray flex gap between the two halves. */
+.stub::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 18px;
+  right: 18px;
+  border-top: 1px dashed rgba(0, 18, 29, 0.45);
+}
+
+@supports (mask-composite: intersect) or (-webkit-mask-composite: source-in) {
+  .field {
+    -webkit-mask-image:
+      radial-gradient(circle 11px at 0% 100%, transparent 11px, #000 11.5px),
+      radial-gradient(circle 11px at 100% 100%, transparent 11px, #000 11.5px);
+    -webkit-mask-composite: source-in;
+    mask-image:
+      radial-gradient(circle 11px at 0% 100%, transparent 11px, #000 11.5px),
+      radial-gradient(circle 11px at 100% 100%, transparent 11px, #000 11.5px);
+    mask-composite: intersect;
+  }
+
+  .stub {
+    -webkit-mask-image:
+      radial-gradient(circle 11px at 0% 0%, transparent 11px, #000 11.5px),
+      radial-gradient(circle 11px at 100% 0%, transparent 11px, #000 11.5px);
+    -webkit-mask-composite: source-in;
+    mask-image:
+      radial-gradient(circle 11px at 0% 0%, transparent 11px, #000 11.5px),
+      radial-gradient(circle 11px at 100% 0%, transparent 11px, #000 11.5px);
+    mask-composite: intersect;
+  }
+}
+
+/* The urgency chip ("12 days left"). Never rendered once the window has
+   closed — see offerDaysRemaining() in lib/demoReceipts.ts for why there is
+   no "Expired" state to style. */
+.daysChip {
+  background: rgba(0, 18, 29, 0.16);
+  border: 1px solid rgba(0, 18, 29, 0.22);
+  color: #00121d;
+}
+
+/* The loyalty progress bar: points banked against the next reward rung.
+   `--pct` is set inline from the figures, so the bar cannot disagree with the
+   number printed beside it. */
+.loyaltyTrack {
+  height: 6px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.loyaltyFill {
+  height: 100%;
+  width: var(--pct, 0%);
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #eb7100 0%, #ff9a3c 100%);
+}

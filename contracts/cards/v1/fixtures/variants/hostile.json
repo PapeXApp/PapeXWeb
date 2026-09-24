@@ -1,0 +1,191 @@
+{
+  "schemaVersion": 1,
+  "sid": "7e57ca4d0000ff01",
+  "status": "ok",
+  "merchant": {
+    "partner": false,
+    "ageRestricted": true
+  },
+  "layout": {
+    "order": "coupons-first"
+  },
+  "cards": [
+    {
+      "id": "ok-offer",
+      "type": "offer",
+      "mode": "live",
+      "valueLabel": "$5",
+      "valueSuffix": "off",
+      "title": "$5 off your next purchase of $30 or more.",
+      "compliance": {
+        "licenseLine": "CA cannabis retailer licence LICENSE_PLACEHOLDER"
+      },
+      "redemption": {
+        "type": "code",
+        "code": "LATENITE5",
+        "scope": "perCustomer"
+      }
+    },
+    {
+      "id": "no-licence-offer",
+      "type": "offer",
+      "mode": "live",
+      "valueLabel": "$5",
+      "valueSuffix": "off",
+      "title": "$5 off your next purchase of $30 or more."
+    },
+    {
+      "id": "merchant-text-no-licence",
+      "type": "text",
+      "mode": "live",
+      "voice": "merchant",
+      "body": "Open late."
+    },
+    {
+      "id": "papex-text",
+      "type": "text",
+      "mode": "live",
+      "voice": "papex",
+      "body": "PapeX keeps this receipt for you."
+    },
+    {
+      "id": "bidi-licence",
+      "type": "offer",
+      "mode": "live",
+      "valueLabel": "$5",
+      "valueSuffix": "off",
+      "title": "$5 off your next purchase of $30 or more.",
+      "compliance": {
+        "licenseLine": "Licence ‮C10-0000000-LIC"
+      }
+    },
+    {
+      "id": "long-licence",
+      "type": "offer",
+      "mode": "live",
+      "valueLabel": "$5",
+      "valueSuffix": "off",
+      "title": "$5 off your next purchase of $30 or more.",
+      "compliance": {
+        "licenseLine": "LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL"
+      }
+    },
+    {
+      "id": "licence-not-object",
+      "type": "offer",
+      "mode": "live",
+      "valueLabel": "$5",
+      "valueSuffix": "off",
+      "title": "$5 off your next purchase of $30 or more.",
+      "compliance": "C10-0000000-LIC"
+    },
+    {
+      "id": "qr-too-long",
+      "type": "offer",
+      "mode": "live",
+      "valueLabel": "$5",
+      "valueSuffix": "off",
+      "title": "$5 off your next purchase of $30 or more.",
+      "compliance": {
+        "licenseLine": "CA cannabis retailer licence LICENSE_PLACEHOLDER"
+      },
+      "redemption": {
+        "type": "barcode",
+        "symbology": "qr",
+        "value": "QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ"
+      }
+    },
+    {
+      "id": "qr-control-char",
+      "type": "offer",
+      "mode": "live",
+      "valueLabel": "$5",
+      "valueSuffix": "off",
+      "title": "$5 off your next purchase of $30 or more.",
+      "compliance": {
+        "licenseLine": "CA cannabis retailer licence LICENSE_PLACEHOLDER"
+      },
+      "redemption": {
+        "type": "barcode",
+        "symbology": "qr",
+        "value": "A\nB"
+      }
+    },
+    {
+      "id": "bad-upca",
+      "type": "offer",
+      "mode": "live",
+      "valueLabel": "$5",
+      "valueSuffix": "off",
+      "title": "$5 off your next purchase of $30 or more.",
+      "compliance": {
+        "licenseLine": "CA cannabis retailer licence LICENSE_PLACEHOLDER"
+      },
+      "redemption": {
+        "type": "barcode",
+        "symbology": "upca",
+        "value": "042100005265"
+      }
+    },
+    {
+      "id": "bad-hide-flag",
+      "type": "offer",
+      "mode": "live",
+      "valueLabel": "$5",
+      "valueSuffix": "off",
+      "title": "$5 off your next purchase of $30 or more.",
+      "compliance": {
+        "licenseLine": "CA cannabis retailer licence LICENSE_PLACEHOLDER"
+      },
+      "validity": {
+        "expiresAt": "2026-11-01T06:59:59Z",
+        "countdown": true,
+        "hideWhenExpired": "yes"
+      }
+    },
+    {
+      "id": "js-cta",
+      "type": "cta",
+      "mode": "live",
+      "voice": "papex",
+      "label": "Go",
+      "url": "javascript:alert(1)",
+      "style": "primary"
+    },
+    {
+      "id": "long-headline",
+      "type": "savings",
+      "mode": "live",
+      "headline": "SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS",
+      "total": "$4.00",
+      "totalLabel": "saved"
+    },
+    {
+      "id": "capture",
+      "type": "emailCapture",
+      "mode": "preview",
+      "consentLabel": "Share my email.",
+      "consent": {
+        "textId": "x",
+        "textVersion": 1
+      },
+      "ageAffirmationLabel": "I am 21+."
+    },
+    {
+      "id": "wallet",
+      "type": "couponWallet",
+      "mode": "live"
+    },
+    {
+      "id": "ok-offer",
+      "type": "offer",
+      "mode": "live",
+      "valueLabel": "$5",
+      "valueSuffix": "off",
+      "title": "$5 off your next purchase of $30 or more.",
+      "compliance": {
+        "licenseLine": "CA cannabis retailer licence LICENSE_PLACEHOLDER"
+      }
+    }
+  ]
+}

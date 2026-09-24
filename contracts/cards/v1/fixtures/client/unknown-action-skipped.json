@@ -1,0 +1,42 @@
+{
+  "description": "Actions whose type is not a v1 action are skipped, however many there are; the offer and its save action render.",
+  "requestSid": "c0ffee0000000100",
+  "response": {
+    "schemaVersion": 1,
+    "sid": "c0ffee0000000100",
+    "status": "ok",
+    "merchant": {
+      "partner": false,
+      "ageRestricted": false
+    },
+    "cards": [
+      {
+        "id": "offer",
+        "type": "offer",
+        "mode": "live",
+        "valueLabel": "$5",
+        "title": "$5 off.",
+        "actions": [
+          {
+            "type": "share",
+            "label": "Share"
+          },
+          {
+            "type": "wallet",
+            "label": "Add to Wallet"
+          },
+          "junk",
+          {
+            "type": "save",
+            "label": "Save"
+          }
+        ]
+      }
+    ]
+  },
+  "expect": {
+    "cardIds": [
+      "offer"
+    ]
+  }
+}

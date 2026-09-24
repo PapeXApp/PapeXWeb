@@ -19,6 +19,8 @@
 //     all), this function is a second, defensive no-op for anything that
 //     isn't the merchant host rewriting a non-/merchant path.
 
+import { demoOverridesAllowed } from "./deployEnv";
+
 export type MerchantRouteDecision =
   | { action: "rewrite"; pathname: string }
   | { action: "none" };
@@ -43,9 +45,17 @@ function hostnameOnly(host: string): string {
  * into the merchant dashboard and take the marketing site down. It is
  * deliberately not read from any committed env file; it must be passed
  * explicitly per-deployment, so there is no way to enable it by accident.
+ *
+ * Gated by `demoOverridesAllowed()` (lib/deployEnv.ts) as a second, fail-closed
+ * line of defense: even if this flag somehow reaches vercel.json's build.env
+ * on the production deployment (the first line of defense —
+ * .github/workflows/merchant-demo-flag-guard.yml — is what's supposed to
+ * catch that before it merges), it still has no effect once VERCEL_ENV
+ * reports "production". See lib/deployEnv.ts's module doc for the full
+ * rationale and lib/merchantHost.test.ts's "PROD GUARD" cases below.
  */
 function demoModeEnabled(): boolean {
-  return process.env.NEXT_PUBLIC_MERCHANT_DEMO_HOST_ANY === "1";
+  return process.env.NEXT_PUBLIC_MERCHANT_DEMO_HOST_ANY === "1" && demoOverridesAllowed();
 }
 
 export function isMerchantHost(host: string): boolean {

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "sid": "c0ffee000000000d",
+  "status": "pending",
+  "retryAfterMs": 20000,
+  "merchant": {
+    "partner": false,
+    "ageRestricted": false
+  },
+  "cards": [
+    {
+      "id": "welcome",
+      "type": "text",
+      "mode": "live",
+      "voice": "merchant",
+      "body": "Thanks for visiting Example Market."
+    }
+  ]
+}

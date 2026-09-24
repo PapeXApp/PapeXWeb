@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "sid": "c0ffee000000000b",
+  "status": "ok",
+  "merchant": {
+    "partner": false,
+    "ageRestricted": false
+  },
+  "cards": [
+    {
+      "id": "demo-disclosure",
+      "type": "disclosure",
+      "mode": "preview",
+      "text": "Example Market is a store created for this demo; its prices and promotions are invented."
+    }
+  ]
+}

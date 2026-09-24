@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "sid": "7e57ca4d00000013",
+  "status": "ok",
+  "merchant": {
+    "partner": false,
+    "ageRestricted": false
+  },
+  "layout": {
+    "order": "receipt-first"
+  },
+  "cards": [
+    {
+      "id": "tc-cta-13",
+      "mode": "live",
+      "type": "cta",
+      "voice": "merchant",
+      "title": "This week at Ellsworth Market",
+      "body": "See the weekly specials before your next trip.",
+      "label": "See weekly specials",
+      "url": "https://papex.app/",
+      "style": "primary"
+    }
+  ]
+}

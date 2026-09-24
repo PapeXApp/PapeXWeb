@@ -25,7 +25,12 @@ import { parseEscPos, guessMerchantName, defaultStyle, type Style } from "./escp
 // re-derives width/height/rowBytes from the PNG's own IHDR chunk, not from
 // what the test expects to send in) so a bug shared by both wouldn't just
 // cancel out.
-function decodePngDataUri(dataUri: string): { width: number; height: number; bits: Uint8Array } {
+function decodePngDataUri(dataUri: string): {
+  width: number;
+  height: number;
+  bits: Uint8Array;
+  foregroundRgb: [number, number, number];
+} {
   const prefix = "data:image/png;base64,";
   assert.ok(dataUri.startsWith(prefix), "data URI has the expected PNG prefix");
   const buf = Buffer.from(dataUri.slice(prefix.length), "base64");
@@ -55,7 +60,9 @@ function decodePngDataUri(dataUri: string): { width: number; height: number; bit
     assert.equal(inflated[rowStart], 0, `row ${y} filter byte is None`);
     bits.set(inflated.subarray(rowStart + 1, rowStart + 1 + rowBytes), y * rowBytes);
   }
-  return { width, height, bits };
+  const plte = chunks.PLTE;
+  const foregroundRgb: [number, number, number] = [plte[3], plte[4], plte[5]];
+  return { width, height, bits, foregroundRgb };
 }
 
 let passed = 0;
@@ -411,6 +418,15 @@ test("GS v 0 raster matches dispensary_logo.bin geometry (48 bytes/row x 40 rows
   assert.equal(decoded.width, widthBytes * 8);
   assert.equal(decoded.height, heightRows);
   assert.deepEqual([...decoded.bits], [...raster]);
+
+  // Avatar variant: `fillPattern` touches every row and (almost) every
+  // column, so trimming barely shrinks it — off by one column here because
+  // the deterministic fill happens to leave the single rightmost column
+  // blank. Still a valid, decodable PNG at (nearly) the same geometry.
+  assert.ok(receipt.logo?.avatarDataUri.startsWith("data:image/png;base64,"));
+  const avatarDecoded = decodePngDataUri(receipt.logo!.avatarDataUri);
+  assert.equal(avatarDecoded.width, widthBytes * 8 - 1);
+  assert.equal(avatarDecoded.height, heightRows);
 });
 
 test("GS v 0 raster matches dispensary_biglogo.bin geometry (72 bytes/row x 120 rows) and decodes pixel-exact", () => {
@@ -432,6 +448,115 @@ test("GS v 0 raster matches dispensary_biglogo.bin geometry (72 bytes/row x 120 
   assert.equal(decoded.width, widthBytes * 8);
   assert.equal(decoded.height, heightRows);
   assert.deepEqual([...decoded.bits], [...raster]);
+
+  assert.ok(receipt.logo?.avatarDataUri.startsWith("data:image/png;base64,"));
+  const avatarDecoded = decodePngDataUri(receipt.logo!.avatarDataUri);
+  assert.equal(avatarDecoded.width, widthBytes * 8 - 1);
+  assert.equal(avatarDecoded.height, heightRows);
+});
+
+test("avatarDataUri trims to the tight ink bounding box, not the full canvas", () => {
+  // 32x16 canvas (widthBytes=4), ink only in an 8x4 block at columns
+  // 16-23 / rows 6-9 — chosen to land on a whole-byte column boundary so
+  // the expected trimmed bitmap is a clean single 0xFF byte per row.
+  const widthBytes = 4;
+  const heightRows = 16;
+  const raster: number[] = [];
+  for (let row = 0; row < heightRows; row++) {
+    const inkRow = row >= 6 && row <= 9;
+    raster.push(0x00, 0x00, inkRow ? 0xff : 0x00, 0x00);
+  }
+  const b: number[] = [0x1b, 0x40];
+  b.push(0x1d, 0x76, 0x30, 0x00, widthBytes & 0xff, (widthBytes >> 8) & 0xff, heightRows & 0xff, (heightRows >> 8) & 0xff);
+  b.push(...raster);
+
+  const receipt = parseEscPos(new Uint8Array(b));
+  assert.ok(receipt.logo, "logo decoded");
+  // Primary dataUri stays full-canvas.
+  assert.equal(receipt.logo?.widthPx, 32);
+  assert.equal(receipt.logo?.heightPx, 16);
+  const full = decodePngDataUri(receipt.logo!.dataUri);
+  assert.equal(full.width, 32);
+  assert.equal(full.height, 16);
+
+  // Avatar trims down to exactly the 8x4 ink block.
+  const avatar = decodePngDataUri(receipt.logo!.avatarDataUri);
+  assert.equal(avatar.width, 8);
+  assert.equal(avatar.height, 4);
+  assert.deepEqual([...avatar.bits], [0xff, 0xff, 0xff, 0xff]);
+
+  // Header crop shares the avatar's exact bounding box (same trim/crop
+  // call, per lib/escpos.ts's buildDecodedLogo comment) — same geometry
+  // and pixels, only the re-encoded PNG's foreground color differs (not
+  // observable from the decoded bits here).
+  assert.equal(receipt.logo?.headerWidthPx, 8);
+  assert.equal(receipt.logo?.headerHeightPx, 4);
+  const header = decodePngDataUri(receipt.logo!.headerDataUri);
+  assert.equal(header.width, 8);
+  assert.equal(header.height, 4);
+  assert.deepEqual([...header.bits], [0xff, 0xff, 0xff, 0xff]);
+});
+
+test("avatarDataUri on an all-blank bitmap falls back to the untrimmed geometry (no zero-size crop)", () => {
+  const widthBytes = 4;
+  const heightRows = 8;
+  const raster = new Array(widthBytes * heightRows).fill(0x00);
+  const b: number[] = [0x1b, 0x40];
+  b.push(0x1d, 0x76, 0x30, 0x00, widthBytes & 0xff, (widthBytes >> 8) & 0xff, heightRows & 0xff, (heightRows >> 8) & 0xff);
+  b.push(...raster);
+
+  const receipt = parseEscPos(new Uint8Array(b));
+  assert.ok(receipt.logo, "logo decoded even though blank — a valid geometry, just no ink");
+  const avatar = decodePngDataUri(receipt.logo!.avatarDataUri);
+  assert.equal(avatar.width, widthBytes * 8);
+  assert.equal(avatar.height, heightRows);
+  assert.ok(
+    [...avatar.bits].every((byte) => byte === 0),
+    "no ink means no ink in the avatar crop either"
+  );
+
+  // headerDataUri falls back the same way (untrimmed geometry, no zero-size crop).
+  assert.equal(receipt.logo?.headerWidthPx, widthBytes * 8);
+  assert.equal(receipt.logo?.headerHeightPx, heightRows);
+  const header = decodePngDataUri(receipt.logo!.headerDataUri);
+  assert.equal(header.width, widthBytes * 8);
+  assert.equal(header.height, heightRows);
+});
+
+test("headerDataUri and avatarDataUri share the same ink-bounds crop but use opposite foreground colors", () => {
+  // Same 32x16 canvas / 8x4 off-center ink block as the earlier trim test,
+  // asymmetric on both axes so a naive "just re-center via CSS" fix
+  // wouldn't be caught by a symmetric fixture.
+  const widthBytes = 4;
+  const heightRows = 16;
+  const raster: number[] = [];
+  for (let row = 0; row < heightRows; row++) {
+    const inkRow = row >= 2 && row <= 5;
+    raster.push(0x00, 0x00, inkRow ? 0xff : 0x00, 0x00);
+  }
+  const b: number[] = [0x1b, 0x40];
+  b.push(0x1d, 0x76, 0x30, 0x00, widthBytes & 0xff, (widthBytes >> 8) & 0xff, heightRows & 0xff, (heightRows >> 8) & 0xff);
+  b.push(...raster);
+
+  const receipt = parseEscPos(new Uint8Array(b));
+  assert.ok(receipt.logo, "logo decoded");
+  const avatar = decodePngDataUri(receipt.logo!.avatarDataUri);
+  const header = decodePngDataUri(receipt.logo!.headerDataUri);
+
+  // Identical crop geometry and pixels — the trim/crop call is shared.
+  assert.equal(header.width, avatar.width);
+  assert.equal(header.height, avatar.height);
+  assert.deepEqual([...header.bits], [...avatar.bits]);
+
+  // Opposite foreground colors — header (near-white, on the themed dark
+  // glass card) vs avatar (dark navy, on the fixed white circle). Values
+  // are this repo's CURRENT LOGO_FOREGROUND/AVATAR_FOREGROUND (verified
+  // against lib/escpos.ts 2026-09-17 — AVATAR_FOREGROUND was re-picked to
+  // #00121D/T.navy here to match app/r/ui.tsx's current monogram color,
+  // not the #181A20 the original draft used).
+  assert.deepEqual(header.foregroundRgb, [0xe6, 0xe7, 0xe8], "header uses LOGO_FOREGROUND");
+  assert.deepEqual(avatar.foregroundRgb, [0x00, 0x12, 0x1d], "avatar uses AVATAR_FOREGROUND");
+  assert.notDeepEqual(header.foregroundRgb, avatar.foregroundRgb);
 });
 
 test("ESC * (8-dot column format) decodes a single band pixel-exact and transposes columns to rows", () => {
@@ -456,6 +581,13 @@ test("ESC * (8-dot column format) decodes a single band pixel-exact and transpos
   assert.equal(decoded.height, 8);
   // One row-byte per row (width=1 -> rowBytes=1); bit is in the MSB (col 0).
   assert.deepEqual([...decoded.bits], [0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00]);
+
+  // Row 7 is blank (0xAA's low bit) — the avatar trims that trailing blank
+  // row off, unlike the primary dataUri which keeps the full declared canvas.
+  const avatarDecoded = decodePngDataUri(receipt.logo!.avatarDataUri);
+  assert.equal(avatarDecoded.width, 1);
+  assert.equal(avatarDecoded.height, 7);
+  assert.deepEqual([...avatarDecoded.bits], [0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80]);
 });
 
 test("GS ( L <Function 112> (store raster in print buffer) decodes pixel-exact, including a non-multiple-of-8 width", () => {
@@ -488,6 +620,13 @@ test("GS ( L <Function 112> (store raster in print buffer) decodes pixel-exact, 
   assert.equal(decoded.width, widthPx);
   assert.equal(decoded.height, heightPx);
   assert.deepEqual([...decoded.bits], bitmap);
+
+  // Row 1 is entirely blank — the avatar trims down to just row 0 (all 9
+  // columns have ink there, so width is unchanged).
+  const avatarDecoded = decodePngDataUri(receipt.logo!.avatarDataUri);
+  assert.equal(avatarDecoded.width, widthPx);
+  assert.equal(avatarDecoded.height, 1);
+  assert.deepEqual([...avatarDecoded.bits], [0xff, 0x80]);
 });
 
 test("GS ( L <Function 69> (print NV graphics) is detected as an NV reference, not rendered", () => {

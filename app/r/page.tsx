@@ -60,8 +60,34 @@
 //   existed. Nothing about the "Receipt not available" honesty rules above
 //   depends on it — the raw byte fetch remains the sole authority on whether
 //   a receipt exists at all.
+//
+// RECEIPT CARDS (1.7.0, contract: contracts/cards/v1/, W0 §1-§5).
+//   For a well-formed, NON-demo sid this page also asks the RDH cards service
+//   which merchant cards to draw with the receipt (lib/cards/fetchCards.ts,
+//   surface=web). Three rules, each held by a test:
+//     1. The receipt never waits for cards. The cards request STARTS alongside
+//        the byte and /parsed reads but is NOT in the Promise.all this page
+//        awaits. If it has finished by the time the receipt is ready, the
+//        cards are placed inline; if not, the receipt renders immediately and
+//        the cards stream into a Suspense slot (fallback: nothing) when they
+//        arrive, within the 2.5 s budget. See the REAL branch below and
+//        app/r/receiptPage.cards.test.tsx.
+//     2. No cards, byte-for-byte today's page. Any failure is "no cards", and a
+//        settled "no cards" returns the exact element tree this page returned
+//        before cards existed (app/r/receiptPage.parity.test.tsx). A demo sid,
+//        a rid link, `?demo=1` and a malformed sid never call the service.
+//     3. `layout.order`: `receipt-first` (the default) draws the stack below
+//        the receipt, before the CTA row (the demo routes' slot);
+//        `cards-first` draws it above the receipt. Web shows no Save action on
+//        cards; the "Save to PapeX" receipt CTA is unchanged.
+//   A `pending` response renders the cards it carries and is NOT re-fetched
+//   on the web in 1.7.0: the ReceiptUpgrade island swaps in the parsed receipt
+//   client-side, and re-asking for cards from there needs a client card
+//   renderer (or a whole-page refresh). No 1.7.0 rule depends on receipt facts
+//   (L12), so a re-fetch would return the same cards. v1.1.
 
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { headers } from "next/headers";
 import { fetchReceiptBytes, isValidSid } from "@/lib/rdh";
 import { platformFromUserAgent } from "@/lib/storeLinks";
@@ -70,6 +96,9 @@ import { parseEscPos } from "@/lib/escpos";
 import { summarizeReceipt, hasStructure as computeHasStructure } from "@/lib/receiptSummary";
 import { hasVisibleContent, resolveReceiptState } from "@/lib/receiptState";
 import { sampleReceiptLines } from "@/lib/sampleReceipt";
+import { isDemoSid } from "@/lib/demoReceipts";
+import { resolveReceiptRoute, type ReceiptRouteInput } from "@/lib/receiptRouting";
+import { APP_CLIP_BANNER_CONTENT, ridAppClipBannerEnabled } from "@/lib/appClipBanner";
 import {
   Shell,
   StateCard,
@@ -77,20 +106,49 @@ import {
   SampleFrame,
   ReceiptNotAvailable,
   ReceiptView,
-  CtaRow,
   AppCta,
 } from "./ui";
+import { CtaRow } from "./CtaRow";
 import RetryButton from "./RetryButton";
 import ReceiptUpgrade from "./ReceiptUpgrade";
+import { renderSharedReceipt } from "./sharedReceiptView";
+import { mayFetchWebCards, startWebCards } from "@/lib/cards/fetchCards";
+import { StreamedCards, WebCardStack } from "./cards/WebCards";
 
-export const metadata: Metadata = {
-  title: "Your PapeX Receipt",
-  description: "View your digital receipt from PapeX.",
-  robots: {
-    index: false,
-    follow: false,
-  },
-};
+type ReceiptSearchParams = { sid?: string | string[]; demo?: string | string[]; rid?: string | string[] };
+
+function routeInputFrom(params: ReceiptSearchParams): ReceiptRouteInput {
+  const rawDemo = Array.isArray(params.demo) ? params.demo[0] : params.demo;
+  return { sidParam: params.sid, ridParam: params.rid, demoRequested: rawDemo === "1" };
+}
+
+// Smart App Banner (`apple-itunes-app`) — sid (RDH) links only, unconditionally.
+// The App Clip live on the App Store has always understood `sid`, so there's
+// no sequencing risk here — see lib/appClipBanner.ts for the rid case, which
+// is NOT unconditional. Nothing prior to this branch had a banner at all
+// (checked: no `apple-itunes-app` anywhere in this repo before this change),
+// so there's nothing to deduplicate against.
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<ReceiptSearchParams>;
+}): Promise<Metadata> {
+  const params = await searchParams;
+  const route = resolveReceiptRoute(routeInputFrom(params));
+
+  const showAppClipBanner =
+    route.kind === "sid" || (route.kind === "rid" && ridAppClipBannerEnabled());
+
+  return {
+    title: "Your PapeX Receipt",
+    description: "View your digital receipt from PapeX.",
+    robots: {
+      index: false,
+      follow: false,
+    },
+    ...(showAppClipBanner ? { other: { "apple-itunes-app": APP_CLIP_BANNER_CONTENT } } : {}),
+  };
+}
 
 // Every render depends on a query param + a live upstream fetch — never
 // prerender or cache this route.
@@ -99,15 +157,24 @@ export const dynamic = "force-dynamic";
 export default async function ReceiptPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sid?: string | string[]; demo?: string | string[] }>;
+  searchParams: Promise<ReceiptSearchParams>;
 }) {
   const params = await searchParams;
-  const rawSid = Array.isArray(params.sid) ? params.sid[0] : params.sid;
-  const rawDemo = Array.isArray(params.demo) ? params.demo[0] : params.demo;
   const uaHeader = (await headers()).get("user-agent") ?? "";
   // Only decides which store link leads and whether "Save to PapeX" is a
   // universal link or the in-page sign-in sheet — never what the page shows.
   const platform = platformFromUserAgent(uaHeader);
+
+  // Precedence: sid > rid > demo/bare — see lib/receiptRouting.ts. A `rid`
+  // link (peer-to-peer share) is handled entirely separately, in
+  // ./sharedReceiptView, and never falls through to the sid/demo logic below.
+  const route = resolveReceiptRoute(routeInputFrom(params));
+  if (route.kind === "rid") {
+    return renderSharedReceipt(route.rid, platform);
+  }
+
+  const rawSid = Array.isArray(params.sid) ? params.sid[0] : params.sid;
+  const rawDemo = Array.isArray(params.demo) ? params.demo[0] : params.demo;
 
   // Explicit demo opt-in (`?demo=1`) — Nico's ask so the sample stays
   // reachable on demand. Deliberately checked before any backend fetch: this
@@ -123,6 +190,14 @@ export default async function ReceiptPage({
   // receipt exist / has it been read yet) and serialising them would add the
   // parsed call's latency to a page whose whole design goal is showing
   // *something* fast.
+  //
+  // Receipt cards: started HERE, beside the two reads, and deliberately NOT
+  // part of the Promise.all below: nothing on this page awaits `cardsTask`
+  // before the receipt's markup exists (header note, rule 1). Never for a
+  // demo sid or `?demo=1`; a rid link returned above.
+  const cardsNow = new Date();
+  const cardsTask = !demoRequested && mayFetchWebCards(rawSid) ? startWebCards(rawSid, { now: cardsNow }) : null;
+
   const [result, parsedResult] = sidIsValid && !demoRequested
     ? await Promise.all([fetchReceiptBytes(rawSid), fetchParsedReceipt(rawSid)])
     : [undefined, undefined];
@@ -192,32 +267,92 @@ export default async function ReceiptPage({
   // exception and the reason it is a different field: a full-page Blaze
   // bitmap is the receipt itself, not decoration on one.
   if (state.kind === "real" && parsed) {
+    // `rawSid` is re-checked purely so TypeScript can narrow it — a raster
+    // page can only exist after a successful fetch for a valid sid, so this
+    // is never false in practice.
+    const receiptNode = rasterPage && rawSid ? (
+      // A bitmap receipt. Its structured form either already exists (the
+      // customer arrived late, or reloaded) or is ~30 s away, so this branch
+      // hands off to the island that can render both and move between them.
+      // A text receipt never comes through here — it has nothing to wait for,
+      // so it stays fully server-rendered and ships no polling code at all.
+      <ReceiptUpgrade
+        sid={rawSid}
+        fallbackSummary={parsed}
+        rasterPage={rasterPage}
+        initialPayload={parsedPayload}
+      />
+    ) : (
+      <ReceiptView
+        summary={parsed}
+        hasStructure={computeHasStructure(parsed)}
+        logo={receipt?.logo}
+      />
+    );
+    // `isDemo` — a demo sid can arrive here and not only at /r/demo: a tag
+    // written before the demo route existed, a link someone shared, a URL
+    // retyped from a screenshot. Claiming is single-owner per sid, so the
+    // Save button on a demo receipt is an action that can fail in front of an
+    // audience; suppress it wherever the sid shows up. A separate prop from
+    // `isSample` on purpose — see CtaRow.tsx.
+    const ctaRow = (
+      <CtaRow
+        sid={rawSid}
+        isSample={false}
+        isDemo={isDemoSid(rawSid)}
+        platform={platform}
+      />
+    );
+
+    // Receipt cards (header note). `peek()` never waits: it reports a cards
+    // request that has ALREADY finished, or undefined.
+    const settledCards = cardsTask?.peek();
+
+    // No cards: no request (demo sid), or it finished with nothing to draw.
+    // This is exactly the tree this branch returned before cards existed.
+    if (!cardsTask || (settledCards && settledCards.cards.cards.length === 0)) {
+      return (
+        <Shell>
+          {receiptNode}
+          {ctaRow}
+        </Shell>
+      );
+    }
+
+    // Cards finished first: place them inline, no Suspense, no layout shift.
+    if (settledCards) {
+      const stack = <WebCardStack cards={settledCards.cards} now={cardsNow} />;
+      return settledCards.cards.layout.order === "cards-first" ? (
+        <Shell>
+          {stack}
+          {receiptNode}
+          {ctaRow}
+        </Shell>
+      ) : (
+        <Shell>
+          {receiptNode}
+          {stack}
+          {ctaRow}
+        </Shell>
+      );
+    }
+
+    // The receipt is ready and the cards are not: render the receipt NOW and
+    // leave a slot above and below it. Each slot awaits the running request
+    // inside its own Suspense boundary with an empty fallback, so the receipt
+    // streams first and reserves no space; when the cards land (or the 2.5 s
+    // budget ends them), the slot `layout.order` names fills and the other
+    // stays empty.
     return (
       <Shell>
-        {/* `rawSid` is re-checked purely so TypeScript can narrow it — a
-            raster page can only exist after a successful fetch for a valid
-            sid, so this is never false in practice. */}
-        {rasterPage && rawSid ? (
-          // A bitmap receipt. Its structured form either already exists (the
-          // customer arrived late, or reloaded) or is ~30 s away, so this
-          // branch hands off to the island that can render both and move
-          // between them. A text receipt never comes through here — it has
-          // nothing to wait for, so it stays fully server-rendered and ships
-          // no polling code at all.
-          <ReceiptUpgrade
-            sid={rawSid}
-            fallbackSummary={parsed}
-            rasterPage={rasterPage}
-            initialPayload={parsedPayload}
-          />
-        ) : (
-          <ReceiptView
-            summary={parsed}
-            hasStructure={computeHasStructure(parsed)}
-            logo={receipt?.logo}
-          />
-        )}
-        <CtaRow sid={rawSid} isSample={false} platform={platform} />
+        <Suspense fallback={null}>
+          <StreamedCards task={cardsTask} position="cards-first" now={cardsNow} />
+        </Suspense>
+        {receiptNode}
+        <Suspense fallback={null}>
+          <StreamedCards task={cardsTask} position="receipt-first" now={cardsNow} />
+        </Suspense>
+        {ctaRow}
       </Shell>
     );
   }

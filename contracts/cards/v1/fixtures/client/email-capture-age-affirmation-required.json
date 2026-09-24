@@ -1,0 +1,37 @@
+{
+  "description": "An age-restricted merchant's emailCapture card without ageAffirmationLabel is dropped.",
+  "requestSid": "c0ffee0000000100",
+  "response": {
+    "schemaVersion": 1,
+    "sid": "c0ffee0000000100",
+    "status": "ok",
+    "merchant": {
+      "partner": true,
+      "ageRestricted": true
+    },
+    "cards": [
+      {
+        "id": "capture",
+        "type": "emailCapture",
+        "mode": "preview",
+        "consentLabel": "Share.",
+        "consent": {
+          "textId": "example",
+          "textVersion": 1
+        }
+      },
+      {
+        "id": "a",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Card a."
+      }
+    ]
+  },
+  "expect": {
+    "cardIds": [
+      "a"
+    ]
+  }
+}

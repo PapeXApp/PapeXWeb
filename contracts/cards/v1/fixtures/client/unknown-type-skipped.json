@@ -1,0 +1,40 @@
+{
+  "description": "A card whose type is not a v1 type is skipped silently; its neighbours render.",
+  "requestSid": "c0ffee0000000100",
+  "response": {
+    "schemaVersion": 1,
+    "sid": "c0ffee0000000100",
+    "status": "ok",
+    "merchant": {
+      "partner": false,
+      "ageRestricted": false
+    },
+    "cards": [
+      {
+        "id": "a",
+        "type": "text",
+        "mode": "live",
+        "voice": "papex",
+        "body": "Card a."
+      },
+      {
+        "id": "b",
+        "type": "poll",
+        "mode": "live",
+        "question": "Did you enjoy it?"
+      },
+      {
+        "id": "c",
+        "type": "disclosure",
+        "mode": "live",
+        "text": "Disclosure."
+      }
+    ]
+  },
+  "expect": {
+    "cardIds": [
+      "a",
+      "c"
+    ]
+  }
+}

@@ -132,9 +132,56 @@ export interface ReceiptLine {
 
 /** A decoded inline raster/bit-image logo, rendered to a PNG `data:` URI. */
 export interface DecodedLogo {
+  /**
+   * Full, untrimmed canvas geometry exactly as declared in the wire format
+   * (e.g. GS v 0's xL/xH/yL/yH) — kept for parity/geometry assertions, not
+   * rendered anywhere directly. See `headerWidthPx`/`headerHeightPx` for
+   * what LogoBlock actually displays.
+   */
   widthPx: number;
   heightPx: number;
+  /**
+   * The full, untrimmed decode, re-encoded as a PNG. Not referenced by any
+   * component today (see `headerDataUri`) — kept for parity with the raw
+   * decode and available to any future caller that wants the literal
+   * capture rather than an optically-centered crop.
+   */
   dataUri: string;
+  /**
+   * Same decoded bitmap, trimmed to its tight ink bounding box (blank
+   * margin stripped) and re-encoded in `AVATAR_FOREGROUND` instead of
+   * `LOGO_FOREGROUND` — for the small circular merchant avatar (app/r/
+   * ui.tsx's MerchantHeaderCard), which sits on a *white* badge unlike the
+   * themed badge `headerDataUri`/LogoBlock renders on. Derived from the
+   * same already-decoded `bits` this.logo is built from — no second raster
+   * decode, no re-walk of the ESC/POS stream. See the "Avatar rendering"
+   * section below for why this is a trim+recolor rather than a square crop.
+   */
+  avatarDataUri: string;
+  /**
+   * Header counterpart to `avatarDataUri`: the SAME ink-bounding-box crop
+   * (both axes — the trim/crop call is shared, not duplicated), but
+   * re-encoded in `LOGO_FOREGROUND` instead of `AVATAR_FOREGROUND`, because
+   * LogoBlock (app/r/ui.tsx) sits on the themed dark glass card, not the
+   * avatar's fixed white circle — the two need opposite foreground colors,
+   * so the crop can't literally be one shared PNG, but it IS one shared
+   * bounding-box computation re-encoded twice.
+   *
+   * Exists because the untrimmed `dataUri` rendered LogoBlock's raster
+   * exactly as captured, blank margin included, and real captures showed
+   * that margin is often asymmetric on both axes — which reads as "the
+   * logo is off-center" even though the *box* around it is perfectly
+   * centered on the card. LogoBlock's own badge padding already supplies
+   * breathing room, so trimming the source bitmap doesn't crowd the mark.
+   */
+  headerDataUri: string;
+  /**
+   * Pixel size of `headerDataUri` (the trimmed crop) — the trimmed and
+   * untrimmed images generally have different aspect ratios, so LogoBlock
+   * must size its `<img>` from these, not from `widthPx`/`heightPx`.
+   */
+  headerWidthPx: number;
+  headerHeightPx: number;
   source: "GS v 0" | "ESC *" | "GS ( L";
 }
 
@@ -197,6 +244,17 @@ export interface Receipt {
 // glass" — consistent with every other surface on the page, in both light
 // and dark theme, instead of a floating white slab.
 const LOGO_FOREGROUND = "#E6E7E8";
+
+// Avatar counterpart to LOGO_FOREGROUND — mirrors MerchantHeaderCard's
+// monogram glyph color (app/r/ui.tsx, `T.navy` = `#00121D` from app/r/
+// chrome.tsx) rather than LOGO_FOREGROUND, because the circular avatar
+// badge keeps its existing **white** fill (design requirement: replace the
+// avatar's contents, not its chrome) — the opposite of LogoBlock's dark
+// glass card. A near-white mark on white would be invisible. Kept as a
+// local literal, same reasoning as LOGO_FOREGROUND's comment above (this
+// file must stay usable outside the Next.js app, and there is no shared
+// lib/theme module) — if the monogram color ever changes, update both.
+const AVATAR_FOREGROUND = "#00121D";
 
 // A Star raster bitmap has to clear both of these to count as a whole
 // receipt rather than a logo band. 200 dot rows is ~25mm of 203dpi tape —
@@ -585,9 +643,9 @@ class ParserContext {
           try {
             const heightPx = bytesPerColumn === 3 ? 24 : 8;
             const rowPacked = columnsToRowPackedBits(this.bytes, dataStart, width, heightPx, bytesPerColumn);
-            const dataUri = encodeMonoPngDataUri({ width, height: heightPx, bits: rowPacked }, LOGO_FOREGROUND);
-            if (dataUri) {
-              this.logo = { widthPx: width, heightPx, dataUri, source: "ESC *" };
+            const built = buildDecodedLogo(width, heightPx, rowPacked, "ESC *");
+            if (built) {
+              this.logo = built;
             }
           } catch {
             // Contract: never throw. A decode failure just means no logo.
@@ -702,12 +760,9 @@ class ParserContext {
         if (!this.logo && widthBytes > 0 && heightRows > 0 && this.bytes.length - dataStart >= dataLen) {
           try {
             const bits = this.bytes.subarray(dataStart, dataStart + dataLen);
-            const dataUri = encodeMonoPngDataUri(
-              { width: widthBytes * 8, height: heightRows, bits },
-              LOGO_FOREGROUND,
-            );
-            if (dataUri) {
-              this.logo = { widthPx: widthBytes * 8, heightPx: heightRows, dataUri, source: "GS v 0" };
+            const built = buildDecodedLogo(widthBytes * 8, heightRows, bits, "GS v 0");
+            if (built) {
+              this.logo = built;
             }
           } catch {
             // Contract: never throw. A decode failure just means no logo.
@@ -891,9 +946,9 @@ class ParserContext {
     if (this.bytes.length - bmpStart < bmpLen) return; // truncated — no logo, no throw
     try {
       const bits = this.bytes.subarray(bmpStart, bmpStart + bmpLen);
-      const dataUri = encodeMonoPngDataUri({ width: widthPx, height: heightPx, bits }, LOGO_FOREGROUND);
-      if (dataUri) {
-        this.logo = { widthPx, heightPx, dataUri, source: "GS ( L" };
+      const built = buildDecodedLogo(widthPx, heightPx, bits, "GS ( L");
+      if (built) {
+        this.logo = built;
       }
     } catch {
       // Contract: never throw. A decode failure just means no logo.
@@ -1008,6 +1063,133 @@ function columnsToRowPackedBits(
     }
   }
   return out;
+}
+
+// ---------------------------------------------------------------------------
+// Avatar/header rendering — building the trimmed-crop variants of a decoded
+// logo.
+//
+// The real captures this was validated against (see lib/escpos.test.ts) are
+// much wider than tall — wordmarks or icon+wordmark lockups, not square
+// marks — because that's how thermal-printer logos print. Squeezed into a
+// small circle, that mismatch has no crop-free answer, and this went through
+// two crop strategies before landing on trim+contain:
+//
+//   - A square window centered on the densest region of ink: on a wide
+//     spark+wordmark capture, the densest square window lands mid-word
+//     because packed letterforms are denser than the sparse icon next to
+//     them — a meaningless text fragment, and actively worse than a
+//     monogram fallback.
+//   - A plain centered square crop (CSS `object-fit: cover` equivalent):
+//     same failure class, a different fragment.
+//   - On a wide solid-mark capture, both land on the shape's fat horizontal
+//     midpoint, rendering as an unrecognizable solid blob — worse than
+//     either text fragment.
+//
+// So: trim the bitmap to its tight ink bounding box (cheap, always safe,
+// never discards content) and let the caller show the *whole* mark via
+// `object-fit: contain` — thin on very wide marks, but never a mangled
+// fragment or a blob. The header logo (LogoBlock) gets the same trim for a
+// different reason: its untrimmed canvas often has asymmetric blank margin
+// on both axes, which reads as "the logo is off-center" even though the box
+// around it is centered on the card.
+// ---------------------------------------------------------------------------
+
+function getBit(bits: Uint8Array, rowBytes: number, x: number, y: number): number {
+  return (bits[y * rowBytes + (x >> 3)] >> (7 - (x & 7))) & 1;
+}
+
+function setBit(out: Uint8Array, rowBytes: number, x: number, y: number): void {
+  out[y * rowBytes + (x >> 3)] |= 1 << (7 - (x & 7));
+}
+
+/**
+ * Tight bounding box of all set (ink) bits in a row-major MSB-first packed
+ * bitmap. Falls back to the full bitmap (no trim) if it's entirely blank —
+ * a degenerate case that shouldn't occur for anything that made it into
+ * `this.logo` (the decode paths already require `width/height > 0`), but a
+ * bitmap with zero ink bits is not itself invalid, so this stays a safe
+ * no-op rather than producing a zero-size crop.
+ */
+function trimToInkBounds(
+  bits: Uint8Array,
+  width: number,
+  height: number,
+): { x0: number; y0: number; w: number; h: number } {
+  const rowBytes = Math.ceil(width / 8);
+  let minX = width;
+  let maxX = -1;
+  let minY = height;
+  let maxY = -1;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (getBit(bits, rowBytes, x, y)) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  if (maxX < 0) return { x0: 0, y0: 0, w: width, h: height };
+  return { x0: minX, y0: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
+}
+
+/** Extract a `w`x`h` rectangle starting at `(x0, y0)` into a new row-major MSB-first packed bitmap. */
+function cropBits(bits: Uint8Array, width: number, x0: number, y0: number, w: number, h: number): Uint8Array {
+  const rowBytes = Math.ceil(width / 8);
+  const outRowBytes = Math.ceil(w / 8);
+  const out = new Uint8Array(outRowBytes * h);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (getBit(bits, rowBytes, x0 + x, y0 + y)) setBit(out, outRowBytes, x, y);
+    }
+  }
+  return out;
+}
+
+/**
+ * Build a `DecodedLogo` (primary `dataUri`, avatar `avatarDataUri`, header
+ * `headerDataUri`) from an already-decoded row-major MSB-first packed
+ * bitmap. Shared by all three decode paths (GS v 0, ESC *, GS ( L) so the
+ * trim/crop logic above exists in exactly one place. Returns `undefined` if
+ * even the primary encode fails — same "no logo" contract as before this
+ * feature existed. A failure of either trimmed-crop re-encode alone is not
+ * fatal: each falls back to the untrimmed `dataUri` so the caller still gets
+ * the real mark instead of silently losing the logo.
+ */
+function buildDecodedLogo(
+  width: number,
+  height: number,
+  bits: Uint8Array,
+  source: DecodedLogo["source"],
+): DecodedLogo | undefined {
+  const dataUri = encodeMonoPngDataUri({ width, height, bits }, LOGO_FOREGROUND);
+  if (!dataUri) return undefined;
+
+  // One trim/crop, reused for both the avatar and header renders — only the
+  // final color re-encode differs between the two.
+  const bounds = trimToInkBounds(bits, width, height);
+  const trimmed = cropBits(bits, width, bounds.x0, bounds.y0, bounds.w, bounds.h);
+
+  const avatarDataUri =
+    encodeMonoPngDataUri({ width: bounds.w, height: bounds.h, bits: trimmed }, AVATAR_FOREGROUND) ?? dataUri;
+
+  const headerEncoded = encodeMonoPngDataUri({ width: bounds.w, height: bounds.h, bits: trimmed }, LOGO_FOREGROUND);
+  const headerDataUri = headerEncoded ?? dataUri;
+  const headerWidthPx = headerEncoded ? bounds.w : width;
+  const headerHeightPx = headerEncoded ? bounds.h : height;
+
+  return {
+    widthPx: width,
+    heightPx: height,
+    dataUri,
+    avatarDataUri,
+    headerDataUri,
+    headerWidthPx,
+    headerHeightPx,
+    source,
+  };
 }
 
 /**
