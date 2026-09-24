@@ -43,7 +43,7 @@ import { countdownDays, endOfUtcDayAfter, formatCountdown, parseExpiresAt } from
 import { demoResolvedCards, projectDemoEnrichment, DEMO_PARTNER_SIDS } from "./demoSource";
 import { normalizeResolvedCards, parseCardsResponse } from "./normalize";
 import { buildVariantFiles, testSid, TEST_SID_PREFIX } from "./testVariants";
-import { CAPS_1_7_0, CARD_TYPES, MAX_RESPONSE_BYTES, type Card, type ResolvedCards } from "./types";
+import { CAPS_1_7_0, CARD_TYPES, MAX_RESPONSE_BYTES, parseCaps, type Card, type ResolvedCards } from "./types";
 import { safeHttpsUrl } from "./url";
 import { DEMO_RECEIPTS, formatDaysRemaining, getDemoEnrichment, offerDaysRemaining } from "../demoReceipts";
 
@@ -483,13 +483,15 @@ test("v1.1 client: parseCardsResponse caps the body, rejects non-JSON, never thr
   assert.equal(parseCardsResponse("{", SID1).rejected, "not json");
 });
 
-test("v1.1 caps: each 1.7.0 surface's token list is exactly what the contract says", () => {
-  assert.deepEqual(CAPS_1_7_0.web.includes("barcode.qr" as never), false, "web has no QR encoder yet");
-  assert.ok(CAPS_1_7_0.clip.includes("barcode.qr") && CAPS_1_7_0.app.includes("barcode.qr"));
-  assert.ok(CAPS_1_7_0.app.includes("save") && !CAPS_1_7_0.clip.includes("save" as never) && !CAPS_1_7_0.web.includes("save" as never));
-  for (const s of ["web", "clip", "app"] as const) {
-    assert.ok(CAPS_1_7_0[s].includes("compliance"), s);
-    for (const t of CAPS_1_7_0[s]) assert.ok(!["emailCapture", "insight", "loyalty"].includes(t), `${s}: ${t}`);
+test("v1.1 caps: each 1.7.0 surface's caps string is exactly what the contract says", () => {
+  const web = parseCaps(CAPS_1_7_0.web);
+  const clip = parseCaps(CAPS_1_7_0.clip);
+  const app = parseCaps(CAPS_1_7_0.app);
+  assert.equal(web.symbologies.has("qr"), false, "web has no QR encoder yet");
+  assert.ok(clip.symbologies.has("qr") && app.symbologies.has("qr"));
+  for (const c of [web, clip, app]) {
+    assert.deepEqual([...c.types].sort(), ["compliance", "cta", "disclosure", "offer", "savings", "text"]);
+    assert.ok(["code128", "ean13", "upca"].every((s) => c.symbologies.has(s)));
   }
 });
 
@@ -534,7 +536,7 @@ test("variants: INDEX sids are 7e57ca4d0000NNNN from 0001, contiguous, test merc
     assert.ok(["5ca1e00000000001", "b0de9a0000000001"].includes(v.copyReceiptBlobFrom));
   });
   assert.equal(new Set(idx.variants.map((v) => v.variant)).size, idx.variants.length);
-  for (const s of ["web", "clip", "app"] as const) assert.equal(idx.capsBySurface[s], CAPS_1_7_0[s].join(","));
+  for (const s of ["web", "clip", "app"] as const) assert.equal(idx.capsBySurface[s], CAPS_1_7_0[s]);
 });
 
 test("variants: every minted response is schema-valid, decodes losslessly, and matches INDEX", () => {
@@ -563,7 +565,7 @@ test("variants: every minted response is schema-valid, decodes losslessly, and m
       for (const c of r.cards) {
         if (c.type === "offer" && c.actions?.length) assert.equal(s, "app", `${where}: save outside the app`);
         if (c.type === "offer" && c.redemption?.type === "barcode") {
-          assert.ok(CAPS_1_7_0[s].includes(`barcode.${c.redemption.symbology}` as never), `${where}: ${c.redemption.symbology} not in ${s} caps`);
+          assert.ok(parseCaps(CAPS_1_7_0[s]).symbologies.has(c.redemption.symbology), `${where}: ${c.redemption.symbology} not in ${s} caps`);
         }
         if (r.merchant.ageRestricted && (c.type === "offer" || ((c.type === "text" || c.type === "cta") && c.voice === "merchant"))) {
           assert.ok(c.compliance?.licenseLine.includes("LICENSE_PLACEHOLDER"), `${where}: ${c.id} lacks the licence line`);
@@ -654,14 +656,14 @@ test("config: the schema enforces L1 audiences, L2 save, L3 licence, L4 1.7.0 ty
   // L3
   const noLicence = { ...base, merchant: { ...base.merchant, ageRestricted: true } };
   assert.equal(validateConfig(noLicence), false);
-  assert.ok(validateConfig({ ...noLicence, merchant: { ...noLicence.merchant, licenseLine: "CA licence LICENSE_PLACEHOLDER" } }));
+  assert.ok(validateConfig({ ...noLicence, compliance: { licenseLine: "CA licence LICENSE_PLACEHOLDER", licenseExpiresOn: "2026-11-17" } }), JSON.stringify(validateConfig.errors));
   // L4
   for (const type of ["emailCapture", "insight", "loyalty", "poll"]) assert.equal(validateConfig(withCard({ id: "x", surfaces: ["web"], type })), false, type);
   // L7
   const debug = { forceStatus: [{ sids: [testSid(18)], status: "degraded" }] };
   assert.ok(validateConfig({ ...base, debug }));
   assert.equal(validateConfig({ ...base, merchantId: "doobie-nights", debug }), false);
-  assert.equal(validateConfig({ ...base, merchant: { ...base.merchant, test: false }, debug }), false);
+  assert.equal(validateConfig({ ...base, merchantId: "doobie-nights", merchant: { ...base.merchant, test: true }, debug }), false);
   // L11 + code modes
   const offers = base.offers as Record<string, Record<string, unknown>>;
   const tpl = offers["h-bounty-code128"];
@@ -672,7 +674,10 @@ test("config: the schema enforces L1 audiences, L2 save, L3 licence, L4 1.7.0 ty
   const red = (code: object) => withOffer({ redemption: { type: "barcode", symbology: "code128", code } });
   assert.ok(validateConfig(red({ mode: "perSid", pool: "p1" })));
   assert.ok(validateConfig(red({ mode: "template", template: "DN-{sid6}" })));
+  assert.ok(validateConfig(red({ mode: "template", template: "DN-{SID8}" })));
+  // The full sid is the receipt's capability: never allowed in a code.
   assert.equal(validateConfig(red({ mode: "template", template: "DN-{sid}" })), false);
+  assert.equal(validateConfig(red({ mode: "template", template: "DN-{SID}" })), false);
   assert.equal(validateConfig(red({ mode: "template", template: "DN-{receipt.total}" })), false);
   assert.equal(validateConfig(red({ mode: "random" })), false);
   // Rules: only the v1 facts.

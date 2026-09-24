@@ -59,19 +59,34 @@ export const CARDS_SURFACES = ["web", "clip", "app", "preview"] as const;
 export type CardsSurface = (typeof CARDS_SURFACES)[number];
 
 /**
- * v1.1 (1.7.0): the capability tokens a client sends as `caps=` (comma
- * separated, flat, no nesting). The server drops any card whose type, or any
- * feature of it, is not covered. Unknown tokens are ignored by the server.
+ * v1.1 (1.7.0): the `caps=` value each 1.7.0 surface sends, verbatim. Comma
+ * separated tokens; a card-type token enables that type; `barcode:a|b|c`
+ * enables those symbologies. The server drops any card whose type or
+ * symbology is not enabled, and ignores unknown tokens.
  *   - `compliance`: the client renders `compliance.licenseLine`. Without it the
- *     server sends no card from an age-restricted merchant at all.
- *   - `save`: the client implements the `save` action (1.7.0: the app only).
- *   - `barcode.<symbology>`: the client can draw that symbology.
+ *     server sends NO card from an age-restricted merchant.
+ *   - There is no `save` token: the server emits `save` actions only for
+ *     `surface=app`, whose client implements them locally.
+ *   - The web omits `qr` until it has a QR encoder (lib/cards/barcode.ts).
+ * A client MUST send caps: an absent `caps` means "every v1 type" to the
+ * server (the P0 behaviour), which no 1.7.0 client can render.
  */
 export const CAPS_1_7_0 = {
-  web: ["text", "offer", "cta", "savings", "disclosure", "compliance", "barcode.code128", "barcode.ean13", "barcode.upca"],
-  clip: ["text", "offer", "cta", "savings", "disclosure", "compliance", "barcode.code128", "barcode.ean13", "barcode.upca", "barcode.qr"],
-  app: ["text", "offer", "cta", "savings", "disclosure", "compliance", "save", "barcode.code128", "barcode.ean13", "barcode.upca", "barcode.qr"],
-} as const satisfies Record<Exclude<CardsSurface, "preview">, readonly string[]>;
+  web: "text,offer,cta,savings,disclosure,compliance,barcode:code128|ean13|upca",
+  clip: "text,offer,cta,savings,disclosure,compliance,barcode:code128|ean13|upca|qr",
+  app: "text,offer,cta,savings,disclosure,compliance,barcode:code128|ean13|upca|qr",
+} as const satisfies Record<Exclude<CardsSurface, "preview">, string>;
+
+/** Parse a caps string the way the server does. */
+export function parseCaps(caps: string): { types: Set<string>; symbologies: Set<string> } {
+  const types = new Set<string>();
+  const symbologies = new Set<string>();
+  for (const tok of caps.split(",").map((t) => t.trim()).filter(Boolean)) {
+    if (tok.startsWith("barcode:")) for (const s of tok.slice(8).split("|")) symbologies.add(s);
+    else types.add(tok);
+  }
+  return { types, symbologies };
+}
 
 /**
  * v1.1 (1.7.0): where the card stack sits relative to the receipt.
