@@ -467,7 +467,12 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  margin: 0;
   padding: 8px 14px 8px 12px;
+  /* a real <button> (keyboard + assistive tech): reset the UA look */
+  -webkit-appearance: none;
+  appearance: none;
+  line-height: 1.2;
   border: 0;
   border-radius: 999px;
   background: #00121d;

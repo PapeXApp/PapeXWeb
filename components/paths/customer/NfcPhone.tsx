@@ -215,10 +215,10 @@ export function NfcPhone() {
       <div className={cn(styles.demoHintRow, ip.hintRow, idle && ip.hintRowIdle)}>
         <span aria-live="polite">
           {idle ? (
-            <span className={ip.chip} onClick={tapDevice}>
+            <button type="button" className={ip.chip} onClick={tapDevice}>
               <span className={ip.chipDot} aria-hidden="true" />
               {hint}
-            </span>
+            </button>
           ) : (
             hint
           )}
