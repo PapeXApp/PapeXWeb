@@ -1,0 +1,364 @@
+/* 02 "What is Tap to Retain?" — see TapToRetain.tsx.
+   Everything that moves is transform/opacity keyframes; nothing is driven by
+   JS. Text on the page takes --flow-* ink; the phone, slip and coupon are
+   elevated objects with their own colours. */
+
+.stage {
+  --pad: clamp(14px, 2.4vw, 28px);
+  --vis: clamp(112px, 13vw, 168px);
+  --loop: 3.4s;
+  position: relative;
+  padding: var(--pad);
+  border: 1px solid var(--flow-hair);
+  border-radius: 24px;
+  background: color-mix(in srgb, var(--flow-fg) 3%, transparent);
+}
+
+.stations {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+}
+
+.station {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  transition: opacity 0.4s ease;
+}
+.dim {
+  opacity: 0.35;
+}
+
+.stationLabel {
+  max-width: 12ch;
+  text-align: center;
+  font-family: var(--font-label);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.3;
+  color: var(--flow-fg-2);
+}
+
+/* --- Counter: the PapeX device + a tap ripple ---------------------------- */
+.deviceWrap {
+  position: relative;
+  display: flex;
+  height: var(--vis);
+  align-items: center;
+  justify-content: center;
+}
+.device {
+  width: calc(var(--vis) * 0.78);
+  height: auto;
+  filter: drop-shadow(0 12px 18px rgba(0, 18, 29, 0.22));
+}
+.ripple {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(var(--vis) * 0.62);
+  height: calc(var(--vis) * 0.62);
+  margin: calc(var(--vis) * -0.31) 0 0 calc(var(--vis) * -0.31);
+  border: 2px solid var(--orange);
+  border-radius: 999px;
+  opacity: 0;
+  animation: ttr-ripple var(--loop) ease-out infinite;
+}
+.stage[data-half="coupons"] .ripple {
+  animation: none;
+}
+
+/* --- Their PapeX app: a small phone -------------------------------------- */
+.phone {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: calc(var(--vis) * 0.56);
+  height: var(--vis);
+  padding: 22px 9px 9px;
+  border: 2px solid #2b3a46;
+  border-radius: 18px;
+  background: #00121d;
+  box-shadow: 0 16px 30px rgba(0, 18, 29, 0.25);
+}
+.island {
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  width: 34%;
+  height: 7px;
+  border-radius: 999px;
+  background: #000;
+  transform: translateX(-50%);
+}
+.row {
+  display: block;
+  height: 14px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.1);
+}
+.rowShort {
+  width: 60%;
+}
+
+/* --- Your dashboard ------------------------------------------------------ */
+.dash {
+  position: relative;
+  display: flex;
+  width: calc(var(--vis) * 0.8);
+  height: var(--vis);
+  align-items: center;
+  justify-content: center;
+  color: var(--flow-fg-2);
+}
+.dash::before {
+  content: "";
+  position: absolute;
+  inset: 22% 0;
+  border: 1.5px solid var(--flow-hair);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--flow-fg) 4%, transparent);
+}
+.dash > svg {
+  position: relative;
+}
+.soonTag {
+  position: absolute;
+  top: 8%;
+  left: 50%;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(-50%, 4px);
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease;
+}
+.soonTagOn {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* "Coming soon" — orange fill, navy ink: readable on either ground. */
+.soonTag,
+.soonPill {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--orange);
+  color: var(--navy);
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  line-height: 1.3;
+  text-transform: uppercase;
+  vertical-align: 0.12em;
+}
+
+/* --- The travelling token ------------------------------------------------ */
+/* A zero-height lane across the stations, level with the visuals' middle.
+   Its content is centred, i.e. on the phone; translating the lane by a third
+   of its own width puts that content on a neighbouring station. */
+.lane {
+  position: absolute;
+  top: calc(var(--pad) + var(--vis) / 2);
+  left: var(--pad);
+  right: var(--pad);
+  height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.fromLeft {
+  animation: ttr-from-left var(--loop) cubic-bezier(0.45, 0, 0.2, 1) infinite;
+}
+.fromRight {
+  animation: ttr-from-right var(--loop) cubic-bezier(0.45, 0, 0.2, 1) infinite;
+}
+.hop {
+  animation: ttr-hop var(--loop) ease-in-out infinite;
+}
+
+.slip {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: calc(var(--vis) * 0.4);
+  padding: 7px 7px 9px;
+  background: #fdfdfb;
+  color: #1b242e;
+  box-shadow: 0 8px 18px rgba(0, 18, 29, 0.28);
+  clip-path: polygon(0 0, 100% 0, 100% 94%, 83% 100%, 66% 94%, 50% 100%, 33% 94%, 17% 100%, 0 94%);
+}
+.slipHead {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+.slipLine {
+  display: block;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(27, 36, 46, 0.3);
+}
+.slipLineShort {
+  width: 55%;
+  margin-left: auto;
+}
+
+.coupon {
+  padding: 9px 10px;
+  border: 1.5px dashed var(--orange);
+  border-radius: 8px;
+  background: #fff;
+  color: #a04e00;
+  font-family: var(--font-label);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  box-shadow: 0 8px 18px rgba(0, 18, 29, 0.22);
+}
+
+@keyframes ttr-from-left {
+  0% {
+    transform: translateX(-33.333%);
+    opacity: 0;
+  }
+  12% {
+    transform: translateX(-33.333%);
+    opacity: 1;
+  }
+  58%,
+  84% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+}
+@keyframes ttr-from-right {
+  0% {
+    transform: translateX(33.333%);
+    opacity: 0;
+  }
+  12% {
+    transform: translateX(33.333%);
+    opacity: 1;
+  }
+  58%,
+  84% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+}
+/* An arc on the way over, then a small settle into the phone. */
+@keyframes ttr-hop {
+  0%,
+  12% {
+    transform: translateY(0) scale(1);
+  }
+  35% {
+    transform: translateY(-26px) rotate(-4deg) scale(1.05);
+  }
+  58% {
+    transform: translateY(0) scale(0.92);
+  }
+  66%,
+  100% {
+    transform: translateY(0) scale(0.96);
+  }
+}
+@keyframes ttr-ripple {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.7;
+  }
+  22% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* --- The two halves ------------------------------------------------------ */
+.card {
+  display: block;
+  width: 100%;
+  padding: clamp(18px, 2vw, 24px) clamp(18px, 2.2vw, 26px);
+  border: 1px solid var(--flow-hair);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--flow-fg) 3%, transparent);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.25s ease,
+    background-color 0.25s ease,
+    transform 0.25s ease;
+}
+.card:hover {
+  transform: translateY(-2px);
+}
+.card:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 3px;
+}
+.cardOn {
+  border-color: var(--orange);
+  background: color-mix(in srgb, var(--orange) 7%, transparent);
+}
+.cardTitle {
+  display: block;
+  font-family: var(--font-display);
+  font-size: clamp(20px, 1.9vw, 24px);
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--flow-fg);
+}
+.cardBody {
+  display: block;
+  margin-top: 8px;
+  font-size: 16.5px;
+  line-height: 1.55;
+  color: var(--flow-fg-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fromLeft,
+  .fromRight,
+  .hop,
+  .ripple {
+    animation: none;
+  }
+  /* The token rests where it ends up: in the phone. */
+  .lane {
+    transform: none;
+    opacity: 1;
+  }
+  .card,
+  .station,
+  .soonTag {
+    transition: none;
+  }
+  .card:hover {
+    transform: none;
+  }
+}

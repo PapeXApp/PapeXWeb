@@ -25,17 +25,27 @@ import styles from "./business.module.css"
 // Scaled again in Web 2.1: it still measured ~580 of 900px, so the heading
 // takes the path's display size (--fs-h1-merchant, as the demo ask does), the
 // dots grow 72 -> 96px, step bodies read at lead size, and the header ->
-// timeline gap is the path's --gap-body x2.5. Same content, ~80% of a screen.
+// timeline gap is the path's --gap-body x1.5 (x2.5 until five steps). ~A screen.
+//
+// Web 2.1 claims pass: four steps -> five, the real install as Nico described
+// it (power, Wi-Fi, add as a printer, test, hand-over — "we install it, free,
+// in about 15 minutes"). The old steps named "a standard port" and "no
+// terminal modification", neither true. `id="setup"` is the footer's
+// "Integration" target (spec §3.5). Five columns >= 821px.
+// Final page order (Nico, 2026-09-24): this is 05 "How do I get it?" and it
+// flows straight into the demo form (#demo) below — same light ground, and a
+// closing link that points down into it, so setup -> demo reads as one path.
 export function HowItWorks() {
   return (
     <FlowSection
+      id={howItWorks.id}
       ground="light"
-      index="03"
-      className={`${styles.screen} px-[clamp(20px,5vw,56px)] py-[var(--section-pad-y)]`}
+      index="05"
+      className={`${styles.screen} scroll-mt-[100px] px-[clamp(20px,5vw,56px)] py-[var(--section-pad-y)]`}
     >
       <div className="mx-auto w-full max-w-[1150px]">
         <Reveal className="max-w-[820px]">
-          <SectionLabel index="03">{howItWorks.eyebrow}</SectionLabel>
+          <SectionLabel index="05">{howItWorks.eyebrow}</SectionLabel>
           <WordReveal
             as="h2"
             className="text-[length:var(--fs-h1-merchant)] font-bold leading-[1.03] tracking-[-.02em] [font-family:var(--font-display)]"
@@ -47,7 +57,7 @@ export function HowItWorks() {
           </p>
         </Reveal>
 
-        <div className="mt-[calc(var(--gap-body)*2.5)] grid grid-cols-1 gap-[clamp(24px,3vw,34px)] min-[821px]:grid-cols-4">
+        <div className="mt-[calc(var(--gap-body)*1.5)] grid grid-cols-1 gap-[clamp(24px,3vw,34px)] min-[821px]:grid-cols-5">
           {howItWorks.steps.map((step, index) => (
             <Reveal key={step.number} as="div" delay={index * 0.08} className={`${styles.rmapNode} pt-1`}>
               <div
@@ -77,6 +87,17 @@ export function HowItWorks() {
             </Reveal>
           ))}
         </div>
+
+        <a
+          href={howItWorks.nextHref}
+          className="mt-[var(--gap-body)] flex w-fit items-center gap-2 text-[length:var(--fs-lead)] font-semibold underline-offset-4 hover:underline"
+          style={{ color: "var(--flow-fg)" }}
+        >
+          {howItWorks.nextLabel}
+          <span aria-hidden="true" style={{ color: "var(--orange)" }}>
+            ↓
+          </span>
+        </a>
       </div>
     </FlowSection>
   )
