@@ -23,7 +23,7 @@ import { SALES_PHONE, SALES_PHONE_HREF, SUPPORT_EMAIL } from '@/components/brand
 import { teamGroups, initialsFor } from './team'
 import styles from './about.module.css'
 
-const TITLE = 'About PapeX | PapeX Digital Receipts'
+const TITLE = 'About PapeX | Digital Receipts, One Tap at Checkout'
 const DESCRIPTION =
   'Meet the team building PapeX: the tap that gets your receipt to your phone, and the free app that keeps it. Get in touch anytime.'
 
