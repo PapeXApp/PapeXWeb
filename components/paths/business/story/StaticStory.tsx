@@ -66,7 +66,9 @@ export function StaticStory() {
       </div>
 
       <figure className={cn(s.staticStep, s.staticDash)}>
-        <div className={s.staticLaptop} role="img" aria-label={story.laptopLabel}>
+        {/* a region, not an image: the dashboard inside is a real, usable UI,
+            and role="img" would make its controls presentational */}
+        <div className={s.staticLaptop} role="region" aria-label={story.laptopLabel}>
           <div className={s.staticScreen}>
             <Dashboard live />
           </div>

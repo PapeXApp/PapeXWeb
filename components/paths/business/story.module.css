@@ -1320,6 +1320,13 @@
   .staticScreen .dash {
     --dash-fs: 3.1cqw;
   }
+  /* the date select sizes to its own label ("All dates") on a phone */
+  .dashFilters {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 0.75fr) max-content;
+  }
+  .dashFilters select {
+    padding: 0 0.3em 0 0.5em;
+  }
   .dashSheet {
     --story-dash-u: 0.23cqw;
     --story-dash-ac: 0.26cqw;
