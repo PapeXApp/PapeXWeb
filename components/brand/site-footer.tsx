@@ -11,23 +11,24 @@
 // The /dashboard login form is cosmetic. Removing this as "dead UI" locks Nico
 // out of the CMS. Keep it in every footer variant.
 //
-// Link set note: the prototype lists Features and About; neither route exists
-// in this repo, so those slots are filled with real routes rather than 404s.
+// Link set (Web 2.1 spec §3.5). The Platform column deep-links to sections on
+// the path homes: #features and #faq on /customers, #setup and #faq on
+// /business (the #features/#setup/#faq ids land with the /customers and
+// /business tasks). Waitlist and POS Calculator are no longer linked; both
+// routes still exist (their fate is an open question for Nico), they are
+// just not promoted from here.
 //
-// `inFlow` (2026-09-22): on the two path homes the footer is now rendered
-// INSIDE FlowGround as a navy FlowSection, so it joins the page's ground
-// crossfade instead of being a flat navy slab bolted on below it. In that mode
+// `inFlow` (2026-09-22): on the two path homes the footer is rendered INSIDE
+// FlowGround, so it joins the page's ground crossfade instead of being a flat
+// navy slab bolted on below it. Pass it through FlowGround's `footer` slot
+// (2026-09-24), not as a child: the slot keeps it inside the crossfade but
+// outside <main> and outside any <section>, which is what makes this <footer>
+// the page's contentinfo landmark (docs/design/footer-landmark.md). In that mode
 // it paints no background of its own (the flow's ground is already navy
 // underneath) and takes its ink from --flow-*. The ten legacy FramerPageShell
 // routes mount <SiteFooter /> with no prop and keep the flat navy footer —
 // never make the transparent variant the global default.
 //
-// Platform column: the legacy framer-footer.tsx linked to the old landing
-// page's #feature/#integration/#faq anchor sections, which no longer exist on
-// this page (`/` is now the fork). Those slots now point at the real routes
-// that cover the same ground: /customers, /business, /support.
-
-import { useState } from 'react'
 import Link from 'next/link'
 import { FullLogo } from './full-logo'
 import { AdminLogin } from '@/components/AdminLogin'
@@ -37,9 +38,10 @@ const COLUMNS: { title: string; links: { href: string; label: string }[] }[] = [
   {
     title: 'Platform',
     links: [
-      { href: '/customers', label: 'Features' },
-      { href: '/business', label: 'Integration' },
-      { href: '/support', label: 'FAQ' },
+      { href: '/customers#features', label: 'Features' },
+      { href: '/business#setup', label: 'Integration' },
+      { href: '/customers#faq', label: 'FAQ' },
+      { href: '/business#faq', label: 'For businesses FAQ' },
     ],
   },
   {
@@ -47,7 +49,6 @@ const COLUMNS: { title: string; links: { href: string; label: string }[] }[] = [
     links: [
       { href: '/customers', label: 'For Customers' },
       { href: '/business', label: 'For Businesses' },
-      { href: '/pos-calculator', label: 'POS Calculator' },
       { href: '/blog', label: 'Blog' },
     ],
   },
@@ -57,15 +58,11 @@ const COLUMNS: { title: string; links: { href: string; label: string }[] }[] = [
       { href: '/support', label: 'Support' },
       { href: '/pci', label: 'PCI Docs' },
       { href: '/contact', label: 'Contact' },
-      { href: '/waitlist', label: 'Waitlist' },
     ],
   },
 ]
 
 export function SiteFooter({ inFlow = false }: { inFlow?: boolean }) {
-  const [email, setEmail] = useState('')
-  const [joined, setJoined] = useState(false)
-
   return (
     <footer
       className={inFlow ? 'rd-footer rd-footer-flow' : 'rd-footer'}
@@ -135,29 +132,16 @@ export function SiteFooter({ inFlow = false }: { inFlow?: boolean }) {
         ))}
 
         <div>
-          <h3 className="rd-foot-heading">Stay in the loop</h3>
-          <form
-            style={{ display: 'flex', gap: 8, marginBottom: 16 }}
-            onSubmit={(event) => {
-              event.preventDefault()
-              // TODO(foundation): no backend wired yet — the design bundle
-              // leaves the capture destination open (README "Data").
-              if (email.trim()) setJoined(true)
-            }}
-          >
-            <input
-              type="email"
-              required
-              className="rd-foot-input"
-              placeholder="Email"
-              aria-label="Email address"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-            />
-            <button type="submit" className="rd-foot-join">
-              {joined ? 'Thanks' : 'Join'}
-            </button>
-          </form>
+          {/* Newsletter signup REMOVED (Web 2.1, 2026-09-24). The old
+              "Stay in the loop" form had no backend: submit just flipped the
+              button to "Thanks" and the address was thrown away, so every
+              visitor who used it was silently lost. It comes back only once
+              it writes somewhere real (Nico, open question Q16: "wire it to
+              what?"). To restore: re-add the <form> with an email input
+              (.rd-foot-input) and a submit button (.rd-foot-join) above this
+              contact block — both classes are still in papex-brand.css —
+              and point onSubmit at the chosen destination. */}
+          <h3 className="rd-foot-heading">Get in touch</h3>
           <div
             style={{ fontSize: 14, color: 'var(--foot-ink-2)', lineHeight: 1.7 }}
           >
