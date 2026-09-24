@@ -179,7 +179,7 @@ export const howItWorks = {
 
 export const rdhDevice = {
   eyebrow: "Is it safe?",
-  heading: "Small device. Nothing touches card data.",
+  heading: "Small device. Never touches card data.",
   deviceAlt: "The PapeX device: a small matte-black box with a green status light and a PapeX label on top.",
   // A point with a `link` renders the label after the text, in orange.
   points: [

@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { LayoutDashboard } from "lucide-react"
 import { Reveal, WordReveal } from "@/components/motion"
 import { cn } from "@/lib/utils"
@@ -23,13 +23,26 @@ type Half = (typeof tapToRetain.halves)[number]["key"]
 //   Coupons:  a coupon leaves YOUR DASHBOARD and lands in their app; the
 //             dashboard carries the "Coming soon" tag and the coupon is drawn
 //             dashed, because only that leg is not live.
-// Motion is CSS keyframes on transform/opacity only (tapToRetain.module.css);
-// the key on the token restarts the loop when you switch halves. Under
-// prefers-reduced-motion the loop is off and the token simply rests in the
-// phone, so the picture still says where it ends up.
+// Motion is CSS keyframes on transform/opacity only (tapToRetain.module.css),
+// and it is FINITE: three runs, then the token rests in the phone — the same
+// frame reduced motion shows. It only plays while the stage is on screen: an
+// IntersectionObserver sets data-playing, and without it every animation is
+// paused (off-screen it costs nothing, and a visitor who arrives late still
+// sees all three runs). The key on the token restarts the three runs when you
+// switch halves. Under prefers-reduced-motion nothing animates at all.
 export function TapToRetain() {
   const [half, setHalf] = useState<Half>("receipts")
+  const [playing, setPlaying] = useState(false)
+  const stageRef = useRef<HTMLDivElement>(null)
   const t = tapToRetain
+
+  useEffect(() => {
+    const el = stageRef.current
+    if (!el || typeof IntersectionObserver === "undefined") return
+    const observer = new IntersectionObserver(([entry]) => setPlaying(entry.isIntersecting), { threshold: 0.35 })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
 
   return (
     <FlowSection
@@ -57,7 +70,13 @@ export function TapToRetain() {
         <div className="mt-[var(--gap-body)] grid grid-cols-1 items-center gap-[clamp(24px,4vw,56px)] min-[900px]:grid-cols-[1.1fr_.9fr]">
           {/* The stage: decorative, the cards carry the words. */}
           <Reveal as="div">
-            <div className={styles.stage} data-half={half} aria-hidden="true">
+            <div
+              ref={stageRef}
+              className={styles.stage}
+              data-half={half}
+              data-playing={playing ? "true" : undefined}
+              aria-hidden="true"
+            >
               <div className={styles.stations}>
                 <div className={cn(styles.station, half === "coupons" && styles.dim)}>
                   <div className={styles.deviceWrap}>
