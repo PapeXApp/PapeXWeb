@@ -32,7 +32,7 @@ export function Hero() {
         // min(100vh, 760px) + items-start seats the content just under the
         // nav and lets the section end when the content does.
         minHeight: "auto",
-        padding: "clamp(96px,12vh,120px) clamp(20px,5vw,56px) 56px",
+        padding: "clamp(80px,10vh,112px) clamp(20px,5vw,56px) 52px",
       }}
     >
       {/* The hero keeps its own pointer-tracked glow: it is part of the live

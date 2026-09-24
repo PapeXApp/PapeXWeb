@@ -4,6 +4,7 @@ import { WordReveal, ChildStagger, Ripple, Spotlight } from "@/components/motion
 import { FlowSection } from "../shared/FlowSection"
 import { SectionLabel } from "../shared/SectionLabel"
 import { hero } from "./content"
+import styles from "./business.module.css"
 
 // Local, declarative-only keyframe for the RDH artwork's infinite float loop
 // (`animation:floaty 7s` in the prototype, PapeX Home.dc.html:753). Plain CSS
@@ -26,15 +27,17 @@ function HeroLoopStyles() {
 // page opens on the same flat #00121D and the commit reads as that half
 // growing. FlowGround (`initial="navy"`) paints the ground; this section only
 // declares it, and its text uses the ground's --flow-* ink.
-// Capped, not full-screen (2026-09-22): `min-h-screen` + items-center parked
-// the content in the middle of a ~900px box with dead air above and below.
-// min(100vh,760px) + items-start seats it just under the nav, and the bottom
-// padding is the shared --section-pad-y so the hero joins the page rhythm.
+// Full screen again (2026-09-22, "screens, not sections"): the capped
+// version measured 559px tall at 1440x900 with the device spilling past the
+// hero's bottom edge into section 02. `styles.screen` makes it >= 100svh and
+// centres the column in that box, so the device is fully contained and the
+// CTA row sits on the screen's midline instead of leaving a dead band under
+// it. The device is scaled up to use the height the screen now gives it.
 export function Hero() {
   return (
     <FlowSection
       ground="navy"
-      className="flex items-start overflow-hidden px-[clamp(20px,5vw,56px)] pb-[var(--section-pad-y)] pt-[clamp(96px,12vh,120px)]"
+      className={`${styles.screen} overflow-hidden px-[clamp(20px,5vw,56px)] pb-[var(--section-pad-y)] pt-[clamp(96px,12vh,120px)]`}
     >
       <HeroLoopStyles />
       <Spotlight
@@ -57,12 +60,12 @@ export function Hero() {
             {hero.heading}
           </WordReveal>
           <p
-            className="mt-[26px] max-w-[46ch] text-[clamp(17px,1.5vw,20px)] leading-[1.5]"
+            className="mt-[var(--gap-title)] max-w-[46ch] text-[length:var(--fs-lead)] leading-[1.5]"
             style={{ color: "var(--flow-fg-2)" }}
           >
             {hero.lead}
           </p>
-          <div className="mt-9 flex flex-wrap items-center gap-3.5">
+          <div className="mt-[var(--gap-body)] flex flex-wrap items-center gap-3.5">
             {/* Jumps to the on-page demo form (section 3.7). */}
             <Ripple as="div" variant="navy" className="inline-block overflow-hidden rounded-full">
               <a
@@ -119,9 +122,9 @@ export function Hero() {
             <Image
               src="/product/rdh-device.svg"
               alt={hero.deviceAlt}
-              width={430}
-              height={350}
-              className="h-auto w-[clamp(300px,34vw,430px)]"
+              width={520}
+              height={423}
+              className="h-auto w-[clamp(300px,36vw,520px)]"
               style={{ filter: "drop-shadow(0 30px 60px rgba(0,0,0,.45))" }}
               priority
             />

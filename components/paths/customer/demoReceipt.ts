@@ -1,5 +1,7 @@
 // The hero demo's INPUT bytes only — a genuine ESC/POS ticket for the fictional
-// "Bluebird Coffee", byte-for-byte the same stream the design prototype scripted
+// "Nook Cafe" (renamed from the prototype's "Bluebird Coffee" on 2026-09-22 —
+// that name wrapped to two lines in the phone mockups), otherwise byte-for-byte
+// the same stream the design prototype scripted
 // (design-prototype/source/PapeX Home.dc.html → demoReceiptBytes()). Decoding is
 // never re-implemented here: NfcPhone.tsx feeds this straight into this repo's
 // own lib/escpos.ts (`parseEscPos`) and lib/receiptSummary.ts (`summarizeReceipt`),
@@ -17,7 +19,7 @@ export function demoReceiptBytes(): Uint8Array {
   out.push(0x1b, 0x40); // ESC @    initialise
   out.push(0x1b, 0x61, 0x01); // ESC a 1  centre
   out.push(0x1b, 0x21, 0x30); // ESC ! 48 double height + double width
-  line("BLUEBIRD COFFEE");
+  line("NOOK CAFE");
   out.push(0x1b, 0x21, 0x00); // ESC ! 0  back to normal
   line("412 Walnut St");
   line("Syracuse, NY 13202");
@@ -42,7 +44,7 @@ export function demoReceiptBytes(): Uint8Array {
   out.push(0x0a);
   out.push(0x1b, 0x61, 0x01); // ESC a 1  centre
   line("Thanks for stopping in!");
-  line("bluebird.coffee");
+  line("nookcafe.com");
   out.push(0x1d, 0x56, 0x00); // GS V 0   cut
 
   return new Uint8Array(out);

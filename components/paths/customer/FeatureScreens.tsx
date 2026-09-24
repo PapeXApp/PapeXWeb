@@ -56,9 +56,12 @@ function Shot({
 export function ReceiptListShot() {
   return (
     <Shot slot="receipts-search" sheetLift="38cqh">
-      {/* The tab bar and FAB ride the crop line, so the five-tab glass bar
-          with Receipts selected is visible instead of falling off-frame. */}
-      <ReceiptsScreen query="blue" tabLift="38cqh" />
+      {/* NO TAB BAR (2026-09-22, Nico). This cell crops the device, so the
+          phone has no visible bottom edge — a floating five-tab capsule
+          parked mid-frame reads as a rendering bug, not as chrome. The FAB
+          stays and rides the crop line (--appui-lift): it is a free-floating
+          button in the app too, so it looks right anywhere on the screen. */}
+      <ReceiptsScreen query="blue" tabLift="38cqh" tabBar={false} />
     </Shot>
   );
 }

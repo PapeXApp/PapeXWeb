@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { parseEscPos } from "@/lib/escpos";
 import { summarizeReceipt } from "@/lib/receiptSummary";
-import { ClipLockScreen, ReceiptsScreen, StatusBar } from "./appui";
+import { ClipLockScreen, IslandLockGlyph, ReceiptsScreen, StatusBar } from "./appui";
 import { demoReceiptBytes } from "./demoReceipt";
 import { ClipReceiptScreen } from "./ReceiptCard";
 import { AppMedia } from "../shared/AppMedia";
@@ -39,24 +39,37 @@ export function PhoneChrome({
   children,
   mediaSlot,
   statusBar = false,
+  islandLock = false,
+  screenClassName,
 }: {
   children: React.ReactNode;
   /** app-media slot whose real capture, if imported, replaces the drawn screen. */
   mediaSlot?: string;
   statusBar?: boolean;
+  /** iOS's lock glyph inside the island — true only while the phone is locked. */
+  islandLock?: boolean;
+  screenClassName?: string;
 }) {
   const drawn = (
     <>
-      <div className={styles.wpIsland} />
+      {/* The glyph is a CHILD of the island: every screen layer below makes its
+          own stacking context, so a glyph drawn from the lock screen would be
+          painted under the island no matter how high its z-index. */}
+      <div className={styles.wpIsland}>{islandLock ? <IslandLockGlyph /> : null}</div>
       {statusBar ? <StatusBar /> : null}
       {children}
       <div className={styles.wpHomeBar} aria-hidden="true" />
+      <div className={styles.wpGlare} aria-hidden="true" />
     </>
   );
   return (
     <div className={styles.wpFrame}>
-      <div className={styles.wpScreen}>
-        {mediaSlot ? <AppMedia slot={mediaSlot} fallback={drawn} /> : drawn}
+      {/* titanium band > BLACK bezel ring > screen. The black ring is what
+          makes this read as an iPhone rather than a grey slab. */}
+      <div className={styles.wpBezel}>
+        <div className={cn(styles.wpScreen, screenClassName)}>
+          {mediaSlot ? <AppMedia slot={mediaSlot} fallback={drawn} /> : drawn}
+        </div>
       </div>
     </div>
   );
@@ -85,7 +98,7 @@ export function WalkPhone({
         : "walk-list";
   const drawn = (
     <>
-      <div className={styles.wpIsland} />
+      <div className={styles.wpIsland}>{step === 0 ? <IslandLockGlyph /> : null}</div>
 
       {/* --- 0: ready to tap — the locked phone with the App Clip card ---- */}
       <div className={cn(styles.wpScene, step === 0 && styles.wpSceneOn)} aria-label={tapCopy.headline}>
@@ -106,13 +119,16 @@ export function WalkPhone({
       </div>
 
       <div className={styles.wpHomeBar} aria-hidden="true" />
+      <div className={styles.wpGlare} aria-hidden="true" />
     </>
   );
 
   return (
     <div className={styles.wpFrame}>
-      <div className={styles.wpScreen}>
-        <AppMedia slot={slot} fallback={drawn} />
+      <div className={styles.wpBezel}>
+        <div className={styles.wpScreen}>
+          <AppMedia slot={slot} fallback={drawn} />
+        </div>
       </div>
     </div>
   );

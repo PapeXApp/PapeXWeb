@@ -3,6 +3,7 @@ import { FlowSection } from "../shared/FlowSection"
 import { SectionLabel } from "../shared/SectionLabel"
 import { whyMerchants } from "./content"
 import { FoldReceipt } from "./FoldReceipt"
+import styles from "./business.module.css"
 
 // 3.2 "Why merchants love PapeX" — the four numeric claims ($0 / 1 port /
 // 1 tap / 0 rolls) used to sit in a static 2x2 `wcard` grid. They are now the
@@ -18,7 +19,7 @@ export function WhyMerchants() {
     <FlowSection
       ground="light"
       index="02"
-      className="px-[clamp(20px,5vw,56px)] py-[var(--section-pad-y)]"
+      className={`${styles.rhythm} px-[clamp(20px,5vw,56px)] py-[var(--section-pad-y)]`}
     >
       <div className="mx-auto max-w-[1150px]">
         <Reveal>

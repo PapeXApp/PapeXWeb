@@ -40,12 +40,16 @@ export const heroContent = {
 
 /** The hero's live receipt demo — hint copy per state, and the tappable phone's a11y label. */
 export const demoContent = {
-  phoneLabel: "Tap the phone on the PapeX reader to receive a receipt",
+  phoneLabel: "Replay the tap",
+  /* The reader is the primary tap target now (2026-09-22): the hero's story is
+     "tap the PapeX device", and nothing happens until the visitor taps IT. */
+  deviceLabel: "Tap the PapeX reader to receive a receipt",
   idleTitle: "Tap to receive",
-  idleSubtitle: "Tap the phone on the reader below. No app needed to get it.",
+  idleSubtitle: "Tap the reader below. No app needed to get the receipt.",
   hint: {
-    idle: "Tap the phone to receive the receipt",
+    idle: "Tap the PapeX device below",
     bowing: "Tapping…",
+    card: "Now tap View to open your receipt",
     done: "Scroll it, open the original receipt, or tap the frame to replay.",
   },
   resetLabel: "Reset",

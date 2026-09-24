@@ -217,8 +217,22 @@
      — and therefore the whole hero — stops growing on a tall display instead
      of tracking 100vh forever. At 1440x900 that gives a 440px phone and an
      ~849px hero, so the absolutely-positioned scroll cue still fits. */
-  --phone-h: clamp(310px, calc(min(100vh, 860px) - 420px), 660px);
+  /* Nico 2026-09-22: at ~150px wide the phone read as a toy. The height
+     budget below is the same one as before, with the reserve cut from 420
+     to 368 (hero top padding 96->80 at the floor, and the reader pulled
+     ~36px further up by .demoRdh) and the viewport term uncapped to 1000.
+     Net: +16% at a 720-tall window (still fits 1280x720 with the scroll
+     cue on screen), +23% at 900, +45% at 1080. */
+  --phone-h: clamp(360px, calc(min(100vh, 1000px) - 368px), 720px);
   --phone-w: calc(var(--phone-h) * 393 / 852);
+
+  /* The hero no longer draws its own device. It renders <PhoneChrome> — the
+     SAME component and the same .wpFrame/.wpScreen/.wpIsland/.wpHomeBar CSS as
+     the walkthrough and the Features shots — and only tells it how tall to be.
+     Before 2026-09-22 the hero had a private .demoShell/.demoNotch/.demoScreen
+     copy, which is how the two phones drifted into different corner radii,
+     bezels and islands. One device, fixed once. */
+  --wp-size: var(--phone-h);
 
   /* The MONOSPACE receipt body's unit only (.acBody/.acLine). Equals 1px when
      the screen is 346px wide — the width at which a standard 32-column receipt
@@ -238,10 +252,11 @@
   z-index: 2;
   cursor: pointer;
   outline: none;
-  border-radius: 44px;
+  /* Matches PhoneChrome's outer radius so the focus ring hugs the device. */
+  border-radius: calc(var(--phone-w) * 0.19);
 }
 .demoPhone:focus-visible {
-  box-shadow: 0 0 0 3px rgba(251, 133, 0, 0.6);
+  box-shadow: 0 0 0 3px rgba(235, 113, 0, 0.6);
 }
 
 .demoTilt {
@@ -252,65 +267,53 @@
   transform: translateY(34px) rotate(7deg);
 }
 
-/* 346px+ is the point a standard 32-column receipt body stops needing to pan. */
-.demoShell {
-  position: relative;
-  /* Driven entirely by the screen inside it — see --phone-w on .demoStage. */
-  width: max-content;
-  border-radius: calc(var(--phone-w) * 0.155);
-  background: linear-gradient(160deg, #2a2d36, #15171d);
-  border: 2px solid rgba(255, 255, 255, 0.12);
-  /* Two shadows, not one: a tight contact shadow keeps the bezel edge crisp
-     while the long one grounds the phone on the section. Navy-tinted, not
-     black: the hero is light now, and a pure-black shadow on #F5F5F5 reads
-     as a grey smudge. */
-  box-shadow: 0 2px 6px rgba(0, 18, 29, 0.3), 0 40px 80px rgba(0, 18, 29, 0.28);
-  padding: calc(var(--phone-w) * 0.031);
-}
+/* The hero's device is <PhoneChrome> now — see --wp-size on .demoStage.
+   The private .demoShell / .demoScreen / .demoNotch rules that used to sit
+   here were deleted on 2026-09-22: they were a second, slightly different
+   iPhone (fatter bezel, 0.155/0.124 radii, its own island maths) drawn
+   beside the walkthrough's. Chrome changes belong in .wpFrame below. */
 
-/* Height is viewport-relative, not width-relative: the phone AND the reader
-   beneath it must both be visible together or the tap is undiscoverable. */
-.demoScreen {
-  position: relative;
-  width: var(--phone-w);
-  height: var(--phone-h);
-  /* Concentric with the shell: the screen radius is the shell radius minus the
-     bezel, which is what stops the corners looking pinched. */
-  border-radius: calc(var(--phone-w) * 0.124);
-  /* The clip's ground is a navy field with a warm aurora, not flat #181A20 —
-     see app-media/reference/clip-receipt-rendered.png. Still the App Clip's
-     own palette, not the site's brand tokens (PapeXWeb/CLAUDE.md). */
-  background: linear-gradient(168deg, #0a1826 0%, #12222f 55%, #081420 100%);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-/* A Dynamic Island, not a notch. Every iPhone this demo is meant to read as
-   has had one since the 14 Pro; a notch hanging off the top edge is the single
-   strongest cue that a mockup is old. Proportions are the real ones: a
-   125x37pt pill on a 393pt-wide screen, inset 11pt from the top. */
-.demoNotch {
-  position: absolute;
-  top: calc(var(--phone-w) * 0.028 + var(--phone-w) * 0.031);
-  left: 50%;
-  width: calc(var(--phone-w) * 0.318);
-  height: calc(var(--phone-w) * 0.094);
-  transform: translateX(-50%);
-  background: #000;
-  border-radius: 999px;
-  z-index: 6;
-}
-
+/* The reader is now the demo's PRIMARY tap target (2026-09-22): the hero's
+   story is "tap the PapeX device", so the device is what you tap. It is a
+   real button — keyboard-reachable, with a visible focus ring — and it keeps
+   a pointer cursor so the affordance reads before anyone tabs to it. */
 .demoRdh {
+  /* The seat offset was a bare translateX; it is a variable now because the
+     hover lift has to compose with it rather than replace it. */
+  --rdh-x: clamp(26px, 8.4vw, 108px);
   position: relative;
   z-index: 1;
-  margin-top: clamp(-84px, -6.2vw, -36px);
-  transform: translateX(clamp(26px, 8.4vw, 108px));
-  width: clamp(212px, 21.5vw, 286px);
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  border-radius: 18px;
+  outline: none;
+  margin-top: clamp(-120px, -8.6vw, -52px);
+  transform: translateX(var(--rdh-x));
+  width: clamp(238px, 24vw, 318px);
   line-height: 0;
-  /* Navy-tinted for the light hero (see .demoShell). */
+  /* Navy-tinted for the light hero — a black shadow on #F5F5F5 reads grey. */
   filter: drop-shadow(0 22px 36px rgba(0, 18, 29, 0.3));
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.demoRdh:hover:not(:disabled) {
+  transform: translateX(var(--rdh-x)) translateY(-3px);
+}
+.demoRdh:focus-visible {
+  box-shadow: 0 0 0 3px rgba(235, 113, 0, 0.65);
+}
+.demoRdh:disabled {
+  cursor: default;
+}
+@media (prefers-reduced-motion: reduce) {
+  .demoRdh {
+    transition: none;
+  }
+  .demoRdh:hover:not(:disabled) {
+    transform: translateX(var(--rdh-x));
+  }
 }
 .demoRdh svg {
   width: 100%;
@@ -379,13 +382,13 @@
 }
 /* The one card with an orange rim: the totals. */
 .acCardTotals {
-  border-color: rgba(251, 133, 0, 0.8);
+  border-color: rgba(235, 113, 0, 0.8);
 }
 /* A section heading sits ABOVE its card, in the clip's accent. */
 .acSectionTitle {
   font-size: calc(20 * var(--u));
   font-weight: 600;
-  color: #fb8500;
+  color: #eb7100;
   padding: calc(2 * var(--u)) 0 calc(6 * var(--u));
 }
 
@@ -408,8 +411,8 @@
   height: calc(56 * var(--u));
   border-radius: 50%;
   background: #fff;
-  border: 2px solid #fb8500;
-  color: #fb8500;
+  border: 2px solid #eb7100;
+  color: #eb7100;
   font-size: calc(24 * var(--u));
   font-weight: 500;
   display: flex;
@@ -430,7 +433,7 @@
 .acMdate {
   font-size: calc(12 * var(--u));
   font-weight: 300;
-  color: #fb8500;
+  color: #eb7100;
   padding-top: 2px;
 }
 .acMsrc {
@@ -487,17 +490,17 @@
   font-variant-numeric: tabular-nums;
 }
 .acTvalBrand {
-  color: #fb8500;
+  color: #eb7100;
 }
 .acTrule {
   height: calc(2 * var(--u));
-  background: #fb8500;
+  background: #eb7100;
   margin: calc(7 * var(--u)) 0;
 }
 .acGrandLabel {
   font-size: calc(22 * var(--u));
   font-weight: 600;
-  color: #fb8500;
+  color: #eb7100;
 }
 .acGrandVal {
   font-size: calc(27 * var(--u));
@@ -512,7 +515,7 @@
   font-size: calc(12.5 * var(--u));
   font-weight: 600;
   letter-spacing: 0.04em;
-  color: #fb8500;
+  color: #eb7100;
 }
 .acChip {
   font-size: calc(11 * var(--u));
@@ -554,14 +557,14 @@
   justify-content: space-between;
   font-size: calc(20 * var(--u));
   font-weight: 500;
-  color: #2b7fc6;
+  color: #0088ea;
 }
 .acOrig summary::-webkit-details-marker {
   display: none;
 }
 .acChev {
   transition: transform 0.25s ease;
-  color: #2b7fc6;
+  color: #0088ea;
   font-size: calc(13 * var(--u));
 }
 .acOrig[open] .acChev {
@@ -629,10 +632,12 @@
   font-weight: 700;
   padding: calc(13 * var(--u)) 0;
   border-radius: 999px;
-  /* The clip's own yellow-orange, brighter than the app's #EB7100. */
-  background: linear-gradient(180deg, #ffc21f, #f7a400);
-  color: #3a2400;
-  box-shadow: 0 calc(8 * var(--u)) calc(20 * var(--u)) rgba(247, 164, 0, 0.32);
+  /* PapeX orange with a WHITE label. It used to be a yellow #ffc21f->#f7a400
+     gradient ("the clip's own yellow-orange") — Nico, 2026-09-22: every beat
+     on this page is on our colours, and the yellow read as a different brand. */
+  background: #eb7100;
+  color: #fff;
+  box-shadow: 0 calc(8 * var(--u)) calc(20 * var(--u)) rgba(235, 113, 0, 0.34);
   transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1),
     transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.22s ease;
 }
@@ -1404,24 +1409,106 @@
      a different scale (the Features rows render it smaller than How It Works
      does) without forking the component. */
   --wp-h: var(--wp-size, min(560px, 62vh));
+  /* 393 x 852pt = 19.5:9, the iPhone 14 Pro..17 screen. Do not decouple these
+     two: the whole point of the 2026-09-22 rebuild is that the silhouette is
+     an iPhone's, not a generic slab's. */
   --wp-w: calc(var(--wp-h) * 393 / 852);
   --wp-u: calc(var(--wp-w) / 355);
 
+  /* THREE layers, because geometry alone was not enough (Nico: "the phone
+     doesn't look any more like Apple"). A flat grey slab with the screen
+     butted straight against it is the Android-reference-device look. A Pro
+     iPhone is: a brushed TITANIUM band, then a BLACK bezel ring, then the
+     screen — and it is that black margin between metal and pixels that does
+     most of the work. */
+  --wp-band: calc(var(--wp-w) * 0.022);
+  --wp-bezel: calc(var(--wp-w) * 0.026);
+  /* The frame corner is visibly rounder than the display corner on Pro
+     models, so these are NOT concentric. CSS has circular corners only, so
+     this approximates Apple's continuous curve rather than reproducing it. */
+  --wp-screen-r: calc(var(--wp-w) * 0.12);
+  --wp-frame-r: calc(var(--wp-w) * 0.19);
+
   position: relative;
   width: max-content;
-  padding: calc(var(--wp-w) * 0.031);
-  border-radius: calc(var(--wp-w) * 0.155);
-  /* Titanium-ish rail: a bright edge top-left falling to a dark one bottom-right. */
-  background: linear-gradient(150deg, #5c6270 0%, #2b3038 34%, #1a1e25 66%, #3a4049 100%);
-  box-shadow: 0 2px 5px rgba(0, 18, 29, 0.4), 0 30px 64px rgba(0, 18, 29, 0.34),
-    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  padding: var(--wp-band);
+  border-radius: var(--wp-frame-r);
+  /* Brushed titanium: bright at the top-left corner, dark through the middle,
+     bright again at the bottom-right — a band catches light twice, a slab
+     once. */
+  background: linear-gradient(
+    160deg,
+    #b9bec6 0%,
+    #7f858f 30%,
+    #4a4f58 55%,
+    #8a9099 80%,
+    #c4c9d0 100%
+  );
+  /* The machined edge: 1px lit top-left, 1px shadowed bottom-right. */
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.55),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.45),
+    0 2px 5px rgba(0, 18, 29, 0.4), 0 30px 64px rgba(0, 18, 29, 0.34);
+}
+
+/* Layer (b): the black bezel ring the display sits inside. */
+.wpBezel {
+  position: relative;
+  padding: var(--wp-bezel);
+  border-radius: calc(var(--wp-frame-r) - var(--wp-band));
+  background: #050607;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+/* Layer (d): side buttons, OUTSIDE the silhouette — mute switch + volume up
+   and down on the left, the longer side button on the right. Three elements
+   on the left means the mute switch gets its own gap, which is the giveaway
+   an iPhone has and nothing else does. */
+.wpFrame::before,
+.wpFrame::after {
+  content: "";
+  position: absolute;
+  width: calc(var(--wp-w) * 0.012);
+  border-radius: calc(var(--wp-w) * 0.012);
+  background: linear-gradient(160deg, #c4c9d0, #6b707a 45%, #a7adb6);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+.wpFrame::before {
+  left: calc(var(--wp-w) * -0.009);
+  top: calc(var(--wp-h) * 0.105);
+  height: calc(var(--wp-h) * 0.27);
+  /* mute switch | gap | volume up | gap | volume down */
+  background: linear-gradient(
+    180deg,
+    #b3b8c0 0 13%,
+    transparent 13% 30%,
+    #b3b8c0 30% 60%,
+    transparent 60% 67%,
+    #b3b8c0 67% 100%
+  );
+}
+.wpFrame::after {
+  right: calc(var(--wp-w) * -0.009);
+  top: calc(var(--wp-h) * 0.185);
+  height: calc(var(--wp-h) * 0.115);
+}
+
+/* Layer (e): the pane of glass. A single diagonal reflection across the top
+   third — without it the screen reads as a printed panel, not glass. */
+.wpGlare {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(115deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 45%);
+  z-index: 12;
 }
 
 .wpScreen {
   position: relative;
   width: var(--wp-w);
   height: var(--wp-h);
-  border-radius: calc(var(--wp-w) * 0.124);
+  border-radius: var(--wp-screen-r);
   overflow: hidden;
   /* The appui kit's unit: 1 iPhone POINT on a 393pt-wide screen. Every value
      in appui.module.css is then the real number read off the captures. */
@@ -1436,29 +1523,132 @@
     radial-gradient(90% 50% at 8% 4%, rgba(96, 166, 214, 0.08), transparent 60%);
 }
 
+/* The Dynamic Island: 27% of the screen's width, 3.6% of its height, pure
+   black, 1.3% down from the top edge. Getting this pill wrong — too tall, too
+   short, or hung off the top edge as a notch — is the loudest "this is not an
+   iPhone" tell there is. */
 .wpIsland {
   position: absolute;
-  top: calc(11 * var(--wp-u));
+  top: calc(var(--wp-h) * 0.013);
   left: 50%;
   transform: translateX(-50%);
-  width: calc(125 * var(--wp-u));
-  height: calc(37 * var(--wp-u));
+  width: calc(var(--wp-w) * 0.27);
+  height: calc(var(--wp-h) * 0.036);
   background: #000;
   border-radius: 999px;
   z-index: 9;
 }
+/* The front camera: a small grey lens dot inside the right end of the pill. */
+.wpIsland::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: calc(9 * var(--u));
+  width: calc(10 * var(--u));
+  height: calc(10 * var(--u));
+  border-radius: 999px;
+  transform: translateY(-50%);
+  background: radial-gradient(circle at 34% 30%, #3b444f 0%, #1a2028 55%, #0b0e12 100%);
+}
+
+/* The lock glyph iOS shows in the LEFT end of the island while the phone is
+   locked (app-media/reference/clip-lockscreen-card.png). It is a CHILD of the
+   island, not a sibling: the screen layers below (.acLayer / .wpScene) each
+   make their own stacking context, so a glyph drawn from the lock screen
+   would be painted underneath the island however high its z-index. */
+.wpIslandLock {
+  position: absolute;
+  top: 50%;
+  left: calc(17 * var(--u));
+  width: calc(12 * var(--u));
+  height: calc(12 * var(--u));
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.92);
+}
 
 /* --- home indicator ------------------------------------------------------ */
+/* Real numbers again: 140 x 5pt, 8pt off the bottom edge. */
 .wpHomeBar {
   position: absolute;
-  bottom: calc(6 * var(--wp-u));
+  bottom: calc(8 * var(--u));
   left: 50%;
   transform: translateX(-50%);
-  width: calc(126 * var(--wp-u));
-  height: calc(4.5 * var(--wp-u));
+  width: calc(140 * var(--u));
+  height: calc(5 * var(--u));
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.32);
   z-index: 11;
+}
+
+/* ==========================================================================
+ * APP CLIP CARD — the bits of appui/Clip.tsx that belong to the INTERACTION
+ * rather than to the shared kit. They live here (not appui.module.css) so the
+ * clip's card can gain a real button and a prompt glow without touching the
+ * kit sheet, which is owned by the app-UI restyle running in parallel.
+ * ========================================================================== */
+
+/* The kit sheet paints the card's NFC waves and the receipt's accent line in
+   two golds (#f5a623 / #f0a12a). appui.module.css is not ours to edit, so the
+   clip card overrides them here — every beat on this page is PapeX orange. */
+.clipWavesBrand { color: #eb7100; }
+.clipPaperAccBrand { background: #eb7100; }
+
+/* iOS system blue, per the App Clip card in the reference shot. The kit's
+   .clipView is a washed periwinkle because the reference is a camera photo of
+   a bright screen; the real control is #0A84FF with white text. */
+.clipViewBtn {
+  position: relative;
+  border: 0;
+  margin-left: auto;
+  flex: 0 0 auto;
+  font: inherit;
+  font-size: calc(18 * var(--u));
+  font-weight: 600;
+  padding: calc(9 * var(--u)) calc(24 * var(--u));
+  border-radius: 999px;
+  background: #0a84ff;
+  color: #fff;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.clipViewBtn:active {
+  background: #0a6fd8;
+}
+.clipViewBtn:focus-visible {
+  outline: calc(2 * var(--u)) solid #fff;
+  outline-offset: calc(2 * var(--u));
+}
+
+/* The "click me" prompt: one ring that expands and fades out of the pill,
+   forever, until the visitor clicks. A pseudo-element so it can scale past
+   the button's own box without moving the label, and opacity+transform only
+   so it stays on the compositor. */
+.clipViewBtn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  box-shadow: 0 0 0 calc(2 * var(--u)) rgba(10, 132, 255, 0.9),
+    0 0 calc(12 * var(--u)) calc(1 * var(--u)) rgba(10, 132, 255, 0.55);
+  opacity: 0;
+  pointer-events: none;
+}
+.clipViewPulse::after {
+  animation: clipViewGlow 1.6s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+}
+/* Ends at 1.16, not the 1.3 a free-standing ring would use: the App Clip card
+   is overflow:hidden (appui.module.css), and the pill sits 16pt off its right
+   edge, so a bigger ring gets sliced flat against the card's border. */
+@keyframes clipViewGlow {
+  0% { opacity: 0.9; transform: scale(1); }
+  74% { opacity: 0; transform: scale(1.16); }
+  100% { opacity: 0; transform: scale(1.16); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Reduced motion gets the card immediately and no pulse — the glow is a
+     pure attention loop, so there is nothing to degrade it to. */
+  .clipViewPulse::after { animation: none; }
 }
 
 /* --- screen switching ---------------------------------------------------- */

@@ -66,6 +66,10 @@ export const LIST_ROWS: ListRow[] = [
     source: "Email by you",
     icon: "mail",
     logoBg: "linear-gradient(160deg,#3b434e,#161a20)",
+    // Deliberately a SECOND unreviewed row: the list has to show both rim
+    // tiers side by side (orange `important` arc vs the neutral corner-lit
+    // ring), which is the thing the shot is meant to demonstrate.
+    unreviewed: true,
   },
 ];
 

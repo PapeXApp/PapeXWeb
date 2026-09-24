@@ -11,13 +11,18 @@ import { demoContent } from "./content";
 import { demoReceiptBytes } from "./demoReceipt";
 import { ClipReceiptScreen } from "./ReceiptCard";
 import { RdhDevice } from "./RdhDevice";
-import { AppMedia } from "../shared/AppMedia";
+import { PhoneChrome } from "./WalkPhone";
 import styles from "./customer.module.css";
 
-type DemoState = "idle" | "bowing" | "reading" | "done";
+/**
+ * The five beats of the tap. The card beat is new on 2026-09-22: before it,
+ * the App Clip card sat on the lock screen at rest, which is not what a real
+ * iPhone does and which spent the whole payoff before anyone touched anything.
+ */
+type DemoState = "idle" | "bowing" | "card" | "reading" | "done";
 
-/** How long the phone stays bowed onto the reader before the clip launches (see .demoTilt). */
-const DEMO_BOW_MS = 460;
+/** How long the phone stays bowed onto the reader before the card arrives (see .demoTilt). */
+const DEMO_BOW_MS = 640;
 /** How long "Reading your receipt" holds — matches the clip's own progress bar. */
 const DEMO_READ_MS = 700;
 /** How long the "Save to PapeX" button holds its "Saved" confirmation. */
@@ -25,18 +30,25 @@ const SAVED_MS = 1800;
 
 /**
  * The hero's live receipt demo — the biggest build in the customer path, and
- * now the App Clip's real story rather than an invented "tap to receive" card:
+ * the App Clip's real story beat for beat:
  *
- *   idle    the phone is LOCKED, with the App Clip card sliding up from the
- *           bottom edge ("PapeX / Tap to View Your Receipt" + a View pill)
- *   bowing  the phone bows onto the isometric RDH reader (RdhDevice)
- *   reading "Reading your receipt" with an orange progress bar
- *   done    the rendered clip receipt, with "Save to PapeX"
+ *   idle    the phone is LOCKED and empty. No App Clip card: iOS shows one
+ *           only after an NFC tap, so the card is the reward, not the set.
+ *   bowing  the visitor tapped the READER (the device is the button); the
+ *           phone bows onto it and the reader's LED pulses.
+ *   card    the phone is back up and iOS has slid the App Clip card in from
+ *           the bottom edge — "PapeX / Tap to View Your Receipt" with a blue
+ *           View pill that glows on a loop until it is clicked.
+ *   reading "Reading your receipt" with an orange progress bar.
+ *   done    the rendered clip receipt, with "Save to PapeX".
  *
  * "Real" means the bytes in demoReceipt.ts go straight through THIS REPO'S
  * OWN `lib/escpos.ts` (`parseEscPos`) and `lib/receiptSummary.ts`
  * (`summarizeReceipt`) — computed once via useMemo, never re-implemented or
  * ported from the design prototype's standalone decoder script.
+ *
+ * The device itself is <PhoneChrome>, the same component the walkthrough and
+ * the Features shots render, so there is exactly one iPhone on this page.
  */
 export function NfcPhone() {
   const [demo, setDemo] = useState<DemoState>("idle");
@@ -60,23 +72,35 @@ export function NfcPhone() {
     return summarizeReceipt(receipt.lines);
   }, []);
 
-  function tap() {
-    if (demo === "done") {
-      reset();
-      return;
-    }
+  /** Beat 1 — the reader was tapped (pointer, Enter or Space). */
+  function tapDevice() {
     if (demo !== "idle") return;
     if (prefersReduced) {
-      setDemo("done");
+      // No bow, and the card is simply there: reduced motion gets the state,
+      // not the choreography.
+      setDemo("card");
       return;
     }
     setDemo("bowing");
     window.clearTimeout(bowTimer.current);
-    bowTimer.current = window.setTimeout(() => {
-      setDemo("reading");
-      window.clearTimeout(readTimer.current);
-      readTimer.current = window.setTimeout(() => setDemo("done"), DEMO_READ_MS);
-    }, DEMO_BOW_MS);
+    bowTimer.current = window.setTimeout(() => setDemo("card"), DEMO_BOW_MS);
+  }
+
+  /** Beat 2 — the blue View pill on the App Clip card was clicked. */
+  function openClip() {
+    if (demo !== "card") return;
+    setDemo("reading");
+    window.clearTimeout(readTimer.current);
+    readTimer.current = window.setTimeout(() => setDemo("done"), DEMO_READ_MS);
+  }
+
+  /** The phone stays tappable as a convenience: it just does whatever the
+   *  current beat's real control would do. The reader is still the thing the
+   *  copy points at. */
+  function tapPhone() {
+    if (demo === "idle") tapDevice();
+    else if (demo === "card") openClip();
+    else if (demo === "done") reset();
   }
 
   function reset() {
@@ -96,6 +120,7 @@ export function NfcPhone() {
     savedTimer.current = window.setTimeout(() => setSaved(false), SAVED_MS);
   }
 
+  const locked = demo === "idle" || demo === "bowing" || demo === "card";
   // The hint copy has one line per visible beat; "reading" borrows the tap's.
   const hint = demoContent.hint[demo === "reading" ? "bowing" : demo];
 
@@ -106,62 +131,60 @@ export function NfcPhone() {
         tabIndex={0}
         aria-label={demoContent.phoneLabel}
         aria-pressed={demo !== "idle"}
-        onClick={tap}
+        onClick={tapPhone}
         onKeyDown={(event) => {
           if (event.key !== "Enter" && event.key !== " ") return;
           event.preventDefault();
-          tap();
+          tapPhone();
         }}
-        className={cn(
-          styles.demoPhone,
-          demo === "bowing" && styles.demoPhoneBowing,
-          demo === "done" && styles.demoPhoneDone,
-        )}
+        className={cn(styles.demoPhone, demo === "bowing" && styles.demoPhoneBowing)}
       >
         <div className={styles.demoTilt}>
-          <div className={styles.demoShell}>
-            <div aria-hidden="true" className={styles.demoNotch} />
-            <div className={styles.demoScreen}>
-              {/* A real capture of the tap (app-media slot "hero-tap") takes over
-                  the whole screen when one exists; until then this renders the
-                  live-decoded demo below, unchanged. */}
-              <AppMedia
-                slot="hero-tap"
-                fallback={
-                  <>
-                    {/* 1. locked phone + the App Clip card */}
-                    <div className={cn(styles.acLayer, demo !== "done" && demo !== "reading" && styles.acLayerOn)}>
-                      <ClipLockScreen />
-                    </div>
-
-                    {/* 2. the clip launching */}
-                    <div className={cn(styles.acLayer, demo === "reading" && styles.acLayerOn)}>
-                      <ClipReading />
-                    </div>
-
-                    {/* 3. the receipt. Taps inside it belong to the receipt —
-                        opening "Original receipt" must not also fire the
-                        phone's replay. Stopping propagation here is what lets
-                        the two tap targets coexist: receipt UI in here, replay
-                        anywhere else on the phone (or the "Reset" link). */}
-                    <div
-                      className={cn(styles.acLayer, demo === "done" && styles.acLayerOn)}
-                      onClick={(event) => event.stopPropagation()}
-                      onKeyDown={(event) => event.stopPropagation()}
-                    >
-                      <ClipReceiptScreen summary={summary} saved={saved} onSave={save} />
-                    </div>
-                  </>
-                }
+          <PhoneChrome islandLock={locked}>
+            {/* 1. the locked phone. The App Clip card only exists from the
+                   "card" beat on — mounting it is what plays iOS's
+                   slide-up-from-the-bottom. */}
+            <div className={cn(styles.acLayer, locked && styles.acLayerOn)}>
+              <ClipLockScreen
+                card={demo === "card"}
+                pulse={!prefersReduced}
+                onView={openClip}
               />
             </div>
-          </div>
+
+            {/* 2. the clip launching */}
+            <div className={cn(styles.acLayer, demo === "reading" && styles.acLayerOn)}>
+              <ClipReading />
+            </div>
+
+            {/* 3. the receipt. Taps inside it belong to the receipt —
+                   opening "Original receipt" must not also fire the phone's
+                   replay. Stopping propagation here is what lets the two tap
+                   targets coexist: receipt UI in here, replay anywhere else
+                   on the phone (or the "Reset" link). */}
+            <div
+              className={cn(styles.acLayer, demo === "done" && styles.acLayerOn)}
+              onClick={(event) => event.stopPropagation()}
+              onKeyDown={(event) => event.stopPropagation()}
+            >
+              <ClipReceiptScreen summary={summary} saved={saved} onSave={save} />
+            </div>
+          </PhoneChrome>
         </div>
       </div>
 
-      <div aria-hidden="true" className={styles.demoRdh}>
+      {/* THE tap target. The reader is what the hero asks you to tap, so it is
+          a real <button>: pointer, Enter and Space all start the sequence, and
+          it drops out of the tab order once it has been used. */}
+      <button
+        type="button"
+        className={styles.demoRdh}
+        onClick={tapDevice}
+        disabled={demo !== "idle"}
+        aria-label={demoContent.deviceLabel}
+      >
         <RdhDevice pulsing={demo === "bowing"} />
-      </div>
+      </button>
 
       <div className={styles.demoHintRow}>
         <span aria-live="polite">{hint}</span>

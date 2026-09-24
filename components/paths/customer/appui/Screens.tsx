@@ -10,11 +10,14 @@ export function MerchantLogo({
   initial,
   bg,
   size,
+  unreviewed = false,
 }: {
   initial: string;
   bg: string;
-  /** Override in app points; defaults to the list row's 44pt. */
+  /** Override in app points; defaults to the list row's 40pt. */
   size?: number;
+  /** Draws the small orange "not reviewed yet" dot at the bottom-right. */
+  unreviewed?: boolean;
 }) {
   return (
     <span
@@ -28,16 +31,17 @@ export function MerchantLogo({
       }}
     >
       {initial}
-      <span className={s.logoDot} />
+      {unreviewed ? <span className={s.logoDot} /> : null}
     </span>
   );
 }
 
 export function ReceiptRow({ row }: { row: ListRow }) {
   return (
-    <div className={s.row}>
-      <span className={s.rowAccent} aria-hidden="true" />
-      <MerchantLogo initial={row.initial} bg={row.logoBg} />
+    /* The rim tier IS the state: an unreviewed row wears the `important`
+       orange top-left arc, a reviewed one the neutral corner-lit ring. */
+    <div className={cn(s.row, row.unreviewed && s.rowNew)}>
+      <MerchantLogo initial={row.initial} bg={row.logoBg} unreviewed={row.unreviewed} />
       <span className={s.rowText}>
         <span className={s.merchant}>{row.merchant}</span>
         <span className={s.rowDate}>{row.date}</span>
@@ -84,19 +88,24 @@ function FilterIcon() {
  *
  * `query` types a term into the search field (the Features row is selling
  * search, and an empty field says nothing about it).
- * `tabLift` raises the tab bar and FAB off the device's bottom edge for the
- * cells that crop the device — same trick as --wp-sheet-lift.
+ * `tabLift` raises the FAB (and the bar, when it is drawn) off the device's
+ * bottom edge for the cells that crop the device — same trick as
+ * --wp-sheet-lift.
+ * `tabBar={false}` drops the bar entirely: a phone cropped by its cell has no
+ * bottom edge on screen, and a tab bar floating mid-frame reads as a bug.
  */
 export function ReceiptsScreen({
   query,
   rows = LIST_ROWS,
   unreviewed = 139,
   tabLift,
+  tabBar = true,
 }: {
   query?: string;
   rows?: ListRow[];
   unreviewed?: number;
   tabLift?: string;
+  tabBar?: boolean;
 }) {
   return (
     <div className={s.screen} style={tabLift ? ({ "--appui-lift": tabLift } as React.CSSProperties) : undefined}>
@@ -136,7 +145,7 @@ export function ReceiptsScreen({
       </div>
 
       <Fab />
-      <TabBar active="receipts" />
+      {tabBar ? <TabBar active="receipts" /> : null}
     </div>
   );
 }

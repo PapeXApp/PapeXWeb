@@ -86,7 +86,7 @@ function randInt(min: number, max: number): number {
 // Fixture vocabulary
 // ---------------------------------------------------------------------------
 
-const MERCHANT_NAME = "Bluebird Coffee";
+const MERCHANT_NAME = "Nook Cafe";
 const MERCHANT_ADDRESS = ["412 Walnut St", "Syracuse, NY 13202", "(315) 555-0142"];
 const SERVERS = ["Maya", "Theo", "Priya", "Sam", "Julian"];
 

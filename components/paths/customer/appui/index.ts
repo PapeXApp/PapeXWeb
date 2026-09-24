@@ -6,6 +6,6 @@
 export { Chevron, Fab, IconButton, StatusBar, TabBar, TABS } from "./Chrome";
 export type { RowIcon, TabKey } from "./Chrome";
 export { MerchantLogo, ReceiptDetailScreen, ReceiptRow, ReceiptsScreen } from "./Screens";
-export { ClipLockScreen, ClipReading, ClipTopBar } from "./Clip";
+export { ClipLockScreen, ClipReading, ClipTopBar, IslandLockGlyph } from "./Clip";
 export { DETAIL_RECEIPT, LIST_ROWS } from "./data";
 export type { ListRow } from "./data";

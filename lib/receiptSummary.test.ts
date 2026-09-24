@@ -300,7 +300,7 @@ test("trailingAmount does not swallow a non-money digit run with no 2-decimal ta
 
 test("summarizeReceipt captures a >$999 total and line item with no thousands separator", () => {
   const lines = [
-    line("Bluebird Coffee"),
+    line("Nook Cafe"),
     line("Espresso Machine  1499.00"),
     line("TOTAL             1499.00"),
   ];

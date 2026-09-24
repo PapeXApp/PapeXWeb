@@ -22,7 +22,7 @@ import styles from "./customer.module.css";
  *
  * Palette is the App Clip's OWN — deliberately not this site's navy/orange
  * (PapeXWeb/CLAUDE.md → "the /customers receipt demo intentionally uses the
- * App Clip's palette"). Verbatim tokens: accent #FB8500, brand blue #2B7FC6,
+ * App Clip's palette"). Verbatim tokens: accent #EB7100, brand blue #0088EA,
  * text #F4F4F4, secondary #C4C7CC, muted #9AA1A8. All values live in
  * customer.module.css's `.ac*` rules — never hardcode a hex here.
  *

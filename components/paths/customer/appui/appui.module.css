@@ -2,34 +2,79 @@
  * appui — the shared PapeX app / App Clip UI kit used by all four phones on
  * /customers (hero NfcPhone, the two Features shots, the How-it-works walk).
  *
- * Rebuilt 2026-09-22 from real captures in app-media/reference/. Before this,
- * each phone drew its own approximation of an older PapeXV2 design and they
- * had already drifted apart (four tab bars, two row styles, a serif screen
- * title the app has never had). Everything visual lives here now, so a change
- * lands on every phone at once.
+ * Rebuilt 2026-09-22 (pass 2) from real captures in app-media/reference/ AND
+ * from PapeXV2's own design tokens, so the drawn screens are the SAME design
+ * as the shipped app rather than an approximation of it.
  *
  * SIZING: the host sets ONE variable, `--u`, equal to (screen width / 393).
- * Every number below is then the real value in iPhone points from the
- * captures, so this reads as a spec sheet rather than a pile of magic numbers.
+ * Every number below is then the real value in iPhone points, so this reads as
+ * a spec sheet rather than a pile of magic numbers.
  *
- * PALETTE: the app's own, not the site's brand tokens (see PapeXWeb/CLAUDE.md
- * → "the /customers receipt demo intentionally uses the App Clip's palette").
- *   ground  #00121D -> #0A1A26 with a warm orange aurora top-left
- *   glass   rgba(20,36,50,.55) + a 1px rgba(140,170,200,.28) rim
- *   ink     #F5F5F5   muted #8A9BA8   orange #EB7100   blue #2B7FC6
- * The App Clip keeps its own warmer accent (#FB8500) in customer.module.css.
+ * PALETTE — BRAND ONLY (changed 2026-09-22). These screens used to borrow the
+ * App Clip's palette (#181A20 / #FB8500 / #2B7FC6). They are the APP, not the
+ * clip, so they now carry PapeXV2/theme/tokens.ts: ground navy #00121D,
+ * accent orange #EB7100, info blue #0088EA, standard outline #7FC4EC, and the
+ * three dark-mode inks rgba(255,255,255,.90/.64/.45). The App Clip block at
+ * the bottom of this file keeps #FB8500 — that surface genuinely is the clip.
+ *
+ * THE THREE THINGS THAT MAKE A PAPEX SURFACE (all ported below):
+ *   1. THE CORNER-LIT RIM (`components/ui/GlassEdgeRing.tsx`). One hairline,
+ *      lit at the TOP-LEFT and BOTTOM-RIGHT corners, fading to `faint` along
+ *      the edges that lead away from them — so the top-right and bottom-left
+ *      corners are the dim ones. In React Native that needs eight pieces; on
+ *      the web it is one diagonal gradient behind a mask-composite ring, which
+ *      is also how the original design handoff drew it. Tones are the dark
+ *      tiers verbatim: neutral white .51 lit / .153 faint; important orange
+ *      #E88036 1.0 lit / .30 faint.
+ *   2. THE 128° FROST (`glassFace.frost`) — brightest at BOTH the top-left and
+ *      bottom-right, dimmest through the middle: the rim's two-corner logic
+ *      applied to the face, which is what makes a card read as a slab of glass
+ *      catching light at two ends instead of a flat panel.
+ *   3. THE DEPTH PAIR (`glassAccents`) — a top-left specular "corner kiss"
+ *      (white .28) and a soft inner bottom shade (black .07).
+ *
+ * Liquid glass is real here in a way it cannot be in RN: `backdrop-filter`
+ * blurs what is actually behind the surface, so the tab bar and the pills are
+ * genuine glass over the list rather than a painted imitation of it.
  * ========================================================================== */
 
 .screen {
-  --ink: #f5f5f5;
-  --ink-2: #b6c4cf;
-  --ink-3: #8a9ba8;
+  /* --- brand palette, PapeXV2/theme/tokens.ts (dark mode) ---------------- */
+  --navy: #00121d;
   --acc: #eb7100;
-  --blue: #2b7fc6;
-  --glass: rgba(20, 36, 50, 0.55);
-  --rim: rgba(140, 170, 200, 0.28);
-  --rim-top: rgba(190, 215, 240, 0.34);
-  --r: calc(22 * var(--u));
+  --blue: #0088ea;
+  --outline: #7fc4ec;
+  --ink: rgba(255, 255, 255, 0.9);
+  --ink-2: rgba(255, 255, 255, 0.64);
+  --ink-3: rgba(255, 255, 255, 0.45);
+
+  /* --- glass recipe ------------------------------------------------------ */
+  /* glassEdges.neutral is white .51 lit / .153 faint on a 1px stroke. That is
+     a HAIRLINE ON A PHONE: these mockups render the 393pt screen at 150-300px,
+     i.e. ~0.4-0.75 CSS px per point, so a 1px .51 rim lands under one device
+     pixel and vanishes. Scaled to survive the render: 1.5px at .70 → .18
+     (2px, solid #EB7100, for the accent tier). Same picture, legible size. */
+  --rim-lit: rgba(255, 255, 255, 0.7);
+  --rim-faint: rgba(255, 255, 255, 0.18);
+  /* glassEdges.important, taken up to the brand orange so it reads at size. */
+  --rim-acc: #eb7100;
+  --rim-acc-faint: rgba(235, 113, 0, 0.55);
+  /* The lit top-left edge also GLOWS in the reference. Off by default; a row
+     switches it on through --glow so .glass keeps ONE box-shadow declaration. */
+  --glow: 0 0 0 rgba(0, 0, 0, 0);
+  /* glassFace.frost */
+  --frost: linear-gradient(
+    128deg,
+    rgba(255, 255, 255, 0.062) 0%,
+    rgba(255, 255, 255, 0.026) 50%,
+    rgba(255, 255, 255, 0.062) 100%
+  );
+  /* glassAccents.dark */
+  --kiss: rgba(255, 255, 255, 0.28);
+  --shade: rgba(0, 0, 0, 0.07);
+
+  --r: calc(24 * var(--u));
+  --r-strip: calc(18 * var(--u));
 
   position: absolute;
   inset: 0;
@@ -38,20 +83,20 @@
   -webkit-font-smoothing: antialiased;
 }
 
-/* The app's ground is never flat: a warm orange aurora sits top-left and a
-   faint blue one under it. Painted here (not on the device) so a screen looks
-   the same in every frame on the page. */
+/* The app's ground is never flat: a warm orange aurora top-left (ScreenGlow)
+   and a cooler one under it. Painted on the screen, not the device, so a
+   screen looks the same in every frame on the page. */
 .ground {
   position: absolute;
   inset: 0;
-  background: linear-gradient(168deg, #00121d 0%, #0a1a26 62%, #00121d 100%);
+  background: var(--navy);
 }
 .ground::after {
   content: "";
   position: absolute;
   inset: 0;
   background: radial-gradient(78% 42% at 6% 2%, rgba(235, 113, 0, 0.16), transparent 64%),
-    radial-gradient(70% 38% at 96% 28%, rgba(43, 127, 198, 0.1), transparent 66%),
+    radial-gradient(70% 38% at 96% 28%, rgba(127, 196, 236, 0.07), transparent 66%),
     radial-gradient(90% 34% at 20% 104%, rgba(235, 113, 0, 0.08), transparent 70%);
 }
 
@@ -146,20 +191,124 @@
   border-radius: calc(1.6 * var(--u));
 }
 
-/* --- the Liquid Glass surface every card/pill/bar shares ------------------ */
+/* ==========================================================================
+ * THE RIM — GlassEdgeRing, as one diagonal gradient behind a masked ring.
+ *
+ * `linear-gradient(135deg, …)` runs along the TOP-LEFT → BOTTOM-RIGHT
+ * diagonal, and its bands are PERPENDICULAR to that diagonal, so the two
+ * unlit corners (top-right, bottom-left) both fall in the middle of the ramp
+ * and land on `faint` automatically. That single property is the whole of
+ * GlassEdgeRing's behaviour, and it follows the corner radius exactly because
+ * the mask is built from the element's own `border-radius`.
+ *
+ * The mask: paint the gradient over the full box, then punch out everything
+ * inside the 1px padding box (`mask-composite: exclude`). One element, one
+ * hairline, no miter where the two lit edges meet.
+ * ========================================================================== */
+/* NO `composes: ring` — the CSS-modules pipeline here resolves composes only
+   ONE level deep (a class that composes a class that composes a third emits
+   two names, not three), so the ring is applied by SELECTOR LIST instead.
+   Add a surface here and it gets the rim; there is no chain to get wrong. */
+.glass::before,
+.mirror::before,
+.tabBar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: linear-gradient(
+    135deg,
+    var(--rim-lit) 0%,
+    var(--rim-faint) 38%,
+    var(--rim-faint) 62%,
+    var(--rim-lit) 100%
+  );
+  -webkit-mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+  -webkit-mask-clip: content-box, border-box;
+  -webkit-mask-composite: xor;
+  mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+  mask-clip: content-box, border-box;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+/* GlassEdgeRing rim="topLeft", tier `important` — the receipt row's orange
+   arc. Light at the top-left ONLY, dying out before it reaches the far
+   corner: the bottom and right walls are not drawn at all. In a long list a
+   complete ring on every row stacks into a grid of boxes; two lit walls read
+   as light falling across the list from one direction instead. */
+.ringAcc::before {
+  padding: 2px;
+  background: linear-gradient(
+    135deg,
+    var(--rim-acc) 0%,
+    var(--rim-acc) 12%,
+    var(--rim-acc-faint) 28%,
+    rgba(235, 113, 0, 0) 45%
+  );
+}
+/* The totals card is the one card in the app that wears a FULL orange ring. */
+.ringAccFull::before {
+  padding: 2px;
+  background: linear-gradient(
+    135deg,
+    var(--rim-acc) 0%,
+    var(--rim-acc-faint) 38%,
+    var(--rim-acc-faint) 62%,
+    var(--rim-acc) 100%
+  );
+}
+
+/* --- the glass surface every card / pill / bar shares --------------------- */
 .glass {
-  background: var(--glass);
-  border: 1px solid var(--rim);
+  position: relative;
   border-radius: var(--r);
-  backdrop-filter: blur(16px) saturate(150%);
-  -webkit-backdrop-filter: blur(16px) saturate(150%);
-  box-shadow: inset 0 1px 0 var(--rim-top), 0 calc(8 * var(--u)) calc(24 * var(--u)) rgba(0, 0, 0, 0.3);
+  /* On device the card is clear and the OS blurs the ground through it, which
+     lifts it off the navy on its own. A web mockup has almost nothing behind
+     the screen to blur, so a transparent card came out the same colour as the
+     ground — "the app didn't change". The reference cards sit around #0E2030
+     against a #00121D page: white .055 under the frost lands there. */
+  background-color: rgba(255, 255, 255, 0.055);
+  background-image: var(--frost);
+  /* glow (off unless a row asks) + corner kiss + inner bottom shade + lift */
+  box-shadow: var(--glow),
+    inset calc(2 * var(--u)) calc(2 * var(--u)) calc(4 * var(--u)) calc(-2 * var(--u)) var(--kiss),
+    inset 0 calc(-12 * var(--u)) calc(24 * var(--u)) var(--shade),
+    0 calc(10 * var(--u)) calc(28 * var(--u)) rgba(0, 0, 0, 0.35);
+  /* Real liquid glass: this blurs the list travelling behind the surface. */
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+}
+/* ==========================================================================
+ * THE MIRROR — components/ui/pills/mirrorFace.ts, the selected segment's face.
+ *   1. BODY        white .20 (`PILL_FILL_ALPHA`)
+ *   2. SKY→GROUND  `PILL_FACE_GRADIENT`, horizon at 56% because a surface lit
+ *                  from above shows more sky than ground
+ *   3. SPECULAR    a tight inset hairline on the top edge, ~4x the sky, which
+ *                  is what makes the top read as LIT rather than as PALE
+ *   4. GROUND SHADE a soft navy inset along the bottom, curving into the caps
+ *   5. RIM         the card's neutral ring (`.ring`), nothing custom
+ * ========================================================================== */
+.mirror {
+  position: relative;
+  border-radius: var(--r);
+  background-color: rgba(255, 255, 255, 0.2);
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.16) 0%,
+    rgba(255, 255, 255, 0.07) 32%,
+    rgba(255, 255, 255, 0) 56%,
+    rgba(0, 18, 29, 0.06) 78%,
+    rgba(0, 18, 29, 0.12) 100%
+  );
+  box-shadow: inset 0 calc(1 * var(--u)) calc(1.5 * var(--u)) calc(-0.5 * var(--u)) rgba(255, 255, 255, 0.55),
+    inset 0 calc(-6 * var(--u)) calc(12 * var(--u)) calc(-1 * var(--u)) rgba(0, 18, 29, 0.22);
 }
 
 /* --- floating header pill: "Receipts / N unreviewed" + "Select" ----------- */
 .headerRow {
   position: absolute;
-  top: calc(56 * var(--u));
+  top: calc(52 * var(--u));
   left: calc(14 * var(--u));
   right: calc(14 * var(--u));
   display: flex;
@@ -170,20 +319,20 @@
 .headerPill {
   composes: glass;
   border-radius: 999px;
-  padding: calc(7 * var(--u)) calc(16 * var(--u)) calc(9 * var(--u));
+  padding: calc(8 * var(--u)) calc(20 * var(--u)) calc(10 * var(--u));
   text-align: center;
   line-height: 1;
 }
 .headerTitle {
   display: block;
-  font-size: calc(24 * var(--u));
+  font-size: calc(23 * var(--u));
   font-weight: 600;
   letter-spacing: -0.01em;
-  color: var(--ink);
+  color: #fff;
 }
 .headerSub {
   display: block;
-  margin-top: calc(5 * var(--u));
+  margin-top: calc(6 * var(--u));
   font-size: calc(12 * var(--u));
   color: var(--ink-3);
 }
@@ -196,10 +345,10 @@
   position: absolute;
   right: 0;
   border-radius: 999px;
-  padding: calc(10 * var(--u)) calc(13 * var(--u));
-  font-size: calc(15 * var(--u));
+  padding: calc(11 * var(--u)) calc(15 * var(--u));
+  font-size: calc(16 * var(--u));
   font-weight: 500;
-  color: var(--ink);
+  color: #fff;
 }
 
 /* --- search pill + filter button ----------------------------------------- */
@@ -213,7 +362,7 @@
   flex: 1;
   min-width: 0;
   border-radius: 999px;
-  height: calc(46 * var(--u));
+  height: calc(44 * var(--u));
   padding: 0 calc(18 * var(--u));
   display: flex;
   align-items: center;
@@ -244,8 +393,8 @@
 .filterBtn {
   composes: glass;
   flex: 0 0 auto;
-  width: calc(46 * var(--u));
-  height: calc(46 * var(--u));
+  width: calc(44 * var(--u));
+  height: calc(44 * var(--u));
   border-radius: 999px;
   display: flex;
   align-items: center;
@@ -253,65 +402,58 @@
   color: var(--ink-2);
 }
 .filterIcon {
-  width: calc(20 * var(--u));
-  height: calc(20 * var(--u));
+  width: calc(19 * var(--u));
+  height: calc(19 * var(--u));
 }
 
 /* --- date group label ----------------------------------------------------- */
 .groupLabel {
   font-size: calc(14 * var(--u));
-  color: var(--ink-3);
+  color: var(--ink-2);
   padding: calc(4 * var(--u)) calc(4 * var(--u)) 0;
 }
 
 /* --- a receipt row -------------------------------------------------------- */
 .row {
   composes: glass;
-  position: relative;
   display: flex;
   align-items: center;
   gap: calc(12 * var(--u));
   padding: calc(11 * var(--u)) calc(12 * var(--u));
 }
-/* The orange edge: a full inset border whose left + top sides are lit, masked
-   so it fades away as it travels round the corner. That curve is the single
-   most recognisable thing about a PapeX receipt row. */
-.rowAccent {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  border: calc(1.4 * var(--u)) solid transparent;
-  border-left-color: var(--acc);
-  border-top-color: var(--acc);
-  -webkit-mask-image: linear-gradient(122deg, #000 0 7%, rgba(0, 0, 0, 0.3) 20%, transparent 32%);
-  mask-image: linear-gradient(122deg, #000 0 7%, rgba(0, 0, 0, 0.3) 20%, transparent 32%);
-  pointer-events: none;
+/* Unreviewed rows wear the `important` tier's top-left arc (see .ringAcc). */
+.rowNew {
+  composes: ringAcc;
+  /* The reference rows visibly BLOOM orange off the top-left edge — the rim's
+     own `glow` in the app (glassEdges.important carries one). Fed through
+     --glow so .glass's single box-shadow declaration still owns the rest. */
+  --glow: -2px -3px 14px -4px rgba(235, 113, 0, 0.55);
 }
 .logo {
   position: relative;
   flex: 0 0 auto;
-  width: calc(44 * var(--u));
-  height: calc(44 * var(--u));
+  width: calc(40 * var(--u));
+  height: calc(40 * var(--u));
   border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: calc(17 * var(--u));
+  font-size: calc(16 * var(--u));
   font-weight: 700;
   letter-spacing: -0.01em;
   color: #fff;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
 }
-/* The little orange dot every logo carries at its bottom-right. */
+/* The small orange "unreviewed" dot at the logo's bottom-right corner. */
 .logoDot {
   position: absolute;
   right: calc(-1 * var(--u));
-  bottom: calc(1 * var(--u));
+  bottom: calc(0 * var(--u));
   width: calc(11 * var(--u));
   height: calc(11 * var(--u));
   border-radius: 999px;
   background: var(--acc);
-  box-shadow: 0 0 0 calc(1.6 * var(--u)) #0a1a26;
+  box-shadow: 0 0 0 calc(1.6 * var(--u)) var(--navy);
 }
 .rowText {
   flex: 1;
@@ -330,7 +472,7 @@
   display: block;
   margin-top: calc(1 * var(--u));
   font-size: calc(14 * var(--u));
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 .rowSource {
   display: block;
@@ -361,16 +503,17 @@
   align-items: center;
   gap: calc(8 * var(--u));
 }
+/* The small round action button: `standard` outline #7FC4EC, as in the app. */
 .iconBtn {
   width: calc(30 * var(--u));
   height: calc(30 * var(--u));
   border-radius: 999px;
-  border: 1px solid var(--rim);
+  border: 1px solid rgba(127, 196, 236, 0.42);
   background: rgba(255, 255, 255, 0.04);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--ink-2);
+  color: rgba(127, 196, 236, 0.85);
 }
 .iconBtnGlyph {
   width: calc(15 * var(--u));
@@ -392,7 +535,7 @@
 .listScroll {
   position: absolute;
   inset: 0;
-  padding: calc(108 * var(--u)) calc(14 * var(--u)) calc(96 * var(--u));
+  padding: calc(104 * var(--u)) calc(14 * var(--u)) calc(96 * var(--u));
   display: flex;
   flex-direction: column;
   gap: calc(10 * var(--u));
@@ -411,15 +554,16 @@
   /* --appui-lift raises the bar + FAB to the crop line in cells that crop the
      device (FeatureScreens), so they stay on the visible edge. 0 elsewhere. */
   bottom: calc(96 * var(--u) + var(--appui-lift, 0px));
-  width: calc(58 * var(--u));
-  height: calc(58 * var(--u));
+  width: calc(56 * var(--u));
+  height: calc(56 * var(--u));
   border-radius: 999px;
   background: var(--acc);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 8;
-  box-shadow: 0 calc(10 * var(--u)) calc(24 * var(--u)) rgba(235, 113, 0, 0.36);
+  box-shadow: inset 0 calc(1 * var(--u)) calc(1.5 * var(--u)) calc(-0.5 * var(--u)) rgba(255, 255, 255, 0.55),
+    0 calc(10 * var(--u)) calc(24 * var(--u)) rgba(235, 113, 0, 0.36);
 }
 .fab::before,
 .fab::after {
@@ -437,24 +581,27 @@
   height: calc(22 * var(--u));
 }
 
-/* --- the five-tab glass bar ---------------------------------------------- */
+/* --- the five-tab glass bar ---------------------------------------------- *
+ * iOS 26 draws this as a floating, inset Liquid Glass capsule over the list.
+ * `backdrop-filter` is the one place the web can do exactly what the device
+ * does: the rows really are blurred behind it. */
 .tabBar {
   position: absolute;
-  left: calc(12 * var(--u));
-  right: calc(12 * var(--u));
-  bottom: calc(14 * var(--u) + var(--appui-lift, 0px));
-  height: calc(60 * var(--u));
+  left: calc(16 * var(--u));
+  right: calc(16 * var(--u));
+  bottom: calc(18 * var(--u) + var(--appui-lift, 0px));
+  height: calc(66 * var(--u));
   border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 calc(6 * var(--u));
+  padding: 0 calc(5 * var(--u));
   z-index: 9;
-  background: rgba(20, 36, 50, 0.52);
-  border: 1px solid var(--rim);
+  background: rgba(0, 18, 29, 0.72);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
-  box-shadow: inset 0 1px 0 var(--rim-top), 0 calc(10 * var(--u)) calc(28 * var(--u)) rgba(0, 0, 0, 0.42);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    0 calc(12 * var(--u)) calc(32 * var(--u)) rgba(0, 0, 0, 0.18);
 }
 .tab {
   position: relative;
@@ -464,22 +611,25 @@
   align-items: center;
   justify-content: center;
   gap: calc(3 * var(--u));
-  height: calc(50 * var(--u));
+  height: calc(56 * var(--u));
   border-radius: 999px;
   font-size: calc(11 * var(--u));
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--ink-2);
 }
-/* Selected tab: orange label + the glass oval that slides behind it. */
+/* The selected tab: the app's own orange label over the mirrored thumb. */
 .tabOn {
+  composes: mirror;
   color: var(--acc);
-  background: rgba(255, 255, 255, 0.1);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
-.tabGlyph {
-  width: calc(22 * var(--u));
-  height: calc(22 * var(--u));
+/* OUR icons — PapeXV2/assets/icons/glass/tabbar/*.png, the 3D glass set the
+   NativeTabs bar renders with `renderingMode="original"`. Copied, not
+   redrawn: a hand-traced SVG of a 3D glass icon is a different icon. */
+.tabIcon {
+  width: calc(26 * var(--u));
+  height: calc(26 * var(--u));
   display: block;
+  object-fit: contain;
 }
 
 /* --- receipt DETAIL screen ------------------------------------------------ */
@@ -529,11 +679,11 @@
   font-size: calc(24 * var(--u));
   font-weight: 600;
   line-height: 1.1;
-  color: var(--ink);
+  color: #fff;
 }
 .merchantRule {
   height: 1px;
-  background: var(--rim);
+  background: var(--rim-faint);
   margin: calc(13 * var(--u)) calc(6 * var(--u));
 }
 .merchantAddr {
@@ -559,6 +709,7 @@
   align-items: center;
   gap: calc(5 * var(--u));
 }
+/* The "Shared" chip is the app's INFO tone — brand blue #0088EA. */
 .chipShared {
   display: inline-flex;
   align-items: center;
@@ -568,8 +719,8 @@
   color: #fff;
   padding: calc(6 * var(--u)) calc(13 * var(--u));
   border-radius: 999px;
-  background: linear-gradient(180deg, rgba(43, 127, 198, 0.85), rgba(28, 86, 138, 0.85));
-  border: 1px solid rgba(140, 190, 235, 0.4);
+  background: linear-gradient(180deg, rgba(0, 136, 234, 0.85), rgba(0, 92, 158, 0.85));
+  border: 1px solid rgba(127, 196, 236, 0.45);
 }
 .chipGlyph {
   width: calc(13 * var(--u));
@@ -578,7 +729,7 @@
 .sectionTitle {
   font-size: calc(20 * var(--u));
   font-weight: 600;
-  color: var(--ink);
+  color: #fff;
   padding: calc(6 * var(--u)) calc(2 * var(--u)) 0;
 }
 .sectionTitleAcc {
@@ -586,7 +737,7 @@
 }
 .fieldRow {
   composes: glass;
-  border-radius: calc(18 * var(--u));
+  border-radius: var(--r-strip);
   height: calc(54 * var(--u));
   padding: 0 calc(15 * var(--u));
   display: flex;
@@ -611,9 +762,9 @@
 }
 .peopleInput {
   composes: glass;
+  border-radius: var(--r-strip);
   flex: 1;
   min-width: 0;
-  border-radius: calc(16 * var(--u));
   height: calc(50 * var(--u));
   padding: 0 calc(15 * var(--u));
   display: flex;
@@ -623,14 +774,14 @@
 }
 /* Focused: the People field is the one being used in the share story. */
 .peopleInputOn {
-  border-color: rgba(235, 113, 0, 0.55);
-  box-shadow: inset 0 1px 0 var(--rim-top), 0 0 0 calc(2 * var(--u)) rgba(235, 113, 0, 0.16);
+  composes: ringAccFull;
+  --glow: 0 0 calc(16 * var(--u)) rgba(235, 113, 0, 0.35);
 }
 .addBtn {
   flex: 0 0 auto;
   height: calc(50 * var(--u));
   padding: 0 calc(20 * var(--u));
-  border-radius: calc(16 * var(--u));
+  border-radius: var(--r-strip);
   border: 1px solid var(--acc);
   color: var(--acc);
   font-size: calc(16 * var(--u));
@@ -649,14 +800,14 @@
   justify-content: space-between;
   gap: calc(12 * var(--u));
   padding: calc(13 * var(--u)) 0;
-  border-bottom: 1px solid var(--rim);
+  border-bottom: 1px solid var(--rim-faint);
 }
 .itemRow:last-child {
   border-bottom: none;
 }
 .itemName {
   font-size: calc(16 * var(--u));
-  color: var(--ink);
+  color: #fff;
 }
 .itemQty {
   font-size: calc(11.5 * var(--u));
@@ -666,13 +817,12 @@
 .itemPrice {
   font-size: calc(17 * var(--u));
   font-weight: 600;
-  color: var(--ink);
+  color: #fff;
   font-variant-numeric: tabular-nums;
 }
-/* The totals card is the one card in the app with an ORANGE rim. */
+/* The totals card is the one card in the app with a FULL orange ring. */
 .totalsCard {
-  composes: glass;
-  border-color: rgba(235, 113, 0, 0.75);
+  composes: glass ringAccFull;
   padding: calc(14 * var(--u)) calc(15 * var(--u));
 }
 .totalRow {
@@ -708,17 +858,17 @@
   font-variant-numeric: tabular-nums;
 }
 .payChip {
+  composes: mirror;
   display: inline-flex;
   align-items: center;
   gap: calc(7 * var(--u));
   font-size: calc(14 * var(--u));
   font-weight: 600;
-  color: var(--ink);
+  color: #fff;
   padding: calc(7 * var(--u)) calc(14 * var(--u));
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid var(--rim);
 }
+
 
 /* ==========================================================================
  * APP CLIP — the lock-screen card and the "Reading your receipt" beat.

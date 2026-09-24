@@ -10,6 +10,7 @@ import { FlowSection } from "../shared/FlowSection"
 import { SectionLabel } from "../shared/SectionLabel"
 import { SALES_PHONE_HREF } from "@/components/brand/links"
 import { demo } from "./content"
+import styles from "./business.module.css"
 
 const ERROR_INK = "#c2410c"
 
@@ -38,12 +39,15 @@ const INITIAL_STATE: DemoFormState = {
 
 // Inputs are white fields with their own ink, so they read the same on either
 // ground — they're elevated surfaces, not text on the page.
+// 60px tall since 2026-09-22: the section is a full screen now, and 48px
+// controls left the form reading as a small box floating in it.
 const inputStyle = {
-  padding: "14px 16px",
+  height: "60px",
+  padding: "0 18px",
   borderRadius: "12px",
   border: "1px solid rgba(0,18,29,.14)",
   background: "#fff",
-  fontSize: "15px",
+  fontSize: "16px",
   color: "var(--ink)",
 }
 
@@ -132,24 +136,29 @@ export function DemoForm() {
       id="demo"
       ground="light"
       index="06"
-      className="scroll-mt-[100px] px-[clamp(20px,5vw,56px)] py-[var(--section-pad-y)]"
+      /* A full screen since 2026-09-22 ("screens, not sections"): it measured
+         454px at 1440x900, so the demo ask shared a viewport with the
+         dashboard columns above it. `styles.screen` gives it >= 100svh with
+         copy left / form right centred in that box; the footer still follows
+         as the page's navy tail. */
+      className={`${styles.screen} scroll-mt-[100px] px-[clamp(20px,5vw,56px)] py-[var(--section-pad-y)]`}
     >
       <Reveal
         as="div"
-        className="mx-auto grid max-w-[960px] grid-cols-1 items-start gap-[clamp(30px,5vw,70px)] min-[821px]:grid-cols-2"
+        className="mx-auto grid w-full max-w-[1000px] grid-cols-1 items-start gap-[clamp(30px,5vw,70px)] min-[821px]:grid-cols-2 min-[821px]:items-center"
       >
         <div>
           <SectionLabel index="06">{demo.eyebrow}</SectionLabel>
           <h2
-            className="text-[length:var(--fs-h2)] font-bold leading-[1.03] tracking-[-.02em]"
+            className="text-[length:var(--fs-h1-merchant)] font-bold leading-[1.03] tracking-[-.02em]"
             style={{ fontFamily: "var(--font-display)" }}
           >
             {demo.heading}
           </h2>
-          <p className="mt-[18px] max-w-[34ch] text-[17px] leading-[1.55]" style={{ color: "var(--flow-fg-2)" }}>
+          <p className="mt-[var(--gap-title)] max-w-[34ch] text-[length:var(--fs-lead)] leading-[1.55]" style={{ color: "var(--flow-fg-2)" }}>
             {demo.body}
           </p>
-          <p className="mt-6 text-[16px] font-semibold" style={{ color: "var(--flow-fg)" }}>
+          <p className="mt-[var(--gap-body)] text-[16px] font-semibold" style={{ color: "var(--flow-fg)" }}>
             {demo.phonePrefix} <a href={SALES_PHONE_HREF} style={{ color: "var(--orange)" }}>{demo.phone}</a>
           </p>
         </div>
@@ -161,7 +170,7 @@ export function DemoForm() {
             </p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} noValidate className="grid gap-3">
+          <form onSubmit={handleSubmit} noValidate className="grid gap-[var(--gap-list)]">
             <p
               id={formErrorId}
               aria-live="assertive"
@@ -256,7 +265,7 @@ export function DemoForm() {
               )}
             </div>
 
-            <div className="grid grid-cols-1 gap-3 min-[481px]:grid-cols-2">
+            <div className="grid grid-cols-1 gap-[var(--gap-list)] min-[481px]:grid-cols-2 min-[821px]:grid-cols-1">
               <div className="grid gap-1.5">
                 <Label htmlFor="demo-phone" className="sr-only">
                   Phone
@@ -308,12 +317,12 @@ export function DemoForm() {
                 the real `<button>` (type, disabled, focus) lives inside it so
                 submit/pending semantics stay intact while still getting the
                 click-ripple treatment from the motion toolkit. */}
-            <Ripple as="div" variant="navy" className="mt-1.5 overflow-hidden rounded-[12px]">
+            <Ripple as="div" variant="navy" className="mt-[calc(var(--gap-list)/2)] overflow-hidden rounded-[12px]">
               <button
                 type="submit"
                 disabled={status === "submitting"}
                 aria-busy={status === "submitting"}
-                className="w-full rounded-[12px] py-[15px] text-[16px] font-semibold transition-transform duration-200 hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
+                className="h-[60px] w-full rounded-[12px] text-[17px] font-semibold transition-transform duration-200 hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
                 style={{ background: "var(--orange)", color: "var(--ink)" }}
               >
                 {status === "submitting" ? demo.submitLabelPending : demo.submitLabel}
