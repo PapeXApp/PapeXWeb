@@ -13,6 +13,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { FramerPageShell } from '@/components/framer/framer-page-shell'
+import { SALES_PHONE, SALES_PHONE_HREF } from '@/components/brand/links'
 
 export const metadata: Metadata = {
   title: 'PapeX Merchant Support',
@@ -35,22 +36,31 @@ const LIGHT_ROWS: {
   {
     light: 'Solid green',
     color: 'green',
-    meaning: 'Ready to tap',
-    detail: 'Receipt ready. Customer taps now.',
+    meaning: 'Idle / ready',
+    detail: 'Waiting for the next sale. Normal.',
     signal: 'normal',
   },
   {
-    light: 'Off',
-    color: 'off',
-    meaning: 'Idle',
-    detail: 'Waiting for next receipt. Normal.',
+    light: 'Slow green blink',
+    color: 'green',
+    blink: 'slow',
+    meaning: 'Processing a receipt',
+    detail: 'A receipt just printed and is on its way. A few seconds.',
+    signal: 'normal',
+  },
+  {
+    light: 'Fast green blink',
+    color: 'green',
+    blink: 'fast',
+    meaning: 'Tap now',
+    detail: 'Receipt ready. Customer taps now.',
     signal: 'normal',
   },
   {
     light: 'Slow red blink',
     color: 'red',
     blink: 'slow',
-    meaning: 'WiFi setup',
+    meaning: 'Wi-Fi setup',
     detail: 'Needs credentials. Call PapeX.',
     signal: 'attention',
   },
@@ -58,7 +68,7 @@ const LIGHT_ROWS: {
     light: 'Solid red',
     color: 'red',
     meaning: 'Connecting',
-    detail: 'Joining WiFi. Wait 15–30s.',
+    detail: 'Joining Wi-Fi. Wait 15–30s.',
     signal: 'attention',
   },
   {
@@ -127,7 +137,7 @@ const TROUBLESHOOTING: { title: string; steps: string[] }[] = [
   {
     title: 'Light is blinking red',
     steps: [
-      'Slow blink: may need WiFi setup or is self-recovering. Wait 30 seconds.',
+      'Slow blink: may need Wi-Fi setup or is self-recovering. Wait 30 seconds.',
       'Fast blink: power-cycle. Unplug, wait 10 seconds, plug back in.',
       'Still fast after restart? Call PapeX support.',
     ],
@@ -136,14 +146,14 @@ const TROUBLESHOOTING: { title: string; steps: string[] }[] = [
     title: 'No light, device unresponsive',
     steps: [
       "Check it's plugged in securely.",
-      'Try a different USB port or cable.',
+      'Try a different outlet or power cable.',
       'Still nothing? Call PapeX support.',
     ],
   },
   {
-    title: 'No paper receipts (printer replacement only)',
+    title: 'No paper receipts (paper switched off)',
     steps: [
-      'Expected. Receipts are digital now.',
+      'Expected if your store has switched off paper in the POS. Receipts are digital now.',
       'Use your POS reprint function if you need paper for a specific transaction.',
     ],
   },
@@ -154,7 +164,7 @@ const DOS: string[] = [
   'Tell customers they can tap for a digital receipt',
   'Keep your merchant guide near your POS for reference',
   'Call PapeX support if anything seems off',
-  'Let PapeX know if you change your WiFi network or password',
+  'Let PapeX know if you change your Wi-Fi network or password',
   'Contact PapeX before switching POS systems or terminals',
 ]
 
@@ -193,18 +203,7 @@ const CUSTOMER_QA: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: '“Can I still get a paper receipt?”',
-    a: (
-      <>
-        <span className="block">
-          <span className="font-semibold text-[#00121D]">Printer Replacement:</span> We went
-          digital, but I can reprint one from the register if you need it.
-        </span>
-        <span className="mt-1 block">
-          <span className="font-semibold text-[#00121D]">Parallel Install:</span> Yep, you’ll still
-          get a paper one too. The tap is just if you want it on your phone.
-        </span>
-      </>
-    ),
+    a: "Yep. If we still print, you'll get paper too. If we've gone paper-free, I can reprint one from the register.",
   },
   {
     q: '“What if it didn’t work / nothing happened?”',
@@ -212,7 +211,7 @@ const CUSTOMER_QA: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: '“Does it work with my phone?”',
-    a: 'It works with iPhones and most Androids. Pretty much any phone made in the last few years.',
+    a: 'Yeah, iPhone and Android both tap. iPhones open the receipt right away; Android phones open it in the browser.',
   },
 ]
 
@@ -229,12 +228,12 @@ function ContactBlock() {
         </p>
       </a>
       <a
-        href="tel:+14152618675"
+        href={SALES_PHONE_HREF}
         className="group rounded-2xl border border-[#00121D]/15 bg-white p-6 shadow-sm transition hover:border-[#EB7100] hover:shadow-md"
       >
         <p className="text-xs font-semibold uppercase tracking-wide text-[#00121D]/50">Call us</p>
         <p className="mt-2 text-2xl font-bold text-[#00121D] group-hover:text-[#EB7100] transition">
-          415-261-8675
+          {SALES_PHONE}
         </p>
       </a>
     </div>
@@ -309,8 +308,8 @@ export default function SupportPage() {
             </div>
             <div className="rounded-xl border-l-4 border-[#EB7100] bg-[#EB7100]/[0.06] px-5 py-3">
               <p className="text-[#00121D] font-medium">
-                <span className="font-semibold">Quick rule:</span> Green = tap now. Off = normal. Red
-                = check the table.
+                <span className="font-semibold">Quick rule:</span> Solid green = idle. Blinking
+                green = processing or tap now. Red = check the table.
               </p>
             </div>
           </section>
@@ -411,7 +410,7 @@ export default function SupportPage() {
             </div>
           </section>
 
-          {/* PCI Compliance — navy gradient callout matching the site's subpage CTA.
+          {/* Never touches card data — navy gradient callout matching the site's subpage CTA.
               NOTE: framer-site.css sets `.framer-site a { color: inherit }`, which
               outranks Tailwind's `text-white` on links (class+element > class). The
               `!text-white` important modifier is required so the button label is
@@ -436,16 +435,16 @@ export default function SupportPage() {
                 </svg>
               </div>
               <div className="flex-1">
-                <h2 className="text-xl font-semibold text-white">PCI Compliance</h2>
+                <h2 className="text-xl font-semibold text-white">Never touches card data</h2>
                 <p className="mt-2 leading-relaxed text-white/75">
-                  Your PapeX RDH is a POS peripheral device that does not store, process, or transmit
-                  cardholder data. Full PCI DSS documentation is available at papex.app/pci.
+                  Your PapeX device (RDH) is a POS peripheral: it doesn&rsquo;t store, process or
+                  transmit cardholder data. The full PCI scope letter is at papex.app/pci.
                 </p>
                 <Link
                   href="/pci"
                   className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#EB7100] px-6 py-3 text-sm font-semibold !text-white shadow-sm transition hover:bg-[#cc6300]"
                 >
-                  View PCI compliance statement
+                  How we handle card data
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="16"
@@ -466,11 +465,14 @@ export default function SupportPage() {
             </div>
           </section>
 
-          {/* Footer contact block repeated */}
-          <footer className="border-t border-[#00121D]/10 pt-8 space-y-4">
+          {/* Contact block repeated. This is page content inside <main>, not a
+              document landmark — SiteFooter (FramerPageShell) is the page's
+              real <footer>, so this stays a <section> to keep exactly one
+              footer landmark. */}
+          <section className="border-t border-[#00121D]/10 pt-8 space-y-4">
             <h2 className="text-lg font-semibold text-[#00121D]">Contact PapeX</h2>
             <ContactBlock />
-          </footer>
+          </section>
         </div>
       </div>
     </FramerPageShell>

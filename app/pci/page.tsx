@@ -19,6 +19,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { FramerPageShell } from '@/components/framer/framer-page-shell'
+import { SALES_PHONE, SALES_PHONE_HREF } from '@/components/brand/links'
 
 export const metadata: Metadata = {
   title: 'PCI DSS Scoping Statement',
@@ -303,10 +304,10 @@ export default function PciCompliancePage() {
               <p className="text-[#00121D]/80">
                 Phone:{' '}
                 <a
-                  href="tel:+14152618675"
+                  href={SALES_PHONE_HREF}
                   className="text-[#EB7100] underline decoration-transparent hover:decoration-[#EB7100] transition"
                 >
-                  415-261-8675
+                  {SALES_PHONE}
                 </a>
               </p>
             </div>
@@ -322,11 +323,14 @@ export default function PciCompliancePage() {
             </p>
           </section>
 
-          <footer className="border-t border-[#00121D]/10 pt-6">
+          {/* Page content inside <main>, not a document landmark — SiteFooter
+              (FramerPageShell) is the page's real <footer>, so this stays a
+              <section> to keep exactly one footer landmark. */}
+          <section className="border-t border-[#00121D]/10 pt-6">
             <p className="text-xs text-[#00121D]/50 uppercase tracking-wide">
               PapeX, Inc. — Provided to merchant for PCI compliance documentation.
             </p>
-          </footer>
+          </section>
         </article>
       </div>
     </FramerPageShell>
