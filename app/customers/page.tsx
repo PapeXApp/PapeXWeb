@@ -9,22 +9,26 @@
 // commit read as one surface growing rather than a page swap. The first paint
 // comes from FlowGround's `initial="light"` in components/paths/customer,
 // which owns the section content.
+//
+// Metadata (Web 2.1): the true positioning — no app needed to GET a receipt,
+// the free app KEEPS it; no "saved forever" on tap alone. A later SEO task
+// refines the wording.
 
 import type { Metadata } from 'next'
 import { SiteShell } from '@/components/brand/site-shell'
 import { CustomerPath } from '@/components/paths/customer'
 
 export const metadata: Metadata = {
-  title: "PapeX for Customers | The last receipt you'll ever lose",
+  title: 'PapeX for Customers | Tap for your receipt. No app needed.',
   description:
-    'Tap your phone at checkout and your receipt is saved forever: searchable, shareable and organized. No paper, no app required to receive it.',
+    'Tap your phone at checkout and your receipt appears, on iPhone or Android. No app needed to get it. The free PapeX app keeps every receipt searchable and shareable.',
   alternates: { canonical: 'https://papex.app/customers' },
   openGraph: {
     type: 'website',
     url: 'https://papex.app/customers',
-    title: "PapeX for Customers | The last receipt you'll ever lose",
+    title: 'PapeX for Customers | Tap for your receipt. No app needed.',
     description:
-      'Tap your phone at checkout and your receipt is saved forever: searchable, shareable and organized.',
+      'Tap your phone at checkout and your receipt appears. No app needed to get it; the free PapeX app keeps every one.',
     images: [
       {
         url: 'https://papex.app/og-image-v2.png',
@@ -37,9 +41,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: "PapeX for Customers | The last receipt you'll ever lose",
+    title: 'PapeX for Customers | Tap for your receipt. No app needed.',
     description:
-      'Tap your phone at checkout and your receipt is saved forever: searchable, shareable and organized.',
+      'Tap your phone at checkout and your receipt appears. No app needed to get it; the free PapeX app keeps every one.',
     images: ['https://papex.app/og-image-v2.png'],
   },
 }

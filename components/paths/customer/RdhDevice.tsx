@@ -49,7 +49,7 @@ export function RdhDevice({ pulsing = false, view = "iso" }: { pulsing?: boolean
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 169.5 138"
       role="img"
-      aria-label="The PapeX RDH: a small matte-black box with a white PapeX label on its top, a green status light, and a white USB-C cable plugged into one end."
+      aria-label="The PapeX device: a small matte-black box with a white PapeX label on its top, a green status light, and a white USB-C cable plugged into one end."
     >
       <defs>
         <linearGradient id="rdhTopFill" x1="0" y1="1" x2="1" y2="0">
@@ -206,7 +206,7 @@ function RdhDeviceFront({ pulsing }: { pulsing: boolean }) {
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 120 106.5"
       role="img"
-      aria-label="The PapeX RDH: a small matte-black box with a white PapeX label on its top, a green status light, and a white USB-C cable plugged into one end."
+      aria-label="The PapeX device: a small matte-black box with a white PapeX label on its top, a green status light, and a white USB-C cable plugged into one end."
     >
       <defs>
         <linearGradient id="rdhTopFillFront" x1="0" y1="1" x2="1" y2="0">

@@ -9,7 +9,7 @@ import { FlowSection } from "../shared/FlowSection";
 import { SectionLabel } from "../shared/SectionLabel";
 import { RDH_VIEWS, RdhDevice } from "./RdhDevice";
 import { WalkPhone } from "./WalkPhone";
-import { howItWorksContent } from "./content";
+import { HOW_IT_WORKS_ANCHOR, howItWorksContent } from "./content";
 import styles from "./customer.module.css";
 
 /** How long the phone stays lifted onto the reader before the receipt lands (mirrors NfcPhone's bow). */
@@ -234,7 +234,7 @@ export function HowItWorks() {
   // than widen WalkPhone's props to allow undefined.
   const tapCopy = {
     headline: howItWorksContent.steps[0].phoneHeadline ?? "Tap to receive",
-    subline: howItWorksContent.steps[0].phoneSubline ?? "Hold near the reader",
+    subline: howItWorksContent.steps[0].phoneSubline ?? "Hold near the PapeX device",
     caption: howItWorksContent.steps[1].phoneCaption ?? "Saved to your receipts",
   };
 
@@ -249,7 +249,13 @@ export function HowItWorks() {
     // full screen like every other one from 821px. The runway is a plain
     // block, so the screen's column flexbox stretches it full width and the
     // sticky stage inside it is unaffected.
-    <FlowSection ground="light" index="05" className={`${styles.screen} ${styles.rhythm}`}>
+    // `id`: the hero's "How does that work?" cue scrolls here (content.ts).
+    <FlowSection
+      ground="light"
+      index="02"
+      id={HOW_IT_WORKS_ANCHOR}
+      className={`${styles.screen} ${styles.rhythm}`}
+    >
       <div
         ref={runwayRef}
         className={styles.walkRunway}
@@ -266,7 +272,7 @@ export function HowItWorks() {
             }}
           >
             <Reveal variant="up">
-              <SectionLabel index="05">{howItWorksContent.eyebrow}</SectionLabel>
+              <SectionLabel index="02">{howItWorksContent.eyebrow}</SectionLabel>
               <WordReveal
                 as="h2"
                 className="max-w-[16ch] [font-family:var(--font-display)] font-bold text-[length:var(--fs-h2)] leading-[1.02] tracking-[-.02em]"
