@@ -124,7 +124,8 @@
 .printerBusy .printerLed {
   animation-name: storyBlink;
   animation-duration: 0.5s;
-  animation-iteration-count: infinite;
+  /* finite: blinks for ~3s each time a print starts, never loops forever */
+  animation-iteration-count: 6;
 }
 @keyframes storyBlink {
   0%,
@@ -401,6 +402,20 @@
   opacity: 0;
   transform-origin: 50% 100%;
 }
+/* No infinite loops in this scene (scroll is its only clock). The reused
+   App Clip kit loops its lock-screen NFC waves and the "Reading" mark
+   forever, even on layers at opacity 0; cap every animation inside the
+   phones to one run. The kit's files belong to /customers, so the cap lives
+   here, not there. */
+.phone *,
+.phone *::before,
+.phone *::after,
+.staticPhone *,
+.staticPhone *::before,
+.staticPhone *::after {
+  animation-iteration-count: 1 !important;
+}
+
 /* The screen's beats as stacked layers; the component crossfades them. Each
    is opaque so a crossfade reads as one screen becoming the next. */
 .layer {

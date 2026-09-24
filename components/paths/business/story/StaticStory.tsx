@@ -28,7 +28,8 @@ export function StaticStory() {
       <div className={s.staticRow}>
         <figure className={s.staticStep}>
           <div className={s.staticArt}>
-            <div className={s.staticSlip}>
+            {/* aria-hidden like the scene's stage: the caption tells it */}
+            <div className={s.staticSlip} aria-hidden="true">
               <div className={s.sheet}>
                 <SlipBody summary={summary} />
               </div>

@@ -61,7 +61,7 @@ export const storyDashboard = {
   columns: [
     {
       title: "Every receipt, searchable",
-      body: "Find any sale by item, amount, card or date, open it exactly as your customer saw it, and export to CSV.",
+      body: "Find any sale by item, amount, date or the last 4 digits on the receipt, open it exactly as your customer saw it, and export to CSV.",
     },
     {
       title: "What sells, and when",
@@ -74,7 +74,7 @@ export const storyDashboard = {
   ],
   customerLine: {
     lead: "And your customers?",
-    body: "They keep every receipt in the free PapeX app.",
+    body: "They can keep every receipt in the free PapeX app.",
   },
 } as const
 
