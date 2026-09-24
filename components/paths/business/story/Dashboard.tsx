@@ -1,10 +1,9 @@
 "use client"
 
-import { useEffect, useId, useMemo, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
 import { DemoReceiptView } from "../../customer/DemoReceiptView"
 import { storyScreen } from "../story"
-import { demoSales, type DemoSale } from "./demoSales"
+import { hourShort, usd, useDashboardModel } from "./useDashboard"
 import s from "../story.module.css"
 
 /**
@@ -31,112 +30,50 @@ import s from "../story.module.css"
  * Mirrors app/merchant (page.tsx search/filters, insights/page.tsx tiles,
  * hour chart drill-down, top items) in the dashboard's own palette
  * (app/merchant/ui/tokens.ts). Data: demoSales.ts — invented, labelled
- * "Demo data" on screen.
+ * "Demo data" on screen. State + data: useDashboard.ts, shared with the
+ * phone card (PhoneDashboard.tsx), which replaces this laptop at <=820px.
  */
 
-type View = "insights" | "receipts"
-type Range = "today" | "7d"
-
-const usd = (n: number) => `$${n.toFixed(2)}`
-const hourShort = (h: number) => `${h % 12 || 12}${h < 12 ? "a" : "p"}`
-
 export function Dashboard({ live = false, className }: { live?: boolean; className?: string }) {
-  const sales = demoSales()
-  const delivered = sales[0]
-  const days = useMemo(() => Array.from(new Set(sales.map((x) => x.day))), [sales])
-
-  const [view, setView] = useState<View>("insights")
-  const [range, setRange] = useState<Range>("today")
-  const [q, setQ] = useState("")
-  const [last4, setLast4] = useState("")
-  const [minAmt, setMinAmt] = useState("")
-  const [day, setDay] = useState("")
-  const [hourFilter, setHourFilter] = useState<number | null>(null)
-  const [tipHour, setTipHour] = useState<number | null>(null)
-  const [openId, setOpenId] = useState<string | null>(null)
-  const openerRef = useRef<HTMLElement | null>(null)
-  const closeRef = useRef<HTMLButtonElement>(null)
-  const uid = useId()
-
-  // Leaving the latched end state: back to the frame the spark delivered.
-  useEffect(() => {
-    if (live) return
-    setView("insights")
-    setRange("today")
-    setQ("")
-    setLast4("")
-    setMinAmt("")
-    setDay("")
-    setHourFilter(null)
-    setTipHour(null)
-    setOpenId(null)
-  }, [live])
-
-  useEffect(() => {
-    if (openId) closeRef.current?.focus()
-  }, [openId])
-
-  const inRange = range === "today" ? sales.filter((x) => x.delivered) : sales
-  const gross = inRange.reduce((a, x) => a + x.total, 0)
-  const tapped = inRange.filter((x) => x.tapped).length
-
-  const byHour = useMemo(() => {
-    const m = new Map<number, DemoSale[]>()
-    for (const x of inRange) m.set(x.hour, [...(m.get(x.hour) ?? []), x])
-    return m
-  }, [inRange])
-  const maxHour = Math.max(1, ...Array.from(byHour.values(), (v) => v.length))
-
-  const topItems = useMemo(() => {
-    const m = new Map<string, number>()
-    for (const x of inRange) for (const it of x.summary.items) m.set(it.name, (m.get(it.name) ?? 0) + it.qty)
-    return Array.from(m, ([name, qty]) => ({ name, qty }))
-      // stable sort: ties keep the receipts' own order
-      .sort((a, b) => b.qty - a.qty)
-      .slice(0, 4)
-  }, [inRange])
-  const maxQty = Math.max(1, ...topItems.map((x) => x.qty))
-
-  const filtered = sales.filter((x) => {
-    const needle = q.trim().toLowerCase()
-    if (needle && !x.order.toLowerCase().includes(needle.replace(/^#?/, "#")) && !x.summary.items.some((it) => it.name.toLowerCase().includes(needle)))
-      return false
-    if (last4 && !(x.lastFour ?? "").startsWith(last4)) return false
-    const min = Number(minAmt)
-    if (minAmt && Number.isFinite(min) && x.total < min) return false
-    if (day && x.day !== day) return false
-    if (hourFilter != null && x.hour !== hourFilter) return false
-    return true
-  })
-
-  const open = openId ? sales.find((x) => x.id === openId) : undefined
-  const openSale = (id: string, el: HTMLElement) => {
-    openerRef.current = el
-    setOpenId(id)
-  }
-  const closeSale = () => {
-    setOpenId(null)
-    openerRef.current?.focus()
-  }
-
-  const t = storyScreen.tiles
-  const tiles = [
-    { label: t.count, empty: "0", value: String(inRange.length) },
-    { label: t.gross, empty: "$0.00", value: usd(gross) },
-    { label: t.avg, empty: "—", value: usd(inRange.length ? gross / inRange.length : 0) },
-    { label: t.tap, empty: "—", value: `${tapped} of ${inRange.length}`, note: t.tapNote },
-  ]
-  const itemKey = tiles.length + 2
+  const {
+    delivered,
+    days,
+    view,
+    setView,
+    range,
+    setRange,
+    q,
+    setQ,
+    last4,
+    setLast4,
+    minAmt,
+    setMinAmt,
+    day,
+    setDay,
+    hourFilter,
+    setHourFilter,
+    tipHour,
+    setTipHour,
+    open,
+    openSale,
+    closeSale,
+    closeRef,
+    onKeyDown,
+    showHour,
+    uid,
+    byHour,
+    maxHour,
+    topItems,
+    maxQty,
+    filtered,
+    tiles,
+    itemKey,
+  } = useDashboardModel(live)
 
   return (
     <div
       className={cn(s.dash, className)}
-      onKeyDown={(e) => {
-        if (e.key === "Escape" && openId) {
-          e.stopPropagation()
-          closeSale()
-        }
-      }}
+      onKeyDown={onKeyDown}
     >
       <div className={s.dashTop}>
         <div className={s.dashBrand}>
@@ -230,11 +167,7 @@ export function Dashboard({ live = false, className }: { live?: boolean; classNa
                     onMouseLeave={() => setTipHour(null)}
                     onFocus={() => setTipHour(h)}
                     onBlur={() => setTipHour(null)}
-                    onClick={() => {
-                      setHourFilter(h)
-                      setDay("")
-                      setView("receipts")
-                    }}
+                    onClick={() => showHour(h)}
                   >
                     {bar}
                     {tipHour === h ? (

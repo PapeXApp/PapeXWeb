@@ -11,6 +11,7 @@ import { PhoneChrome } from "../../customer/WalkPhone"
 import { CustomerLine, DashboardColumns, DashboardCopy } from "../DashboardPreview"
 import { story } from "../story"
 import { Dashboard } from "./Dashboard"
+import { PhoneDashboard } from "./PhoneDashboard"
 import { Bin, DeviceArt, Printer } from "./Furniture"
 import {
   FOLD_VECS,
@@ -52,14 +53,23 @@ import s from "../story.module.css"
  *   0.56-0.73  SPARK    phone + device slide RIGHT, the laptop appears on the
  *                       LEFT (Nico, via the lead); a spark runs from the phone
  *                       to the laptop and its lid opens. On phones (<=820px)
- *                       the pair shrinks up to the top-right instead, over a
- *                       full-width laptop.
+ *                       there is no laptop: the pair shrinks, whole, into the
+ *                       top-right corner, the spark runs down to the lower
+ *                       left, and the PHONE DASHBOARD card (PhoneDashboard)
+ *                       blooms open from where it lands (a clip-path circle),
+ *                       covering the stage while the pair fades under it.
  *   0.72-0.82  DELIVER  the sale lands on the drawn dashboard: new-receipt
  *                       row, the four tiles, its hour's bar, its items
  *   0.83-1.00  VALUE    the three-part row settles to the top of the pin and
  *                       the dashboard info rises in under it. On phones only
- *                       the laptop docks; phone + device fade out, since a
- *                       three-part row at 390px wide would be too small to read.
+ *                       the dashboard card docks, at 1:1 (never scaled, so
+ *                       its type stays real phone sizes), top-aligned in the
+ *                       slot, which measure() sizes to the card.
+ *
+ * Phones (B6, Nico: "I want to see a full phone... we have a lot of blank
+ * space, use it well"): the stage is a 1:2 box as tall as the pin allows under
+ * the nav, and the tap pose's iPhone is ~80% of its height, never cropped,
+ * with the PapeX device fully in view under its lower right.
  *
  * Perf contract: the rAF frame WRITES only `transform`, `opacity` and
  * `clip-path`, and READS nothing from layout. Every geometric number (sizes,
@@ -224,6 +234,7 @@ export function RetainStory() {
   const readRef = useRef<HTMLDivElement>(null)
   const rcptRef = useRef<HTMLDivElement>(null)
   const laptopRef = useRef<HTMLDivElement>(null)
+  const cardDashRef = useRef<HTMLDivElement>(null)
   const lidRef = useRef<HTMLDivElement>(null)
   const deckRef = useRef<HTMLDivElement>(null)
   const dimRef = useRef<HTMLSpanElement>(null)
@@ -251,17 +262,25 @@ export function RetainStory() {
     const laptop = laptopRef.current
     if (!stage || !pin || !laptop) return
 
-    // Collected ONCE: the dashboard's pieces that receive the delivered sale.
-    const fills: Fill[] = Array.from(laptop.querySelectorAll<HTMLElement>("[data-fill]")).map((el) => ({
-      el,
-      key: Number(el.dataset.fill),
-      kind: el.dataset.kind ?? "fade",
-    }))
-    const empties = Array.from(laptop.querySelectorAll<HTMLElement>("[data-empty]")).map((el) => ({
-      el,
-      key: Number(el.dataset.empty),
-    }))
-    const fillKeys = Math.max(1, ...fills.map((f) => f.key + 1))
+    // Collected ONCE: the dashboard's pieces that receive the delivered sale,
+    // for both drawings of it (the laptop's, and the phone card that
+    // replaces it at <=820px; CSS shows one, the frame drives that one).
+    const collect = (root: HTMLElement | null) => ({
+      fills: Array.from(root?.querySelectorAll<HTMLElement>("[data-fill]") ?? []).map(
+        (el): Fill => ({
+          el,
+          key: Number(el.dataset.fill),
+          kind: el.dataset.kind ?? "fade",
+        }),
+      ),
+      empties: Array.from(root?.querySelectorAll<HTMLElement>("[data-empty]") ?? []).map((el) => ({
+        el,
+        key: Number(el.dataset.empty),
+      })),
+    })
+    const { fills: fillsLap, empties: emptiesLap } = collect(laptop)
+    const { fills: fillsCard, empties: emptiesCard } = collect(cardDashRef.current)
+    const fillKeys = Math.max(1, ...[...fillsLap, ...fillsCard].map((f) => f.key + 1))
 
     /** Everything the frame needs, in px. Rebuilt by measure() only. */
     const M = {
@@ -280,6 +299,14 @@ export function RetainStory() {
       postY: 0,
       postS: 1,
       dockGroup: true,
+      /** <=820px: the phone dashboard card replaces the laptop */
+      phoneDash: false,
+      /** the tap's tilt, degrees (smaller on phones: the phone is taller) */
+      bowRot: 7,
+      /** phone card bloom: centre (card px) and full radius */
+      bloomX: 0,
+      bloomY: 0,
+      bloomR: 0,
       phoneH: 0,
       bowX: 0,
       bowY: 0,
@@ -312,6 +339,8 @@ export function RetainStory() {
       M.postY = num(cs, "--g-post-y", 0) * cq
       M.postS = num(cs, "--g-post-s", 1)
       M.dockGroup = num(cs, "--dock-group", 1) > 0
+      M.phoneDash = num(cs, "--phone-dash", 0) > 0
+      M.bowRot = num(cs, "--bow-rot", 7)
 
       const paper = paperRef.current
       const fold = foldRef.current
@@ -321,7 +350,8 @@ export function RetainStory() {
       const device = deviceRef.current
       const phone = phoneRef.current
       const lid = lidRef.current
-      if (!paper || !fold || !bin || !printer || !group || !device || !phone || !lid) return
+      const card = cardDashRef.current
+      if (!paper || !fold || !bin || !printer || !group || !device || !phone || !lid || !card) return
 
       M.paperW = paper.offsetWidth
       M.foldH = fold.offsetHeight || 1
@@ -360,11 +390,17 @@ export function RetainStory() {
 
       // the spark: phone screen centre -> the laptop's hinge, as a quadratic
       // curve bowed away from the straight line (up on a wide stage, out to
-      // the side on a tall one), sampled into SPARK_N points
+      // the side on a tall one), sampled into SPARK_N points. On phones it
+      // lands in the card's lower left, where the card then blooms from.
+      const cb = offsetIn(card, stage)
+      M.bloomX = cb.w * 0.3
+      M.bloomY = cb.h * 0.72
+      // + 60: the circle ends past the card's shadow, so dropping it for "none" never pops
+      M.bloomR = Math.hypot(Math.max(M.bloomX, cb.w - M.bloomX), Math.max(M.bloomY, cb.h - M.bloomY)) + 60
       const lb = offsetIn(lid, stage)
       const [x0, y0] = post(phb.x + phb.w / 2, phb.y + phb.h * 0.46)
-      const x2 = lb.x + lb.w / 2
-      const y2 = lb.y + lb.h
+      const x2 = M.phoneDash ? cb.x + M.bloomX : lb.x + lb.w / 2
+      const y2 = M.phoneDash ? cb.y + M.bloomY : lb.y + lb.h
       const dx = x2 - x0
       const dy = y2 - y0
       const len = Math.hypot(dx, dy) || 1
@@ -403,9 +439,12 @@ export function RetainStory() {
       const info = infoRef.current
       const inner = infoInnerRef.current
       if (!slot || !info || !inner) return
-      // desktop docks the whole three-part row; a phone docks the laptop
-      // alone (the phone + device fade: they have delivered their receipt)
-      const la = offsetIn(laptop, stage)
+      // desktop docks the whole three-part row; a phone docks the dashboard
+      // card alone (the phone + device fade: they have delivered their receipt)
+      const la = M.phoneDash ? cb : offsetIn(laptop, stage)
+      // the phone card docks at 1:1, so the slot is made exactly its height
+      // (a measure-time write, never per frame; "" hands it back to the CSS)
+      slot.style.minHeight = M.phoneDash ? `${Math.ceil(cb.h)}px` : ""
       const [gx0, gy0] = post(gb.x, gb.y)
       const [gx1, gy1] = post(gb.x + gb.w, gb.y + gb.h)
       const bx = M.dockGroup ? Math.min(la.x, gx0) : la.x
@@ -416,10 +455,10 @@ export function RetainStory() {
       const sr = slot.getBoundingClientRect()
       const sx = sr.left - pr.left
       const sy = sr.top - pr.top
-      const sc = Math.min(sr.width / bw, sr.height / bh) || 1
+      const sc = M.phoneDash ? 1 : Math.min(sr.width / bw, sr.height / bh) || 1
       M.dockS = sc
       M.dockTx = sx + sr.width / 2 - sc * (bx + bw / 2) - stage.offsetLeft
-      M.dockTy = sy + sr.height / 2 - sc * (by + bh / 2) - stage.offsetTop
+      M.dockTy = M.phoneDash ? sy - by - stage.offsetTop : sy + sr.height / 2 - sc * (by + bh / 2) - stage.offsetTop
       // A screen too short for laptop + info: the info simply continues below
       // the pin (never scrolled up inside it, which would push the open
       // dashboard under the nav), and a spacer after the runway gives it
@@ -630,7 +669,7 @@ export function RetainStory() {
       set(
         phoneRef.current,
         "transform",
-        `translate(${(M.bowX * bow).toFixed(1)}px, ${((1 - rise) * 0.35 * M.phoneH + M.bowY * bow).toFixed(1)}px) rotate(${(7 * bow).toFixed(2)}deg)`,
+        `translate(${(M.bowX * bow).toFixed(1)}px, ${((1 - rise) * 0.35 * M.phoneH + M.bowY * bow).toFixed(1)}px) rotate(${(M.bowRot * bow).toFixed(2)}deg)`,
         "phT",
       )
       op(phoneRef.current, rise * 3, "phO")
@@ -655,15 +694,29 @@ export function RetainStory() {
         `translate(${(M.postX * g).toFixed(1)}px, ${(M.postY * g).toFixed(1)}px) scale(${(1 + (M.postS - 1) * g).toFixed(4)})`,
         "grpT",
       )
-      const lap = ease(seg(p, T.slideA + 0.01, T.slideB))
-      op(laptop, lap, "lapO")
-      set(laptop, "transform", `translateX(${(-(1 - lap) * M.lapIn).toFixed(1)}px)`, "lapT")
       const open = ease(seg(p, T.openA, T.openB))
-      set(lidRef.current, "transform", `rotateX(${(-90 + 90 * open).toFixed(2)}deg)`, "lidT")
-      op(lidRef.current, open > 0.002 ? 1 : 0, "lidO")
-      set(deckRef.current, "transform", `translateX(-50%) scaleY(${(0.35 + 0.65 * open).toFixed(3)})`, "deckT")
-      // the screen lights up as it opens
-      op(dimRef.current, 1 - ease(seg(p, T.openA + 0.02, T.openB + 0.01)), "dim")
+      if (!M.phoneDash) {
+        const lap = ease(seg(p, T.slideA + 0.01, T.slideB))
+        op(laptop, lap, "lapO")
+        set(laptop, "transform", `translateX(${(-(1 - lap) * M.lapIn).toFixed(1)}px)`, "lapT")
+        set(lidRef.current, "transform", `rotateX(${(-90 + 90 * open).toFixed(2)}deg)`, "lidT")
+        op(lidRef.current, open > 0.002 ? 1 : 0, "lidO")
+        set(deckRef.current, "transform", `translateX(-50%) scaleY(${(0.35 + 0.65 * open).toFixed(3)})`, "deckT")
+        // the screen lights up as it opens
+        op(dimRef.current, 1 - ease(seg(p, T.openA + 0.02, T.openB + 0.01)), "dim")
+      } else {
+        // phones: the dashboard card blooms open from where the spark lands
+        const card = cardDashRef.current
+        op(card, open > 0.002 ? 1 : 0, "pdO")
+        set(
+          card,
+          "clip-path",
+          open >= 0.999
+            ? "none"
+            : `circle(${(M.bloomR * open).toFixed(1)}px at ${M.bloomX.toFixed(1)}px ${M.bloomY.toFixed(1)}px)`,
+          "pdC",
+        )
+      }
 
       const sp = seg(p, T.sparkA, T.sparkB)
       const hp = sp * (SPARK_N - 1 + SPARK_TRAIL)
@@ -693,10 +746,14 @@ export function RetainStory() {
       const fl = seg(p, T.fillA, T.fillB)
       const dur = 0.34
       const step = fillKeys > 1 ? (1 - dur) / (fillKeys - 1) : 0
+      // only the dashboard on screen: the laptop's, or the phone card's
+      const fills = M.phoneDash ? fillsCard : fillsLap
+      const empties = M.phoneDash ? emptiesCard : emptiesLap
+      const pre = M.phoneDash ? "p" : ""
       for (let n = 0; n < fills.length; n++) {
         const f = fills[n]
         const t = ease(seg(fl, f.key * step, f.key * step + dur))
-        const key = `f${n}`
+        const key = `${pre}f${n}`
         if (f.kind === "growY") set(f.el, "transform", `scaleY(${t.toFixed(3)})`, key)
         else if (f.kind === "growX") set(f.el, "transform", `scaleX(${t.toFixed(3)})`, key)
         else {
@@ -706,7 +763,7 @@ export function RetainStory() {
       }
       for (let n = 0; n < empties.length; n++) {
         const e = empties[n]
-        op(e.el, 1 - ease(seg(fl, e.key * step, e.key * step + dur * 0.6)), `e${n}`)
+        op(e.el, 1 - ease(seg(fl, e.key * step, e.key * step + dur * 0.6)), `${pre}e${n}`)
       }
 
       // ---- value: dock the row, raise the info ------------------------------
@@ -721,7 +778,16 @@ export function RetainStory() {
         "stageT",
       )
       op(groundRef.current, 1 - dk, "ground")
-      op(groupRef.current, M.dockGroup ? 1 : 1 - ease(seg(p, T.dockA, T.dockA + 0.05)), "grpO")
+      op(
+        groupRef.current,
+        M.dockGroup
+          ? 1
+          : M.phoneDash
+            ? // phones: the pair fades under the card as it blooms
+              1 - ease(seg(p, T.openA + 0.02, T.openB))
+            : 1 - ease(seg(p, T.dockA, T.dockA + 0.05)),
+        "grpO",
+      )
       op(hintRef.current, 1 - ease(seg(p, T.dockA, T.dockA + 0.04)), "hint")
       const rise3 = (el: HTMLElement | null, t: number, key: string) => {
         op(el, t, `${key}O`)
@@ -977,6 +1043,19 @@ export function RetainStory() {
               </PhoneChrome>
             </div>
           </div>
+
+          {/* ---- phones (<=820px): the dashboard card, in place of the
+                 laptop (hidden there). Painted after the group, so it covers
+                 the pair as it blooms; the spark (z 6) stays above it. ---- */}
+          <PhoneDashboard
+            live={live}
+            className={s.pdScene}
+            ref={cardDashRef}
+            aria-hidden={!live}
+            inert={!live}
+            role={live ? "region" : undefined}
+            aria-label={live ? story.laptopLabel : undefined}
+          />
 
           {/* ---- the spark ---- */}
           <div className={s.spark} aria-hidden="true">
