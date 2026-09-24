@@ -1,5 +1,8 @@
 import { cn } from "@/lib/utils";
 import s from "./appui.module.css";
+/* The iOS status-bar glyphs are device chrome, so they live with the device
+   in iphone.module.css, not in the app kit sheet. */
+import ip from "../iphone.module.css";
 
 /**
  * Device-independent app furniture: status bar, the five-tab glass bar, the
@@ -75,20 +78,37 @@ export function TabBar({ active }: { active: TabKey }) {
   );
 }
 
+/**
+ * iOS's status bar: the time on the left (empty on the lock screen, where the
+ * big clock is the clock), cellular, Wi-Fi and battery on the right.
+ *
+ * 2.1 (2026-09-23): the three glyphs are SVGs drawn to Apple's shapes (the
+ * rounded bars, the three-arc Wi-Fi fan, the battery with its cap) instead of
+ * CSS borders, which at mockup scale rendered the Wi-Fi as a "?" and helped
+ * the phone read as Android. The container keeps the kit's `.status` /
+ * `.statusRight` classes so the kit still owns where the bar sits.
+ */
 export function StatusBar({ time = "7:06" }: { time?: string }) {
   return (
     <div className={s.status} aria-hidden="true">
-      <span>{time}</span>
+      <span className={ip.sfTime}>{time}</span>
       <span className={s.statusRight}>
-        <span className={s.bars}>
-          <i /><i /><i /><i />
-        </span>
-        <span className={s.wifi}>
-          <i /><i /><i />
-        </span>
-        <span className={s.battery}>
-          <i />
-        </span>
+        <svg viewBox="0 0 18 12" className={ip.sbSignal} fill="#fff">
+          <rect x="0" y="7.5" width="3.2" height="4.5" rx="1" />
+          <rect x="4.9" y="5.2" width="3.2" height="6.8" rx="1" />
+          <rect x="9.8" y="2.8" width="3.2" height="9.2" rx="1" />
+          <rect x="14.7" y="0" width="3.2" height="12" rx="1" />
+        </svg>
+        <svg viewBox="0 0 16 12" className={ip.sbWifi} fill="#fff">
+          <path d="M8 2.3c2.3 0 4.4.9 6 2.4.2.2.5.2.7 0l.9-.9c.2-.2.2-.5 0-.7A11.4 11.4 0 0 0 8 0C5.1 0 2.4 1.1.4 3.1c-.2.2-.2.5 0 .7l.9.9c.2.2.5.2.7 0 1.6-1.5 3.7-2.4 6-2.4Z" />
+          <path d="M8 6c1.3 0 2.4.5 3.3 1.3.2.2.5.2.7 0l.9-.9c.2-.2.2-.5 0-.7A7 7 0 0 0 8 3.7a7 7 0 0 0-4.9 2c-.2.2-.2.5 0 .7l.9.9c.2.2.5.2.7 0C5.6 6.5 6.7 6 8 6Z" />
+          <path d="M10.2 9.2c.2-.2.2-.5 0-.7A3.2 3.2 0 0 0 8 7.6c-.8 0-1.6.3-2.2.9-.2.2-.2.5 0 .7l1.8 1.8c.2.2.6.2.8 0l1.8-1.8Z" />
+        </svg>
+        <svg viewBox="0 0 27 13" className={ip.sbBattery}>
+          <rect x="0.5" y="0.5" width="23" height="12" rx="3.6" fill="none" stroke="#fff" strokeOpacity="0.4" />
+          <rect x="2" y="2" width="16.4" height="9" rx="2.2" fill="#fff" />
+          <path d="M25 4.4v4.2c.8-.3 1.4-1.1 1.4-2.1s-.6-1.8-1.4-2.1Z" fill="#fff" fillOpacity="0.45" />
+        </svg>
       </span>
     </div>
   );
