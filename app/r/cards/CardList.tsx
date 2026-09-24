@@ -61,14 +61,19 @@ function renderCardSafely(card: Card, ctx: RenderContext): ReactNode {
   }
 }
 
-export function CardList({ cards, now }: { cards: NormalizedCards; now: Date }) {
+/**
+ * `className` is added to the stack's container, beside its layout classes;
+ * production `/r` uses it for the enter animation of a stack that streams in
+ * after the receipt has painted (./WebCards.tsx). Absent: the P0 markup.
+ */
+export function CardList({ cards, now, className }: { cards: NormalizedCards; now: Date; className?: string }) {
   const ctx: RenderContext = { now, partner: cards.merchant.partner === true };
   const rendered = cards.cards
     .map((card) => ({ id: card.id, node: renderCardSafely(card, ctx) }))
     .filter((r) => r.node != null && r.node !== false);
   if (rendered.length === 0) return null;
   return (
-    <div className="flex flex-col gap-4">
+    <div className={className ? `flex flex-col gap-4 ${className}` : "flex flex-col gap-4"}>
       {rendered.map((r) => (
         <Fragment key={r.id}>{r.node}</Fragment>
       ))}

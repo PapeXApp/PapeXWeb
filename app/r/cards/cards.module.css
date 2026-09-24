@@ -45,3 +45,27 @@
   color: rgba(255, 255, 255, 0.6);
   cursor: not-allowed;
 }
+
+/* Production /r: a card stack that streams in after the receipt has already
+   painted (app/r/cards/WebCards.tsx) enters once, with a short fade. It is
+   inserted once and never moves again; with reduced motion it just appears. */
+.enter {
+  animation: cardsEnter 260ms ease-out both;
+}
+
+@keyframes cardsEnter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .enter {
+    animation: none;
+  }
+}

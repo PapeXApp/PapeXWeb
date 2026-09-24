@@ -47,15 +47,17 @@ export const testRequest = { userAgent: IPHONE_UA };
 
 /** The frozen "now" every page render sees: 2026-10-01 10:00 PDT. */
 export const FIXED_NOW_MS = Date.parse("2026-10-01T17:00:00Z");
+/** The page clock. Tests may move it (e.g. past an offer's expiry) and must put it back. */
+export const testClock = { nowMs: FIXED_NOW_MS };
 {
   const RealDate = Date;
   class FixedDate extends RealDate {
     constructor(...args: unknown[]) {
-      if (args.length === 0) super(FIXED_NOW_MS);
+      if (args.length === 0) super(testClock.nowMs);
       else super(...(args as [string]));
     }
     static now() {
-      return FIXED_NOW_MS;
+      return testClock.nowMs;
     }
   }
   globalThis.Date = FixedDate as DateConstructor;
