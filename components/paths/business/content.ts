@@ -103,7 +103,7 @@ export const whyMerchants = {
     {
       value: "$0",
       title: "Free",
-      body: "The PapeX device, the install and support cost you nothing.",
+      body: "The PapeX device, the install and support are free today. Take advantage while it lasts.",
       isLead: true,
     },
     {
@@ -209,7 +209,7 @@ export const dashboard = {
   columns: [
     {
       title: "Every receipt, searchable",
-      body: "Filter by amount, item, card or date. Open any receipt exactly as the customer saw it.",
+      body: "Filter by amount, item, date or the last 4 digits on the receipt. Open any receipt exactly as the customer saw it.",
     },
     {
       title: "Know your busiest hours",
