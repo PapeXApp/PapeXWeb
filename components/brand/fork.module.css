@@ -132,7 +132,7 @@
    the mark still sits exactly where the prototype put it. */
 .planeWrap {
   position: absolute;
-  width: min(260px, 20vw);
+  width: var(--fork-plane-w);
   pointer-events: none;
   transform: rotate(-8deg);
   will-change: transform, opacity;
@@ -148,6 +148,163 @@
    plane approaches and needs a single source for the base value. It is applied
    inline, which also means reduced-motion visitors get the same resting
    picture with no JS motion on top. */
+
+/* --- Layout: type scale, nav clearance, plane placement --------------------
+   Measured 2026-09-23 (headless Chrome, 390x844 / 768x1024 / 1440x900 /
+   1920x1080). None of this touches the locked commit in papex-brand.css: no
+   flex-grow, no transition, no transform or opacity on .rd-fork-content. It
+   only sets sizes and positions, and it never pads the HALVES themselves —
+   padding on a flex item survives flex-grow .0001, so the losing half would
+   stop collapsing at the padding height.
+
+   The numbers the rules below are built from:
+   - The nav floats over the TOP half: var(--nav-pad-y) + a 50-54px bubble
+     row (logo bubble 50.3px; the desktop links bubble 53.8px). Before this,
+     the top half centred its content in the whole half, so at 1440x900 the
+     eyebrow started at y=73 against a nav bottom of 73.8 — touching the
+     links bubble. --fork-nav-clear is that row height, and only the top
+     content is pushed below it, so each half centres its block in the space
+     the visitor can actually see.
+   - Stacked content = eyebrow 18 + gap + N lines x 1.02 x fs + gap + cue 22.
+     The top headline is 3 lines at 16ch, i.e. 82px + 3.06fs. Its free field
+     is 50vh - clear, so a >=40px margin above and below needs
+     fs <= 0.163vh - 77px. That is the height term in --fork-h.
+   - Kameron bold: 1ch = 0.596em, so the 16ch top measure is 9.54fs wide
+     (9.6 used, rounded up). The planes are sized to fit the gutter beside it. */
+.fork {
+  --fork-nav-clear: calc(var(--nav-pad-y) + 54px);
+  /* Desktop (>=821): the brand token, capped by height. 1440x900 -> 69.7px
+     (was 72, with 0px between nav and eyebrow); 1920x1080 -> 72 (token max);
+     1366x768 -> 48. Floors at 34px, the token's own minimum. */
+  --fork-h: clamp(34px, calc(16.3vh - 77px), var(--fs-fork-heading));
+  --fork-eyebrow-gap: 16px;
+  --fork-cue-gap: 26px;
+  /* Everything the top plane can travel toward the headline, beyond its rest
+     box: idle 5.5 + pointer parallax 13 + approach 24 + scale 1.12 (~8) +
+     the -8deg rotation's bounding growth (~5) = ~56px, plus air. */
+  --fork-plane-reserve: 64px;
+  --fork-plane-w: max(
+    0px,
+    min(
+      260px,
+      20vw,
+      calc((100vw - var(--fork-h) * 9.6) / 2 - 5vw - var(--fork-plane-reserve))
+    )
+  );
+}
+
+/* Tap target: each half IS the button (a full-width, half-viewport target).
+   These only stop iOS flashing a grey box over the whole half on tap and
+   remove the double-tap-zoom delay; no colour or motion changes. */
+.half {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* The headline measure stays the designer's 16ch / 15ch (it sets the line
+   breaks — copy unchanged); only the size is responsive. */
+.eyebrow {
+  display: block;
+  margin-bottom: var(--fork-eyebrow-gap);
+}
+.headline {
+  display: block;
+  font-size: var(--fork-h);
+  line-height: 1.02;
+  margin: 0 auto;
+}
+.headlineTop {
+  max-width: 16ch;
+}
+.headlineBottom {
+  max-width: 15ch;
+}
+/* Two classes to beat .rd-fork-cue / .rd-fork-content (one class each, and
+   module order vs papex-brand.css is not guaranteed). */
+.fork .cue {
+  margin-top: var(--fork-cue-gap);
+}
+.fork .contentTop {
+  padding-top: var(--fork-nav-clear);
+}
+
+/* Desktop planes sit in the gutter beside the headline (width above), so
+   their vertical position only has to stay clear of the nav. */
+.planeTop {
+  left: 5%;
+  top: max(22%, calc(var(--fork-nav-clear) + 8px));
+}
+.planeBottom {
+  right: 5%;
+  bottom: 20%;
+}
+
+/* Phones + tablets (the site's <=820 split). The gutter beside a 16ch
+   headline is ~33px at 390 wide, so the planes move into the free bands
+   ABOVE the top block and BELOW the bottom block instead. Before: at 768 the
+   top plane (x35-199, y104-212) overlapped the headline (x187+, y185+); at
+   390 the bottom plane (x293-375, y705-758) sat on the cue (to x296, y709).
+   Type: the desktop slope left 768x1024 at 41.5px inside ~150px of empty
+   margin; 7vw gives 53.8 there and keeps phones on the 34px floor (390 ->
+   34).
+   The top plane's width is also held to the band above the top block, so
+   that even receding (the half being swiped away from drops it 18px + 7px of
+   idle drift) it stays clear of the headline: band = (half - clear - 82 -
+   3.06fs) / 2, and the rotated plane is ~0.66w tall. It only binds on short
+   phones (360x640 -> ~44px); at 390x844 and 768x1024 the 20vw / 140px caps
+   win. svh where supported, because iOS Safari's vh is the toolbar-hidden
+   height and would overstate the band. */
+@media (max-width: 820px) {
+  .fork {
+    --fork-h: clamp(34px, min(7vw, calc(16.3vh - 77px)), 60px);
+    --fork-plane-w: max(
+      0px,
+      min(
+        20vw,
+        140px,
+        calc(((50vh - var(--fork-nav-clear) - 82px - var(--fork-h) * 3.06) / 2 - 5px) / 0.66)
+      )
+    );
+  }
+  @supports (height: 1svh) {
+    .fork {
+      --fork-plane-w: max(
+        0px,
+        min(
+          20vw,
+          140px,
+          calc(((50svh - var(--fork-nav-clear) - 82px - var(--fork-h) * 3.06) / 2 - 5px) / 0.66)
+        )
+      );
+    }
+  }
+  .planeTop {
+    top: calc(var(--fork-nav-clear) + 8px);
+  }
+  .planeBottom {
+    bottom: max(16px, 5%);
+  }
+}
+
+/* Short viewports (landscape phones, squat browser windows). A 390px-tall
+   landscape phone leaves each half 195px, ~124 below the nav, and the
+   3-line block needs 186 even at the 34px floor. Here the headline runs on
+   one line at a smaller size, the gaps tighten, and the planes are dropped:
+   there is no gutter left that they would not cover the headline from. */
+@media (max-height: 540px) {
+  .fork {
+    --fork-h: clamp(20px, 6vh, 40px);
+    --fork-eyebrow-gap: 8px;
+    --fork-cue-gap: 10px;
+  }
+  .headlineTop,
+  .headlineBottom {
+    max-width: 26em;
+  }
+  .planeWrap {
+    display: none;
+  }
+}
 
 /* --- The seam -------------------------------------------------------------
    N14: the designer removed the "Choose your path" label and its rd-seam-glow

@@ -435,12 +435,16 @@ export function Fork() {
     committing === null ? 'idle' : committing === side ? 'won' : 'lost'
 
   return (
-    <div className="rd-fork" data-committing={committing !== null} data-nav-theme="dark">
+    <div
+      className={`rd-fork ${styles.fork}`}
+      data-committing={committing !== null}
+      data-nav-theme="dark"
+    >
       {/* TOP HALF — navy surface, always. Its destination is TOP_PATH. */}
       <button
         ref={topHalf}
         type="button"
-        className="rd-fork-half rd-hairlines"
+        className={`rd-fork-half rd-hairlines ${styles.half}`}
         data-surface="navy"
         data-side={TOP_PATH}
         data-state={stateFor(TOP_PATH)}
@@ -453,8 +457,8 @@ export function Fork() {
         <span className={styles.grain} aria-hidden="true" />
         <span
           ref={topPlane}
-          className={styles.planeWrap}
-          style={{ top: '22%', left: '5%', opacity: PLANE_REST_OPACITY.navy }}
+          className={`${styles.planeWrap} ${styles.planeTop}`}
+          style={{ opacity: PLANE_REST_OPACITY.navy }}
           aria-hidden="true"
         >
           {/* Orange body / white lines — the dark-surface variant. */}
@@ -466,28 +470,23 @@ export function Fork() {
             priority
           />
         </span>
-        <span className="rd-fork-content">
+        {/* contentTop pushes this block below the floating nav, so it centres
+            in the part of the half the visitor can see — see fork.module.css. */}
+        <span className={`rd-fork-content ${styles.contentTop}`}>
           <span
-            className="rd-eyebrow rd-eyebrow-wide"
-            style={{ display: 'block', color: 'var(--orange)', marginBottom: 16 }}
+            className={`rd-eyebrow rd-eyebrow-wide ${styles.eyebrow}`}
+            style={{ color: 'var(--orange)' }}
           >
             For Business
           </span>
           <span
-            className="rd-display"
-            style={{
-              display: 'block',
-              fontSize: 'var(--fs-fork-heading)',
-              lineHeight: 1.02,
-              maxWidth: '16ch',
-              margin: '0 auto',
-              color: 'var(--offwhite)',
-            }}
+            className={`rd-display ${styles.headline} ${styles.headlineTop}`}
+            style={{ color: 'var(--offwhite)' }}
           >
             Modernize your checkout. No cost. No hassle.
           </span>
           <span
-            className="rd-fork-cue"
+            className={`rd-fork-cue ${styles.cue}`}
             style={{ color: 'rgba(245,245,245,.62)' }}
           >
             <span className="rd-chevron rd-chevron-up" aria-hidden="true" />
@@ -508,7 +507,7 @@ export function Fork() {
       <button
         ref={bottomHalf}
         type="button"
-        className="rd-fork-half"
+        className={`rd-fork-half ${styles.half}`}
         data-surface="light"
         data-side={BOTTOM_PATH}
         data-state={stateFor(BOTTOM_PATH)}
@@ -521,8 +520,8 @@ export function Fork() {
         <span className={styles.grain} aria-hidden="true" />
         <span
           ref={bottomPlane}
-          className={styles.planeWrap}
-          style={{ bottom: '20%', right: '5%', opacity: PLANE_REST_OPACITY.light }}
+          className={`${styles.planeWrap} ${styles.planeBottom}`}
+          style={{ opacity: PLANE_REST_OPACITY.light }}
           aria-hidden="true"
         >
           {/* Navy body / white lines. The light half already spends its orange
@@ -539,25 +538,18 @@ export function Fork() {
         </span>
         <span className="rd-fork-content">
           <span
-            className="rd-eyebrow rd-eyebrow-wide"
-            style={{ display: 'block', color: 'var(--orange)', marginBottom: 16 }}
+            className={`rd-eyebrow rd-eyebrow-wide ${styles.eyebrow}`}
+            style={{ color: 'var(--orange)' }}
           >
             For Customers
           </span>
           <span
-            className="rd-display"
-            style={{
-              display: 'block',
-              fontSize: 'var(--fs-fork-heading)',
-              lineHeight: 1.02,
-              maxWidth: '15ch',
-              margin: '0 auto',
-              color: 'var(--navy)',
-            }}
+            className={`rd-display ${styles.headline} ${styles.headlineBottom}`}
+            style={{ color: 'var(--navy)' }}
           >
             Never lose a receipt again.
           </span>
-          <span className="rd-fork-cue" style={{ color: 'rgba(0,18,29,.55)' }}>
+          <span className={`rd-fork-cue ${styles.cue}`} style={{ color: 'rgba(0,18,29,.55)' }}>
             <span className="rd-chevron rd-chevron-down" aria-hidden="true" />
             Scroll down or click to enter
           </span>
