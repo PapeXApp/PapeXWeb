@@ -1,0 +1,617 @@
+{
+  "generatedBy": "npm run app:sync (scripts/app-source/sync.mjs)",
+  "sources": {
+    "papexv2": {
+      "commit": "585e439aa9bc82d7b4879ad9fdebfcbd3da86943",
+      "branch": "feat/stores-favorites-spacing",
+      "uncommitted": []
+    },
+    "appclip": {
+      "commit": "7b516b2bf47f1fa67aff0a631f6f0e89edb795ef",
+      "branch": "receipt-design",
+      "uncommitted": []
+    }
+  },
+  "files": [
+    {
+      "url": "/app/kit/brand/Main_blue_transparent_outline.png",
+      "source": "papexv2:assets/logos/Main_blue_transparent_outline.png",
+      "bytes": 80762,
+      "sha256": "28b4722338281562"
+    },
+    {
+      "url": "/app/kit/brand/main_logo.png",
+      "source": "papexv2:assets/logos/main_logo.png",
+      "bytes": 162353,
+      "sha256": "dbe0fe934e1f107c"
+    },
+    {
+      "url": "/app/kit/brand/new_logo_trans.png",
+      "source": "papexv2:assets/logos/new_logo_trans.png",
+      "bytes": 136361,
+      "sha256": "55003442d041880f"
+    },
+    {
+      "url": "/app/kit/brand/papex_app_icon.png",
+      "source": "papexv2:assets/logos/papex_app_icon.png",
+      "bytes": 334248,
+      "sha256": "294195a0c51e7acd"
+    },
+    {
+      "url": "/app/kit/clip/papex-logo.png",
+      "source": "appclip:Resources/papex-logo.png",
+      "bytes": 17948,
+      "sha256": "0b9b98c200fe93ab"
+    },
+    {
+      "url": "/app/kit/fonts/Barlow-Bold.ttf",
+      "source": "papexv2:assets/fonts/Barlow-Bold.ttf",
+      "bytes": 108220,
+      "sha256": "84e6a4d61e7c3e21"
+    },
+    {
+      "url": "/app/kit/fonts/Barlow-Light.ttf",
+      "source": "papexv2:assets/fonts/Barlow-Light.ttf",
+      "bytes": 97936,
+      "sha256": "c9e9410bad3b4efb"
+    },
+    {
+      "url": "/app/kit/fonts/Barlow-Medium.ttf",
+      "source": "papexv2:assets/fonts/Barlow-Medium.ttf",
+      "bytes": 98244,
+      "sha256": "f1f57edb6604f544"
+    },
+    {
+      "url": "/app/kit/fonts/Barlow-Regular.ttf",
+      "source": "papexv2:assets/fonts/Barlow-Regular.ttf",
+      "bytes": 98812,
+      "sha256": "77fb1ac54d2ceb98"
+    },
+    {
+      "url": "/app/kit/fonts/Barlow-SemiBold.ttf",
+      "source": "papexv2:assets/fonts/Barlow-SemiBold.ttf",
+      "bytes": 108348,
+      "sha256": "86577cb32f8abe36"
+    },
+    {
+      "url": "/app/kit/fonts/IBMPlexMono-Medium.ttf",
+      "source": "papexv2:assets/fonts/IBMPlexMono-Medium.ttf",
+      "bytes": 136704,
+      "sha256": "a9b4c49bb299e05b"
+    },
+    {
+      "url": "/app/kit/fonts/IBMPlexMono-SemiBold.ttf",
+      "source": "papexv2:assets/fonts/IBMPlexMono-SemiBold.ttf",
+      "bytes": 140216,
+      "sha256": "d3c38e55c78f5b0f"
+    },
+    {
+      "url": "/app/kit/fonts/MaterialSymbolsRounded200.ttf",
+      "source": "papexv2:assets/fonts/MaterialSymbolsRounded200.ttf",
+      "bytes": 24120,
+      "sha256": "6fbebc7c4d90c67c"
+    },
+    {
+      "url": "/app/kit/fonts/MaterialSymbolsRounded200Fill.ttf",
+      "source": "papexv2:assets/fonts/MaterialSymbolsRounded200Fill.ttf",
+      "bytes": 25672,
+      "sha256": "7ac2b3c47af99b01"
+    },
+    {
+      "url": "/app/kit/icons/glass/bell-light@2x.png",
+      "source": "papexv2:assets/icons/glass/bell-light@2x.png",
+      "bytes": 8214,
+      "sha256": "c74fb477ee72d6f2"
+    },
+    {
+      "url": "/app/kit/icons/glass/bell@2x.png",
+      "source": "papexv2:assets/icons/glass/bell@2x.png",
+      "bytes": 7457,
+      "sha256": "450ae528ac5d8833"
+    },
+    {
+      "url": "/app/kit/icons/glass/calendar-light@2x.png",
+      "source": "papexv2:assets/icons/glass/calendar-light@2x.png",
+      "bytes": 12925,
+      "sha256": "b5481c217d39fb3c"
+    },
+    {
+      "url": "/app/kit/icons/glass/calendar@2x.png",
+      "source": "papexv2:assets/icons/glass/calendar@2x.png",
+      "bytes": 12874,
+      "sha256": "d81e23dd7c219527"
+    },
+    {
+      "url": "/app/kit/icons/glass/camera-light@2x.png",
+      "source": "papexv2:assets/icons/glass/camera-light@2x.png",
+      "bytes": 15237,
+      "sha256": "ad8f86d5c09f278a"
+    },
+    {
+      "url": "/app/kit/icons/glass/camera@2x.png",
+      "source": "papexv2:assets/icons/glass/camera@2x.png",
+      "bytes": 14985,
+      "sha256": "7872c0f554d7da19"
+    },
+    {
+      "url": "/app/kit/icons/glass/car-front-light@2x.png",
+      "source": "papexv2:assets/icons/glass/car-front-light@2x.png",
+      "bytes": 12545,
+      "sha256": "2883e6c7513a9d60"
+    },
+    {
+      "url": "/app/kit/icons/glass/car-front@2x.png",
+      "source": "papexv2:assets/icons/glass/car-front@2x.png",
+      "bytes": 12471,
+      "sha256": "3d693bc85b11cdab"
+    },
+    {
+      "url": "/app/kit/icons/glass/cart-light@2x.png",
+      "source": "papexv2:assets/icons/glass/cart-light@2x.png",
+      "bytes": 11819,
+      "sha256": "d355070e3292b7f7"
+    },
+    {
+      "url": "/app/kit/icons/glass/cart@2x.png",
+      "source": "papexv2:assets/icons/glass/cart@2x.png",
+      "bytes": 11731,
+      "sha256": "34331a66d862fe15"
+    },
+    {
+      "url": "/app/kit/icons/glass/chart-bar-light@2x.png",
+      "source": "papexv2:assets/icons/glass/chart-bar-light@2x.png",
+      "bytes": 9450,
+      "sha256": "3ad2dc0a430a9a11"
+    },
+    {
+      "url": "/app/kit/icons/glass/chart-bar@2x.png",
+      "source": "papexv2:assets/icons/glass/chart-bar@2x.png",
+      "bytes": 9065,
+      "sha256": "f02b429e57bebd7b"
+    },
+    {
+      "url": "/app/kit/icons/glass/cloud-download-light@2x.png",
+      "source": "papexv2:assets/icons/glass/cloud-download-light@2x.png",
+      "bytes": 4726,
+      "sha256": "14750032b6bfbd85"
+    },
+    {
+      "url": "/app/kit/icons/glass/cloud-download@2x.png",
+      "source": "papexv2:assets/icons/glass/cloud-download@2x.png",
+      "bytes": 4689,
+      "sha256": "c09ba9e5c45b2695"
+    },
+    {
+      "url": "/app/kit/icons/glass/cloud-upload-light@2x.png",
+      "source": "papexv2:assets/icons/glass/cloud-upload-light@2x.png",
+      "bytes": 4766,
+      "sha256": "dbe574051af18c96"
+    },
+    {
+      "url": "/app/kit/icons/glass/cloud-upload@2x.png",
+      "source": "papexv2:assets/icons/glass/cloud-upload@2x.png",
+      "bytes": 4714,
+      "sha256": "4b59a1611354fadc"
+    },
+    {
+      "url": "/app/kit/icons/glass/credit-cards-light@2x.png",
+      "source": "papexv2:assets/icons/glass/credit-cards-light@2x.png",
+      "bytes": 9535,
+      "sha256": "50bff392877cc796"
+    },
+    {
+      "url": "/app/kit/icons/glass/credit-cards@2x.png",
+      "source": "papexv2:assets/icons/glass/credit-cards@2x.png",
+      "bytes": 9500,
+      "sha256": "4c864ee95939b560"
+    },
+    {
+      "url": "/app/kit/icons/glass/envelope-light@2x.png",
+      "source": "papexv2:assets/icons/glass/envelope-light@2x.png",
+      "bytes": 8537,
+      "sha256": "98f4a7e7374127ff"
+    },
+    {
+      "url": "/app/kit/icons/glass/envelope@2x.png",
+      "source": "papexv2:assets/icons/glass/envelope@2x.png",
+      "bytes": 8503,
+      "sha256": "2a0108253100460e"
+    },
+    {
+      "url": "/app/kit/icons/glass/gear-light@2x.png",
+      "source": "papexv2:assets/icons/glass/gear-light@2x.png",
+      "bytes": 15355,
+      "sha256": "9a711095143db85c"
+    },
+    {
+      "url": "/app/kit/icons/glass/gear@2x.png",
+      "source": "papexv2:assets/icons/glass/gear@2x.png",
+      "bytes": 15031,
+      "sha256": "7d05f4df8882c193"
+    },
+    {
+      "url": "/app/kit/icons/glass/heart-light@2x.png",
+      "source": "papexv2:assets/icons/glass/heart-light@2x.png",
+      "bytes": 8333,
+      "sha256": "551cc0f014ba9bc5"
+    },
+    {
+      "url": "/app/kit/icons/glass/heart-off-light@2x.png",
+      "source": "papexv2:assets/icons/glass/heart-off-light@2x.png",
+      "bytes": 8281,
+      "sha256": "6e6aa82d83d16744"
+    },
+    {
+      "url": "/app/kit/icons/glass/heart-off@2x.png",
+      "source": "papexv2:assets/icons/glass/heart-off@2x.png",
+      "bytes": 6140,
+      "sha256": "27bc988476c4b527"
+    },
+    {
+      "url": "/app/kit/icons/glass/heart@2x.png",
+      "source": "papexv2:assets/icons/glass/heart@2x.png",
+      "bytes": 7666,
+      "sha256": "821b83ecf65aa77e"
+    },
+    {
+      "url": "/app/kit/icons/glass/house-light@2x.png",
+      "source": "papexv2:assets/icons/glass/house-light@2x.png",
+      "bytes": 12795,
+      "sha256": "168db29fba2b58fa"
+    },
+    {
+      "url": "/app/kit/icons/glass/house@2x.png",
+      "source": "papexv2:assets/icons/glass/house@2x.png",
+      "bytes": 11976,
+      "sha256": "fd174c0ad59a7aec"
+    },
+    {
+      "url": "/app/kit/icons/glass/knife-spoon-light@2x.png",
+      "source": "papexv2:assets/icons/glass/knife-spoon-light@2x.png",
+      "bytes": 8484,
+      "sha256": "19370ddfbc63fa9b"
+    },
+    {
+      "url": "/app/kit/icons/glass/knife-spoon@2x.png",
+      "source": "papexv2:assets/icons/glass/knife-spoon@2x.png",
+      "bytes": 7541,
+      "sha256": "29cf9d8fc0d16413"
+    },
+    {
+      "url": "/app/kit/icons/glass/location-light@2x.png",
+      "source": "papexv2:assets/icons/glass/location-light@2x.png",
+      "bytes": 12096,
+      "sha256": "8cf2e8966a0c24e5"
+    },
+    {
+      "url": "/app/kit/icons/glass/location@2x.png",
+      "source": "papexv2:assets/icons/glass/location@2x.png",
+      "bytes": 11722,
+      "sha256": "4d37eb5e2377862f"
+    },
+    {
+      "url": "/app/kit/icons/glass/lock-light@2x.png",
+      "source": "papexv2:assets/icons/glass/lock-light@2x.png",
+      "bytes": 8963,
+      "sha256": "28f71f3b9c80e9d3"
+    },
+    {
+      "url": "/app/kit/icons/glass/lock@2x.png",
+      "source": "papexv2:assets/icons/glass/lock@2x.png",
+      "bytes": 8711,
+      "sha256": "68939d3a005f077e"
+    },
+    {
+      "url": "/app/kit/icons/glass/magnifier-light@2x.png",
+      "source": "papexv2:assets/icons/glass/magnifier-light@2x.png",
+      "bytes": 9509,
+      "sha256": "2a0edb2559baec74"
+    },
+    {
+      "url": "/app/kit/icons/glass/magnifier@2x.png",
+      "source": "papexv2:assets/icons/glass/magnifier@2x.png",
+      "bytes": 8759,
+      "sha256": "653c0026a64aaafa"
+    },
+    {
+      "url": "/app/kit/icons/glass/medicine-light@2x.png",
+      "source": "papexv2:assets/icons/glass/medicine-light@2x.png",
+      "bytes": 10063,
+      "sha256": "ba0e9ca4bb1c1600"
+    },
+    {
+      "url": "/app/kit/icons/glass/medicine@2x.png",
+      "source": "papexv2:assets/icons/glass/medicine@2x.png",
+      "bytes": 9763,
+      "sha256": "70b96aca04af53d6"
+    },
+    {
+      "url": "/app/kit/icons/glass/miscellaneous-light@2x.png",
+      "source": "papexv2:assets/icons/glass/miscellaneous-light@2x.png",
+      "bytes": 8453,
+      "sha256": "61a38aea33d4c7f9"
+    },
+    {
+      "url": "/app/kit/icons/glass/miscellaneous@2x.png",
+      "source": "papexv2:assets/icons/glass/miscellaneous@2x.png",
+      "bytes": 8238,
+      "sha256": "c19654771f7c4d42"
+    },
+    {
+      "url": "/app/kit/icons/glass/money-bill-light@2x.png",
+      "source": "papexv2:assets/icons/glass/money-bill-light@2x.png",
+      "bytes": 10399,
+      "sha256": "64bed866b7f672be"
+    },
+    {
+      "url": "/app/kit/icons/glass/money-bill@2x.png",
+      "source": "papexv2:assets/icons/glass/money-bill@2x.png",
+      "bytes": 10382,
+      "sha256": "7680837ab7ade5fb"
+    },
+    {
+      "url": "/app/kit/icons/glass/paper-plane-light@2x.png",
+      "source": "papexv2:assets/icons/glass/paper-plane-light@2x.png",
+      "bytes": 8393,
+      "sha256": "6c3c2df1b11269c6"
+    },
+    {
+      "url": "/app/kit/icons/glass/paper-plane@2x.png",
+      "source": "papexv2:assets/icons/glass/paper-plane@2x.png",
+      "bytes": 8229,
+      "sha256": "a5b032a7ae026d75"
+    },
+    {
+      "url": "/app/kit/icons/glass/pin-light@2x.png",
+      "source": "papexv2:assets/icons/glass/pin-light@2x.png",
+      "bytes": 10362,
+      "sha256": "28cf434f1e4f0153"
+    },
+    {
+      "url": "/app/kit/icons/glass/pin@2x.png",
+      "source": "papexv2:assets/icons/glass/pin@2x.png",
+      "bytes": 9566,
+      "sha256": "e7dba5f4d41eb96a"
+    },
+    {
+      "url": "/app/kit/icons/glass/receipt-light@2x.png",
+      "source": "papexv2:assets/icons/glass/receipt-light@2x.png",
+      "bytes": 4357,
+      "sha256": "7bca9c07ecea6c26"
+    },
+    {
+      "url": "/app/kit/icons/glass/receipt@2x.png",
+      "source": "papexv2:assets/icons/glass/receipt@2x.png",
+      "bytes": 4249,
+      "sha256": "143ec56bcc6a31a2"
+    },
+    {
+      "url": "/app/kit/icons/glass/rect-layout-grid-light@2x.png",
+      "source": "papexv2:assets/icons/glass/rect-layout-grid-light@2x.png",
+      "bytes": 5896,
+      "sha256": "c7f4f444179a35db"
+    },
+    {
+      "url": "/app/kit/icons/glass/rect-layout-grid@2x.png",
+      "source": "papexv2:assets/icons/glass/rect-layout-grid@2x.png",
+      "bytes": 5775,
+      "sha256": "b6051a1304a0344c"
+    },
+    {
+      "url": "/app/kit/icons/glass/shopping-light@2x.png",
+      "source": "papexv2:assets/icons/glass/shopping-light@2x.png",
+      "bytes": 9821,
+      "sha256": "a1d401744553d1e0"
+    },
+    {
+      "url": "/app/kit/icons/glass/shopping@2x.png",
+      "source": "papexv2:assets/icons/glass/shopping@2x.png",
+      "bytes": 9840,
+      "sha256": "79860ccf9a0b44dd"
+    },
+    {
+      "url": "/app/kit/icons/glass/square-chart-line-light@2x.png",
+      "source": "papexv2:assets/icons/glass/square-chart-line-light@2x.png",
+      "bytes": 10250,
+      "sha256": "57f6841c75bc279a"
+    },
+    {
+      "url": "/app/kit/icons/glass/square-chart-line@2x.png",
+      "source": "papexv2:assets/icons/glass/square-chart-line@2x.png",
+      "bytes": 10338,
+      "sha256": "0585e16c94a287ff"
+    },
+    {
+      "url": "/app/kit/icons/glass/stack-play-light@2x.png",
+      "source": "papexv2:assets/icons/glass/stack-play-light@2x.png",
+      "bytes": 11501,
+      "sha256": "35aadfb23063384b"
+    },
+    {
+      "url": "/app/kit/icons/glass/stack-play@2x.png",
+      "source": "papexv2:assets/icons/glass/stack-play@2x.png",
+      "bytes": 11540,
+      "sha256": "f7be9517132ff259"
+    },
+    {
+      "url": "/app/kit/icons/glass/team-light@2x.png",
+      "source": "papexv2:assets/icons/glass/team-light@2x.png",
+      "bytes": 11414,
+      "sha256": "2e431d8f27458924"
+    },
+    {
+      "url": "/app/kit/icons/glass/team@2x.png",
+      "source": "papexv2:assets/icons/glass/team@2x.png",
+      "bytes": 11191,
+      "sha256": "ad20897c7d8eed69"
+    },
+    {
+      "url": "/app/kit/icons/glass/wallet-content-light@2x.png",
+      "source": "papexv2:assets/icons/glass/wallet-content-light@2x.png",
+      "bytes": 13880,
+      "sha256": "171ec356dded1f36"
+    },
+    {
+      "url": "/app/kit/icons/glass/wallet-content@2x.png",
+      "source": "papexv2:assets/icons/glass/wallet-content@2x.png",
+      "bytes": 13671,
+      "sha256": "5ab27770d7894773"
+    },
+    {
+      "url": "/app/kit/icons/tabbar/cart-inactive-light@2x.png",
+      "source": "papexv2:assets/icons/glass/tabbar/cart-inactive-light@2x.png",
+      "bytes": 3360,
+      "sha256": "1aa7d8b747375135"
+    },
+    {
+      "url": "/app/kit/icons/tabbar/cart-inactive@2x.png",
+      "source": "papexv2:assets/icons/glass/tabbar/cart-inactive@2x.png",
+      "bytes": 3099,
+      "sha256": "c922af76fc0ef00e"
+    },
+    {
+      "url": "/app/kit/icons/tabbar/cart-light@2x.png",
+      "source": "papexv2:assets/icons/glass/tabbar/cart-light@2x.png",
+      "bytes": 3692,
+      "sha256": "66ba44b0ca77840e"
+    },
+    {
+      "url": "/app/kit/icons/tabbar/cart@2x.png",
+      "source": "papexv2:assets/icons/glass/tabbar/cart@2x.png",
+      "bytes": 3599,
+      "sha256": "4261f9b684eaa5c9"
+    },
+    {
+      "url": "/app/kit/icons/tabbar/coupon-inactive-light@2x.png",
+      "source": "papexv2:assets/icons/glass/tabbar/coupon-inactive-light@2x.png",
+      "bytes": 3318,
+      "sha256": "92b21bf2d0293aca"
+    },
+    {
+      "url": "/app/kit/icons/tabbar/coupon-inactive@2x.png",
+      "source": "papexv2:assets/icons/glass/tabbar/coupon-inactive@2x.png",
+      "bytes": 3155,
+      "sha256": "37975baa62fced0d"
+    },
+    {
+      "url": "/app/kit/icons/tabbar/coupon-light@2x.png",
+      "source": "papexv2:assets/icons/glass/tabbar/coupon-light@2x.png",
+      "bytes": 3550,
+      "sha256": "5f89d44fcbd140c4"
+    },
+    {
+      "url": "/app/kit/icons/tabbar/coupon@2x.png",
+      "source": "papexv2:assets/icons/glass/tabbar/coupon@2x.png",
+      "bytes": 3468,
+      "sha256": "1699375e11bb0e48"
+    },
+    {
+      "url": "/app/kit/icons/tabbar/gear-inactive-light@2x.png",
+      "source": "papexv2:assets/icons/glass/tabbar/gear-inactive-light@2x.png",
+      "bytes": 3716,
+      "sha256": "962e8adb23bb058c"
+    },
+    {
+      "url": "/app/kit/icons/tabbar/gear-inactive@2x.png",
+      "source": "papexv2:assets/icons/glass/tabbar/gear-inactive@2x.png",
+      "bytes": 3399,
+      "sha256": "fe4ad8c61b5b61a6"
+    },
+    {
+      "url": "/app/kit/icons/tabbar/gear-light@2x.png",
+      "source": "papexv2:assets/icons/glass/tabbar/gear-light@2x.png",
+      "bytes": 4364,
+      "sha256": "1b612f52124d9080"
+    },
+    {
+      "url": "/app/kit/icons/tabbar/gear@2x.png",
+      "source": "papexv2:assets/icons/glass/tabbar/gear@2x.png",
+      "bytes": 4003,
+      "sha256": "f095d43ee3fe4707"
+    },
+    {
+      "url": "/app/kit/icons/tabbar/house-inactive-light@2x.png",
+      "source": "papexv2:assets/icons/glass/tabbar/house-inactive-light@2x.png",
+      "bytes": 2874,
+      "sha256": "b906bdab9d46f7a5"
+    },
+    {
+      "url": "/app/kit/icons/tabbar/house-inactive@2x.png",
+      "source": "papexv2:assets/icons/glass/tabbar/house-inactive@2x.png",
+      "bytes": 2614,
+      "sha256": "b7d21a2e963750f3"
+    },
+    {
+      "url": "/app/kit/icons/tabbar/house-light@2x.png",
+      "source": "papexv2:assets/icons/glass/tabbar/house-light@2x.png",
+      "bytes": 3438,
+      "sha256": "3a2a692a90057227"
+    },
+    {
+      "url": "/app/kit/icons/tabbar/house@2x.png",
+      "source": "papexv2:assets/icons/glass/tabbar/house@2x.png",
+      "bytes": 3213,
+      "sha256": "c1c3d383d1ac7b31"
+    },
+    {
+      "url": "/app/kit/icons/tabbar/receipt-inactive-light@2x.png",
+      "source": "papexv2:assets/icons/glass/tabbar/receipt-inactive-light@2x.png",
+      "bytes": 2280,
+      "sha256": "84a0eb2049554395"
+    },
+    {
+      "url": "/app/kit/icons/tabbar/receipt-inactive@2x.png",
+      "source": "papexv2:assets/icons/glass/tabbar/receipt-inactive@2x.png",
+      "bytes": 2102,
+      "sha256": "5defefcb4dc7c8f0"
+    },
+    {
+      "url": "/app/kit/icons/tabbar/receipt-light@2x.png",
+      "source": "papexv2:assets/icons/glass/tabbar/receipt-light@2x.png",
+      "bytes": 2520,
+      "sha256": "012b1ea0e48f16c1"
+    },
+    {
+      "url": "/app/kit/icons/tabbar/receipt@2x.png",
+      "source": "papexv2:assets/icons/glass/tabbar/receipt@2x.png",
+      "bytes": 2400,
+      "sha256": "465826b0996d25ca"
+    },
+    {
+      "url": "/app/kit/icons/tabbar/team-inactive-light@2x.png",
+      "source": "papexv2:assets/icons/glass/tabbar/team-inactive-light@2x.png",
+      "bytes": 3700,
+      "sha256": "289d13db484efca9"
+    },
+    {
+      "url": "/app/kit/icons/tabbar/team-inactive@2x.png",
+      "source": "papexv2:assets/icons/glass/tabbar/team-inactive@2x.png",
+      "bytes": 3514,
+      "sha256": "0024440c92895072"
+    },
+    {
+      "url": "/app/kit/icons/tabbar/team-light@2x.png",
+      "source": "papexv2:assets/icons/glass/tabbar/team-light@2x.png",
+      "bytes": 3942,
+      "sha256": "6baaaf45a1c94ec7"
+    },
+    {
+      "url": "/app/kit/icons/tabbar/team@2x.png",
+      "source": "papexv2:assets/icons/glass/tabbar/team@2x.png",
+      "bytes": 3814,
+      "sha256": "73390af12c454f5d"
+    },
+    {
+      "url": "/app/kit/images/screen-glow-light.png",
+      "source": "papexv2:assets/images/screen-glow-light.png",
+      "bytes": 97570,
+      "sha256": "cc94b72ea1aecd08"
+    },
+    {
+      "url": "/app/kit/images/screen-glow.png",
+      "source": "papexv2:assets/images/screen-glow.png",
+      "bytes": 77275,
+      "sha256": "3b941e527ed8569f"
+    }
+  ]
+}
