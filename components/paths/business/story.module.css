@@ -38,8 +38,15 @@
   --gap-title: clamp(20px, 2.4vw, 36px);
   --gap-body: clamp(28px, 3.2vw, 48px);
   --gap-list: clamp(18px, 2vw, 28px);
+  /* the section's side gutter; the runway cancels it to run edge to edge */
+  --story-px: clamp(20px, 5vw, 56px);
   position: relative;
-  padding: var(--section-pad-y) clamp(20px, 5vw, 56px);
+  padding: var(--section-pad-y) var(--story-px);
+}
+/* The 1150px reading column (heading, static story, the copy after). */
+.col {
+  max-width: 1150px;
+  margin-inline: auto;
 }
 
 .fill {
@@ -49,9 +56,12 @@
 }
 
 /* --- runway + pin ---------------------------------------------------------- */
+/* Edge to edge (the section's gutter cancelled), so the camera can use the
+   whole viewport's width, not just the 1150px column. */
 .runway {
   position: relative;
   margin-top: var(--gap-body, 40px);
+  margin-inline: calc(-1 * var(--story-px));
 }
 /* Server render / first frame: both versions are in the HTML and CSS picks
    one (same contract as intro/intro.module.css), so the section is its final
@@ -80,27 +90,47 @@
   gap: 12px;
   /* clears the floating nav band */
   padding-top: 84px;
-  /* the docked stage may scale past the column on phones: clip, never
-     hidden (hidden would make this a scroll container) */
-  overflow-x: clip;
+  /* The camera scales the scene past the stage's box: whatever it frames is
+     inside the viewport by construction, the rest (pieces waiting at opacity
+     0) is cut here. clip, never hidden (hidden would make this a scroll
+     container and break the sticky). */
+  overflow: clip;
+  /* the camera's free area (read by measure()): under the nav band, --cam-side
+     from the viewport's edges, --cam-gap above the caption */
+  --cam-top: 92px;
+  --cam-side: clamp(20px, 2.6vw, 48px);
+  --cam-gap: 12px;
+  /* the print beat: printer + slip at most this share of the pin's height */
+  --cam-print-h: 0.7;
+  /* the last frame (laptop + phone + device): this share of the free area */
+  --cam-final-fill: 0.94;
 }
 
 .stage {
   container-type: inline-size;
   position: relative;
   flex: none;
-  width: min(100%, calc((100svh - 190px) * 2));
+  /* The layout box every beat is measured in (cqw). The camera does the
+     framing, so its size only sets the scene's resolution: as wide as the
+     viewport's gutters allow while it still fits the pin. */
+  width: min(100% - 2 * var(--cam-side), calc((100svh - 150px) * 2));
   aspect-ratio: 2 / 1;
-  transform-origin: 0 0;
+  /* 1: the camera frames each beat (read by measure()); 0: off */
+  --cam: 1;
   --rig-shift: -14;
   /* the group's move from its tap pose to its final spot (cqw / scale) */
   --g-post-x: 29;
   --g-post-y: 0;
-  /* a touch smaller once the laptop arrives, so the docked row is led by
-     the laptop's height and the dashboard docks as big as possible */
+  /* a touch smaller once the laptop arrives, so the laptop leads the row */
   --g-post-s: 0.82;
-  /* 1: the value beat docks laptop + phone + device; 0: the laptop only */
-  --dock-group: 1;
+}
+
+/* The camera layer: every piece of the scene sits in it, laid out exactly as
+   in the stage (inset 0), and the frame writes one transform on it. */
+.cam {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 0;
 }
 
 .ground {
@@ -115,7 +145,14 @@
 
 .hint {
   flex: none;
-  width: min(100%, 62ch);
+  /* pinned to the pin's foot on desktop, so the camera's free area is
+     everything above it (phones keep it in flow, under the stage) */
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: clamp(12px, 2.4svh, 24px);
+  margin-inline: auto;
+  width: min(100% - 40px, 62ch);
   /* two lines reserved, so a wrapping hint never moves the stage */
   min-height: 2.9em;
   font-family: var(--font-label);
@@ -174,7 +211,10 @@
   container-type: inline-size;
   position: relative;
   width: 100%;
-  perspective: 2600px;
+  /* 2600px on the 1150px stage the fold was tuned on, kept as a share of the
+     stage (cqw resolves against .stage, not this container) so a larger
+     stage never deepens the foreshortening */
+  perspective: 226cqw;
   transform-origin: 50% 50%;
   will-change: transform;
 }
@@ -468,7 +508,9 @@
   height: 33.75cqw;
   z-index: 4;
   opacity: 0;
-  perspective: 1400px;
+  /* 1400px on the 1150px stage the lid was tuned on, as a share of the
+     stage: a fixed px value would bend a bigger stage's lid far harder */
+  perspective: 121.7cqw;
   perspective-origin: 50% 92%;
 }
 .lid {
@@ -580,47 +622,23 @@
   height: 7cqw;
 }
 
-/* --- the value: docked row + heading ------------------------------------------ */
-/* The pinned screen only holds the docked row and the heading under it; the
-   columns follow the runway in flow (.after), so nothing here can overflow
-   the pin and no JS spacer is ever needed (no height change at hydration). */
-.info {
-  position: absolute;
-  inset: 0;
-  z-index: 7;
-  overflow: hidden;
-  pointer-events: none;
-}
-.infoInner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: clamp(16px, 2.6svh, 32px);
-  height: 100%;
-  padding: clamp(84px, 11svh, 100px) 0 clamp(24px, 5svh, 56px);
-}
-.slot {
-  flex: 1 1 0;
-  min-height: 120px;
-  width: 100%;
-}
-.infoCopy {
-  flex: none;
-  width: 100%;
-  text-align: center;
-  opacity: 0;
-}
-.static .infoCopy {
-  opacity: 1;
-}
-
-/* --- after the scene: the three columns + the customer line ------------------ */
+/* --- after the scene: the dashboard's heading block, then the columns ----------- */
+/* P3-B2 (Nico: "super cluttered; we need space fixing"). The pin ends on the
+   screens alone; once it lets go, this follows in flow with clear air: the
+   pin's own empty foot + the padding above the heading, then a wide gap
+   before the three columns. */
 .after {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: clamp(40px, 5vw, 72px);
-  padding-top: clamp(48px, 7vw, 104px);
+  gap: clamp(56px, 6.4vw, 96px);
+  max-width: 1150px;
+  margin-inline: auto;
+  padding-top: clamp(56px, 7vw, 104px);
+}
+.afterCopy {
+  width: 100%;
+  text-align: center;
 }
 .cols {
   display: grid;
@@ -647,17 +665,6 @@
   font-size: 15px;
   line-height: 1.6;
   color: var(--flow-fg-2);
-}
-.customerLine {
-  max-width: 60ch;
-  text-align: center;
-  font-size: 16px;
-  line-height: 1.5;
-  color: var(--flow-fg-2);
-}
-.customerLine strong {
-  color: var(--flow-fg);
-  font-weight: 700;
 }
 
 /* --- the screens' interactive layers ------------------------------------------ */
@@ -822,16 +829,23 @@
   .pin {
     padding-top: 64px;
   }
+  .hint {
+    position: static;
+    width: min(100%, 62ch);
+    margin-inline: 0;
+  }
   .stage {
-    width: min(100%, calc((100svh - 128px) / 2));
+    /* the runway is edge to edge: the section's gutter comes back here */
+    width: min(100% - 2 * var(--story-px), calc((100svh - 128px) / 2));
     aspect-ratio: 1 / 2;
+    /* no camera: the 1:2 stage already fills the pin */
+    --cam: 0;
     --rig-shift: -14;
     /* the pair's union box (x 2-96, y 2-195 cqw) at 0.42, to the top-right
        corner with a 3cqw margin: x 57.5-97, y 3-84 */
     --g-post-x: 27.68;
     --g-post-y: -55.84;
     --g-post-s: 0.42;
-    --dock-group: 0;
     /* read by measure(): the phone card replaces the laptop */
     --phone-dash: 1;
     /* a gentler tilt for the taller phone, so its top corner stays in */
@@ -895,15 +909,6 @@
     height: 3.2cqw;
     margin: -1.6cqw 0 0 -1.6cqw;
   }
-  /* the pinned info must fit one phone screen under the docked laptop: the
-     lead repeats the beat line just above it, so it goes (the static
-     version keeps it) */
-  .pin .infoCopy p {
-    display: none;
-  }
-  .pin .infoCopy h3 {
-    font-size: 25px;
-  }
   .cols {
     grid-template-columns: minmax(0, 1fr);
     gap: 32px;
@@ -918,9 +923,6 @@
   }
   .colRule {
     margin-bottom: 12px;
-  }
-  .customerLine {
-    font-size: 15px;
   }
   .staticArt {
     min-height: 0;

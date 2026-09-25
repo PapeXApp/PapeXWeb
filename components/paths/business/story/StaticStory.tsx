@@ -2,7 +2,6 @@
 
 import { cn } from "@/lib/utils"
 import { PhoneChrome } from "../../customer/WalkPhone"
-import { DashboardCopy } from "../DashboardPreview"
 import { story } from "../story"
 import { DeviceArt } from "./Furniture"
 import { FitFrame } from "./merchant/FitFrame"
@@ -18,9 +17,9 @@ import s from "../story.module.css"
  * keeps, and what `prefers-reduced-motion` gets instead of the pinned scene.
  * Same three moments, stacked — the paper receipt, the phone with the same
  * receipt on it at the PapeX device (usable: Save to PapeX, the app's
- * Receipts tab, the receipt), and the dashboard it lands on (usable) — then
- * the same heading the scene ends on. The three columns follow both versions
- * (RetainStory renders them once, after). Every piece of copy the scene
+ * Receipts tab, the receipt), and the dashboard it lands on (usable). The
+ * heading block and the three columns follow both versions (RetainStory
+ * renders them once, after). Every piece of copy the scene
  * carries is here, so nothing is lost for search or assistive tech.
  */
 export function StaticStory() {
@@ -91,8 +90,6 @@ export function StaticStory() {
           {dash.body}
         </figcaption>
       </figure>
-
-      <DashboardCopy className={s.infoCopy} />
     </div>
   )
 }

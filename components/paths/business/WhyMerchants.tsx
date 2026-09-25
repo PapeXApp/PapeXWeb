@@ -19,10 +19,14 @@ import s from "./story.module.css"
 // runway (a view-timeline freezes inside a sticky pin). B1's index.tsx wraps
 // this section in <div id="how"> and keeps the calculator SLOT after it, so
 // neither lives here.
+//
+// The heading sits in the 1150px column; the story does not (P3-B2): its
+// pinned scene runs edge to edge so the camera can use the whole viewport,
+// and it puts its own static version and closing copy back in the column.
 export function WhyMerchants() {
   return (
     <FlowSection ground="light" index="03" className={s.section}>
-      <div className="mx-auto max-w-[1150px]">
+      <div className={s.col}>
         <Reveal>
           <SectionLabel index="03">{story.eyebrow}</SectionLabel>
           <ScrollLit
@@ -37,9 +41,9 @@ export function WhyMerchants() {
             {story.lead}
           </p>
         </Reveal>
-
-        <RetainStory />
       </div>
+
+      <RetainStory />
     </FlowSection>
   )
 }
