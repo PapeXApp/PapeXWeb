@@ -110,8 +110,12 @@ export const marquee = {
 export const howItWorks = {
   id: "setup",
   eyebrow: "How do I get it?",
-  heading: "We install it, free, in about 15 minutes.",
-  lead: "One short visit and we do the work. Your paper printer keeps printing the whole time.",
+  heading: "Free in 15 minutes.",
+  // The one duration claim: a start and an end on the timeline's axis, and
+  // this line. No per-step minutes (we have no measured split to show).
+  lead: "We install it, free, in about 15 minutes.",
+  axisStart: "0 min",
+  axisEnd: "about 15 min",
   steps: [
     {
       number: "01",
@@ -121,7 +125,7 @@ export const howItWorks = {
     {
       number: "02",
       title: "Join your Wi-Fi",
-      body: "It connects to your store's 2.4 GHz Wi-Fi.",
+      body: "It joins your store's 2.4 GHz Wi-Fi.",
     },
     {
       number: "03",
@@ -136,7 +140,7 @@ export const howItWorks = {
     {
       number: "05",
       title: "Hand-over: your dashboard is live",
-      body: "Customers can tap from the next sale.",
+      body: "Customers can tap from your next sale.",
     },
   ],
   // Leads straight into the demo form below: setup + demo read as one path.
