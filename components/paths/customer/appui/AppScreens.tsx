@@ -22,8 +22,8 @@ import x from "./appScreens.module.css";
  * Story: the receipt the App Clip just showed is saved, so it tops the
  * Receipts tab (unreviewed, "Tapped by you"). Nook Cafe is a partner store in
  * the kit's demo data, so that same tap also left a coupon for the next visit
- * ("Given when you tapped at the counter") — the Coupons tab shows it next to
- * two coupons the shopper scanned elsewhere. Coupons are live (Nico,
+ * ("$2 off your next visit", the same coupon /business shows) — the Coupons
+ * tab shows it next to two coupons the shopper scanned elsewhere. Coupons are live (Nico,
  * 2026-09-24): a tap can bring one at select stores; everywhere else you
  * save coupons by scanning them.
  *

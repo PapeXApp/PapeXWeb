@@ -21,9 +21,9 @@ export function demoReceiptBytes(): Uint8Array {
   out.push(0x1b, 0x21, 0x30); // ESC ! 48 double height + double width
   line("NOOK CAFE");
   out.push(0x1b, 0x21, 0x00); // ESC ! 0  back to normal
-  line("412 Walnut St");
-  line("Syracuse, NY 13202");
-  line("(315) 555-0142");
+  line("48 Demo Street");
+  line("San Francisco, CA 94100");
+  line("(415) 555-0142");
   out.push(0x0a);
   out.push(0x1b, 0x61, 0x00); // ESC a 0  left
   line("Order #1042   Jun 8, 2026  10:24 AM");

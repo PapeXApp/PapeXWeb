@@ -237,13 +237,13 @@ export const demoCoupons: KitCoupon[] = [
   {
     id: 'c1',
     storeId: 'demo-nook-cafe',
-    kind: 'freebie',
-    title: 'Free pastry with any drink',
-    subtitle: 'Given when you tapped at the counter',
-    terms: 'One per visit. Not valid with other offers.',
-    code: 'NOOK-7Q2',
-    expiresAt: '2026-09-26T23:59:00',
-    inStoreOnly: true,
+    // The partner-tap coupon, identical everywhere on the site: /business
+    // (business/content.ts appCoupon) shows "$2 OFF" / "$2 off your next
+    // visit" / "Expires in 30 days" (30 days after DEMO_NOW). No caption:
+    // the app prints none for a tap coupon.
+    kind: 'dollar',
+    title: '$2 off your next visit',
+    expiresAt: '2026-10-24T23:59:00',
     via: 'tap',
   },
   {
