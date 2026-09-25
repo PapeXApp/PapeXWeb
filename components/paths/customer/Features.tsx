@@ -129,23 +129,18 @@ export function Features() {
           return (
             <div
               key={key}
+              className={styles.featRow}
               ref={(el) => {
                 if (el) rowEls.current.set(key, el);
                 else rowEls.current.delete(key);
               }}
             >
-              <Reveal
-                variant="up"
-                className="grid items-center"
-                style={{
-                  // auto-fit with a floor collapses to one column when two can't
-                  // breathe; the min(100%, …) stops the floor itself overflowing
-                  // tiny screens.
-                  gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))",
-                  gap: "clamp(30px,5vw,80px)",
-                }}
-              >
-                <div style={{ order: mirrored ? 2 : 1 }}>
+              {/* Two columns only when the row is wide enough (a container query
+                  in customer.module.css). Stacked, the text ALWAYS comes first,
+                  so every whole phone sits under its own row's words; side by
+                  side, rows alternate text/phone by position. */}
+              <Reveal variant="up" className={cn(styles.featGrid, mirrored && styles.featGridMirrored)}>
+                <div className={styles.featText}>
                   <SectionLabel index={`05.${index + 1}`} style={{ marginBottom: 16 }}>
                     {row.eyebrow}
                   </SectionLabel>
@@ -181,9 +176,10 @@ export function Features() {
                     ))}
                   </ul>
                 </div>
-                <Reveal variant="mask" className="flex items-center justify-center" style={{ order: mirrored ? 1 : 2 }}>
-                  {/* Real app screens, built from PapeXV2's own tokens — see FeatureScreens.tsx. */}
-                  <FeatureShot feature={key} />
+                <Reveal variant="mask" className={cn("flex items-center justify-center", styles.featShotCell)}>
+                  {/* A whole iPhone on the app kit's screens; the quiz result picks
+                      its demo data — see FeatureScreens.tsx. */}
+                  <FeatureShot feature={key} persona={active} />
                 </Reveal>
               </Reveal>
             </div>

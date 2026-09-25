@@ -1240,7 +1240,7 @@
   width: calc(76 * var(--u));
   height: calc(76 * var(--u));
   display: block;
-  animation: appuiReadFloat 2.2s ease-in-out infinite;
+  animation: appuiReadFloat 2.2s ease-in-out 3;
 }
 @keyframes appuiReadFloat {
   0%, 100% { transform: translateY(0); }
