@@ -17,16 +17,52 @@
 //     the enter fade) and the other stays empty. Nothing is reserved while
 //     waiting: the fallback is null.
 // Either way, zero valid cards renders nothing at all.
+//
+// SAVE-LINK (lib/offerSaveLink.ts, behind OFFER_SAVE_LINK). `saveLinkHref`
+// is app/r/page.tsx's one decision (flag + iOS UA); this file's only job is
+// to place `SaveInAppLink` directly under the stack — never on its own,
+// since a save hand-off with no card to save makes no sense, and never when
+// there is no OFFER card specifically (a text/cta/savings-only stack has
+// nothing the app's Save button would act on). Passing `undefined` (the
+// flag-off / non-iOS case) renders exactly what shipped before this file
+// knew about save links — byte-identical, checked by
+// app/r/offerSaveLink.test.tsx against the existing parity/cards goldens.
+//
+// COPY: "Open in PapeX to save", not "Save in the PapeX app" — confirmed
+// against PapeXV2 origin/release/1.7.0 that opening this link IS the whole
+// action. The app's #19 auto-save (services/rdhCards/autoSave.ts, wired in
+// RdhTapCards.tsx's `below`-mount effect) files any live, unexpired offer
+// with a `save` action into the owner's wallet automatically, the first
+// time receiptDetail's cards load after this hand-off's claim completes —
+// no further tap. See lib/offerSaveLink.ts / app/r/ui.tsx's SaveInAppLink
+// doc comment for the full citation trail.
 
 import type { NormalizedCards } from "@/lib/cards/normalize";
 import type { LayoutOrder } from "@/lib/cards/types";
 import type { WebCardsTask } from "@/lib/cards/fetchCards";
 import { CardList } from "./CardList";
+import { SaveInAppLink } from "../ui";
 import styles from "./cards.module.css";
 
-export function WebCardStack({ cards, now, entering = false }: { cards: NormalizedCards; now: Date; entering?: boolean }) {
+export function WebCardStack({
+  cards,
+  now,
+  entering = false,
+  saveLinkHref,
+}: {
+  cards: NormalizedCards;
+  now: Date;
+  entering?: boolean;
+  saveLinkHref?: string;
+}) {
   if (cards.cards.length === 0) return null;
-  return <CardList cards={cards} now={now} className={entering ? styles.enter : undefined} />;
+  const showSaveLink = saveLinkHref != null && cards.cards.some((c) => c.type === "offer");
+  return (
+    <>
+      <CardList cards={cards} now={now} className={entering ? styles.enter : undefined} />
+      {showSaveLink ? <SaveInAppLink href={saveLinkHref!} label="Open in PapeX to save" /> : null}
+    </>
+  );
 }
 
 /**
@@ -34,8 +70,18 @@ export function WebCardStack({ cards, now, entering = false }: { cards: Normaliz
  * (never started here) and draws the stack only if this slot is where
  * `layout.order` puts it.
  */
-export async function StreamedCards({ task, position, now }: { task: WebCardsTask; position: LayoutOrder; now: Date }) {
+export async function StreamedCards({
+  task,
+  position,
+  now,
+  saveLinkHref,
+}: {
+  task: WebCardsTask;
+  position: LayoutOrder;
+  now: Date;
+  saveLinkHref?: string;
+}) {
   const { cards } = await task.promise;
   if (cards.cards.length === 0 || cards.layout.order !== position) return null;
-  return <WebCardStack cards={cards} now={now} entering />;
+  return <WebCardStack cards={cards} now={now} entering saveLinkHref={saveLinkHref} />;
 }

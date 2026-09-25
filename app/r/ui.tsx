@@ -789,18 +789,36 @@ export function AppCta({ platform }: { platform: Platform }) {
   );
 }
 
-// ---- "Save in the PapeX app" (rid save-link, issue #23 S4) ---------------------
+// ---- "Save in the PapeX app" (a plain universal-link hand-off) -----------------
 //
-// A second, small link under AppCta on `/r?rid=` (peer-to-peer shared
-// receipts only — see app/r/sharedReceiptView.tsx, the only caller) that
-// hands an iOS Safari visitor to `https://links.papex.app/r?rid=...&save=1`,
-// a cross-host universal link the installed app intercepts and completes the
-// save for (see lib/ridSaveLink.ts for the URL contract and the flag it sits
-// behind). Android and desktop visitors get nothing here — see that module's
-// doc comment for why.
+// Generic: a small link to whatever `href` the caller resolved, with the
+// caller's own `label`. Two callers today, each gating it differently, each
+// with DIFFERENT real in-app behaviour, and never on the same page:
+//   - app/r/sharedReceiptView.tsx: under AppCta on `/r?rid=` (peer-to-peer
+//     shared receipts), hands an iOS Safari visitor to
+//     `https://links.papex.app/r?rid=...&save=1` (lib/ridSaveLink.ts). The
+//     rid contract is explicit that this NEVER saves by itself — the app
+//     only surfaces its own Save button and the visitor must still tap it
+//     (issue23-contract.md) — so this caller keeps the literal copy "Save in
+//     the PapeX app".
+//   - app/r/cards/WebCards.tsx: under an OFFER card stack on `/r?sid=`
+//     (an RDH tap), hands an iOS Safari visitor to
+//     `https://links.papex.app/rdh?sid=...` (lib/offerSaveLink.ts). Unlike
+//     the rid case, this ONE DOES save with no further tap: PapeXV2's #19
+//     auto-save (origin/release/1.7.0 services/rdhCards/autoSave.ts, wired
+//     in components/rdhCards/RdhTapCards.tsx:163-181's `below`-mount effect,
+//     mounted at app/receiptDetail.tsx:4227) files any live, unexpired offer
+//     that carries a `save` action into the owner's wallet automatically,
+//     the first time receiptDetail's cards load after the claim — which is
+//     exactly what happens right after this link's hand-off completes. So
+//     this caller's label says "Open in PapeX to save", not "Save in the
+//     PapeX app": opening is the whole action, and promising a further Save
+//     step the app never asks for would be dishonest.
+// Both callers restrict this to iOS themselves — see each module's doc
+// comment for why Android/desktop get nothing here.
 //
 // Server component: a plain <a>, no client JS, same as AppCta above.
-export function SaveInAppLink({ href }: { href: string }) {
+export function SaveInAppLink({ href, label = "Save in the PapeX app" }: { href: string; label?: string }) {
   return (
     <p className="text-center text-xs" style={{ color: S.textMuted }}>
       <a
@@ -808,7 +826,7 @@ export function SaveInAppLink({ href }: { href: string }) {
         className="font-medium underline underline-offset-2"
         style={{ color: T.orange }}
       >
-        Save in the PapeX app
+        {label}
       </a>
     </p>
   );
