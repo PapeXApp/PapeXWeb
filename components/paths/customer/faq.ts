@@ -22,6 +22,12 @@ export const customerFaq: FaqItem[] = [
     a: "Yes. Getting your receipt with a tap is free, and the PapeX app is free on the App Store and Google Play.",
   },
   {
+    // Added 2026-09-24 (Nico): coupons are live, not a receipt-only app —
+    // "at select stores" per the approved facts, never every store.
+    q: "Do I get coupons?",
+    a: "At select stores, yes: a tap can get you a coupon for your next visit. Anywhere else, scan a coupon to save it in PapeX, and favorite the ones you'll use.",
+  },
+  {
     q: "Does PapeX work on Android?",
     a: "Yes. iPhone or Android: tap and your receipt opens (iPhone in an App Clip, Android in the browser).",
   },
