@@ -1,27 +1,14 @@
-import Image from "next/image"
 import { Phone } from "lucide-react"
 import { WordReveal, ChildStagger, Ripple, Spotlight } from "@/components/motion"
 import { FlowSection } from "../shared/FlowSection"
 import { SectionLabel } from "../shared/SectionLabel"
+import { parseEscPos } from "@/lib/escpos"
+import { summarizeReceipt } from "@/lib/receiptSummary"
+import { demoReceiptBytes } from "../customer/demoReceipt"
+import { receiptMoment } from "../customer/appui/Clip"
 import { hero } from "./content"
+import { LoopVisual } from "./hero/LoopVisual"
 import styles from "./business.module.css"
-
-// Local, declarative-only keyframe for the RDH artwork's infinite float loop
-// (`animation:floaty 7s` in the prototype, PapeX Home.dc.html:753). Plain CSS
-// animation, not hand-rolled JS — the motion toolkit's `Loops` behaviors
-// (`floaty`) aren't part of its exported component API, so it's recreated
-// here scoped to this file. `prefers-reduced-motion` collapses it to static.
-function HeroLoopStyles() {
-  return (
-    <style>{`
-      @keyframes rdh-hero-floaty { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-10px) } }
-      .rdh-hero-float { animation: rdh-hero-floaty 7s ease-in-out infinite }
-      @media (prefers-reduced-motion: reduce) {
-        .rdh-hero-float { animation: none }
-      }
-    `}</style>
-  )
-}
 
 // 3.1 Hero — NAVY. The fork's navy top half leads here (2026-09-10), so the
 // page opens on the same flat #00121D and the commit reads as that half
@@ -32,14 +19,29 @@ function HeroLoopStyles() {
 // hero's bottom edge into section 02. `styles.screen` makes it >= 100svh and
 // centres the column in that box, so the device is fully contained and the
 // CTA row sits on the screen's midline instead of leaving a dead band under
-// it. The device is scaled up to use the height the screen now gives it.
+// it.
+//
+// Web 2.1 wave 3 (Nico, 2026-09-24): the visual column no longer shows the
+// PapeX device box ("we don't want to make it seem like we're a hardware
+// company… especially if investors are looking"), and the infinite float
+// that came with it is gone. It shows the RETURN-VISIT LOOP instead — tap ->
+// coupon -> comes back — on one phone: hero/LoopVisual.tsx.
 export function Hero() {
+  // The demo receipt is decoded HERE, on the server, through this repo's own
+  // lib/escpos.ts + lib/receiptSummary.ts (same bytes and path as /customers),
+  // so the parser never ships in the /business bundle.
+  const summary = summarizeReceipt(parseEscPos(demoReceiptBytes()).lines)
+  const clock = receiptMoment(summary.dateline).time
   return (
     <FlowSection
       ground="navy"
       className={`${styles.screen} overflow-hidden px-[clamp(20px,5vw,56px)] pb-[var(--section-pad-y)] pt-[clamp(96px,12vh,120px)]`}
     >
-      <HeroLoopStyles />
+      {/* No JS: LoopVisual's stage waits hidden for hydration (see its
+          FIRST PAINT note); without JS it must show its final frame. */}
+      <noscript>
+        <style>{`[data-hero-loop]{opacity:1!important}`}</style>
+      </noscript>
       <Spotlight
         strength={70}
         className="pointer-events-none absolute inset-0"
@@ -137,19 +139,9 @@ export function Hero() {
           </a>
         </ChildStagger>
 
-        {/* RDH device at the POS — real product artwork (3.1c). */}
-        <div className="flex items-center justify-center">
-          <div className="rdh-hero-float">
-            <Image
-              src="/product/rdh-device.svg"
-              alt={hero.deviceAlt}
-              width={520}
-              height={423}
-              className="h-auto w-[clamp(300px,36vw,520px)]"
-              style={{ filter: "drop-shadow(0 30px 60px rgba(0,0,0,.45))" }}
-              priority
-            />
-          </div>
+        {/* The return-visit loop: tap -> coupon -> comes back. */}
+        <div className="flex min-w-0 items-center justify-center">
+          <LoopVisual summary={summary} clock={clock} />
         </div>
       </div>
     </FlowSection>
