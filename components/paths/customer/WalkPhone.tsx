@@ -14,11 +14,14 @@ import { hasAppMedia } from "../shared/appMediaIndex";
 import ip from "./iphone.module.css";
 
 /** How long the App Clip card shows between the tap (step 1 -> 2) and the
- *  rendered receipt. Long enough to read "Tap to View Your Receipt". */
-const WALK_CARD_MS = 1100;
-/** How long step 3 shows the Receipts tab before the app moves to Coupons,
- *  where the coupon the same tap brought sits (W3: coupons are live). */
-const WALK_COUPONS_MS = 2200;
+ *  rendered receipt. Long enough to read "Tap to View Your Receipt".
+ *  Exported: HowItWorks' autoplay waits it out before moving on. */
+export const WALK_CARD_MS = 1100;
+/** Step 3 is the demo's end (P3-C1, 2026-09-25): the app slowly alternates
+ *  between the Receipts tab and the Coupons tab — where the coupon the same
+ *  tap brought sits (W3: coupons are live) — holding each this long, for as
+ *  long as the phone is on screen. Was a one-shot switch at 2200ms. */
+const WALK_TAB_MS = 3500;
 
 /**
  * The iPhone every phone on /customers is drawn in, and the "How it works"
@@ -92,9 +95,12 @@ export function PhoneChrome({
 export function WalkPhone({
   step,
   tapCopy,
+  active = true,
 }: {
   step: number;
   tapCopy: { headline: string; subline: string; caption: string };
+  /** The phone is on screen. The step-3 tab alternation pauses while false. */
+  active?: boolean;
 }) {
   /* Same decode path as the hero: real ESC/POS bytes through this repo's own
      lib/escpos.ts + lib/receiptSummary.ts, so step 2 shows the receipt a real
@@ -128,15 +134,19 @@ export function WalkPhone({
 
   const lockOn = step === 0 || cardBeat;
 
-  /* Step 3: the Receipts tab first, then (once, a beat later) the Coupons
-     tab. Leaving the step resets it; reduced motion stays on Receipts. */
+  /* Step 3: Receipts first, then Coupons, Receipts, Coupons… one tab every
+     WALK_TAB_MS, crossfading (appScreens' .layer), for as long as the phone is
+     on screen. Off-screen it pauses where it is; leaving the step resets it
+     to Receipts; reduced motion stays on Receipts, a still frame. */
   const [couponsOn, setCouponsOn] = useState(false);
   useEffect(() => {
-    setCouponsOn(false);
-    if (step !== 2 || prefersReduced) return;
-    const t = window.setTimeout(() => setCouponsOn(true), WALK_COUPONS_MS);
+    if (step !== 2) setCouponsOn(false);
+  }, [step]);
+  useEffect(() => {
+    if (step !== 2 || prefersReduced || !active) return;
+    const t = window.setTimeout(() => setCouponsOn((on) => !on), WALK_TAB_MS);
     return () => window.clearTimeout(t);
-  }, [step, prefersReduced]);
+  }, [step, prefersReduced, active, couponsOn]);
 
   /* One `walk` video, if it exists, plays across all three steps; otherwise
      each step looks for its own capture and falls back to the drawn scenes. */
@@ -171,7 +181,7 @@ export function WalkPhone({
         ) : null}
       </div>
 
-      {/* --- 2: saved into the app — Receipts, then Coupons ---------------- */}
+      {/* --- 2: saved into the app — Receipts <-> Coupons, alternating ------ */}
       <div className={cn(ip.scene, step === 2 && ip.sceneOn)}>
         <WalkAppScreen summary={summary} coupons={couponsOn} time={moment.time} />
       </div>

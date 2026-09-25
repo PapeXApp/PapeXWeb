@@ -8,23 +8,25 @@ import { Reveal, WordReveal } from "@/components/motion";
 import { FlowSection } from "../shared/FlowSection";
 import { SectionLabel } from "../shared/SectionLabel";
 import { RDH_VIEWS, RdhDevice } from "./RdhDevice";
-import { WalkPhone } from "./WalkPhone";
+import { WALK_CARD_MS, WalkPhone } from "./WalkPhone";
 import { HOW_IT_WORKS_ANCHOR, howItWorksContent } from "./content";
 import styles from "./customer.module.css";
 
 /** How long the phone stays lifted onto the reader before the receipt lands (mirrors NfcPhone's bow). */
 const BOW_MS = 380;
 
+/** Autoplay timing (P3-C1). A beat on the idle lock screen before the tap,
+ *  then the bow (BOW_MS) + WalkPhone's App Clip card beat (WALK_CARD_MS),
+ *  then the clip's receipt holds long enough to read before it is saved. */
+const AUTO_LEAD_MS = 700;
+const AUTO_CLIP_HOLD_MS = 2400;
+
 /** When the stage pins. MUST match the media query on .walkRunway/.walkStage
  *  in customer.module.css — the CSS owns the layout, this only picks the
- *  behaviour. min-height raised 600 -> 850 on 2026-09-24: below that the
- *  text column (heading + 3 steps, sized off WIDTH not height) is taller
- *  than a short pinned stage can hold — see the media query's own comment
- *  in customer.module.css for the numbers. This constant is not otherwise
- *  owned by this fix; it's edited only because the file above requires it
- *  to stay in lockstep with the CSS threshold, or pinned-mode scroll logic
- *  would keep running under a stage that's visually unpinned. */
-const PIN_QUERY = "(prefers-reduced-motion: no-preference) and (min-width: 821px) and (min-height: 850px)";
+ *  behaviour. min-height 600 -> 850 (2026-09-24) -> 640 (P3-C1, 2026-09-25):
+ *  the pinned layout now compacts by viewport height instead of unpinning,
+ *  so a normal ~780px laptop window scrolls through the steps again. */
+const PIN_QUERY = "(prefers-reduced-motion: no-preference) and (min-width: 821px) and (min-height: 640px)";
 
 /** Seats the phone under the "front" RDH view (see .walkRdhSeat). The phone's
  *  top edge sits 9 viewBox units below the top face's nearest corner, so a
@@ -58,6 +60,19 @@ const RDH_SEAT = {
  * IntersectionObserver says the runway is on screen, with one rAF-throttled
  * read per frame. The list highlight follows via a CSS variable (--walk-s),
  * so scrolling re-renders React only when the whole step changes.
+ *
+ * NO MODE NEEDS A TAP TO SEE THE DEMO (P3-C1, 2026-09-25, Nico: a first-time
+ * visitor won't know to tap):
+ *   - pinned: scrolling plays it (the pin now fits down to 640px tall);
+ *   - tap mode (phones, short windows): the first time the phone is mostly
+ *     on screen it plays 1 -> 2 -> 3 by itself, once;
+ *   - after step 3 the phone keeps alternating Receipts <-> Coupons while it
+ *     is on screen (WalkPhone), and a tap/click on the phone replays the demo
+ *     from step 1 — in place, in both modes. In pinned mode a replay is only
+ *     visual: the next scroll event cancels it and the scroll position wins
+ *     again, so the two never fight;
+ *   - reduced motion: no autoplay, no alternation — the complete last step,
+ *     still steppable by tap/keys.
  */
 export function HowItWorks() {
   const stepCount = howItWorksContent.steps.length;
@@ -65,23 +80,48 @@ export function HowItWorks() {
   const [step, setStep] = useState(0);
   const [bowing, setBowing] = useState(false);
   const [pinned, setPinned] = useState(false);
+  /** The phone is mostly on screen. Drives the tap-mode autoplay and pauses
+   *  WalkPhone's tab alternation off-screen. */
+  const [inView, setInView] = useState(false);
   const prefersReduced = useReducedMotion();
   const bowTimer = useRef<number | undefined>(undefined);
   const runwayRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
+  const phoneRef = useRef<HTMLDivElement>(null);
   /** The step most recently asked for. Equal to `step` except during a bow,
    *  which lands on whatever this is when it finishes. */
   const target = useRef(0);
+  /** Timers of an autoplay / replay in flight (empty = none). */
+  const autoTimers = useRef<number[]>([]);
+  /** Tap mode's one-time autoplay has run (or the visitor took over). */
+  const autoplayed = useRef(false);
+  /** `pinned` for callbacks that must not re-subscribe when it flips. */
+  const pinnedRef = useRef(false);
 
-  useEffect(() => () => window.clearTimeout(bowTimer.current), []);
+  const stopAuto = useCallback(() => {
+    autoTimers.current.forEach((t) => window.clearTimeout(t));
+    autoTimers.current = [];
+  }, []);
+
+  useEffect(
+    () => () => {
+      window.clearTimeout(bowTimer.current);
+      stopAuto();
+    },
+    [stopAuto],
+  );
 
   useEffect(() => {
     const mq = window.matchMedia(PIN_QUERY);
-    const apply = () => setPinned(mq.matches);
+    const apply = () => {
+      pinnedRef.current = mq.matches;
+      setPinned(mq.matches);
+    };
     apply();
     mq.addEventListener("change", apply);
     return () => mq.removeEventListener("change", apply);
   }, []);
+
 
   /** Show step `next`. Leaving step 0 forwards plays the bow first. */
   const land = useCallback((next: number, animate: boolean) => {
@@ -108,6 +148,70 @@ export function HowItWorks() {
     setStep(next);
   }, []);
 
+  /** Show `next` as a demo beat: land it (with the bow on 0 -> 1) and, when
+   *  pinned, move the list's highlight with it — in pinned mode the scroll
+   *  listener normally owns --walk-s, and hands it back on the next scroll. */
+  const showBeat = useCallback(
+    (next: number, animate: boolean) => {
+      if (pinnedRef.current) stageRef.current?.style.setProperty("--walk-s", String(next));
+      land(next, animate);
+    },
+    [land],
+  );
+
+  /** Play the demo from step 1: the idle lock screen, the tap, the clip's
+   *  receipt, then saved into the app (where WalkPhone's alternation takes
+   *  over). Used by tap mode's autoplay and by every replay. */
+  const playFromStart = useCallback(() => {
+    stopAuto();
+    showBeat(0, false);
+    const tapAt = AUTO_LEAD_MS;
+    const saveAt = tapAt + BOW_MS + WALK_CARD_MS + AUTO_CLIP_HOLD_MS;
+    autoTimers.current = [
+      window.setTimeout(() => showBeat(1, true), tapAt),
+      window.setTimeout(() => {
+        autoTimers.current = [];
+        showBeat(last, true);
+      }, saveAt),
+    ];
+  }, [last, showBeat, stopAuto]);
+
+  /* Is the phone on screen? One observer for both modes. */
+  useEffect(() => {
+    const phone = phoneRef.current;
+    if (!phone) return;
+    const io = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), { threshold: 0.55 });
+    io.observe(phone);
+    return () => io.disconnect();
+  }, []);
+
+  /* Reduced motion: the complete last frame, not the first (no autoplay will
+     ever get it there). Once, after hydration — the server can't know. */
+  const reducedApplied = useRef(false);
+  useEffect(() => {
+    if (!prefersReduced || reducedApplied.current) return;
+    reducedApplied.current = true;
+    autoplayed.current = true;
+    stopAuto();
+    land(last, false);
+  }, [prefersReduced, last, land, stopAuto]);
+
+  /* Tap mode autoplays ONCE, the first time the phone is on screen. If the
+     phone leaves the screen mid-play, the play is dropped and runs again,
+     from the top, next time it comes into view — nothing plays unseen. */
+  useEffect(() => {
+    if (pinned || prefersReduced !== false) return;
+    if (inView) {
+      if (autoplayed.current || target.current !== 0) return;
+      autoplayed.current = true;
+      playFromStart();
+    } else if (autoTimers.current.length > 0) {
+      stopAuto();
+      autoplayed.current = false;
+      land(0, false);
+    }
+  }, [inView, pinned, prefersReduced, playFromStart, stopAuto, land]);
+
   /* Pinned mode: scroll position -> step. */
   useEffect(() => {
     if (!pinned) return;
@@ -127,6 +231,8 @@ export function HowItWorks() {
       land(Math.round(s), animate);
     };
     const onScroll = () => {
+      // A scroll takes back over from an in-place replay.
+      stopAuto();
       if (!raf) raf = requestAnimationFrame(() => read());
     };
     const listen = (on: boolean) => {
@@ -138,7 +244,7 @@ export function HowItWorks() {
     };
     const io = new IntersectionObserver(([entry]) => {
       listen(entry.isIntersecting);
-      onScroll(); // settle the final position on the way in AND out
+      if (!raf) raf = requestAnimationFrame(() => read()); // settle the final position on the way in AND out
     });
     io.observe(runway);
     // First read without the bow: a page restored below this section should
@@ -150,7 +256,7 @@ export function HowItWorks() {
       if (raf) cancelAnimationFrame(raf);
       stage.style.removeProperty("--walk-s");
     };
-  }, [pinned, stepCount, land]);
+  }, [pinned, stepCount, land, stopAuto]);
 
   /** Pinned mode's only way to change step: scroll to its spot in the runway.
    *  `index === stepCount` means past the runway, i.e. on to the next section. */
@@ -167,6 +273,8 @@ export function HowItWorks() {
   }
 
   function goToStep(index: number) {
+    stopAuto();
+    autoplayed.current = true;
     if (pinned) scrollToStep(index);
     else land(index, !prefersReduced);
   }
@@ -186,17 +294,39 @@ export function HowItWorks() {
      the point: an earlier version had the swipe set the guard and then call the
      guarded function, which immediately swallowed its own call and made swiping
      forward do nothing at all. */
-  function stepForward() {
+  /** `replay`: a tap/click/Enter on the finished demo plays it again from
+   *  step 1 (in place, both modes). Arrow keys pass false, so in pinned mode
+   *  ArrowRight on the last step still moves on to the next section. */
+  function stepForward(replay = true) {
+    const wasPlaying = autoTimers.current.length > 0;
+    stopAuto();
+    autoplayed.current = true;
     if (pinned) {
-      // Off the last step = on to the next section, never a wrap back to 1.
-      scrollToStep(target.current + 1);
+      if (target.current >= last) {
+        if (replay) playFromStart();
+        else scrollToStep(stepCount); // off the last step = on to the next section
+        return;
+      }
+      if (!wasPlaying) {
+        scrollToStep(target.current + 1);
+        return;
+      }
+      // A tap during a replay jumps it one beat on, in place.
+      showBeat(target.current + 1, true);
       return;
     }
     if (bowing) return;
-    land(step === last ? 0 : step + 1, !prefersReduced);
+    if (step === last) {
+      if (prefersReduced) land(0, false);
+      else playFromStart();
+      return;
+    }
+    land(step + 1, !prefersReduced);
   }
 
   function stepBack() {
+    stopAuto();
+    autoplayed.current = true;
     if (pinned) {
       if (target.current > 0) scrollToStep(target.current - 1);
       return;
@@ -204,12 +334,12 @@ export function HowItWorks() {
     land(step === 0 ? last : step - 1, false);
   }
 
-  function advance() {
+  function advance(replay = true) {
     if (swallowClick.current) {
       swallowClick.current = false;
       return;
     }
-    stepForward();
+    stepForward(replay);
   }
 
   function onPointerDown(event: React.PointerEvent) {
@@ -231,11 +361,14 @@ export function HowItWorks() {
     }
     // Horizontal intent only.
     if (Math.abs(dx) < SWIPE_MIN || Math.abs(dx) < Math.abs(dy)) return;
-    if (dx < 0) stepForward();
+    if (dx < 0) stepForward(false);
     else stepBack();
   }
 
   const cue = (pinned ? howItWorksContent.scrollCues : howItWorksContent.cues)[step];
+  // A tap on the finished demo replays it in both modes now (P3-C1), so the
+  // last cue offers "Replay" in pinned mode too (content.continueLabel is no
+  // longer shown).
   // The optional-copy fields are typed loosely in content.ts; fall back rather
   // than widen WalkPhone's props to allow undefined.
   const tapCopy = {
@@ -282,14 +415,14 @@ export function HowItWorks() {
               <SectionLabel index="02">{howItWorksContent.eyebrow}</SectionLabel>
               <WordReveal
                 as="h2"
-                className="max-w-[16ch] [font-family:var(--font-display)] font-bold text-[length:var(--fs-h2)] leading-[1.02] tracking-[-.02em]"
+                className={cn(
+                  "max-w-[16ch] [font-family:var(--font-display)] font-bold text-[length:var(--fs-h2)] leading-[1.02] tracking-[-.02em]",
+                  styles.walkHeading,
+                )}
               >
                 {howItWorksContent.headline}
               </WordReveal>
-              <div
-                className={cn("grid", !pinned && styles.walkStepsEased)}
-                style={{ marginTop: "var(--gap-body)", gap: 8 }}
-              >
+              <div className={cn(styles.walkSteps, !pinned && styles.walkStepsEased)}>
                 {howItWorksContent.steps.map((s, index) => (
                   // The row is the click target; the <button> inside is what
                   // keyboard and screen-reader users reach (its click bubbles
@@ -304,26 +437,9 @@ export function HowItWorks() {
                     <div className={styles.walkStepRail}>
                       <div className={styles.walkStepFill} data-nojs="walk-fill" />
                     </div>
-                    <div style={{ paddingBottom: index < stepCount - 1 ? 22 : 0 }}>
-                      <div
-                        style={{
-                          fontFamily: "var(--font-label)",
-                          fontWeight: 500,
-                          fontSize: 12,
-                          color: "var(--orange)",
-                          letterSpacing: ".08em",
-                        }}
-                      >
-                        {s.number}
-                      </div>
-                      <h3
-                        style={{
-                          fontFamily: "var(--font-display)",
-                          fontWeight: 600,
-                          fontSize: "clamp(21px,2.4vw,28px)",
-                          marginTop: 3,
-                        }}
-                      >
+                    <div className={styles.walkStepText}>
+                      <div className={styles.walkStepNum}>{s.number}</div>
+                      <h3 className={styles.walkStepTitle}>
                         <button
                           type="button"
                           className={styles.walkStepBtn}
@@ -332,16 +448,14 @@ export function HowItWorks() {
                           {s.title}
                         </button>
                       </h3>
-                      <p style={{ marginTop: 7, fontSize: 15, color: "var(--flow-fg-2)", lineHeight: 1.5, maxWidth: "34ch" }}>
-                        {s.body}
-                      </p>
+                      <p className={styles.walkStepBody}>{s.body}</p>
                     </div>
                   </div>
                 ))}
               </div>
             </Reveal>
 
-            <Reveal variant="up" className="flex flex-col items-center" style={{ gap: 18 }}>
+            <Reveal variant="up" className={styles.walkPhoneCol}>
               <div className={cn("relative flex items-end justify-center", styles.walkRdhSeat)} style={RDH_SEAT}>
                 {/* The reader: the SAME generated box as the hero, from its
                     sticker end. It sits behind the phone; the bow lifts the
@@ -355,14 +469,15 @@ export function HowItWorks() {
                     walkthrough is invisible to them. Pointer Events cover mouse,
                     trackpad and touch in one path. */}
                 <div
+                  ref={phoneRef}
                   role="button"
                   tabIndex={0}
                   aria-label={howItWorksContent.phoneAriaLabel}
-                  onClick={advance}
+                  onClick={() => advance()}
                   onKeyDown={(event) => {
                     if (event.key === "ArrowRight" || event.key === "ArrowDown") {
                       event.preventDefault();
-                      advance();
+                      advance(false);
                       return;
                     }
                     if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
@@ -383,7 +498,7 @@ export function HowItWorks() {
                   style={{ touchAction: "pan-y", cursor: "grab" }}
                 >
                   <div className={styles.walkTilt}>
-                    <WalkPhone step={step} tapCopy={tapCopy} />
+                    <WalkPhone step={step} tapCopy={tapCopy} active={inView} />
                   </div>
                 </div>
               </div>
@@ -399,7 +514,7 @@ export function HowItWorks() {
               <div className={styles.walkCue} data-nojs="walk-cue" aria-live="polite">
                 {step === last ? (
                   <>
-                    {cue} <b>{pinned ? howItWorksContent.continueLabel : howItWorksContent.replayLabel}</b>
+                    {cue} <b>{howItWorksContent.replayLabel}</b>
                   </>
                 ) : (
                   cue
