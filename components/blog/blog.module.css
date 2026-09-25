@@ -451,6 +451,24 @@
   position: relative;
 }
 
+/* Fine print under the form, both variants. 12px floor per spec; colour is
+   set inline per variant (foot-ink-3 / on-light-muted) so one class covers
+   both grounds. */
+.subscribeFinePrint {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.subscribeFinePrintLink {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color var(--dur-hover, 240ms) ease;
+}
+.subscribeFinePrintLink:hover {
+  color: var(--orange);
+}
+
 /* --- Closing CTA ------------------------------------------------------------ */
 .ctaSection {
   padding-bottom: var(--section-pad-y);

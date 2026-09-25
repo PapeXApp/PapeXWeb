@@ -18,6 +18,7 @@
 // the server owns validation and its message wins — see STATUS_MESSAGES below
 // for exactly how each response maps to copy.
 
+import Link from 'next/link'
 import { useId, useRef, useState, type FormEvent } from 'react'
 import { subscribeToBlog } from '@/lib/signup/client'
 import type { SignupResult } from '@/lib/signup/client'
@@ -65,6 +66,23 @@ function SubscribeForm({ source, path, variant }: BlogSubscribeFormProps) {
   const isFooter = variant === 'footer'
   const sending = status === 'sending'
 
+  // Fine print under the form, both variants (coordinator addition,
+  // 2026-09-24): small and muted, but still >=12px and legible on either
+  // ground — foot-ink-3 is the footer's own muted tone, on-light-muted is
+  // the blog card's. The link keeps the surrounding size/colour and just
+  // adds an underline, so it doesn't jump out of "fine print" register.
+  const finePrint = (
+    <p
+      className={styles.subscribeFinePrint}
+      style={{ color: isFooter ? 'var(--foot-ink-3)' : 'var(--on-light-muted)' }}
+    >
+      Only new posts, nothing else. Reply to any email to unsubscribe.{' '}
+      <Link href="/privacy" className={styles.subscribeFinePrintLink}>
+        Privacy policy
+      </Link>
+    </p>
+  )
+
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     if (sending) return
@@ -101,6 +119,7 @@ function SubscribeForm({ source, path, variant }: BlogSubscribeFormProps) {
         >
           {message}
         </p>
+        {finePrint}
       </div>
     )
   }
@@ -158,6 +177,7 @@ function SubscribeForm({ source, path, variant }: BlogSubscribeFormProps) {
       >
         {message}
       </p>
+      {finePrint}
     </div>
   )
 }
