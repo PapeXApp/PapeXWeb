@@ -1,4 +1,4 @@
-// How the quiz personalises the feature rows — section 04, Personas.tsx.
+// How the quiz (section 04, Personas.tsx) personalises section 05 Features.
 //
 // Nico, 2026-09-25: "section four gives you a personalization for section
 // five, because that's what PapeX is about, personalization… if I'm a keeper,

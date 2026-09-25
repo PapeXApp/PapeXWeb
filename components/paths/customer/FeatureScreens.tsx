@@ -47,7 +47,7 @@ import x from "./appui/appScreens.module.css";
 import styles from "./quizFeatures.module.css";
 
 /**
- * The five feature phones (section 04, under the quiz): Find, Export, Add,
+ * The five feature phones (section 05 Features, the quiz's outcome): Find, Export, Add,
  * Share, Deals.
  *
  * CROPPED PHONES (P3-C2, Nico 2026-09-25 — back from the whole phones of

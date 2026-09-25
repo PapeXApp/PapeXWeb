@@ -164,17 +164,15 @@ export interface PersonaResult {
  * Personas.tsx so it wins ties by design (the middle ground / safest read).
  */
 export const personasContent = {
-  // Web 2.1 P3-C2 (Nico, 2026-09-25): the quiz and the feature list are ONE
-  // section (04, Personas.tsx) whose point is personalisation — "that's what
-  // PapeX is about". The quiz is the head; its result re-orders the feature
-  // rows under it and swaps their lines and phone content (personaFeatures.ts).
+  // Web 2.1 (Nico, 2026-09-24): the quiz answers "what's in it for ME", and
+  // its result re-orders section 05 Features and swaps its lines and phone
+  // content (personaFeatures.ts). The quiz itself is the 9ef8fd4 quiz,
+  // unchanged (P3-C3, Nico 2026-09-25: "don't touch the questionnaire").
   eyebrow: "What's in it for you?",
   headline: "Answer 3 questions.",
-  intro: "Tell us how you handle receipts, and the list below puts the parts of PapeX that matter to you first.",
+  intro: "Tap an answer for each and we'll tell you which kind of receipt person you are.",
   tapHint: "Tap an answer",
   restartLabel: "Take it again",
-  /** Result panel link down to the re-ordered list. */
-  seeListLabel: "See your picks",
   questions: [
     {
       prompt: "Someone asks you for a receipt from three months ago.",
@@ -229,7 +227,7 @@ export const personasContent = {
   ] satisfies PersonaResult[],
 };
 
-// Section 04's feature rows — five rows, live app features only (Nico's list,
+// Section 05 Features — five rows, live app features only (Nico's list,
 // 2026-09-24, plus Export 2026-09-25). Each row is drawn as a REAL app screen
 // by FeatureScreens.tsx (built from PapeXV2's own tokens, per
 // docs/design/app-reference.md), not an image. The ORDER of the rows, the
@@ -246,7 +244,7 @@ export const personasContent = {
 export type FeatureKey = "find" | "export" | "add" | "share" | "deals";
 
 export interface FeatureRow {
-  /** The row's one-word label, set as its [04.N] eyebrow. */
+  /** The row's one-word label, set as its [05.N] eyebrow. */
   eyebrow: string;
   title: string;
   /** The live features the row covers, as short tags under its line. */
@@ -254,8 +252,10 @@ export interface FeatureRow {
 }
 
 export const featuresContent = {
-  // No eyebrow/headline of its own any more: the rows sit under the quiz in
-  // section 04, headed by the "Picked for you" line (personaFeatures.ts).
+  // Its own section again (P3-C3): the 9ef8fd4 eyebrow + headline, then the
+  // "Showing / Picked for you" header over the rows (personaFeatures.ts).
+  eyebrow: "Once it's yours",
+  headline: "Every receipt, kept and searchable.",
   rows: {
     find: {
       eyebrow: "Find",
