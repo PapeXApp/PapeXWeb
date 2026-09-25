@@ -5,7 +5,9 @@
    Geometry is in cqw of .stage (its inline-size container). Two shapes:
      desktop  2:1 stage, as wide as the section's 1150px column allows while
               the pin still fits under the nav (height-capped).
-     <=820px  3:5 stage: phone + device sit small, top-right, over the laptop.
+     <=820px  1:2 stage as tall as the pin allows: a whole, large iPhone with
+              the device under it; no laptop — the phone dashboard card
+              (.pd*, PhoneDashboard.tsx) blooms over the stage instead (B6).
    Everything below is the scene's RESTING geometry = its final layout (the
    laptop on the left, phone + device on the right). The component measures
    these boxes once (measure()) and every motion is a transform from them.
@@ -1230,70 +1232,578 @@
   }
 }
 
+/* --- the phone dashboard card (<=820px only; hidden on desktop) -------------
+   story/PhoneDashboard.tsx. Replaces the laptop on phones (Web 2.1 B6): the
+   scaled laptop put the dashboard's text at ~6px on a 390px screen, so this
+   card is laid out for a phone at REAL sizes (body 13-14px, labels 11px, key
+   numbers 22px, search 16px so iOS never zooms on focus) and is never scaled.
+   Same palette as the laptop's dashboard (app/merchant/ui/tokens.ts).
+   Both uses are fixed-height `pdash` size containers: the scene's fills the
+   stage, the static one is 660px; the hour bars take any spare height, and
+   the top items drop out (never get cut) when the card is too short. */
+.pd {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  background: #181a20;
+  box-shadow: 0 24px 48px -20px rgba(0, 18, 29, 0.55);
+  color: #f4f4f4;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.3;
+  text-align: left;
+}
+.pd button,
+.pd input {
+  font: inherit;
+  color: inherit;
+}
+.pd button {
+  cursor: pointer;
+}
+.pd :focus-visible {
+  outline: 2px solid #fb8500;
+  outline-offset: 1px;
+}
+.pd [hidden] {
+  display: none !important;
+}
+/* in the scene: the whole stage, capped for tall tablets and centred there */
+.pdScene {
+  position: absolute;
+  inset: 0;
+  height: min(100%, 760px);
+  margin-block: auto;
+  z-index: 5;
+  opacity: 0;
+  container: pdash / size;
+}
+/* reduced motion: a still card under the tap figure */
+.pdStatic {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  height: 660px;
+  margin: 0 auto;
+  container: pdash / size;
+}
+.pdTop {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 24px;
+}
+.pdBrand {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 17px;
+  font-weight: 600;
+}
+.pdBrand i {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: #fb8500;
+}
+.pdBrand small {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: #9aa1a8;
+}
+.pdDemo {
+  padding: 3px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 99px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9aa1a8;
+}
+.pdTabs {
+  flex: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 3px;
+  padding: 3px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.06);
+}
+.pdTabs button {
+  height: 30px;
+  border: 0;
+  border-radius: 99px;
+  background: none;
+  color: #c4c7cc;
+  font-size: 14px;
+}
+.pdTabs .pdOn {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+.pdPanel {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pdRanges {
+  flex: none;
+  align-self: flex-start;
+  display: flex;
+  padding: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 99px;
+}
+.pdRanges button {
+  height: 26px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 99px;
+  background: none;
+  color: #c4c7cc;
+  font-size: 13px;
+}
+.pdRanges .pdRangeOn {
+  background: #fb8500;
+  color: #fff;
+}
+.pdToast {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid rgba(251, 133, 0, 0.55);
+  border-radius: 12px;
+  background: rgba(251, 133, 0, 0.12);
+  text-align: left;
+}
+.pdToast:hover {
+  background: rgba(251, 133, 0, 0.2);
+}
+.pdToastLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+.pdToastDot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fb8500;
+  box-shadow: 0 0 6px #fb8500;
+}
+.pdToastLead {
+  flex: 1;
+  color: #fb8500;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.pdToastText {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+}
+.pdToastAmt {
+  flex: none;
+  font-size: 15px;
+  font-weight: 600;
+}
+.pdTag {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: rgba(0, 136, 234, 0.18);
+  color: #7fc4ec;
+  font-size: 11px;
+}
+.pdTagOff {
+  background: rgba(255, 255, 255, 0.07);
+  color: #9aa1a8;
+}
+.pdTiles {
+  flex: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.pdTile,
+.pdCard {
+  min-width: 0;
+  padding: 9px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(20, 26, 36, 0.6);
+}
+.pdLabel {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9aa1a8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pdValueBox {
+  position: relative;
+  height: 28px;
+  margin-top: 3px;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 28px;
+}
+.pdValueEmpty,
+.pdValue {
+  position: absolute;
+  left: 0;
+  top: 0;
+  white-space: nowrap;
+}
+.pdValueEmpty {
+  color: #5f6670;
+  opacity: 0;
+}
+/* wraps on a narrow card rather than losing words */
+.pdNote {
+  margin-top: 1px;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.25;
+  color: #c4c7cc;
+}
+.pdCard {
+  display: flex;
+  flex-direction: column;
+}
+/* the only part that grows: spare card height goes to the bars */
+.pdHours {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.pdBars {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 56px;
+  max-height: 240px;
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  margin-top: 8px;
+}
+.pdBarSlot {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0;
+  border: 1px solid rgba(251, 133, 0, 0.3);
+  border-radius: 3px;
+  background: none;
+}
+.pdBarBtn:hover,
+.pdBarBtn:focus-visible {
+  border-color: #fb8500;
+}
+.pdBar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(251, 133, 0, 0.62);
+  border-top: 2px solid #fb8500;
+  transform-origin: 50% 100%;
+}
+.pdTip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  z-index: 2;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #f4f4f4;
+  color: #181a20;
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.pdTipStart {
+  left: 0;
+  transform: none;
+}
+.pdTipEnd {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+.pdAxis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+  font-size: 11px;
+  color: #9aa1a8;
+}
+.pdItems {
+  flex: none;
+}
+.pdItem {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 8.5em) minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 8px;
+  height: 20px;
+  margin-top: 3px;
+  font-size: 13px;
+}
+.pdItemRank,
+.pdItemQty {
+  color: #9aa1a8;
+}
+.pdItemQty {
+  text-align: right;
+}
+.pdItemName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pdItemTrack {
+  height: 5px;
+  border-radius: 99px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+}
+.pdItemTrack i {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: #fb8500;
+  transform-origin: 0 50%;
+}
+/* a card too short for everything: the top items go, whole (never cut).
+   Measured: with them the content needs 600px at the bars' 56px minimum,
+   ~614px if the tap-rate note wraps on a narrow card
+   (a container query reads the CONTENT box: card height - 26px) */
+@container pdash (max-height: 614px) {
+  .pdItems {
+    display: none;
+  }
+}
+/* --- Receipts: one search field, then the sales --- */
+.pd .pdSearch {
+  flex: none;
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  background: rgba(20, 26, 36, 0.8);
+  /* 16px: the placeholder fits whole at ~200px, and iOS doesn't zoom */
+  font-size: 16px;
+}
+.pdSearch::placeholder {
+  color: #7b828c;
+}
+.pdListHead {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 22px;
+  font-size: 12px;
+  color: #9aa1a8;
+}
+.pdChip {
+  padding: 2px 10px;
+  border: 1px solid rgba(251, 133, 0, 0.6);
+  border-radius: 99px;
+  background: rgba(251, 133, 0, 0.12);
+  color: #fb8500;
+}
+.pdList {
+  flex: 1 1 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+}
+.pdSale {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 3px;
+  width: 100%;
+  padding: 9px 4px;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: none;
+  text-align: left;
+}
+.pdSale:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.pdSaleWhat {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+.pdSaleAmt {
+  text-align: right;
+  font-size: 13px;
+  font-weight: 600;
+}
+.pdSaleWhen {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11.5px;
+  color: #9aa1a8;
+}
+.pdSale .pdTag {
+  justify-self: end;
+}
+.pdEmpty {
+  padding: 16px 4px;
+  font-size: 13px;
+  color: #9aa1a8;
+}
+/* a receipt as the customer saw it, over the whole card; the App Clip kit's
+   units in cqw of the card (registered, so they reach it as px): ~310px of
+   receipt on a 335px card, the width it is drawn for on a phone */
+.pdSheet {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  border-radius: inherit;
+  background: rgba(10, 12, 16, 0.97);
+  --story-dash-u: 0.235cqw;
+  --story-dash-ac: 0.27cqw;
+  --u: var(--story-dash-u);
+  --ac-u: var(--story-dash-ac);
+}
+.pdSheetBar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 13px;
+  color: #c4c7cc;
+}
+.pdSheetBar button {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 18px;
+  line-height: 1;
+}
+.pdSheetBody {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px 12px 14px;
+}
+
 /* --- phones and tablets ------------------------------------------------------- */
+/* B6 (Nico at 375-390px: "I want to see a full phone... we have a lot of blank
+   space, use it well"). The stage is a 1:2 box, as tall as the pin allows
+   under the nav: 64px nav band + 12px gap + 38px (two-line hint) + ~14px of
+   margin = 128px. At 375x812 that is 335x670, at 390x844 350x700.
+   The tap pose's iPhone is 158cqw of screen (a ~165cqw frame, ~80% of the
+   stage's height), whole, with the PapeX device fully in view under its lower
+   right. Once the receipt lands the pair shrinks, whole, to the top-right
+   corner and the dashboard CARD (not the laptop) blooms over the stage. */
 @media (max-width: 820px) {
   .pin {
     padding-top: 64px;
   }
   .stage {
-    width: min(100%, calc((100svh - 190px) * 0.6));
-    aspect-ratio: 3 / 5;
+    width: min(100%, calc((100svh - 128px) / 2));
+    aspect-ratio: 1 / 2;
     --rig-shift: -14;
-    --g-post-x: 20;
-    --g-post-y: -26;
-    --g-post-s: 0.55;
+    /* the pair's union box (x 2-96, y 2-195 cqw) at 0.42, to the top-right
+       corner with a 3cqw margin: x 57.5-97, y 3-84 */
+    --g-post-x: 27.68;
+    --g-post-y: -55.84;
+    --g-post-s: 0.42;
     --dock-group: 0;
+    /* read by measure(): the phone card replaces the laptop */
+    --phone-dash: 1;
+    /* a gentler tilt for the taller phone, so its top corner stays in */
+    --bow-rot: 3;
   }
   .ground {
-    height: 22%;
+    height: 16%;
   }
+  /* act 1, centred in the taller stage (printer top 22 -> bin bottom 170) */
   .printer {
     left: 20cqw;
+    top: 22cqw;
     width: 60cqw;
   }
   .feedClip {
     left: 26cqw;
-    top: 25.8cqw;
+    top: 47.8cqw;
     width: 48cqw;
   }
   .bin {
     left: 71cqw;
+    bottom: 30cqw;
     width: 26cqw;
   }
-  /* tap pose: a phone big enough for the App Clip kit (its unit floors
-     assume ~330px+), centred; then 0.55x up to the top-right */
+  /* tap pose: the group is the whole stage; everything in it stays inside
+     0-100cqw across the bow (tilt 3deg: top-right corner reaches ~97cqw) */
   .group {
-    left: 10cqw;
-    top: 10cqw;
-    width: 80cqw;
-    height: 120cqw;
+    left: 0;
+    top: 0;
+    width: 100cqw;
+    height: 200cqw;
+    pointer-events: none;
   }
   .phone {
-    --story-phone-h: 94cqw;
-    left: 6cqw;
+    --story-phone-h: 158cqw;
+    left: 2cqw;
     top: 2cqw;
   }
   .device {
-    left: 36cqw;
-    top: 84cqw;
-    width: 40cqw;
+    left: 58cqw;
+    top: 164cqw;
+    width: 38cqw;
   }
-  /* a 4:3 screen on phones: room for the dashboard at a legible size */
-  .laptop {
-    left: 5cqw;
-    top: 84cqw;
-    width: 90cqw;
-    height: 71.5cqw;
+  /* no laptop on phones: the dashboard card takes its place */
+  .laptop,
+  .staticScreen,
+  .staticDeck {
+    display: none;
   }
-  .lid {
-    height: 67.5cqw;
-  }
-  .deck {
-    top: 67.5cqw;
-    height: 4cqw;
-  }
-  .staticScreen {
-    aspect-ratio: 4 / 3;
+  .pd {
+    display: flex;
   }
   .dot {
     width: 2.2cqw;
@@ -1305,31 +1815,10 @@
     height: 3.2cqw;
     margin: -1.6cqw 0 0 -1.6cqw;
   }
-  /* the docked laptop gets most of a phone screen; the info continues below */
+  /* measure() sizes the slot to the card (it docks at 1:1); the info
+     continues below it */
   .slot {
     min-height: 36svh;
-  }
-  /* the docked laptop is ~310px wide here: one bigger base size, and the
-     receipt sheet uses the full width */
-  .dash {
-    --dash-fs: 3cqw;
-  }
-  .dashSheetBody {
-    padding: 0.6em 4%;
-  }
-  .staticScreen .dash {
-    --dash-fs: 3.1cqw;
-  }
-  /* the date select sizes to its own label ("All dates") on a phone */
-  .dashFilters {
-    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 0.75fr) max-content;
-  }
-  .dashFilters select {
-    padding: 0 0.3em 0 0.5em;
-  }
-  .dashSheet {
-    --story-dash-u: 0.23cqw;
-    --story-dash-ac: 0.26cqw;
   }
   /* the pinned info must fit one phone screen under the docked laptop: the
      lead repeats the beat line just above it, so it goes (the static
@@ -1361,8 +1850,10 @@
   .staticArt {
     min-height: 0;
   }
+  /* the still phone as large as fits beside its device (frame 0.507h wide,
+     plus ~80px of device) */
   .staticPhone {
-    --story-phone-h: 300px;
+    --story-phone-h: min(400px, calc((100vw - 120px) * 1.9));
   }
   .staticDevice {
     width: 130px;

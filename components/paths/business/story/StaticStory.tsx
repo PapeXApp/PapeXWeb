@@ -6,6 +6,7 @@ import { PhoneChrome } from "../../customer/WalkPhone"
 import { CustomerLine, DashboardColumns, DashboardCopy } from "../DashboardPreview"
 import { story } from "../story"
 import { Dashboard } from "./Dashboard"
+import { PhoneDashboard } from "./PhoneDashboard"
 import { DeviceArt } from "./Furniture"
 import { useDemoReceipt } from "./receipt"
 import { SlipBody } from "./Slip"
@@ -73,6 +74,8 @@ export function StaticStory() {
             <Dashboard live />
           </div>
           <div className={s.staticDeck} aria-hidden="true" />
+          {/* <=820px: the phone card instead of the laptop (CSS shows one) */}
+          <PhoneDashboard live className={s.pdStatic} />
         </div>
         <figcaption className={s.staticCap}>
           <strong>{dash.title}</strong>
