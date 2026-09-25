@@ -38,7 +38,7 @@ type Phase = "rest" | "clear" | "redacted"
 const NEVER_COLLECTED = [
   "Your name",
   "Your email or phone number",
-  "Your card number (a receipt only shows the last 4 digits)",
+  "Your card number",
   "An account or a sign-up",
 ]
 
@@ -57,8 +57,7 @@ export function Privacy({ eyebrowIndex }: { eyebrowIndex: string }) {
               Your receipt, not your identity.
             </WordReveal>
             <p className={styles.lead}>
-              A tap sends your receipt, and only your receipt. No sign-up, no personal info, and never more of your
-              card than the last 4 digits already printed on paper.
+              A tap sends your receipt, and only your receipt. No sign-up, no personal info.
             </p>
             <p className={styles.body}>
               Save it to the PapeX app and it&apos;s yours: delete a receipt, or your whole account, any time.
@@ -177,8 +176,6 @@ function RedactingReceipt() {
             <span className={styles.kept}>{KEPT_GROUP}</span>
           </span>
         </div>
-        <p className={styles.rNote}>Last 4 only, same as the paper slip.</p>
-
         <div className={styles.stamp}>Receipt only</div>
       </div>
     </div>

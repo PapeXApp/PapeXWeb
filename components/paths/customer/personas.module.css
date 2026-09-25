@@ -1,5 +1,8 @@
 /* ==========================================================================
- * 03 Personas — the one-question-at-a-time quiz (2026-09-23, Web 2.1 T7).
+ * 04 Personas — the one-question-at-a-time quiz (2026-09-23, Web 2.1 T7).
+ * Since P3-C2 (2026-09-25) it is the HEAD of the merged personalisation
+ * section; the section layout (padding, head grid, the feature rows under
+ * it) lives in quizFeatures.module.css. This file keeps the quiz itself.
  *
  * The page's FIRST navy beat. Ink rule (components/paths/shared/flow.module.css):
  * anything that sits on the ground takes --flow-fg / --flow-fg-2 so it
@@ -33,44 +36,26 @@
   --q-edge: color-mix(in srgb, var(--flow-fg) 36%, transparent);
   --q-track: rgba(245, 245, 245, 0.18);
   --q-track: color-mix(in srgb, var(--flow-fg) 18%, transparent);
-
-  padding: var(--section-pad-y) var(--section-pad-x);
-}
-
-/* Desktop: the section owns one screen and centres in it, like /business's
-   `.screen`. Below 821px it stacks and scrolls (same breakpoint). */
-@media (min-width: 821px) {
-  .section {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    min-height: 100svh;
-  }
-}
-
-.inner {
-  width: 100%;
-  max-width: var(--section-max);
-  margin: 0 auto;
 }
 
 .intro {
-  margin: var(--gap-title) auto 0;
-  max-width: 46ch;
+  margin: var(--gap-title) 0 0;
+  max-width: 40ch;
   font-size: var(--fs-lead);
   line-height: 1.55;
   color: var(--flow-fg-2);
 }
 
 .quiz {
-  max-width: 780px;
-  margin: var(--gap-body) auto 0;
+  /* Clears the fixed nav when "Answer 3 questions" / "Change my answers"
+     scrolls here. */
+  scroll-margin-top: 96px;
 }
 
 /* --- Progress ------------------------------------------------------------- */
 
 .progress {
-  margin-bottom: var(--gap-body);
+  margin-bottom: clamp(16px, 1.8vw, 24px);
 }
 .progressRow {
   display: flex;
@@ -170,16 +155,27 @@
 .stage {
   position: relative;
 }
-@media (min-width: 821px) {
-  /* Tall enough for either the question or the result, so the centred
-     screen doesn't shift up and down between steps. */
+/* Tall enough for every question AND every result at each width, so the
+   feature rows under the quiz don't shift between steps. Measured 2026-09-25
+   (tallest panel per width): 1440 → 335 (Non-Keeper result), 960 → 356,
+   820/700/640 → 295, 390 → 402 (Question 3), 360 → 425. Narrow phones stack
+   the four answers, so the floor grows as the column narrows. */
+.stage {
+  min-height: max(300px, calc(300px + (640px - 100vw) * 0.45));
+}
+@media (min-width: 640px) {
   .stage {
-    min-height: 420px;
+    min-height: 300px;
+  }
+}
+@media (min-width: 960px) {
+  .stage {
+    min-height: 360px;
   }
 }
 
 .panel {
-  text-align: center;
+  text-align: left;
 }
 .enterForward {
   animation: quizEnterForward 0.5s var(--ease-out-expo) both;
@@ -209,8 +205,8 @@
 }
 
 .prompt {
-  max-width: 26ch;
-  margin: 0 auto;
+  max-width: 30ch;
+  margin: 0;
   font-family: var(--font-display);
   font-weight: 700;
   font-size: clamp(22px, 2.6vw, 32px);
@@ -224,7 +220,7 @@
   outline: none;
 }
 .hint {
-  margin: 10px auto 0;
+  margin: 8px 0 0;
   font-family: var(--font-label);
   font-size: var(--fs-eyebrow);
   font-weight: 500;
@@ -253,15 +249,15 @@
   align-items: center;
   gap: 14px;
   width: 100%;
-  min-height: 64px;
-  padding: 14px 16px;
+  min-height: 60px;
+  padding: 12px 14px;
   border: 1.5px solid var(--q-edge);
   border-radius: var(--r-16);
   background: var(--q-surface);
   color: var(--flow-fg);
   font: inherit;
-  font-size: 16px;
-  line-height: 1.4;
+  font-size: 15px;
+  line-height: 1.38;
   text-align: left;
   cursor: pointer;
   transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease, opacity 0.3s ease,
@@ -364,13 +360,12 @@
 .resultPanel {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
 }
 .resultCard {
   position: relative;
   width: 100%;
-  max-width: 620px;
-  padding: clamp(28px, 2.8vw, 34px) clamp(22px, 3vw, 40px) clamp(22px, 2.4vw, 30px);
+  padding: clamp(26px, 2.6vw, 30px) clamp(20px, 2.6vw, 32px) clamp(20px, 2.2vw, 26px);
   border: 2px solid var(--orange);
   border-radius: var(--r-card);
   background: var(--q-surface);
@@ -394,8 +389,7 @@
 .resultTag {
   position: absolute;
   top: -13px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: clamp(20px, 2.6vw, 32px);
   padding: 5px 13px;
   border-radius: 999px;
   background: var(--orange);
@@ -415,8 +409,8 @@
   color: var(--orange);
 }
 .resultTitle {
-  margin: 12px auto 0;
-  max-width: 22ch;
+  margin: 10px 0 0;
+  max-width: 26ch;
   font-family: var(--font-display);
   font-weight: 700;
   font-size: clamp(24px, 2.8vw, 34px);
@@ -424,26 +418,47 @@
   color: var(--flow-fg);
 }
 .resultBody {
-  margin: 12px auto 0;
-  max-width: 48ch;
-  font-size: var(--fs-lead);
+  margin: 10px 0 0;
+  max-width: 52ch;
+  font-size: 16px;
   line-height: 1.55;
   color: var(--flow-fg-2);
 }
 
-.resultActions {
-  display: flex;
-  flex-direction: column;
+/* "See your picks" — the jump down to the re-ordered rows. */
+.seeList {
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-top: clamp(20px, 2vw, 28px);
+  margin-top: 14px;
+  color: var(--orange);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.seeList:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.seeList:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.resultActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-top: clamp(16px, 1.8vw, 22px);
 }
 .cta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 52px;
-  padding: 0 32px;
+  min-height: 48px;
+  padding: 0 26px;
   border-radius: 999px;
   background: var(--orange);
   color: var(--navy);
@@ -477,7 +492,6 @@
   align-items: center;
   gap: 8px;
   min-height: 44px;
-  margin-top: 6px;
   padding: 0 16px;
   border: none;
   border-radius: 999px;

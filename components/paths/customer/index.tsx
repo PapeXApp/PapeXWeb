@@ -8,7 +8,6 @@ import { Hero } from "./Hero";
 import { Problem } from "./Problem";
 import { MarqueeBand } from "./MarqueeBand";
 import { Personas } from "./Personas";
-import { Features } from "./Features";
 import { HowItWorks } from "./HowItWorks";
 import { Vision } from "./Vision";
 import { Privacy } from "./Privacy";
@@ -22,23 +21,24 @@ import styles from "./customer.module.css";
  * FlowGround crossfades ONE page-level ground between them (see
  * components/paths/shared/flow.module.css).
  *
- * Web 2.1 FINAL ORDER (Nico, 2026-09-24, merge wiring). Show WHAT first,
- * then answer the visitor's next question, in the order they ask it:
+ * Web 2.1 FINAL ORDER (Nico, 2026-09-24, merge wiring; 04+05 merged in P3-C2,
+ * 2026-09-25). Show WHAT first, then answer the visitor's next question, in
+ * the order they ask it:
  *   01 Hero                              light
  *   02 How it works (walkthrough)        light  (the hero cue scrolls here)
  *      ribbon                            (no ground of its own)
  *   03 Problem — "Why does it matter?"   light
- *   04 Quiz — "What's in it for you?"    NAVY
- *   05 Features — "What else can I do?"  NAVY   id="features"
- *      (the quiz result re-orders Features' four rows: personaStore.ts)
- *   06 Privacy                           light
- *   07 Get it — Vision + Download        NAVY
- *   08 FAQ                               NAVY   id="faq"
+ *   04 "What's in it for you?"           NAVY   id="features"
+ *      ONE section about personalisation: the quiz is its head, and its
+ *      result re-orders the feature rows under it (Personas.tsx +
+ *      Features.tsx, hand-off in personaStore.ts)
+ *   05 Privacy                           light
+ *   06 Get it — Vision + Download        NAVY
+ *   07 FAQ                               NAVY   id="faq"
  *      footer                            NAVY   (FlowGround's footer slot,
  *                                                outside <main>)
- * 04→05 is navy next to navy by Nico's order; 07→08→footer is also navy next
- * to navy, so there's no colour change from Get it through the footer;
- * everything else alternates.
+ * 06→07→footer is navy next to navy, so there's no colour change from Get it
+ * through the footer; everything else alternates.
  *
  * The [NN] eyebrows live inside each section file (or are passed as
  * `eyebrowIndex` for the shared Faq and Privacy); keep them in step with
@@ -81,10 +81,9 @@ export function CustomerPath() {
         <MarqueeBand />
         <Problem />
         <Personas />
-        <Features />
-        <Privacy eyebrowIndex="06" />
+        <Privacy eyebrowIndex="05" />
         <Vision />
-        <Faq id="faq" eyebrowIndex="08" ground="navy" heading={customerFaqHeading} items={customerFaq} />
+        <Faq id="faq" eyebrowIndex="07" ground="navy" heading={customerFaqHeading} items={customerFaq} />
       </FlowGround>
     </div>
   );

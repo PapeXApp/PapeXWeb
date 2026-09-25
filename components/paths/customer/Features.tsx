@@ -2,28 +2,45 @@
 
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
-import { Reveal, WordReveal } from "@/components/motion";
-import { FlowSection } from "../shared/FlowSection";
+import { Reveal } from "@/components/motion";
 import { PointerLitGroup } from "../shared/PointerLit";
 import { SectionLabel } from "../shared/SectionLabel";
 import { FeatureShot } from "./FeatureScreens";
 import { featuresContent, type FeatureKey } from "./content";
-import { DEFAULT_PERSONA, personaFeatureLines, personaFeatureOrder, pickedForYouLabel } from "./personaFeatures";
-import { onBeforePersonaChange, usePersona } from "./personaStore";
-import styles from "./customer.module.css";
+import {
+  DEFAULT_PERSONA,
+  answerQuizLabel,
+  personaFeatureLines,
+  personaFeatureOrder,
+  personaFeatureTitles,
+  pickedHeader,
+} from "./personaFeatures";
+import { onBeforePersonaChange, requestRetake, usePersona } from "./personaStore";
+import styles from "./quizFeatures.module.css";
 
 /** How long a row takes to glide to its new place after the quiz re-sorts. */
 const REORDER_MS = 700;
 
+/** After the result, the header's button restarts the quiz rather than just
+ *  pointing at it. */
+const CHANGE_ANSWERS_LABEL = "Change my answers";
+
 /**
- * 05 Features — NAVY ground, right after the navy quiz: the two read as one
- * "for you" block (Nico, 2026-09-24).
+ * The personalised feature rows — the BODY of section 04 (Personas.tsx is the
+ * section; the quiz is its head). Not a section of its own any more (P3-C2,
+ * 2026-09-25: the quiz and the old 05 Features merged into one section about
+ * personalisation).
  *
- * FOUR ROWS, ALWAYS (Web 2.1, live features only): Find · Add · Share ·
- * Deals. The quiz result (personaStore.ts, in memory only) sets their ORDER
- * and which benefit line each shows (personaFeatures.ts). Before the quiz,
- * the page shows the `casual` order and lines. Rows alternate text/shot sides
- * by POSITION, so the rhythm holds in every order.
+ * FIVE ROWS, ALWAYS (live features only): Find · Export · Add · Share ·
+ * Deals. The quiz result (personaStore.ts, in memory only) sets their ORDER,
+ * the benefit line each shows, any per-persona title, and what the phones
+ * show (personaFeatures.ts, featureData.ts). Before the quiz — and on the
+ * server, and with no JS — the rows show the `casual` order under a
+ * "Showing: The Casual" header that invites the visitor to answer.
+ *
+ * The header is always there and always the same size (label, one summary
+ * line, one button), so the rows never move when a result arrives except by
+ * the FLIP below.
  *
  * THE RE-SORT is a FLIP on transforms only: the moment the quiz hands over a
  * new persona — synchronously, before React re-renders — each row's offsetTop
@@ -31,17 +48,14 @@ const REORDER_MS = 700;
  * row is put back where it was with a transform ("Invert") and eased to none
  * ("Play"). No per-frame layout reads. Reduced motion: the rows just land in
  * their new order.
- *
- * `styles.screen` (2026-09-23, screens not sections): the section runs past
- * one viewport, so the screen is a floor, not a fit. The inner columns carry
- * `w-full` because a `margin: 0 auto` item in the screen's column flexbox
- * would otherwise shrink to its content instead of filling the 1150 column.
  */
 export function Features() {
   const persona = usePersona();
   const active = persona ?? DEFAULT_PERSONA;
   const order = personaFeatureOrder[active];
   const lines = personaFeatureLines[active];
+  const titles = personaFeatureTitles[active] ?? {};
+  const header = pickedHeader[persona ?? "default"];
 
   const rowEls = useRef(new Map<FeatureKey, HTMLDivElement>());
   const firstTops = useRef<Map<FeatureKey, number> | null>(null);
@@ -88,104 +102,83 @@ export function Features() {
     return () => window.clearTimeout(done);
   }, [active]);
 
+  /** Scroll the quiz into view (and, after a result, restart it). Without JS
+   *  the plain #quiz anchor still jumps there. */
+  function toQuiz(event: React.MouseEvent<HTMLAnchorElement>) {
+    const target = document.getElementById("quiz");
+    if (!target) return;
+    event.preventDefault();
+    if (persona) requestRetake();
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    target.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  }
+
   return (
-    <FlowSection
-      ground="navy"
-      index="05"
-      id="features"
-      className={`${styles.screen} ${styles.rhythm}`}
-      style={{ padding: "var(--section-pad) clamp(20px,5vw,56px)" }}
-    >
-      {/* Same 1150 column as the rows below, so the label, headline and the
-          first row share one left edge. */}
-      <div className="w-full" style={{ maxWidth: 1150, margin: "0 auto" }}>
-        <Reveal variant="up">
-          <SectionLabel index="05">{featuresContent.eyebrow}</SectionLabel>
-          <WordReveal
-            as="h2"
-            className="max-w-[20ch] [font-family:var(--font-display)] font-bold text-[length:var(--fs-h2)] leading-[1.03] tracking-[-.02em]"
-          >
-            {featuresContent.headline}
-          </WordReveal>
-        </Reveal>
-        {/* Held in place (hidden) before the quiz so nothing below jumps when
-            it appears. Announced politely when a result arrives. */}
-        <p aria-live="polite" style={{ marginTop: "var(--gap-title)" }}>
-          <span
-            className={cn(styles.featPicked, !persona && styles.featPickedHidden)}
-            aria-hidden={!persona || undefined}
-          >
-            {persona ? pickedForYouLabel[persona] : pickedForYouLabel[DEFAULT_PERSONA]}
+    <div className={styles.list} id="your-picks">
+      {/* The header over the rows: who the list is picked for, and why it is
+          in this order. Announced politely when a result arrives. */}
+      <div className={styles.picked}>
+        <div aria-live="polite" aria-atomic="true" className={styles.pickedText}>
+          <span key={`label-${active}-${persona ? 1 : 0}`} className={cn(styles.pickedLabel, persona && styles.pickedLabelOn)}>
+            {header.label}
           </span>
-        </p>
+          <p key={`sum-${active}-${persona ? 1 : 0}`} className={styles.pickedSummary}>
+            {header.summary}
+          </p>
+        </div>
+        <a href="#quiz" className={styles.pickedCta} onClick={toQuiz}>
+          <span aria-hidden="true" className={styles.pickedCtaArrow}>
+            ↑
+          </span>
+          {persona ? CHANGE_ANSWERS_LABEL : answerQuizLabel}
+        </a>
       </div>
-      <PointerLitGroup
-        className="grid w-full"
-        style={{ maxWidth: 1150, margin: "calc(var(--gap-body) * 1.5) auto 0", gap: "clamp(44px,5vw,72px)" }}
-      >
+
+      <PointerLitGroup className={styles.rows}>
         {order.map((key, index) => {
           const row = featuresContent.rows[key];
           const mirrored = index % 2 === 1;
           return (
             <div
               key={key}
-              className={styles.featRow}
+              className={styles.row}
+              data-feature={key}
               ref={(el) => {
                 if (el) rowEls.current.set(key, el);
                 else rowEls.current.delete(key);
               }}
             >
-              {/* Two columns only when the row is wide enough (a container query
-                  in customer.module.css). Stacked, the text ALWAYS comes first,
-                  so every whole phone sits under its own row's words; side by
-                  side, rows alternate text/phone by position. */}
-              <Reveal variant="up" className={cn(styles.featGrid, mirrored && styles.featGridMirrored)}>
-                <div className={styles.featText}>
-                  <SectionLabel index={`05.${index + 1}`} style={{ marginBottom: 16 }}>
+              {/* Two columns only when the row is wide enough (a container
+                  query in quizFeatures.module.css). Stacked, the text ALWAYS
+                  comes first, so every phone sits under its own row's words;
+                  side by side, rows alternate text/phone by position. */}
+              <Reveal variant="up" className={cn(styles.grid, mirrored && styles.gridMirrored)}>
+                <div className={styles.text}>
+                  <SectionLabel index={`04.${index + 1}`} style={{ marginBottom: 12 }}>
                     {row.eyebrow}
                   </SectionLabel>
-                  <h3
-                    style={{
-                      fontFamily: "var(--font-display)",
-                      fontWeight: 700,
-                      fontSize: "clamp(28px,3.4vw,46px)",
-                      lineHeight: 1.05,
-                      letterSpacing: "-.02em",
-                    }}
-                  >
-                    {row.title}
+                  <h3 key={`t-${key}-${active}`} className={styles.title}>
+                    {titles[key] ?? row.title}
                   </h3>
-                  <p
-                    key={`${key}-${active}`}
-                    className={styles.featLine}
-                    style={{
-                      marginTop: "var(--gap-title)",
-                      fontSize: 17,
-                      lineHeight: 1.55,
-                      color: "var(--flow-fg-2)",
-                      maxWidth: "42ch",
-                    }}
-                  >
+                  <p key={`l-${key}-${active}`} className={styles.line}>
                     {lines[key]}
                   </p>
-                  <ul className={styles.featTags} aria-label={`${row.eyebrow}: what's included`}>
+                  <ul className={styles.tags} aria-label={`${row.eyebrow}: what's included`}>
                     {row.tags.map((tag) => (
-                      <li key={tag} className={styles.featTag}>
+                      <li key={tag} className={styles.tag}>
                         {tag}
                       </li>
                     ))}
                   </ul>
                 </div>
-                <Reveal variant="mask" className={cn("flex items-center justify-center", styles.featShotCell)}>
-                  {/* A whole iPhone on the app kit's screens; the quiz result picks
-                      its demo data — see FeatureScreens.tsx. */}
+                <div className={styles.shotCell}>
                   <FeatureShot feature={key} persona={active} />
-                </Reveal>
+                </div>
               </Reveal>
             </div>
           );
         })}
       </PointerLitGroup>
-    </FlowSection>
+    </div>
   );
 }

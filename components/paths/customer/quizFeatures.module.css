@@ -1,0 +1,318 @@
+/* ==========================================================================
+ * 04 "What's in it for you?" — the merged quiz + feature rows section
+ * (Web 2.1 P3-C2, Nico 2026-09-25: one section about PERSONALISATION).
+ *
+ *   head   the quiz (Personas.tsx; its internals stay in personas.module.css)
+ *   body   the "Picked for you" header + five feature rows (Features.tsx),
+ *          each a text column beside a CROPPED phone (FeatureScreens.tsx)
+ *
+ * NAVY ground. Ink rule (shared/flow.module.css): text on the ground uses
+ * --flow-fg / --flow-fg-2 so it crossfades with the ground.
+ *
+ * Replaces, in customer.module.css (left there for the lead to delete at
+ * merge, now unused): .featStage, .featPhone, .featRow, .featGrid,
+ * .featGridMirrored, .featText, .featShotCell, .featDemo, .featPicked,
+ * .featPickedHidden, .featTags, .featTag, .featLine (+ @keyframes
+ * featLineIn and their reduced-motion lines).
+ * ========================================================================== */
+
+.section {
+  padding: var(--section-pad-y) var(--section-pad-x);
+}
+
+.inner {
+  width: 100%;
+  max-width: var(--section-max);
+  margin: 0 auto;
+}
+
+/* --- Head: intro beside the quiz ----------------------------------------- */
+
+.head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--gap-body);
+  align-items: start;
+}
+@media (min-width: 960px) {
+  .head {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: clamp(40px, 5vw, 80px);
+  }
+}
+.headText,
+.headQuiz {
+  min-width: 0;
+}
+
+/* --- Body: the "Picked for you" header + rows ---------------------------- */
+
+.list {
+  margin-top: clamp(44px, 5vw, 72px);
+  scroll-margin-top: 96px;
+}
+
+.picked {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px 24px;
+  padding-bottom: clamp(16px, 1.8vw, 22px);
+  border-bottom: 1px solid rgba(245, 245, 245, 0.14);
+  border-bottom: 1px solid color-mix(in srgb, var(--flow-fg) 14%, transparent);
+}
+.pickedText {
+  flex: 1 1 420px;
+  min-width: 0;
+}
+/* The pill: quiet before the quiz (the default order), orange once a result
+   has picked the order. */
+.pickedLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-family: var(--font-label);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--flow-fg);
+  border: 1px solid rgba(245, 245, 245, 0.3);
+  border: 1px solid color-mix(in srgb, var(--flow-fg) 30%, transparent);
+  animation: qfFade 0.45s ease both;
+}
+.pickedLabel::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--flow-fg) 45%, transparent);
+}
+.pickedLabelOn {
+  border-color: rgba(235, 113, 0, 0.6);
+  background: rgba(235, 113, 0, 0.12);
+}
+.pickedLabelOn::before {
+  background: var(--orange, #eb7100);
+}
+.pickedSummary {
+  margin-top: 10px;
+  max-width: 62ch;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--flow-fg-2);
+  animation: qfFade 0.45s ease both;
+}
+.pickedCta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1.5px solid var(--orange, #eb7100);
+  color: var(--flow-fg);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 0.2s ease;
+}
+.pickedCta:hover {
+  background: rgba(235, 113, 0, 0.14);
+}
+.pickedCta:focus-visible {
+  outline: 3px solid var(--orange, #eb7100);
+  outline-offset: 3px;
+}
+.pickedCtaArrow {
+  color: var(--orange, #eb7100);
+}
+
+.rows {
+  display: grid;
+  gap: clamp(36px, 4.2vw, 60px);
+  margin-top: clamp(28px, 3.4vw, 48px);
+}
+
+/* The row grid. Stacked by default; two columns from a 720px-wide row. In two
+   columns the mirrored rows put the phone on the left, by `order`; stacked,
+   `order` is never set, so the text always leads its own phone. */
+.row {
+  container-type: inline-size;
+}
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(20px, 3vw, 44px);
+}
+@container (min-width: 720px) {
+  .grid {
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  }
+  .gridMirrored {
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  }
+  .gridMirrored .text {
+    order: 2;
+  }
+  .gridMirrored .shotCell {
+    order: 1;
+  }
+}
+.text {
+  min-width: 0;
+}
+.title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(26px, 3vw, 40px);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  animation: qfFade 0.45s ease both;
+}
+/* The benefit line swaps with the persona: a short fade, keyed in React. */
+.line {
+  margin-top: 14px;
+  max-width: 42ch;
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--flow-fg-2);
+  animation: qfFade 0.45s ease both;
+}
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+  padding: 0;
+  list-style: none;
+}
+.tag {
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--flow-fg-2);
+  border: 1px solid rgba(245, 245, 245, 0.18);
+  border: 1px solid color-mix(in srgb, var(--flow-fg) 18%, transparent);
+}
+.shotCell {
+  min-width: 0;
+}
+
+/* --- The cropped phone (restored from before 78d243a) --------------------
+ * A REAL-PROPORTION iPhone that the cell cuts off — never a full-length screen
+ * squeezed into a short frame (Nico: "if I cut the phone in half I can only
+ * see the top half of the operating system").
+ *
+ * The cell has a definite width (100%) and aspect-ratio, so its height is
+ * definite, and `container-type: size` lets the phone be sized from it in cqh.
+ * --wp-size is the SCREEN height (iphone.module.css .frame); at 132cqh the
+ * device is taller than the cell, which is what produces the crop, while the
+ * screen keeps 393:852. Pure CSS: no layout read, no hydration jump.
+ *
+ * Stacked rows (narrow) use a square cell so the phone is bigger on phones;
+ * two-column rows use 4:3, the original cell. */
+.shot {
+  position: relative;
+  width: 100%;
+  /* Stacked, a square cell up to 440px wide, centred under its text: bigger
+     than a 4:3 cell on a phone, without a 600px-tall slab on a tablet. */
+  max-width: 440px;
+  margin-inline: auto;
+  aspect-ratio: 1 / 1;
+  container-type: size;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 20px;
+  /* Raised-on-navy surface: a barely-there white wash, a white hairline, an
+     orange glow from the top and a black shadow so it still lifts. */
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: radial-gradient(120% 90% at 50% -10%, rgba(235, 113, 0, 0.1), transparent 62%),
+    rgba(255, 255, 255, 0.06);
+  box-shadow: 0 26px 60px -20px rgba(0, 0, 0, 0.5), 0 3px 10px rgba(0, 0, 0, 0.25);
+}
+@container (min-width: 720px) {
+  .shot {
+    max-width: none;
+    aspect-ratio: 4 / 3;
+  }
+}
+/* Bottom edge crop (default): the device aligns to the cell's top, so every
+   pixel of overflow falls past the bottom and the bezel + island stay whole. */
+.shotPhone {
+  --wp-size: 132cqh;
+  /* a little air above the device so it isn't welded to the cell's top edge */
+  transform: translateY(4%);
+}
+/* Top edge crop: the device aligns to the cell's bottom and shows the BOTTOM
+   of the screen (FAB, menus, tab bar), with the same small air gap mirrored. */
+.shotCropTop {
+  align-items: flex-end;
+}
+.shotCropTop .shotPhone {
+  transform: translateY(-4%);
+}
+/* Marker on the phone's screen box (PhoneChrome `screenClassName`), so a
+   check can read its computed size. Declares nothing visible. */
+.shotScreen {
+  --qf-shot-screen: 1;
+}
+
+/* "Demo data" — every shot's rows are invented (copy gate rule 11). A quiet
+   mono caption in the cell's corner, on the cut edge, off the phone. */
+.shotDemo {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  z-index: 2;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-family: var(--font-label);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+  background: rgba(0, 18, 29, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  pointer-events: none;
+}
+.shotCropTop .shotDemo {
+  bottom: auto;
+  top: 10px;
+}
+@container (max-width: 420px) {
+  .shotDemo {
+    right: 8px;
+    padding: 2px 6px;
+    font-size: 8.5px;
+  }
+}
+
+@keyframes qfFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pickedLabel,
+  .pickedSummary,
+  .title,
+  .line {
+    animation: none;
+  }
+  .pickedCta {
+    transition: none;
+  }
+}
