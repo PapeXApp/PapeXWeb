@@ -9,7 +9,7 @@
 // CLAIM RULES (same as content.ts): coupons are live (merchants set them up in
 // their dashboard; at partner stores a tap sends the customer one for their
 // next visit), so nothing here says "Coming soon". The store is the invented
-// "Nook Cafe" used everywhere else on the site, and the visual carries a
+// "Tidewick Cafe" used everywhere else on the site, and the visual carries a
 // "Demo data" tag. No figures, no retention metric, no real merchants.
 //
 // The hero's own copy (eyebrow, H1, lead, paper line) lives in content.ts and
@@ -25,8 +25,8 @@ export const loop = {
   ],
   /** The demo coupon, in the app's Coupons tab (PapeXV2 CouponRow anatomy). */
   coupon: {
-    store: "Nook Cafe",
-    monogram: "N",
+    store: "Tidewick Cafe",
+    monogram: "T",
     kind: "$2 OFF",
     title: "$2 off your next visit",
     expiry: "Expires in 30 days",
@@ -36,5 +36,5 @@ export const loop = {
   /** Screen-reader description of the whole visual (the phone itself is
    *  aria-hidden: its strings are app furniture, not content). */
   description:
-    "Demo with an invented store: a customer taps their phone at checkout and gets a Nook Cafe receipt, a coupon for $2 off their next visit lands in their PapeX app, and when they come back they use it.",
+    "Demo with an invented store: a customer taps their phone at checkout and gets a Tidewick Cafe receipt, a coupon for $2 off their next visit lands in their PapeX app, and when they come back they use it.",
 } as const

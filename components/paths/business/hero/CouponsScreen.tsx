@@ -34,8 +34,8 @@ import s from "./hero.module.css"
 
 export type CouponState = "pending" | "landed" | "used"
 
-/** Nook Cafe's brand field — the same gradient appui/data.ts gives its logo. */
-const NOOK_FIELD = "linear-gradient(160deg,#9a5a2c,#5a2f14)"
+/** Tidewick Cafe's brand field — the same gradient appui/data.ts gives its logo. */
+const TIDEWICK_FIELD = "linear-gradient(160deg,#9a5a2c,#5a2f14)"
 
 const line = {
   fill: "none",
@@ -121,7 +121,7 @@ function CouponRow({ state }: { state: CouponState }) {
   return (
     <div className={cn(s.rowWrap, state === "pending" ? s.rowPending : s.rowIn)}>
       <div className={s.cRow}>
-        <span className={s.stub} style={{ background: NOOK_FIELD }}>
+        <span className={s.stub} style={{ background: TIDEWICK_FIELD }}>
           <span className={s.seal}>{c.monogram}</span>
         </span>
         <span className={s.perf} />

@@ -1,5 +1,5 @@
 // The hero demo's INPUT bytes only — a genuine ESC/POS ticket for the fictional
-// "Nook Cafe" (renamed from the prototype's "Bluebird Coffee" on 2026-09-22 —
+// "Tidewick Cafe" (renamed from the prototype's "Bluebird Coffee" on 2026-09-22 —
 // that name wrapped to two lines in the phone mockups), otherwise byte-for-byte
 // the same stream the design prototype scripted
 // (design-prototype/source/PapeX Home.dc.html → demoReceiptBytes()). Decoding is
@@ -19,7 +19,7 @@ export function demoReceiptBytes(): Uint8Array {
   out.push(0x1b, 0x40); // ESC @    initialise
   out.push(0x1b, 0x61, 0x01); // ESC a 1  centre
   out.push(0x1b, 0x21, 0x30); // ESC ! 48 double height + double width
-  line("NOOK CAFE");
+  line("TIDEWICK CAFE");
   out.push(0x1b, 0x21, 0x00); // ESC ! 0  back to normal
   line("48 Demo Street");
   line("San Francisco, CA 94100");

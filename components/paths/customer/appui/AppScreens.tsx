@@ -20,7 +20,7 @@ import x from "./appScreens.module.css";
  * hand-drawn appui screens. W3, 2026-09-24.
  *
  * Story: the receipt the App Clip just showed is saved, so it tops the
- * Receipts tab (unreviewed, "Tapped by you"). Nook Cafe is a partner store in
+ * Receipts tab (unreviewed, "Tapped by you"). Tidewick Cafe is a partner store in
  * the kit's demo data, so that same tap also left a coupon for the next visit
  * ("$2 off your next visit", the same coupon /business shows) — the Coupons
  * tab shows it next to two coupons the shopper scanned elsewhere. Coupons are live (Nico,
@@ -37,7 +37,7 @@ function monogram(letter: string, bg: string): string {
 }
 
 const [, greenleaf, cityhop] = receiptsListContent.rows;
-const nook = demoStore("demo-nook-cafe");
+const tidewick = demoStore("demo-tidewick-cafe");
 const copper = demoStore("demo-copperpeg-hardware");
 const quill = demoStore("demo-quillbrook-market");
 const toAmount = (s: string) => Number(s.replace(/[^0-9.]/g, ""));
@@ -49,8 +49,8 @@ export function walkReceipts(summary: ReceiptSummary): KitReceipt[] {
     {
       ...base,
       id: "tap",
-      merchantName: nook.name,
-      logoUrl: nook.logoUrl ?? null,
+      merchantName: tidewick.name,
+      logoUrl: tidewick.logoUrl ?? null,
       amount: summary.total ?? null,
       dateLabel: "Jun 8",
       category: "Dining",

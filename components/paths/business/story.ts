@@ -8,7 +8,7 @@
 // named below exists in app/merchant today: search + filters and CSV export
 // (app/merchant/page.tsx), busiest hours/days + top items + tap rate
 // (app/merchant/insights/page.tsx), device status (app/merchant/devices).
-// The receipt in the scene is the /customers demo receipt ("Nook Cafe", an
+// The receipt in the scene is the /customers demo receipt ("Tidewick Cafe", an
 // invented shop) decoded through lib/escpos.ts, so all three screens show the
 // same sale.
 

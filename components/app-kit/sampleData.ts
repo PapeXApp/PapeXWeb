@@ -93,9 +93,9 @@ function monogram(letter: string, bg: string, fg = '#FFFFFF'): string {
 
 export const demoStores: KitStore[] = [
   {
-    id: 'demo-nook-cafe',
-    name: 'Nook Cafe',
-    logoUrl: monogram('N', '#6B3E26'),
+    id: 'demo-tidewick-cafe',
+    name: 'Tidewick Cafe',
+    logoUrl: monogram('T', '#6B3E26'),
     brandColor: '#6B3E26',
     brandColorSecondary: '#C9894B',
     category: 'Cafe',
@@ -107,7 +107,7 @@ export const demoStores: KitStore[] = [
       { day: 'Mon–Fri', text: '7:00 AM – 6:00 PM' },
       { day: 'Sat–Sun', text: '8:00 AM – 4:00 PM' },
     ],
-    loyalty: { programName: 'Nook Rewards', nextRewardLabel: 'a free drink', points: 60, goal: 100 },
+    loyalty: { programName: 'Tidewick Rewards', nextRewardLabel: 'a free drink', points: 60, goal: 100 },
   },
   {
     id: 'demo-copperpeg-hardware',
@@ -140,7 +140,7 @@ export const demoStore = (id: string): KitStore => {
 export const demoReceipts: KitReceipt[] = [
   {
     id: 'r1',
-    merchantName: 'Nook Cafe',
+    merchantName: 'Tidewick Cafe',
     logoUrl: demoStores[0].logoUrl!,
     amount: 12.4,
     dateLabel: 'Sep 24',
@@ -219,7 +219,7 @@ export const demoReceipts: KitReceipt[] = [
   },
   {
     id: 'r5',
-    merchantName: 'Nook Cafe',
+    merchantName: 'Tidewick Cafe',
     logoUrl: demoStores[0].logoUrl!,
     amount: 6.5,
     dateLabel: 'Sep 22',
@@ -236,7 +236,7 @@ export const demoReceipts: KitReceipt[] = [
 export const demoCoupons: KitCoupon[] = [
   {
     id: 'c1',
-    storeId: 'demo-nook-cafe',
+    storeId: 'demo-tidewick-cafe',
     // The partner-tap coupon, identical everywhere on the site: /business
     // (business/content.ts appCoupon) shows "$2 OFF" / "$2 off your next
     // visit" / "Expires in 30 days" (30 days after DEMO_NOW). No caption:

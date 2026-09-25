@@ -4,8 +4,8 @@ import { demoSales, type DemoSale } from "../demoSales"
 /**
  * DEMO DATA for the merchant dashboard in /business §03, in the shapes the
  * live dashboard's screens read (lib/merchantApi.ts: InsightsWindow, the
- * insights buckets, TapRate, MerchantDevice). Every sale is an invented Nook
- * Cafe receipt decoded through lib/escpos.ts (demoSales.ts); the devices are
+ * insights buckets, TapRate, MerchantDevice). Every sale is an invented
+ * Tidewick Cafe receipt decoded through lib/escpos.ts (demoSales.ts); the devices are
  * invented too. Nothing here is fetched, and nothing reaches app/merchant:
  * the marketing component passes it down as props.
  *

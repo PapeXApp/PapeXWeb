@@ -55,28 +55,28 @@ export interface ListRow {
 
 const [blue, whole, uber] = receiptsListContent.rows;
 
-const NOOK_BG = "linear-gradient(160deg,#9a5a2c,#5a2f14)";
+const TIDEWICK_BG = "linear-gradient(160deg,#9a5a2c,#5a2f14)";
 const BLUE_BG = "linear-gradient(160deg,#2f7ad6,#10529e)";
 
 /**
  * The walkthrough's step 3 ("Saved & organized"): the Receipts tab right after
  * the tap. The first row IS the receipt the App Clip just rendered in step 2 —
- * Nook Cafe, $12.42, dated Jun 8 2026 on the ticket (demoReceipt.ts), source
+ * Tidewick Cafe, $12.42, dated Jun 8 2026 on the ticket (demoReceipt.ts), source
  * `rdh` so "Tapped by you" + the scan ring — and it is unreviewed, as every
  * new receipt is. The older rows show the other two provenances.
  */
 export const LIST_ROWS: ListRow[] = [
   {
-    id: "nook",
-    merchant: "Nook Cafe",
-    initial: "N",
+    id: "tidewick",
+    merchant: "Tidewick Cafe",
+    initial: "T",
     amount: "$12.42",
     group: "June 8, 2026",
     date: "Jun 8",
     source: "Tapped by you",
     glyph: "scan",
     tone: "own",
-    logoBg: NOOK_BG,
+    logoBg: TIDEWICK_BG,
     unreviewed: true,
   },
   {

@@ -47,7 +47,7 @@ function Phone({ label, mode, children }: { label: string; mode: 'dark' | 'light
 export default async function AppKitGallery({ searchParams }: { searchParams: Promise<{ mode?: string }> }) {
   if (process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production') notFound()
   const mode = (await searchParams).mode === 'light' ? 'light' : 'dark'
-  const nook = demoStore('demo-nook-cafe')
+  const tidewick = demoStore('demo-tidewick-cafe')
   const copper = demoStore('demo-copperpeg-hardware')
   const moss = demoStore('demo-mossbrook-pharmacy')
   return (
@@ -62,9 +62,9 @@ export default async function AppKitGallery({ searchParams }: { searchParams: Pr
         <Phone label="ReceiptsScreen" mode={mode}><ReceiptsScreen mode={mode} receipts={demoReceipts} /></Phone>
         <Phone label="ReceiptDetail" mode={mode}><ReceiptDetail mode={mode} receipt={demoReceipts[1]} /></Phone>
         <Phone label="CouponsScreen" mode={mode}><CouponsScreen mode={mode} coupons={demoCoupons} favorites={['c1']} /></Phone>
-        <Phone label="CouponDetail (code)" mode={mode}><CouponDetail mode={mode} coupon={demoCoupons[0]} store={nook} isFavorite /></Phone>
+        <Phone label="CouponDetail (code)" mode={mode}><CouponDetail mode={mode} coupon={demoCoupons[0]} store={tidewick} isFavorite /></Phone>
         <Phone label="CouponDetail (barcode)" mode={mode}><CouponDetail mode={mode} coupon={demoCoupons[1]} store={copper} /></Phone>
-        <Phone label="StoreProfile · partner" mode={mode}><StoreProfile mode={mode} store={nook} coupons={demoCoupons.filter((c) => c.storeId === nook.id)} /></Phone>
+        <Phone label="StoreProfile · partner" mode={mode}><StoreProfile mode={mode} store={tidewick} coupons={demoCoupons.filter((c) => c.storeId === tidewick.id)} /></Phone>
         <Phone label="StoreProfile · basic (brand colours)" mode={mode}><StoreProfile mode={mode} store={copper} coupons={[]} /></Phone>
         <Phone label="StoreProfile · basic (PapeX banner)" mode={mode}><StoreProfile mode={mode} store={moss} coupons={[]} /></Phone>
         <Phone label="ClipReceipt (App Clip)" mode="dark"><ClipReceipt data={demoClipReceipt} /></Phone>

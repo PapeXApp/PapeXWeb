@@ -133,13 +133,13 @@ function RedactingReceipt() {
       className={styles.receipt}
       data-phase={phase}
       role="img"
-      aria-label="Example receipt from Nook Cafe. The card line shows only the last 4 digits: 4242."
+      aria-label="Example receipt from Tidewick Cafe. The card line shows only the last 4 digits: 4242."
     >
       <div aria-hidden="true">
         <div className={styles.rHead}>
-          <span className={styles.rMono}>N</span>
+          <span className={styles.rMono}>T</span>
           <span>
-            <span className={styles.rMerchant}>Nook Cafe</span>
+            <span className={styles.rMerchant}>Tidewick Cafe</span>
             <span className={styles.rMeta}>Mon Jun 8 · 10:24</span>
           </span>
         </div>

@@ -11,7 +11,7 @@ import { demoReceiptBytes } from "../../customer/demoReceipt"
 
 /**
  * DEMO DATA for the interactive dashboard at the end of the "Tap to Retain"
- * scene. One invented shop (Nook Cafe, the same invented shop as the
+ * scene. One invented shop (Tidewick Cafe, the same invented shop as the
  * /customers demo) and a handful of invented sales from its own menu. No real
  * merchant, no real customer, no real card: the card numbers are made-up
  * last-4s on made-up receipts.
@@ -128,7 +128,7 @@ function saleBytes(spec: SaleSpec, header: string[]): Uint8Array {
   out.push(0x1b, 0x40)
   out.push(0x1b, 0x61, 0x01)
   out.push(0x1b, 0x21, 0x30)
-  line("NOOK CAFE")
+  line("TIDEWICK CAFE")
   out.push(0x1b, 0x21, 0x00)
   for (const h of header) line(h)
   out.push(0x0a)
@@ -193,7 +193,7 @@ const TODAY = Date.UTC(2026, 5, 8)
 const DAY_MS = 86_400_000
 
 function generated(): SaleSpec[] {
-  const r = prng(0x4e4f4f4b) // "NOOK"
+  const r = prng(0x4e4f4f4b) // fixed seed, unrelated to the store's name
   const pick = <T,>(list: T[], weights?: number[]) => {
     if (!weights) return list[Math.floor(r() * list.length)]
     let x = r() * weights.reduce((a, b) => a + b, 0)

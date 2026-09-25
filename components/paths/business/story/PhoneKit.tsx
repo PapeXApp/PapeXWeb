@@ -45,7 +45,7 @@ function paymentLabel(summary: ReceiptSummary): string | undefined {
 
 export function clipData(summary: ReceiptSummary): ClipReceiptData {
   return {
-    merchantName: titleCase(summary.merchantName ?? "Nook Cafe"),
+    merchantName: titleCase(summary.merchantName ?? "Tidewick Cafe"),
     addressLines: summary.addressLines.slice(0, 2),
     dateline: summary.dateline,
     items: summary.items.map((i) => ({ label: i.name, quantity: i.qty, amount: i.amount })),
@@ -59,7 +59,7 @@ export function clipData(summary: ReceiptSummary): ClipReceiptData {
 function kitReceipts(summary: ReceiptSummary): KitReceipt[] {
   const mine: KitReceipt = {
     id: "story-receipt",
-    merchantName: titleCase(summary.merchantName ?? "Nook Cafe"),
+    merchantName: titleCase(summary.merchantName ?? "Tidewick Cafe"),
     logoUrl: demoStores[0].logoUrl ?? null,
     amount: summary.total ?? null,
     dateLabel: "Jun 8",

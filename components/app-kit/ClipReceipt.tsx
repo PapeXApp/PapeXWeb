@@ -191,9 +191,9 @@ function ShareGlyph({ color }: { color: string }) {
   );
 }
 
-/** Invented demo receipt for the gallery (Nook Cafe — not a real merchant). */
+/** Invented demo receipt for the gallery (Tidewick Cafe — not a real merchant). */
 export const demoClipReceipt: ClipReceiptData = {
-  merchantName: 'Nook Cafe',
+  merchantName: 'Tidewick Cafe',
   addressLines: ['14 Alder Lane', 'Springvale'],
   dateline: 'Sep 24, 2026 · 8:42 AM',
   items: [

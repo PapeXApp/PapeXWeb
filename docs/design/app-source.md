@@ -89,7 +89,7 @@ defaults.
 | `ReceiptDetail` | app/receiptDetail.tsx (store card, Category, Shared Group, Receipt Sharing, Items, Totals) |
 | `ClipReceipt` | **Papex_AppClip** Sources/AppClip/ReceiptView.swift (+ docs/design/screens/ReceiptView.dc.html) |
 
-Sample data (`sampleData.ts`) is invented and labelled demo: Nook Cafe,
+Sample data (`sampleData.ts`) is invented and labelled demo: Tidewick Cafe,
 Copperpeg Hardware, Mossbrook Pharmacy and Quillbrook Market, with invented
 monogram logos. Field names follow the app's own `Store` / `Coupon` /
 `DisplayReceipt` types, so the vendored helpers read it unchanged. Every coupon
@@ -134,7 +134,7 @@ directory: nothing was added to PapeXWeb, and nothing was run inside PapeXV2.
   `GlassCard` and `ReceiptRow` with zero shims. `renderToString` renders both on
   Node:
   - GlassCard's full 8-piece rim comes out as DOM;
-  - ReceiptRow prints "Nook Cafe / Sep 22 • Dining / $12.40".
+  - ReceiptRow prints "Tidewick Cafe / Sep 22 • Dining / $12.40".
 - **What breaks:**
   1. **The frost is dropped.** RN's `experimental_backgroundImage` is emitted as
      an invalid `experimental_background-image` CSS property, so every card

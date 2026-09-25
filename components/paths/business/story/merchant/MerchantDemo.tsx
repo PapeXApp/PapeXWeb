@@ -124,7 +124,7 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
         needle &&
         !x.receiptNumber.includes(needle) &&
         !(x.lastFour ?? "").includes(needle) &&
-        !"nook cafe".includes(needle) &&
+        !"tidewick cafe".includes(needle) &&
         !x.summary.items.some((it) => it.name.toLowerCase().includes(needle))
       )
         return false

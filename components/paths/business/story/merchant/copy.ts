@@ -15,7 +15,7 @@ export const merchantCopy = {
   brand: "papex",
   brandTag: "Merchant",
   demoTag: "Demo data",
-  merchantLabel: "Nook Cafe",
+  merchantLabel: "Tidewick Cafe",
   signOut: "Sign out",
   nav: {
     tx: "Transactions",

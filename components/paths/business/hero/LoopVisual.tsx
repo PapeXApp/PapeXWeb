@@ -16,7 +16,7 @@ import s from "./hero.module.css"
  * should get from it at a glance: it isn't only receipts, it's receipts AND
  * coupons, and the point is bringing the customer back.
  *
- *   beat 1  Tap         the App Clip's rendered Nook Cafe receipt (the SAME
+ *   beat 1  Tap         the App Clip's rendered Tidewick Cafe receipt (the SAME
  *                       screen /customers draws: ClipReceiptScreen), a tap
  *                       ripple at the top of the phone, then "Saved"
  *   beat 2  Coupon      the app's Coupons tab; "$2 off your next visit" drops

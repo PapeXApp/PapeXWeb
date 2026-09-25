@@ -7,7 +7,7 @@ import s from "./intro.module.css"
 
 /**
  * The PapeX app's Coupons tab with ONE coupon in it: the demo "$2 off your
- * next visit" from Nook Cafe that the paper coupon turns into.
+ * next visit" from Tidewick Cafe that the paper coupon turns into.
  *
  * Layout per docs/design/app-reference.md "Coupons (app/(tabs)/coupons.tsx)":
  *   1. title row — Select capsule, "Coupons" bubble, glass heart + bell
@@ -28,8 +28,8 @@ import s from "./intro.module.css"
  * `rowRef` is the row the scene aims the paper coupon at.
  */
 
-/** Nook Cafe's brand field — the same gradient appui/data.ts gives its logo. */
-const NOOK_FIELD = "linear-gradient(160deg,#9a5a2c,#5a2f14)"
+/** Tidewick Cafe's brand field — the same gradient appui/data.ts gives its logo. */
+const TIDEWICK_FIELD = "linear-gradient(160deg,#9a5a2c,#5a2f14)"
 
 const line = {
   fill: "none",
@@ -89,13 +89,13 @@ export function CouponRow({ rowRef }: { rowRef?: React.Ref<HTMLDivElement> }) {
   const c = tapToRetain.appCoupon
   return (
     <div ref={rowRef} className={s.cRow}>
-      <span className={s.stub} style={{ background: NOOK_FIELD }}>
-        <span className={s.seal}>N</span>
+      <span className={s.stub} style={{ background: TIDEWICK_FIELD }}>
+        <span className={s.seal}>T</span>
       </span>
       <span className={s.perf} />
       <span className={s.cBody}>
         <span className={s.cIdentity}>
-          <span className={s.cStore}>Nook Cafe</span>
+          <span className={s.cStore}>Tidewick Cafe</span>
           <span className={s.kind}>
             <TagGlyph />
             {c.kind}

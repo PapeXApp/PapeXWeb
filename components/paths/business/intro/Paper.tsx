@@ -8,7 +8,7 @@ import s from "./intro.module.css"
 /**
  * The two pieces of PAPER the §02 scene grows and sends into the phone.
  *
- * The receipt prints the /customers demo sale ("Nook Cafe", invented),
+ * The receipt prints the /customers demo sale ("Tidewick Cafe", invented),
  * decoded through lib/escpos.ts by `useDemoReceipt()` — the same numbers the
  * App Clip screen shows once it lands, and the same sale §03 follows. The
  * coupon is a demo coupon from the same store, stamped "Demo" on its face.
@@ -59,7 +59,7 @@ export const PaperCoupon = forwardRef<HTMLDivElement, { merchant?: string; class
     return (
       <div ref={ref} className={cn(s.paper, s.coupon, className)}>
         <div className={s.cInner}>
-          <div className={s.pHead}>{merchant ?? "NOOK CAFE"}</div>
+          <div className={s.pHead}>{merchant ?? "TIDEWICK CAFE"}</div>
           <div className={s.cKicker}>{c.kicker}</div>
           <div className={s.cValue}>{c.value}</div>
           <div className={s.cLine}>{c.line}</div>

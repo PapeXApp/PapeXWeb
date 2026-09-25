@@ -22,7 +22,7 @@ import cardStyles from "../tapToRetain.module.css"
  * scroll), and every frame a pure function of `p` — scrolling up plays it
  * backwards, any `p` always draws the same picture, no timers, no loops.
  *
- *   0.00-0.17  RECEIPT   a paper receipt (the demo Nook Cafe sale) grows from
+ *   0.00-0.17  RECEIPT   a paper receipt (the demo Tidewick Cafe sale) grows from
  *                        nothing until it clearly reads as a store receipt
  *   0.17-0.25            hold: read it
  *   0.25-0.38            it flies to the phone and sinks into the screen,

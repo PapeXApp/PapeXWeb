@@ -69,7 +69,7 @@ export const hero = {
 // live: receipts, and coupons the merchant sets up in their dashboard. There
 // is no "Coming soon" anywhere in this section any more (Web 2.1 W3). No
 // retention figures anywhere — we have none to show. Everything drawn in the
-// scene is DEMO data for the invented "Nook Cafe" (the /customers demo
+// scene is DEMO data for the invented "Tidewick Cafe" (the /customers demo
 // receipt), and the scene says so with `demoTag`.
 export const tapToRetain = {
   eyebrow: "What is Tap to Retain?",
