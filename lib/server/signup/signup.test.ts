@@ -8,7 +8,8 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { cleanText, validateSignupInput, type DemoRequest } from "../../signup/schema";
-import { submitSignup } from "../../signup/client";
+import { submitSignup, type SignupResult } from "../../signup/client";
+import { shouldFallBackToClientWrite } from "../../signup/fallback";
 import { buildNotificationEmail, readSesConfig, type NotificationEmail } from "./email";
 import { handleSignup, MAX_SIGNUP_BODY_BYTES, type SignupDeps, type SignupHttpRequest } from "./handler";
 import { clientIpFromHeaders, createRateLimiter } from "./rateLimit";
@@ -501,6 +502,46 @@ async function main() {
       fetchImpl: (async () => new Response("<html>502</html>", { status: 502 })) as typeof fetch,
     });
     assert.deepEqual(html, { ok: false, error: "server_error" });
+  });
+
+  console.log("signup: DemoForm go-live fallback decision");
+
+  await test("falls back to the client write only on unavailable / not_configured / network", () => {
+    const cases: [SignupResult, boolean][] = [
+      [{ ok: false, error: "unavailable" }, true],
+      [{ ok: false, error: "not_configured" }, true],
+      [{ ok: false, error: "network" }, true],
+      [{ ok: true }, false],
+      [{ ok: false, error: "invalid_fields", fields: { email: "Enter a valid email address." } }, false],
+      [{ ok: false, error: "invalid_request" }, false],
+      [{ ok: false, error: "invalid_json" }, false],
+      [{ ok: false, error: "rate_limited", retryAfterSeconds: 60 }, false],
+      [{ ok: false, error: "too_large" }, false],
+      [{ ok: false, error: "unsupported_media_type" }, false],
+      [{ ok: false, error: "server_error" }, false],
+    ];
+    for (const [result, expected] of cases) {
+      assert.equal(shouldFallBackToClientWrite(result, false), expected, JSON.stringify(result));
+    }
+  });
+
+  await test("a filled honeypot never falls back, whatever the result", () => {
+    for (const error of ["unavailable", "not_configured", "network"] as const) {
+      assert.equal(shouldFallBackToClientWrite({ ok: false, error }, true), false);
+    }
+  });
+
+  await test("route 503 / fetch failure map to results that trigger the fallback", async () => {
+    const r503 = await submitSignup(DEMO as never, {
+      fetchImpl: (async () => new Response(JSON.stringify({ ok: false, error: "unavailable" }), { status: 503 })) as typeof fetch,
+    });
+    assert.equal(shouldFallBackToClientWrite(r503, false), true);
+    const offline = await submitSignup(DEMO as never, {
+      fetchImpl: (async () => {
+        throw new TypeError("Failed to fetch");
+      }) as typeof fetch,
+    });
+    assert.equal(shouldFallBackToClientWrite(offline, false), true);
   });
 
   console.log(`\nsignup: ${passed} passed, ${failed} failed`);

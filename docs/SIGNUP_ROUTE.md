@@ -88,13 +88,31 @@ path?: string, createdAt: server timestamp
 Written with `create()`, so the first sign-up wins; repeats write nothing and
 send no email.
 
+## Temporary go-live fallback (DemoForm only)
+
+So that demo requests keep working if the code ships before
+`PAPEXWEB_SERVICE_ACCOUNT` is set, the DemoForm falls back to its previous
+client-side write (`addDoc` to `waitlist`, exact old payload, client SDK)
+when the route answers 503 (`unavailable` / `not_configured`) or can't be
+reached (`network`), and then shows success as before. It never falls back
+on 400/413/415/429/500, and never when the honeypot is filled. The decision
+is `shouldFallBackToClientWrite` in `lib/signup/fallback.ts` (tested). A
+fallback write sends no email (the team only gets email via the route).
+Blog sign-ups have no fallback.
+
+**Remove it** (delete `lib/signup/fallback.ts`, the fallback block and the
+`firebase/firestore` + `@/firebase/firebaseConfig` imports in
+`DemoForm.tsx`, and its tests) once BOTH are true: the credential is live
+on Vercel, and browser writes to `waitlist` are locked in the Firestore
+rules (after which the fallback could only fail anyway).
+
 ## Environment variables (Vercel, Production + Preview)
 
 Names only. Never commit values; `.env.example` lists them commented out.
 
 | Name | Required | Default | Purpose |
 |------|----------|---------|---------|
-| `PAPEXWEB_SERVICE_ACCOUNT` | **yes**, or the DemoForm fails | none | Service-account JSON (raw or base64) for Firebase project **`papexweb-aed97`**. Refused if its `project_id` is anything else. Needs Firestore write access (role "Cloud Datastore User" is enough). Not the same key as `PAPEXV2_SERVICE_ACCOUNT` (that one is `papexv2`, for the merchant dashboard). |
+| `PAPEXWEB_SERVICE_ACCOUNT` | **yes** (until set, demo requests use the client-side fallback and send no email; blog sign-ups fail) | none | Service-account JSON (raw or base64) for Firebase project **`papexweb-aed97`**. Refused if its `project_id` is anything else. Needs Firestore write access (role "Cloud Datastore User" is enough). Not the same key as `PAPEXV2_SERVICE_ACCOUNT` (that one is `papexv2`, for the merchant dashboard). |
 | `AWS_SES_ACCESS_KEY_ID` | for email | none | IAM access key allowed `ses:SendEmail` from the papexmail.com identity. |
 | `AWS_SES_SECRET_ACCESS_KEY` | for email | none | Its secret. Both keys must be set or email is skipped. |
 | `AWS_SES_REGION` | no | `us-east-1` | Region where papexmail.com is verified (DKIM went green in us-east-1 on 2026-09-15). |
@@ -121,8 +139,10 @@ match /blog_subscribers/{id} {
 }
 ```
 
-`waitlist`: the browser no longer writes it once this ships. After the new
-build has been live for a day (so no cached old page is still submitting),
+`waitlist`: once `PAPEXWEB_SERVICE_ACCOUNT` is live the browser only writes
+it through the temporary fallback (which then never triggers). After the new
+build has been live for a day with the credential set (so no cached old page
+is still submitting),
 the client `create` permission on `waitlist` can be removed too
 (`allow read, write: if false;`). Nothing else in the workspace writes it
 (checked PapeXV2 and the RDH backend). Keep whatever read access the team's
@@ -156,9 +176,12 @@ counter to a shared store (Upstash/Vercel KV).
 
 ## Deploy steps (Nico / Noah)
 
-Order matters: the DemoForm now depends on `PAPEXWEB_SERVICE_ACCOUNT`.
-Deploying the code without it turns every demo request into an error message.
-Deploying without the SES keys is invisible to users (just no email).
+Order matters less thanks to the fallback: deploying without
+`PAPEXWEB_SERVICE_ACCOUNT` keeps demo requests working through the old
+client-side write (no email), but blog sign-ups return an error until it is
+set. Deploying without the SES keys is invisible to users (just no email).
+Do NOT lock browser writes to `waitlist` (step 7) before step 2 is live, or
+demo requests fail both ways.
 
 1. **Firebase console, project `papexweb-aed97`** → Project settings →
    Service accounts → Generate new private key. (Or a dedicated service
@@ -177,4 +200,6 @@ Deploying without the SES keys is invisible to users (just no email).
    /business demo form once: check a new `waitlist` doc with
    `type: "business-demo-request"` and the email arriving. Delete the test doc.
 6. Promote/merge to `main` (= production deploy).
-7. A day later: remove client write access to `waitlist` in the rules.
+7. A day later (only after step 2 is live): remove client write access to
+   `waitlist` in the rules, then remove the DemoForm fallback (see
+   "Temporary go-live fallback").

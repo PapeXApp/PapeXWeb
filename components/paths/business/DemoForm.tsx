@@ -1,7 +1,10 @@
 "use client"
 
 import { useId, useRef, useState, type ChangeEvent, type FocusEvent, type FormEvent } from "react"
+import { collection, addDoc, serverTimestamp } from "firebase/firestore"
+import { db } from "@/firebase/firebaseConfig"
 import { requestDemo } from "@/lib/signup/client"
+import { shouldFallBackToClientWrite } from "@/lib/signup/fallback"
 import { HONEYPOT_FIELD } from "@/lib/signup/schema"
 import { Reveal, Ripple } from "@/components/motion"
 import { Input } from "@/components/ui/input"
@@ -125,19 +128,48 @@ export function DemoForm() {
     // Since Web 2.1 (B3) the form posts to the shared sign-up route, which
     // writes the SAME `waitlist` document server-side (fields + the
     // "business-demo-request" type marker; see lib/server/signup/store.ts)
-    // and emails the team. The browser no longer writes Firestore directly.
+    // and emails the team. The browser writes Firestore itself only in the
+    // temporary fallback below.
+    const hp = honeypotRef.current?.value || undefined
     const result = await requestDemo({
       fullName: fields.fullName.trim(),
       businessName: fields.businessName.trim(),
       email: fields.email.trim(),
       phone: fields.phone.trim(),
       posSystem: fields.posSystem.trim(),
-      hp: honeypotRef.current?.value || undefined,
+      hp,
     })
 
     if (result.ok) {
       setStatus("success")
       setStatusMessage(demo.successMessage)
+      return
+    }
+
+    // TEMPORARY go-live fallback (lib/signup/fallback.ts): while the route has
+    // no Firestore credential (503) or can't be reached, write the request
+    // the old way, client-side, with exactly the old payload. Never for a
+    // honeypot hit. Remove once PAPEXWEB_SERVICE_ACCOUNT is live and browser
+    // writes to `waitlist` are locked (docs/SIGNUP_ROUTE.md).
+    if (shouldFallBackToClientWrite(result, Boolean(hp?.trim()))) {
+      try {
+        await addDoc(collection(db, "waitlist"), {
+          fullName: fields.fullName.trim(),
+          businessName: fields.businessName.trim(),
+          email: fields.email.trim(),
+          phone: fields.phone.trim(),
+          posSystem: fields.posSystem.trim(),
+          // Marks this as a merchant demo request so it can be told apart
+          // from consumer waitlist signups in the shared `waitlist` collection.
+          type: "business-demo-request",
+          createdAt: serverTimestamp(),
+        })
+        setStatus("success")
+        setStatusMessage(demo.successMessage)
+      } catch {
+        setStatus("error")
+        setStatusMessage(demo.errorMessage)
+      }
       return
     }
 
