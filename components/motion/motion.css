@@ -11,11 +11,20 @@
   }
 }
 
+/* Finite on purpose (no infinite animations on the site): Marquee.tsx sets
+   the loop count inline and starts it on first scroll-in; `forwards` holds
+   the last frame, -50%, which is pixel-identical to the first. */
 .papex-marquee-track {
   animation-name: papex-marquee-track;
   animation-timing-function: linear;
-  animation-iteration-count: infinite;
+  animation-iteration-count: 2;
+  animation-fill-mode: forwards;
   will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .papex-marquee-track {
+    animation: none;
+  }
 }
 
 /* ScrollLit — words light up across a staggered slice of the paragraph's own

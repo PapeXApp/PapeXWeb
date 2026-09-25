@@ -32,6 +32,23 @@
 .runway {
   position: relative;
 }
+/* Server render / first frame: both versions are in the HTML and CSS picks
+   one, so the section never changes height when JS arrives (anchors below it,
+   #demo and #faq, land true). The static overview only for reduced motion;
+   everyone else gets the runway (its height is the inline RUNWAY_VH) showing
+   the finished overview until JS marks it [data-live] and draws the scene.
+   Same contract as intro/intro.module.css. */
+.staticSlot {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .runway {
+    display: none;
+  }
+  .staticSlot {
+    display: block;
+  }
+}
 .pin {
   position: sticky;
   top: 0;
@@ -139,11 +156,11 @@
   fill: var(--orange);
 }
 /* the pinned scene draws the ink in; stroke-dashoffset is written per frame */
-.pinned .art [data-d] {
+.pinned[data-live] .art [data-d] {
   stroke-dasharray: 1 1;
   stroke-dashoffset: 1;
 }
-.pinned .art [data-f] {
+.pinned[data-live] .art [data-f] {
   opacity: 0;
 }
 
@@ -221,7 +238,7 @@
   height: 2px;
   background: var(--orange);
 }
-.pinned .step .node::after {
+.pinned[data-live] .step .node::after {
   display: none;
 }
 
@@ -357,8 +374,13 @@
   .step:last-child .lblUp {
     display: none;
   }
-  .pinned .step:last-child .lblUp {
+  .pinned[data-live] .step:last-child .lblUp {
     display: block;
+  }
+  /* before JS (and with JS off) the runway shows the finished phone overview:
+     number + title, bodies already faded as at the end of the zoom */
+  .pinned:not([data-live]) .body {
+    opacity: 0;
   }
   .lblDown {
     display: block;

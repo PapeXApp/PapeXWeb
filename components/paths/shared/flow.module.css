@@ -288,6 +288,10 @@
 .ribbon {
   position: relative;
   padding: 0 var(--gutter-x);
+  /* The run is a nowrap line wider than a phone: never let it widen the page
+     (it did under reduced motion). clip, not hidden: no scroll container. */
+  overflow-x: clip;
+  max-width: 100%;
 }
 .ribbonBand {
   border-top: 1px solid var(--flow-hair);
