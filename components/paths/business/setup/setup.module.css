@@ -1,21 +1,14 @@
 /* §05 "How do I get it?" (#setup) — the setup timeline.
 
-   ONE layout, the OVERVIEW, is the only thing CSS lays out: five columns on
-   a horizontal line (>= 821px) or a stacked list on a vertical rail (phones).
-   It is also the whole static fallback (reduced motion, short screens, the
-   server render). The pinned scene (SetupTimeline.tsx) never changes layout:
-   it reads these boxes once on mount/resize and moves each step's three parts
-   (art, node, text) with transform only, from a zoomed-in horizontal "travel"
-   pose back to exactly these boxes, so the zoom-out lands pixel-true.
+   ONE layout, the OVERVIEW: five columns on a horizontal line (>= 821px) or a
+   stacked list on a vertical rail (phones). It is also the whole static
+   fallback (reduced motion, short screens, no JS, the server render), where
+   every step is lit. The live scene (SetupTimeline.tsx) never moves a box: it
+   only lights steps in place — opacity on the ring/fill/number/words/ghost,
+   stroke-dashoffset on the art, scaleX/scaleY on each connector's fill.
 
-   Knobs the scene reads from `.stage` (plain numbers, not lengths):
-     --t-pitch      step spacing in travel, as a fraction of the stage width
-     --t-pitch-add  + this many px (phones: a step per screen, plus a gutter)
-     --t-ill        art width in travel (px), capped by --t-ill-frac x width
-     --t-txt        text scale in travel
-     --t-gap1       art -> line gap in travel (px), holds the minute label
-     --t-gap2       line -> text gap in travel (px)
-     --t-phone      1 on phones: the stacked overview (labels/body swap) */
+   Knob the scene reads from `.stage` (a plain number):
+     --t-phone      1 on phones: vertical rail, unpinned, reading-line driven */
 
 .wrap {
   width: 100%;
@@ -31,12 +24,14 @@
 /* ---- the runway + pin (same pattern as story.module.css) ----------------- */
 .runway {
   position: relative;
+  height: var(--runway-h, 250vh);
 }
 /* Server render / first frame: both versions are in the HTML and CSS picks
    one, so the section never changes height when JS arrives (anchors below it,
    #demo and #faq, land true). The static overview only for reduced motion;
-   everyone else gets the runway (its height is the inline RUNWAY_VH) showing
-   the finished overview until JS marks it [data-live] and draws the scene.
+   everyone else gets the runway (desktop: --runway-h from RUNWAY_VH; phones:
+   its content) showing the finished overview until JS marks it [data-live]
+   and lights it step by step.
    Same contract as intro/intro.module.css. */
 .staticSlot {
   display: none;
@@ -58,9 +53,6 @@
   /* clears the floating nav band */
   padding-top: 84px;
   padding-bottom: clamp(18px, 3svh, 34px);
-  /* the travel pose runs off the right edge of the screen: clip it there
-     (clip, not hidden — hidden would make this a scroll container) */
-  overflow-x: clip;
 }
 .pin > .wrap {
   flex: none;
@@ -74,13 +66,6 @@
 .stage {
   position: relative;
   width: 100%;
-  --t-pitch: 0.6;
-  --t-pitch-add: 0;
-  --t-ill: 300;
-  --t-ill-frac: 0.86;
-  --t-txt: 1.35;
-  --t-gap1: 46;
-  --t-gap2: 26;
   --t-phone: 0;
 }
 .pinned .stage {
@@ -100,6 +85,8 @@
 .list {
   --step-gap: clamp(20px, 2.4vw, 30px);
   --dot: 14px;
+  /* a waiting step's grey: dot ring, number, line */
+  --wait: color-mix(in srgb, var(--flow-fg) 30%, transparent);
   position: relative;
   z-index: 1;
   width: 100%;
@@ -118,15 +105,22 @@
   min-width: 0;
 }
 
-.ill,
-.node,
-.txt {
-  transform-origin: 0 0;
-}
-
 .ill {
+  position: relative;
   /* never taller than a fifth of the screen, so the overview always fits */
   width: min(100%, calc(20svh * 4 / 3));
+}
+/* A waiting step's faint ghost, under the ink that draws over it. Only the
+   live scene renders it; the frame fades it out as the ink completes. */
+.ghost {
+  position: absolute;
+  inset: 0;
+  opacity: 0.14;
+  pointer-events: none;
+}
+/* positioned, so it paints over the (absolutely positioned) ghost */
+.ink {
+  position: relative;
 }
 .art {
   display: block;
@@ -163,6 +157,14 @@
 .pinned[data-live] .art [data-f] {
   opacity: 0;
 }
+/* ...except the ghost, which is always the complete drawing */
+.pinned[data-live] .ghost .art [data-d] {
+  stroke-dasharray: none;
+  stroke-dashoffset: 0;
+}
+.pinned[data-live] .ghost .art [data-f] {
+  opacity: 1;
+}
 
 .node {
   position: relative;
@@ -184,6 +186,22 @@
   inset: 2px;
   border-radius: 50%;
   background: var(--orange);
+}
+/* The lit ring: an orange ring over the dot's own border. In the static
+   overview it simply matches; live, the dot's border is grey and this fades
+   in as the line arrives. */
+.dotRing {
+  position: absolute;
+  inset: -2px;
+  border: 2px solid var(--orange);
+  border-radius: 50%;
+}
+.pinned[data-live] .dot {
+  border-color: var(--wait);
+}
+.pinned[data-live] .dotRing,
+.pinned[data-live] .dotFill {
+  opacity: 0;
 }
 
 /* The minute axis: "0 min" on the first node, "about 15 min" on the last. */
@@ -207,11 +225,30 @@
   margin-top: 22px;
 }
 .num {
+  position: relative;
   display: block;
+  width: fit-content;
   font-family: var(--font-label);
   font-size: 13px;
   letter-spacing: 0.08em;
   color: var(--orange);
+}
+/* live: the number waits grey; its orange twin fades in over it when lit */
+.numOn {
+  display: none;
+}
+.pinned[data-live] .num {
+  color: var(--wait);
+}
+.pinned[data-live] .numOn {
+  position: absolute;
+  inset: 0;
+  display: block;
+  color: var(--orange);
+  opacity: 0;
+}
+.pinned[data-live] .copy {
+  opacity: 0;
 }
 .title {
   margin-top: 8px;
@@ -227,46 +264,30 @@
   color: var(--flow-fg-2);
 }
 
-/* The static line: a connector from each node to the next (orange, the
-   whole path is done). The pinned scene draws its own line instead. */
-.step:not(:last-child) .node::after {
-  content: "";
+/* The line: a connector from each node to the next, laid out once. Static:
+   orange (the whole path is done). Live: a grey track whose orange fill the
+   frame scales from 0 to 1 as the lit position passes (scaleX here, scaleY on
+   the phones' rail). */
+.conn {
   position: absolute;
+  z-index: 0;
   left: calc(var(--dot) / 2);
   top: calc(var(--dot) / 2 - 1px);
   width: calc(100% + var(--step-gap));
   height: 2px;
   background: var(--orange);
 }
-.pinned[data-live] .step .node::after {
-  display: none;
-}
-
-/* ---- the pinned scene's own line ----------------------------------------- */
-.track,
-.fill,
-.lineWrap {
+.connFill {
   position: absolute;
-  left: 0;
-  top: 0;
-}
-.lineWrap {
   inset: 0;
-  z-index: 0;
-  pointer-events: none;
-}
-.track,
-.fill {
-  width: 100px;
-  height: 2px;
-  transform-origin: 0 50%;
-  transform: scaleX(0);
-}
-.track {
-  background: color-mix(in srgb, var(--flow-fg) 16%, transparent);
-}
-.fill {
   background: var(--orange);
+  transform-origin: 0 50%;
+}
+.pinned[data-live] .conn {
+  background: var(--wait);
+}
+.pinned[data-live] .connFill {
+  transform: scaleX(0);
 }
 
 /* ---- the closing link ----------------------------------------------------- */
@@ -293,19 +314,21 @@
   margin-top: clamp(10px, 2svh, 24px);
 }
 
-/* ---- phones and tablets: a stacked list on a vertical rail --------------- */
+/* ---- phones and tablets: a stacked list on a vertical rail --------------
+   Not pinned: the runway is its content's height and the pin is plain flow,
+   so the list scrolls normally and each step lights as it reaches the
+   reading line (SetupTimeline.tsx). */
 @media (max-width: 820px) {
+  .runway {
+    height: auto;
+  }
   .pin {
-    padding-top: 64px;
+    position: relative;
+    height: auto;
+    padding-top: var(--section-pad-y);
+    padding-bottom: var(--section-pad-y);
   }
   .stage {
-    --t-pitch: 1;
-    --t-pitch-add: 40;
-    --t-ill: 220;
-    --t-ill-frac: 0.64;
-    --t-txt: 1.1;
-    --t-gap1: 44;
-    --t-gap2: 22;
     --t-phone: 1;
   }
   .list {
@@ -355,32 +378,22 @@
     margin-top: 4px;
     font-size: 14px;
   }
-  /* the pinned overview shows number + title only (bodies were read in
-     travel; they stay in the DOM for AT and fade out in the zoom) */
-  .pinned .body {
-    position: absolute;
-    left: 0;
-    top: 100%;
-    width: 100%;
-  }
   /* rail: dot centre to the next dot centre */
-  .step:not(:last-child) .node::after {
+  .conn {
     left: calc(var(--dot) / 2 - 1px);
     top: calc(var(--dot) / 2);
     width: 2px;
     height: calc(100% + 14px);
   }
+  .connFill {
+    transform-origin: 50% 0;
+  }
+  .pinned[data-live] .connFill {
+    transform: scaleY(0);
+  }
   /* "about 15 min" sits under the list, not above the last dot */
   .step:last-child .lblUp {
     display: none;
-  }
-  .pinned[data-live] .step:last-child .lblUp {
-    display: block;
-  }
-  /* before JS (and with JS off) the runway shows the finished phone overview:
-     number + title, bodies already faded as at the end of the zoom */
-  .pinned:not([data-live]) .body {
-    opacity: 0;
   }
   .lblDown {
     display: block;

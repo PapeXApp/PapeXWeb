@@ -1,66 +1,66 @@
 "use client"
 
-import { useEffect, useRef, useState, type ReactNode } from "react"
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
 import { clamp01, ease, seg } from "../story/fold"
 import { SetupIllustration } from "./Illustrations"
 import s from "./setup.module.css"
 
 /**
- * §05 "How do I get it?" — the five install steps as a pinned, scroll-driven
- * horizontal timeline (Web 2.1 W3, Nico's brief 2026-09-24). Same machinery
- * as story/RetainStory.tsx: a tall runway, a `position: sticky` 100svh pin,
- * and ONE progress value `p` (0..1 over the runway) from which every frame is
- * a pure function, so scrolling up plays it backwards and any `p` always
- * draws the same frame.
+ * §05 "How do I get it?" — the five install steps as a timeline that LIGHTS
+ * UP as you scroll (Web 2.1 P3-B3, Nico 2026-09-25: "start with one, show the
+ * whole timeline, and then it lights up orange with each point appearing").
  *
- *   approach   as the section scrolls in, step 1's art draws in
- *   0.05-0.72  TRAVEL  the chain moves left one step per leg (four legs,
- *                      each a move then a short hold); each arriving step
- *                      draws its art and raises its text; the orange fill
- *                      tip stays on the step in front of you
- *   0.76-0.93  ZOOM    the whole timeline shrinks back to the overview —
- *                      all five in a row (a stacked list on phones)
- *   0.93-1.00  hold, then the pin releases into the demo form
+ * The layout never moves. From the first frame the pin shows the finished
+ * overview — all five slots in a row on the 0 min -> about 15 min axis — with
+ * steps 2-5 waiting: a faint ghost of their art, a grey dot, a grey number, a
+ * grey line, no words. Each scroll leg lights the next step: the orange line
+ * runs to its dot, the dot and number turn orange, the art draws in (the
+ * illustrations' stroke-dashoffset contract) and the title + body rise in.
+ * Lit steps stay lit — nothing slides away, so there is never an empty region.
  *
- * How the zoom lands exactly: CSS lays out ONLY the overview (setup.module.css).
- * measure() reads each step's art/node/text boxes once, computes where each
- * part sits in the zoomed-in travel pose, and the frame lerps a
- * translate+scale between the two. Overview = transform none, so the final
- * frame is the real layout, pixel-true, and text there renders at its own size.
+ * One continuous value drives everything: `c`, the lit position in steps
+ * (0 = step 1's dot, N-1 = the last). Connector k fills with c - k; step i is
+ * lit as c reaches i.
+ *
+ *   desktop (>= 821px): pinned. Step 1 lights as the section scrolls in
+ *     (c: -1 -> 0 on the approach), then four legs on p (each a move of the
+ *     line, then a hold), then a hold on the whole lit row and the pin
+ *     releases into the demo form (#demo).
+ *   phones (<= 820px): NOT pinned — the same stacked list scrolls normally
+ *     and c follows a reading line (62% down the screen) from dot to dot, so
+ *     each step lights as it reaches it.
  *
  * Perf contract (RetainStory's): the frame WRITES only transform, opacity and
  * stroke-dashoffset (through a change cache) and READS nothing from layout;
  * measure() runs on mount, resize and font load only.
  *
  * Accessibility: the steps are one real <ol> in DOM order; art, the dots and
- * the minute axis are aria-hidden. Reduced motion, a screen too short to pin,
- * and the server render all get the overview as a static layout.
+ * the minute axis are aria-hidden. Reduced motion, a screen too short to hold
+ * the pinned row, no JS and the server render all get the finished overview
+ * as a static layout.
  */
 
-/** Scroll budget for the scene, in viewport heights, after the 100vh pin. */
-const SCROLL_VH = 280
+/** Scroll budget for the pinned scene, in viewport heights, after the 100vh pin. */
+const SCROLL_VH = 150
+/** The runway: the pinned viewport plus the scene's scroll (desktop only — CSS). */
 const RUNWAY_VH = 100 + SCROLL_VH
-/** Beats on p. */
-const TRAVEL_A = 0.05
-const TRAVEL_B = 0.72
-const ZOOM_A = 0.76
-const ZOOM_B = 0.93
-/** Each travel leg moves over this share of its span, then holds. */
-const LEG_MOVE = 0.68
-/** Opacity a passed step settles to while travelling on desktop (full again in the zoom). */
-const PAST_DIM = 0.3
-/** How far below its spot a step's text starts as it arrives (px). */
-const TEXT_RISE = 16
-/** A travel pose squeezed below this share of its intended size isn't worth pinning. */
-const MIN_FIT = 0.72
+/** Beats on p: the four legs (steps 2-5), then a hold to the release. */
+const LEGS_A = 0.03
+const LEGS_B = 0.84
+/** Each leg moves the line over this share of its span, then holds. */
+const LEG_MOVE = 0.62
+/** Where the phone reading line sits, as a share of the viewport height. */
+const READ_AT = 0.62
+/** How far below its spot a step's words start as they arrive (px). */
+const TEXT_RISE = 14
+/** A waiting step's art: a faint ghost of the finished drawing. */
+const GHOST = 0.14
 
 export type SetupStep = { number: string; title: string; body: string }
 
-type Box = { x: number; y: number; w: number; h: number }
-
 /** Offset of `el` inside `root`, from layout boxes (transforms don't count). */
-function offsetIn(el: HTMLElement, root: HTMLElement): Box {
+function offsetIn(el: HTMLElement, root: HTMLElement) {
   let x = 0
   let y = 0
   let n: HTMLElement | null = el
@@ -71,8 +71,6 @@ function offsetIn(el: HTMLElement, root: HTMLElement): Box {
   }
   return { x, y, w: el.offsetWidth, h: el.offsetHeight }
 }
-
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t
 
 export function SetupTimeline({
   header,
@@ -91,30 +89,28 @@ export function SetupTimeline({
 }) {
   // "ssr": the server render and first client frame carry BOTH versions and
   // CSS shows one (setup.module.css: the runway unless prefers-reduced-motion,
-  // then the static overview). The runway's height is inline, so the section
-  // is its final height from the first paint and never grows at hydration —
-  // #demo / #faq deep links land true. After mount JS keeps only one:
-  // "scene", or "static" for reduced motion and screens too short to pin.
-  // (Same contract as intro/IntroScene.tsx.)
+  // then the static overview). The runway's height is CSS (a fixed vh on
+  // desktop, its content on phones), so the section is its final height from
+  // the first paint and never grows at hydration — #demo / #faq deep links
+  // land true. After mount JS keeps only one: "scene", or "static" for reduced
+  // motion and desktop screens too short to hold the row.
   const [reduced, setReduced] = useState<boolean | null>(null)
-  // `short` flips to true when the screen can't hold the pinned scene (see measure()).
+  // `short` flips to true when the screen can't hold the pinned row (see measure()).
   const [short, setShort] = useState(false)
   const mode: "ssr" | "scene" | "static" = reduced === null ? "ssr" : reduced || short ? "static" : "scene"
-  const pinned = mode === "scene"
+  const live = mode === "scene"
 
   const runwayRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
   const listRef = useRef<HTMLOListElement>(null)
-  const trackRef = useRef<HTMLSpanElement>(null)
-  const fillRef = useRef<HTMLSpanElement>(null)
-  const illRefs = useRef<(HTMLDivElement | null)[]>([])
-  const nodeRefs = useRef<(HTMLDivElement | null)[]>([])
+  const inkRefs = useRef<(HTMLDivElement | null)[]>([])
+  const ghostRefs = useRef<(HTMLDivElement | null)[]>([])
   const dotRefs = useRef<(HTMLSpanElement | null)[]>([])
+  const ringRefs = useRef<(HTMLSpanElement | null)[]>([])
   const dotFillRefs = useRef<(HTMLSpanElement | null)[]>([])
-  const txtRefs = useRef<(HTMLDivElement | null)[]>([])
-  const bodyRefs = useRef<(HTMLParagraphElement | null)[]>([])
-  const endUpRef = useRef<HTMLSpanElement>(null)
-  const endDownRef = useRef<HTMLSpanElement>(null)
+  const numOnRefs = useRef<(HTMLSpanElement | null)[]>([])
+  const copyRefs = useRef<(HTMLDivElement | null)[]>([])
+  const connRefs = useRef<(HTMLSpanElement | null)[]>([])
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)")
@@ -136,108 +132,47 @@ export function SetupTimeline({
   }, [short])
 
   useEffect(() => {
-    if (!pinned) return
+    if (!live) return
     const stage = stageRef.current
     const list = listRef.current
     const runway = runwayRef.current
     if (!stage || !list || !runway) return
     const N = steps.length
 
-    // Collected ONCE: each step's drawable strokes and fading fills.
-    const draws = illRefs.current.map((el) => Array.from(el?.querySelectorAll<SVGPathElement>("[data-d]") ?? []))
-    const fades = illRefs.current.map((el) => Array.from(el?.querySelectorAll<SVGPathElement>("[data-f]") ?? []))
+    // Collected ONCE: each step's drawable strokes and fading fills (the ink
+    // copy only — the ghost copy is drawn complete by CSS).
+    const draws = inkRefs.current.map((el) => Array.from(el?.querySelectorAll<SVGPathElement>("[data-d]") ?? []))
+    const fades = inkRefs.current.map((el) => Array.from(el?.querySelectorAll<SVGPathElement>("[data-f]") ?? []))
 
-    /** Everything the frame needs, in px. Rebuilt by measure() only. */
+    /** Everything the frame needs. Rebuilt by measure() only. */
     const M = {
-      P: 1,
       phone: false,
       runTop: 0,
       runTotal: 0,
       vh: 1,
-      // per step, travel pose relative to the overview box, before the camera
-      ill: [] as { tx: number; ty: number; s: number }[],
-      node: [] as { tx: number; ty: number }[],
-      txt: [] as { tx: number; ty: number; s: number }[],
-      // the line's two ends: travel (before camera) and overview
-      tA: [0, 0],
-      tB: [0, 0],
-      oA: [0, 0],
-      oB: [0, 0],
+      /** phones: each dot's centre, in document px */
+      dotY: [] as number[],
     }
 
-    const num = (cs: CSSStyleDeclaration, name: string, fallback: number) => {
-      const v = parseFloat(cs.getPropertyValue(name))
-      return Number.isFinite(v) ? v : fallback
-    }
-
-    /** Returns false when the screen can't hold the scene. */
+    /** Returns false when the screen can't hold the pinned row. */
     const measure = (): boolean => {
-      M.runTop = runway.getBoundingClientRect().top + window.scrollY
-      M.runTotal = runway.offsetHeight - window.innerHeight
       M.vh = window.innerHeight || 1
-      const W = stage.clientWidth
-      const H = stage.clientHeight
-      const cs = getComputedStyle(stage)
-      M.phone = num(cs, "--t-phone", 0) > 0
-      const P = W * num(cs, "--t-pitch", 0.6) + num(cs, "--t-pitch-add", 0)
-      M.P = P
-
-      const ills: Box[] = []
-      const nodes: Box[] = []
-      const dots: Box[] = []
-      const txts: Box[] = []
-      let txtH = 0
-      for (let i = 0; i < N; i++) {
-        const ill = illRefs.current[i]
-        const node = nodeRefs.current[i]
-        const dot = dotRefs.current[i]
-        const txt = txtRefs.current[i]
-        const body = bodyRefs.current[i]
-        if (!ill || !node || !dot || !txt || !body) return true
-        ills.push(offsetIn(ill, stage))
-        nodes.push(offsetIn(node, stage))
-        dots.push(offsetIn(dot, stage))
-        const t = offsetIn(txt, stage)
-        txts.push(t)
-        // the body may sit outside the text box (phones' overview): count it
-        const b = offsetIn(body, stage)
-        txtH = Math.max(txtH, t.h, b.y + b.h - t.y)
+      M.phone = parseFloat(getComputedStyle(stage).getPropertyValue("--t-phone")) > 0
+      M.runTop = runway.getBoundingClientRect().top + window.scrollY
+      M.runTotal = Math.max(0, runway.offsetHeight - M.vh)
+      if (M.phone) {
+        const top = stage.getBoundingClientRect().top + window.scrollY
+        M.dotY = []
+        for (let i = 0; i < N; i++) {
+          const dot = dotRefs.current[i]
+          if (!dot) return true
+          const b = offsetIn(dot, stage)
+          M.dotY.push(top + b.y + b.h / 2)
+        }
+        return true
       }
-      // the overview itself must fit, or there is nothing to land on
-      if (list.offsetHeight > H + 1) return false
-
-      const aspect = ills[0].h / (ills[0].w || 1)
-      const dotH = dots[0].h
-      let TW = Math.min(num(cs, "--t-ill", 300), W * num(cs, "--t-ill-frac", 0.86))
-      let sT = num(cs, "--t-txt", 1.3)
-      let g1 = num(cs, "--t-gap1", 44)
-      let g2 = num(cs, "--t-gap2", 26)
-      const want = TW * aspect + g1 + dotH + g2 + sT * txtH
-      const f = Math.min(1, (H * 0.96) / want)
-      if (f < MIN_FIT) return false
-      TW *= f
-      sT *= f
-      g1 *= f
-      g2 *= f
-      const yIll = (H - want * f) / 2
-      const yLine = yIll + TW * aspect + g1 + dotH / 2
-
-      M.ill = []
-      M.node = []
-      M.txt = []
-      for (let i = 0; i < N; i++) {
-        const x0 = i * P
-        M.ill.push({ tx: x0 - ills[i].x, ty: yIll - ills[i].y, s: TW / (ills[i].w || 1) })
-        // the node moves so its DOT lands on the line at the card's left
-        M.node.push({ tx: x0 - dots[i].x, ty: yLine - dotH / 2 - dots[i].y })
-        M.txt.push({ tx: x0 - txts[i].x, ty: yLine + dotH / 2 + g2 - txts[i].y, s: sT })
-      }
-      const half = dots[0].w / 2
-      M.tA = [half, yLine]
-      M.tB = [(N - 1) * P + half, yLine]
-      M.oA = [dots[0].x + half, dots[0].y + dots[0].h / 2]
-      M.oB = [dots[N - 1].x + half, dots[N - 1].y + dots[N - 1].h / 2]
-      return true
+      // the row itself must fit the pin, or there is nothing to light
+      return list.offsetHeight <= stage.clientHeight + 1
     }
 
     // Every write goes through set(): unchanged values are dropped.
@@ -254,46 +189,31 @@ export function SetupTimeline({
     }
     const op = (el: Element | null | undefined, v: number, key: string) => set(el, "opacity", clamp01(v).toFixed(3), key)
 
-    /** The camera, in steps (0..N-1): four legs, each a move then a hold. */
-    const camAt = (p: number) => {
-      const t = (N - 1) * seg(p, TRAVEL_A, TRAVEL_B)
+    /** Desktop: the lit position from the approach and the runway. */
+    const cDesk = (y: number) => {
+      if (y < M.runTop) return ease(seg(y, M.runTop - 0.6 * M.vh, M.runTop - 0.08 * M.vh)) - 1
+      const p = M.runTotal > 0 ? clamp01((y - M.runTop) / M.runTotal) : 1
+      const t = (N - 1) * seg(p, LEGS_A, LEGS_B)
       if (t >= N - 1) return N - 1
       const k = Math.floor(t)
       return k + ease(seg(t - k, 0, LEG_MOVE))
     }
-
-    const line = (el: HTMLElement | null, ax: number, ay: number, bx: number, by: number, frac: number, key: string) => {
-      const len = Math.hypot(bx - ax, by - ay) * frac
-      const ang = Math.atan2(by - ay, bx - ax)
-      set(
-        el,
-        "transform",
-        `translate(${ax.toFixed(1)}px, ${(ay - 1).toFixed(1)}px) rotate(${ang.toFixed(4)}rad) scaleX(${(len / 100).toFixed(4)})`,
-        key,
-      )
+    /** Phones: the reading line's position between the dots it sits between. */
+    const cPhone = (y: number) => {
+      const d = M.dotY
+      if (d.length < 2) return N - 1
+      const r = y + READ_AT * M.vh
+      if (r <= d[0]) return (r - d[0]) / (d[1] - d[0] || 1)
+      for (let k = 0; k < d.length - 1; k++) {
+        if (r < d[k + 1]) return k + (r - d[k]) / (d[k + 1] - d[k] || 1)
+      }
+      return N - 1
     }
 
-    const draw = (p: number, approach: number) => {
-      const c = camAt(p)
-      const cam = c * M.P
-      const z = ease(seg(p, ZOOM_A, ZOOM_B))
+    const draw = (c: number) => {
       for (let i = 0; i < N; i++) {
-        // arrival: step 1 draws as the section scrolls in, the rest as they
-        // slide in from the right toward the front of the line
-        const r = i === 0 ? approach : seg(c, i - 0.72, i - 0.06)
-        const past = i < N - 1 ? seg(c, i + 0.3, i + 0.85) : 0
-        // phones show one step per screen: a passed step leaves entirely
-        const dim = lerp(1 - (1 - (M.phone ? 0 : PAST_DIM)) * past, 1, z)
-        // the art
-        const a = M.ill[i]
-        if (!a) continue
-        set(
-          illRefs.current[i],
-          "transform",
-          z >= 1 ? "none" : `translate(${lerp(a.tx - cam, 0, z).toFixed(1)}px, ${lerp(a.ty, 0, z).toFixed(1)}px) scale(${lerp(a.s, 1, z).toFixed(4)})`,
-          `iT${i}`,
-        )
-        op(illRefs.current[i], Math.min(1, r * 6) * dim, `iO${i}`)
+        // the art draws in as the line runs the last stretch to its dot
+        const r = seg(c, i - 0.6, i)
         const ds = draws[i]
         const n = ds.length
         for (let j = 0; j < n; j++) {
@@ -302,60 +222,38 @@ export function SetupTimeline({
         }
         const fo = seg(r, 0.45, 1).toFixed(3)
         for (let j = 0; j < fades[i].length; j++) set(fades[i][j], "opacity", fo, `f${i}.${j}`)
-        // the node: the dot rides the line; ahead of you it waits, faint
-        const nd = M.node[i]
-        set(
-          nodeRefs.current[i],
-          "transform",
-          z >= 1 ? "none" : `translate(${lerp(nd.tx - cam, 0, z).toFixed(1)}px, ${lerp(nd.ty, 0, z).toFixed(1)}px)`,
-          `nT${i}`,
-        )
-        op(nodeRefs.current[i], 0.35 + 0.65 * seg(r, 0, 0.5), `nO${i}`)
-        op(dotFillRefs.current[i], seg(r, 0.55, 1), `dF${i}`)
-        // the text rises in after the art has started
+        op(ghostRefs.current[i], GHOST * (1 - seg(r, 0.6, 1)), `g${i}`)
+        // the dot and the number turn orange as the line arrives
+        const hit = seg(c, i - 0.14, i)
+        op(ringRefs.current[i], hit, `rg${i}`)
+        op(dotFillRefs.current[i], hit, `dF${i}`)
+        op(numOnRefs.current[i], hit, `nO${i}`)
+        // the words rise in after the art has started
         const tr = ease(seg(r, 0.3, 1))
-        const t = M.txt[i]
-        set(
-          txtRefs.current[i],
-          "transform",
-          z >= 1
-            ? "none"
-            : `translate(${lerp(t.tx - cam, 0, z).toFixed(1)}px, ${(lerp(t.ty, 0, z) + (1 - tr) * TEXT_RISE * (1 - z)).toFixed(1)}px) scale(${lerp(t.s, 1, z).toFixed(4)})`,
-          `tT${i}`,
-        )
-        op(txtRefs.current[i], tr * dim, `tO${i}`)
-        // phones' overview is number + title only: bodies leave in the zoom
-        op(bodyRefs.current[i], M.phone ? 1 - seg(z, 0, 0.4) : 1, `bO${i}`)
+        set(copyRefs.current[i], "transform", `translateY(${((1 - tr) * TEXT_RISE).toFixed(1)}px)`, `cT${i}`)
+        op(copyRefs.current[i], tr, `cO${i}`)
+        // the line to the next dot
+        if (i < N - 1) {
+          const f = clamp01(c - i).toFixed(4)
+          set(connRefs.current[i], "transform", M.phone ? `scaleY(${f})` : `scaleX(${f})`, `L${i}`)
+        }
       }
-      // the end label swaps sides on phones (above the line -> under the list)
-      op(endUpRef.current, M.phone ? 1 - seg(z, 0, 0.5) : 1, "eU")
-      op(endDownRef.current, M.phone ? seg(z, 0.5, 1) : 0, "eD")
-      // the line, end to end; the fill tip rides the step in front of you
-      const ax = lerp(M.tA[0] - cam, M.oA[0], z)
-      const ay = lerp(M.tA[1], M.oA[1], z)
-      const bx = lerp(M.tB[0] - cam, M.oB[0], z)
-      const by = lerp(M.tB[1], M.oB[1], z)
-      line(trackRef.current, ax, ay, bx, by, 1, "track")
-      line(fillRef.current, ax, ay, bx, by, c / (N - 1), "fill")
     }
 
     let raf: number | null = null
+    // Set on cleanup. The refs outlive this effect, so a late callback —
+    // fonts.ready resolving after a switch to static — must never write through them.
+    let disposed = false
     const update = () => {
       raf = null
       if (disposed) return
-      // no layout read: where the runway sits and how far it scrolls are measured
+      // no layout read: where the runway and the dots sit is measured
       const y = window.scrollY
-      const p = M.runTotal > 0 ? clamp01((y - M.runTop) / M.runTotal) : 0
-      const approach = ease(seg(y, M.runTop - 0.6 * M.vh, M.runTop - 0.08 * M.vh))
-      draw(p, approach)
+      draw(M.phone ? cPhone(y) : cDesk(y))
     }
     const onScroll = () => {
       if (raf === null) raf = requestAnimationFrame(update)
     }
-    // Set on cleanup. The refs outlive this effect (they point at the static
-    // fallback's nodes once it renders), so a late callback — fonts.ready
-    // resolving after a switch to static — must never write through them.
-    let disposed = false
     const onResize = () => {
       if (disposed) return
       if (!measure()) {
@@ -384,97 +282,60 @@ export function SetupTimeline({
       ro.disconnect()
       if (raf !== null) cancelAnimationFrame(raf)
     }
-  }, [pinned, steps.length])
+  }, [live, steps.length])
 
-  const last = steps.length - 1
+  const lastIndex = steps.length - 1
+  /** A callback ref into one of the per-step arrays — only on the scene's copy. */
+  const into =
+    <T extends Element>(on: boolean, arr: { current: (T | null)[] }, i: number) =>
+    (el: T | null) => {
+      if (on) arr.current[i] = el
+    }
   // Only the scene's copy carries refs: in "ssr" both copies are mounted, and
-  // a shared object ref would be nulled when the static copy unmounts.
-  const renderList = (live: boolean) => (
-    <ol className={s.list} ref={live ? listRef : undefined}>
+  // a shared ref would be nulled when the static copy unmounts.
+  const renderList = (scene: boolean) => (
+    <ol className={s.list} ref={scene ? listRef : undefined}>
       {steps.map((step, i) => (
         <li key={step.number} className={s.step}>
-          <div
-            className={s.ill}
-            ref={
-              live
-                ? (el) => {
-                    illRefs.current[i] = el
-                  }
-                : undefined
-            }
-          >
-            <SetupIllustration index={i} />
+          <div className={s.ill}>
+            {scene ? (
+              <div className={s.ghost} aria-hidden="true" ref={into(scene, ghostRefs, i)}>
+                <SetupIllustration index={i} />
+              </div>
+            ) : null}
+            <div className={s.ink} ref={into(scene, inkRefs, i)}>
+              <SetupIllustration index={i} />
+            </div>
           </div>
-          <div
-            className={s.node}
-            aria-hidden="true"
-            ref={
-              live
-                ? (el) => {
-                    nodeRefs.current[i] = el
-                  }
-                : undefined
-            }
-          >
-            <span
-              className={s.dot}
-              ref={
-                live
-                  ? (el) => {
-                      dotRefs.current[i] = el
-                    }
-                  : undefined
-              }
-            >
-              <span
-                className={s.dotFill}
-                ref={
-                  live
-                    ? (el) => {
-                        dotFillRefs.current[i] = el
-                      }
-                    : undefined
-                }
-              />
+          <div className={s.node} aria-hidden="true">
+            {i < lastIndex ? (
+              <span className={s.conn}>
+                <span className={s.connFill} ref={into(scene, connRefs, i)} />
+              </span>
+            ) : null}
+            <span className={s.dot} ref={into(scene, dotRefs, i)}>
+              <span className={s.dotRing} ref={into(scene, ringRefs, i)} />
+              <span className={s.dotFill} ref={into(scene, dotFillRefs, i)} />
             </span>
             {i === 0 ? <span className={s.lbl}>{axisStart}</span> : null}
-            {i === last ? (
+            {i === lastIndex ? (
               <>
-                <span className={cn(s.lbl, s.lblUp)} ref={live ? endUpRef : undefined}>
-                  {axisEnd}
-                </span>
-                <span className={cn(s.lbl, s.lblDown)} ref={live ? endDownRef : undefined}>
-                  {axisEnd}
-                </span>
+                <span className={cn(s.lbl, s.lblUp)}>{axisEnd}</span>
+                <span className={cn(s.lbl, s.lblDown)}>{axisEnd}</span>
               </>
             ) : null}
           </div>
-          <div
-            className={s.txt}
-            ref={
-              live
-                ? (el) => {
-                    txtRefs.current[i] = el
-                  }
-                : undefined
-            }
-          >
+          <div className={s.txt}>
             <span className={s.num} aria-hidden="true">
               {step.number}
+              <span className={s.numOn} ref={into(scene, numOnRefs, i)}>
+                {step.number}
+              </span>
             </span>
-            <h3 className={s.title}>{step.title}</h3>
-            <p
-              className={s.body}
-              ref={
-                live
-                  ? (el) => {
-                      bodyRefs.current[i] = el
-                    }
-                  : undefined
-              }
-            >
-              {step.body}
-            </p>
+            <div className={s.copy} ref={into(scene, copyRefs, i)}>
+              <h3 className={s.title}>{step.title}</h3>
+              <p className={s.body}>{step.body}</p>
+            </div>
           </div>
         </li>
       ))}
@@ -503,17 +364,13 @@ export function SetupTimeline({
         ref={runwayRef}
         className={cn(s.runway, s.pinned)}
         data-nojs="runway"
-        data-live={pinned ? "" : undefined}
-        style={{ height: `${RUNWAY_VH}vh` }}
+        data-live={live ? "" : undefined}
+        style={{ "--runway-h": `${RUNWAY_VH}vh` } as CSSProperties}
       >
         <div className={s.pin}>
           <div className={cn(s.wrap, s.head)}>{header}</div>
           <div className={cn(s.wrap, s.stageWrap)}>
             <div className={s.stage} ref={stageRef}>
-              <div className={s.lineWrap} aria-hidden="true">
-                <span className={s.track} ref={trackRef} />
-                <span className={s.fill} ref={fillRef} />
-              </div>
               {renderList(true)}
             </div>
           </div>

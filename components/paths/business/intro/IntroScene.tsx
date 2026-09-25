@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
 import { ClipLockScreen } from "../../customer/appui"
 import { receiptMoment } from "../../customer/appui/Clip"
@@ -38,6 +38,12 @@ import cardStyles from "../tapToRetain.module.css"
  *
  * On phones (<=820px) the paper grows IN FRONT of the (dimmed) phone, which
  * stays whole and large; on desktop it grows beside it.
+ *
+ * The section heading (`header`) is placed twice and CSS shows one
+ * (intro.module.css): on desktop screens tall enough (>= 821 x 680) it sits at
+ * the top of the pin and the scene is sized to the space left under it
+ * (container query units), so title + scene read as one screen; on phones,
+ * short screens, reduced motion and no-JS it sits in flow above, as before.
  *
  * The caption cards highlight in sync (receipt beat / coupon beat) and are
  * buttons that scroll to their beat's "paper fully readable" point.
@@ -96,7 +102,7 @@ function offsetIn(el: HTMLElement, root: HTMLElement) {
 /** 0 -> 1 -> 0 across [a, c], peaking at b. */
 const bump = (p: number, a: number, b: number, c: number) => (p <= b ? seg(p, a, b) : 1 - seg(p, b, c))
 
-export function IntroScene() {
+export function IntroScene({ header }: { header: ReactNode }) {
   // "ssr": the server render and first client frame carry BOTH versions and
   // CSS shows one (intro.module.css: the runway unless prefers-reduced-motion,
   // then the static composition). So the section is its final height from the
@@ -308,19 +314,34 @@ export function IntroScene() {
     window.scrollTo({ top: Math.round(runTop + JUMP[key] * runTotal), behavior: "smooth" })
   }, [])
 
+  // In flow above the runway / static version; hidden by CSS on desktop while
+  // the pinned copy shows (data-nojs="static": no-JS always shows this one).
+  const flowHead = (
+    <div className={s.flowHead} data-nojs="static">
+      {header}
+    </div>
+  )
   const staticVersion =
     mode === "scene" ? null : (
       <div className={s.staticSlot} data-nojs="static">
         <IntroStatic />
       </div>
     )
-  if (mode === "static") return staticVersion
+  if (mode === "static")
+    return (
+      <>
+        {flowHead}
+        {staticVersion}
+      </>
+    )
 
   return (
     <>
+    {flowHead}
     {staticVersion}
     <div ref={runwayRef} className={s.runway} data-nojs="runway" style={{ height: `${RUNWAY_VH}vh` }}>
       <div className={s.pin} ref={pinRef}>
+        <div className={s.pinHead}>{header}</div>
         <div className={s.layout}>
           <div className={s.sceneWrap}>
             <span className={s.demoTag}>{t.demoTag}</span>
