@@ -23,7 +23,9 @@ export const heroContent = {
   // Web 2.1 (spec §3.2): "no app to GET it, the free app to KEEP it" — the old
   // "saved… forever. No app required" line contradicted the Download button
   // right under it.
-  lead: "Tap your phone at checkout and your receipt appears. No app needed to get it — the free PapeX app keeps every one.",
+  // Web 2.1 (Nico, 2026-09-24): "not just a receipt" — at select stores a
+  // tap earns a coupon too. Still no app needed to GET it (spec §3.2).
+  lead: "Tap your phone at checkout and your receipt appears — at select stores, a coupon for next time comes with it. No app needed to get it — the free PapeX app keeps every receipt and coupon in one place.",
   ctaLabel: "Download the app",
   // True of both listings (lib/storeLinks.ts). Also shown under the quiz
   // result's CTA (Personas.tsx).
@@ -125,7 +127,15 @@ export const marqueeContent = {
   durationSeconds: 30,
   // Web 2.1 (spec §3.2): "Saved forever" removed; "Less paper", not "Zero
   // paper" — the store's printer can keep printing.
-  phrases: ["One tap.", "No app to receive.", "iPhone & Android.", "Free.", "Less paper."],
+  // "Coupons at select stores." added 2026-09-24 (Nico) — never every store.
+  phrases: [
+    "One tap.",
+    "No app to receive.",
+    "iPhone & Android.",
+    "Free.",
+    "Coupons at select stores.",
+    "Less paper.",
+  ],
 };
 
 export type PersonaId = "keeper" | "casual" | "non";
@@ -304,7 +314,9 @@ export const howItWorksContent = {
     {
       number: "03",
       title: "Save it to PapeX",
-      body: "Save it to the free PapeX app and it's always searchable.",
+      // Web 2.1 (Nico, 2026-09-24): saved receipts sit next to any coupons
+      // from stores you shop at — coupons are live, not "coming soon".
+      body: "Save it to the free PapeX app and it's always searchable — right alongside coupons from stores you shop at.",
     },
   ],
 };
@@ -343,6 +355,8 @@ export const proofContent = {
 export const visionContent = {
   eyebrow: "The vision",
   headline: "A world where every receipt is useful, and none of them are wasted.",
-  body: "We're modernizing the most ignored moment of every purchase. Less paper, less waste, and receipts that finally work for you.",
+  // Web 2.1 (Nico, 2026-09-24): ties receipts to coupons, no numbers, no
+  // "every store" implication — "select stores" per the approved facts.
+  body: "We're modernizing the most ignored moment of every purchase. Less paper, less waste, and receipts that pay you back — with coupons at select stores.",
   primaryCta: "Download the app",
 };
