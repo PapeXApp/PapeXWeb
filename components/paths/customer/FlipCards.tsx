@@ -257,7 +257,9 @@ function Tree({ kind, h, u, haze = 0 }: { kind: TreeKind; h: number; u: U; haze?
   return (
     <g>
       <path d={`M${-TRUNK_HALF} 0.5L-2.6 ${r1(-H * 0.56)}H2.6L${TRUNK_HALF} 0.5Z`} fill={u("bark")} {...INK} />
-      <path d={`M0.5 ${r1(-H * 0.36)}L${r1(H * 0.13)} ${r1(-H * 0.5)}`} stroke="#643F24" strokeWidth={1.5} fill="none" />
+      {/* the diagonal branch stub that used to sit here (2026-09-24) read as a
+          cut/slash across the trunk at this scale — dropped, not replaced;
+          the leaf blobs alone still read as a round tree. */}
       {blobs.map(([cx, cy, r], i) => (
         <circle key={i} cx={r1(cx)} cy={r1(cy)} r={r1(r)} fill={u("leaf")} {...INK} />
       ))}
@@ -272,14 +274,42 @@ function Tree({ kind, h, u, haze = 0 }: { kind: TreeKind; h: number; u: U; haze?
   );
 }
 
-/** Stump sitting on the ground at 0,0 — bark sides, root flare, a cut face with rings. */
-function Stump({ u }: { u: U }) {
+/**
+ * Stump sitting on the ground at 0,0 — bark sides, root flare, and (once cut)
+ * a pale cut face with rings.
+ *
+ * `cut` (default true) draws the cut face; pass `false` for a whole,
+ * still-standing tree's base — the bark trapezoid alone reads as the trunk
+ * running into the ground, with nothing at the top to suggest it's already
+ * been sawn through.
+ *
+ * `revealAt` (ms) is for a tree that's ABOUT to fall: the cut face stays
+ * hidden — so the standing tree looks whole — until the fall itself, then
+ * fades in in step with `.treeFell`'s own fade-out (see `.stumpCut` in
+ * flipcards.module.css), so the "cut" and the "gone" read as one moment
+ * instead of the cut face having been sitting there the whole time. Leave it
+ * unset for a stump meant to be already-felled from the first frame (e.g. the
+ * lone stump in FrontForest).
+ */
+function Stump({ u, cut = true, revealAt }: { u: U; cut?: boolean; revealAt?: number }) {
   const s = STUMP_H;
+  const cutFace = (
+    <>
+      <ellipse cx="0" cy={-s} rx="4.4" ry="1.7" fill="#EECE98" {...INK} />
+      <ellipse cx="-0.2" cy={-s} rx="2.4" ry="0.9" stroke="#C39158" {...DETAIL} />
+    </>
+  );
   return (
     <g>
       <path d={`M-4.4 ${-s}V-1.2Q-4.6 0.6 -7.2 1.2H7.2Q4.6 0.6 4.4 -1.2V${-s}Z`} fill={u("bark")} {...INK} />
-      <ellipse cx="0" cy={-s} rx="4.4" ry="1.7" fill="#EECE98" {...INK} />
-      <ellipse cx="-0.2" cy={-s} rx="2.4" ry="0.9" stroke="#C39158" {...DETAIL} />
+      {cut &&
+        (revealAt !== undefined ? (
+          <g className={styles.stumpCut} style={{ animationDelay: `${revealAt}ms` }}>
+            {cutFace}
+          </g>
+        ) : (
+          cutFace
+        ))}
     </g>
   );
 }
@@ -690,7 +720,7 @@ function StandTree({
           className={styles.treeShadow}
           style={{ animationDelay: `${fall}ms` }}
         />
-        <Stump u={u} />
+        <Stump u={u} revealAt={fall} />
         <g transform={`translate(0 ${-STUMP_H})`}>
           <g className={styles.treeFell} style={{ animationDelay: `${fall}ms` }}>
             <Tree kind={kind} h={h} u={u} haze={haze} />
@@ -874,7 +904,9 @@ function FrontPrint() {
   );
 }
 
-/** The forest front plate: the scene's third blow — axe bitten into the trunk, notch open. */
+/** The forest front plate: a whole, untouched stand — the axe about to swing,
+ *  nothing cut yet (2026-09-24: it used to pre-draw the third blow's open
+ *  notch, which meant the "before" card front already showed a tree mid-cut). */
 function FrontForest() {
   const ids = useSvgIds("forest-front");
   const u = ids.url;
@@ -897,34 +929,30 @@ function FrontForest() {
       ].map((tr, i) => (
         <g key={i} transform={`translate(${tr.x} ${tr.y}) scale(${tr.s})`}>
           <ellipse cx={r1(tr.h * 0.3)} cy="0.6" rx={r1(tr.h * 0.36)} ry="3" fill={SHADOW} />
-          <Stump u={u} />
+          <Stump u={u} cut={false} />
           <g transform={`translate(0 ${-STUMP_H})`}>
             <Tree kind={tr.kind} h={tr.h} u={u} haze={tr.haze} />
           </g>
         </g>
       ))}
-      {/* one already down: a stump in the grass */}
+      {/* one already down: a stump in the grass — the one tree in this plate
+          that's meant to already be cut, so its face stays on. */}
       <g transform="translate(184 92) scale(0.9)">
         <Stump u={u} />
       </g>
-      {/* the tree being felled */}
+      {/* the tree the axe is about to swing at — whole, same as the rest */}
       <g transform={`translate(${t.x} ${t.base}) scale(${t.s})`}>
         <ellipse cx={r1(t.h * 0.3)} cy="0.6" rx={r1(t.h * 0.36)} ry="3" fill={SHADOW} />
-        <Stump u={u} />
+        <Stump u={u} cut={false} />
         <g transform={`translate(0 ${-STUMP_H})`}>
           <Tree kind="round" h={t.h} u={u} />
         </g>
       </g>
-      <path
-        d={`M${r1(x0)} ${r1(bite[1] - 3.2)}L${r1(x0 + 4.4)} ${r1(bite[1])}L${r1(x0)} ${r1(bite[1] + 3.2)}Z`}
-        fill="#EFCF98"
-        {...INK}
-      />
+      {/* the axe, mid-swing toward it — no notch, no chips: nothing's been
+          cut yet, per Nico (2026-09-24). */}
       <g transform={`translate(${r1(grip[0])} ${r1(grip[1])}) rotate(${AXE_BITE_DEG}) scale(${axeScale})`}>
         <Axe u={u} />
       </g>
-      {/* chips thrown back out of the notch */}
-      <path d="M72 84l2.6 -0.8l-0.2 1.4ZM66 88l2.4 0.4l-1.2 1.1ZM78 80l2 -0.6l-0.2 1.2ZM60 94l2.6 -0.4l-0.6 1.3Z" fill="#E4BE86" />
       <GrassTufts tufts={[[12, 95, 0.8], [110, 97, 0.9], [196, 96, 0.8], [132, 88, 0.6]]} />
     </svg>
   );

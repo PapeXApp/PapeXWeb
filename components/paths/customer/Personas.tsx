@@ -205,11 +205,7 @@ export function Personas() {
                 {questions.map((q, i) => (
                   <li
                     key={q.prompt}
-                    className={cn(
-                      styles.stepSeg,
-                      (i < step || isResult) && styles.stepDone,
-                      i === step && !isResult && styles.stepCurrent,
-                    )}
+                    className={cn(styles.stepSeg, (i < step || isResult) && styles.stepDone)}
                   />
                 ))}
               </ol>

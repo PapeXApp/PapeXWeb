@@ -352,7 +352,8 @@
 }
 .still .ledOn,
 .still .paperOut,
-.still .treeGrow {
+.still .treeGrow,
+.still .stumpCut {
   opacity: 1;
 }
 .still .treeFell,
@@ -712,6 +713,23 @@
   }
   to {
     opacity: 0;
+  }
+}
+/* Stump's cut face (2026-09-24): a standing tree's stump must look whole —
+   the pale cut face only fades in as the tree above it falls away, on the
+   SAME 1s/delay as .treeFell and crossfading with its own 70%->100% fade-out,
+   so "the tree is gone" and "the stump is cut" read as one moment. */
+.stumpCut {
+  opacity: 0;
+  animation: fcStumpCut 1s linear both;
+}
+@keyframes fcStumpCut {
+  0%,
+  70% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
   }
 }
 /* wood chips at the cut, leaves at the impact: a two-leg arc */

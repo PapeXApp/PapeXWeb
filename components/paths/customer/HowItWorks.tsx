@@ -17,8 +17,14 @@ const BOW_MS = 380;
 
 /** When the stage pins. MUST match the media query on .walkRunway/.walkStage
  *  in customer.module.css — the CSS owns the layout, this only picks the
- *  behaviour. */
-const PIN_QUERY = "(prefers-reduced-motion: no-preference) and (min-width: 821px) and (min-height: 600px)";
+ *  behaviour. min-height raised 600 -> 850 on 2026-09-24: below that the
+ *  text column (heading + 3 steps, sized off WIDTH not height) is taller
+ *  than a short pinned stage can hold — see the media query's own comment
+ *  in customer.module.css for the numbers. This constant is not otherwise
+ *  owned by this fix; it's edited only because the file above requires it
+ *  to stay in lockstep with the CSS threshold, or pinned-mode scroll logic
+ *  would keep running under a stage that's visually unpinned. */
+const PIN_QUERY = "(prefers-reduced-motion: no-preference) and (min-width: 821px) and (min-height: 850px)";
 
 /** Seats the phone under the "front" RDH view (see .walkRdhSeat). The phone's
  *  top edge sits 9 viewBox units below the top face's nearest corner, so a
@@ -245,7 +251,7 @@ export function HowItWorks() {
   return (
     // `styles.screen` (2026-09-23): when the stage pins, the runway is already
     // taller than a screen and this is a no-op; when it doesn't (reduced
-    // motion, or a desktop window under 600px tall) the section still owns a
+    // motion, or a desktop window under 850px tall) the section still owns a
     // full screen like every other one from 821px. The runway is a plain
     // block, so the screen's column flexbox stretches it full width and the
     // sticky stage inside it is unaffected.

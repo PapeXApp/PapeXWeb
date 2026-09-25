@@ -33,10 +33,12 @@ import styles from "./customer.module.css";
  *      (the quiz result re-orders Features' four rows: personaStore.ts)
  *   06 Privacy                           light
  *   07 Get it — Vision + Download        NAVY
- *   08 FAQ                               light  id="faq"
+ *   08 FAQ                               NAVY   id="faq"
  *      footer                            NAVY   (FlowGround's footer slot,
  *                                                outside <main>)
- * 04→05 is navy next to navy by Nico's order; everything else alternates.
+ * 04→05 is navy next to navy by Nico's order; 07→08→footer is also navy next
+ * to navy, so there's no colour change from Get it through the footer;
+ * everything else alternates.
  *
  * The [NN] eyebrows live inside each section file (or are passed as
  * `eyebrowIndex` for the shared Faq and Privacy); keep them in step with
@@ -82,7 +84,7 @@ export function CustomerPath() {
         <Features />
         <Privacy eyebrowIndex="06" />
         <Vision />
-        <Faq id="faq" eyebrowIndex="08" ground="light" heading={customerFaqHeading} items={customerFaq} />
+        <Faq id="faq" eyebrowIndex="08" ground="navy" heading={customerFaqHeading} items={customerFaq} />
       </FlowGround>
     </div>
   );
