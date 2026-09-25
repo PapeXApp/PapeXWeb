@@ -33,6 +33,8 @@ const MAX_BYTES = 400 * 1024
 const VARIANTS = [
   { key: 'default', out: 'public/og-image-v3.png' },
   { key: 'alt', out: 'public/og-image-v3-alt.png' },
+  { key: 'v4', out: 'public/og-image-v4.png' },
+  { key: 'v4c', out: 'public/og-image-v4-coupon.png' },
 ]
 
 // ---- 1. Logo paths from the site's components -----------------------------

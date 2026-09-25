@@ -60,7 +60,7 @@
     font-size: 76px; line-height: 1.06; letter-spacing: -0.012em;
   }
   .headline em { font-style: normal; color: var(--orange); }
-  .alt .headline { font-size: 60px; width: 730px; }
+  .alt .headline, .compact .headline { font-size: 60px; width: 730px; }
   .url {
     position: absolute; left: 78px; bottom: 60px;
     font-size: 27px; letter-spacing: 0.01em; color: rgba(0, 18, 29, 0.72);
@@ -264,9 +264,16 @@
     const COPY = {
       default: 'Your receipt,<br><em>one tap</em> away.',
       alt: 'Receipts and coupons,<br><em>one tap</em> away.',
+      // v4 (Nico, provisional): flip "tap to pay" — the tap where you get something back.
+      v4: 'Tap to pay?<br>Now <em>tap to receive.</em>',
+      v4c: 'Tap to pay?<br>Now <em>tap to receive.</em>',
     };
-    const v = new URLSearchParams(location.search).get('v') === 'alt' ? 'alt' : 'default';
-    document.body.classList.add(v);
+    // Which layout class each variant uses: 'alt' shows the coupon ticket.
+    const LAYOUT = { default: 'default', alt: 'alt', v4: 'default', v4c: 'alt' };
+    const q = new URLSearchParams(location.search).get('v');
+    const v = q in COPY ? q : 'default';
+    document.body.classList.add(LAYOUT[v]);
+    if (v === 'v4') document.body.classList.add('compact'); // keep the line on two rows
     document.getElementById('headline').innerHTML = COPY[v];
 
     const NS = 'http://www.w3.org/2000/svg';
