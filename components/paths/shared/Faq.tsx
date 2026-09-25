@@ -217,15 +217,21 @@ export function Faq({ id, eyebrowIndex, eyebrow = "FAQ", heading, items, ground 
                         {String(index + 1).padStart(2, "0")}
                       </span>
                       <span className={styles.qText}>{item.q}</span>
-                      <span aria-hidden="true" className={styles.icon}>
-                        <span className={styles.bar} />
-                        <span className={`${styles.bar} ${styles.barV}`} />
+                      <span aria-hidden="true" className={styles.icon} data-nojs="faq-icon">
+                        <span className={styles.bar} data-nojs="faq-bar" />
+                        <span className={`${styles.bar} ${styles.barV}`} data-nojs="faq-bar-v" />
                       </span>
                     </button>
                   </h3>
-                  <div id={panelId} role="region" aria-labelledby={buttonId} className={styles.panel}>
-                    <div className={styles.panelClip}>
-                      <div className={styles.answer}>
+                  <div
+                    id={panelId}
+                    role="region"
+                    aria-labelledby={buttonId}
+                    className={styles.panel}
+                    data-nojs="faq-panel"
+                  >
+                    <div className={styles.panelClip} data-nojs="faq-clip">
+                      <div className={styles.answer} data-nojs="faq-answer">
                         <Answer a={item.a} />
                       </div>
                     </div>

@@ -12,17 +12,24 @@ Sitemap: https://papex.app/sitemap.xml
 Crawl-delay: 1
 
 # Allow all major search engines
+# Each named group below is its own record and otherwise overrides the
+# default `*` group entirely for that crawler, so /r has to be re-disallowed
+# in every one of them or these bots would crawl it.
 User-agent: Googlebot
 Allow: /
+Disallow: /r
 
 User-agent: Bingbot
 Allow: /
+Disallow: /r
 
 User-agent: Slurp
 Allow: /
+Disallow: /r
 
 User-agent: DuckDuckBot
 Allow: /
+Disallow: /r
 
 # Block unnecessary crawlers
 User-agent: AhrefsBot

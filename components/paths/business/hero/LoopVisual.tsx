@@ -127,7 +127,10 @@ export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock:
         </div>
 
         {/* --- the phone ------------------------------------------------ */}
-        <div className={s.phone} aria-hidden="true">
+        {/* The picture is decorative (the stops carry the words) and inert:
+            the reused clip screen holds a disabled button and a <summary>
+            that must never take focus (see intro/IntroScene.tsx). */}
+        <div className={s.phone} aria-hidden="true" inert>
           <PhoneChrome>
             <div className={cn(s.scene, s.sceneClip, !at(phase, "coupon") && s.sceneOn)}>
               <ClipReceiptScreen summary={summary} saved={at(phase, "saved")} />

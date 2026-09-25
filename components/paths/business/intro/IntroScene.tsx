@@ -310,7 +310,7 @@ export function IntroScene() {
 
   const staticVersion =
     mode === "scene" ? null : (
-      <div className={s.staticSlot}>
+      <div className={s.staticSlot} data-nojs="static">
         <IntroStatic />
       </div>
     )
@@ -319,7 +319,7 @@ export function IntroScene() {
   return (
     <>
     {staticVersion}
-    <div ref={runwayRef} className={s.runway} style={{ height: `${RUNWAY_VH}vh` }}>
+    <div ref={runwayRef} className={s.runway} data-nojs="runway" style={{ height: `${RUNWAY_VH}vh` }}>
       <div className={s.pin} ref={pinRef}>
         <div className={s.layout}>
           <div className={s.sceneWrap}>

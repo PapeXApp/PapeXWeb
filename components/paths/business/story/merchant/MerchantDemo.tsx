@@ -635,18 +635,18 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
             </div>
           </div>
         </aside>
-        <main className="absolute inset-y-0 left-60 right-0 overflow-y-auto px-8 pb-10 pt-8">
+        <div className="absolute inset-y-0 left-60 right-0 overflow-y-auto px-8 pb-10 pt-8">
           {content}
-        </main>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="font-barlow relative h-full w-full overflow-hidden text-left" style={{ background: T.pageBg, color: T.text }}>
-      <main className="absolute inset-0 overflow-y-auto px-4 pb-28 pt-[116px]">
+      <div className="absolute inset-0 overflow-y-auto px-4 pb-28 pt-[116px]">
         {content}
-      </main>
+      </div>
       {/* Mobile top bar (below the phone's status bar area) */}
       <header className="absolute inset-x-0 top-0 z-20 flex items-center justify-between border-b px-4 pb-3 pt-12" style={{ borderColor: T.glassBorder, background: "rgba(12,15,20,0.85)" }}>
         <Brand small />

@@ -265,9 +265,10 @@ export function HowItWorks() {
       <div
         ref={runwayRef}
         className={styles.walkRunway}
+        data-nojs="walk-runway"
         style={{ ["--walk-steps" as string]: stepCount } as CSSProperties}
       >
-        <div ref={stageRef} className={styles.walkStage} style={stageStyle}>
+        <div ref={stageRef} className={styles.walkStage} data-nojs="walk-stage" style={stageStyle}>
           <div
             className="grid w-full items-center"
             style={{
@@ -296,11 +297,12 @@ export function HowItWorks() {
                   <div
                     key={s.number}
                     className={styles.walkStep}
+                    data-nojs="walk-step"
                     style={{ ["--walk-i" as string]: index } as CSSProperties}
                     onClick={() => goToStep(index)}
                   >
                     <div className={styles.walkStepRail}>
-                      <div className={styles.walkStepFill} />
+                      <div className={styles.walkStepFill} data-nojs="walk-fill" />
                     </div>
                     <div style={{ paddingBottom: index < stepCount - 1 ? 22 : 0 }}>
                       <div
@@ -388,13 +390,13 @@ export function HowItWorks() {
 
               {/* Page dots: the affordance that says "there are three of these and
                   you can move between them". */}
-              <div className={styles.wpDots} aria-hidden="true">
+              <div className={styles.wpDots} data-nojs="walk-dots" aria-hidden="true">
                 {howItWorksContent.steps.map((s, i) => (
                   <span key={s.number} className={cn(styles.wpDot, i === step && styles.wpDotOn)} />
                 ))}
               </div>
 
-              <div className={styles.walkCue} aria-live="polite">
+              <div className={styles.walkCue} data-nojs="walk-cue" aria-live="polite">
                 {step === last ? (
                   <>
                     {cue} <b>{pinned ? howItWorksContent.continueLabel : howItWorksContent.replayLabel}</b>

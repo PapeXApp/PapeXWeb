@@ -77,37 +77,59 @@ const SITE_JSON_LD = JSON.stringify({
   // Escape "<" so no value can ever close the script element.
 }).replace(/</g, '\\u003c')
 
-// No-JS visibility (Web 2.1 P5). Scroll reveals start hidden in the server
-// HTML (inline opacity 0 / blur / clip) and only JS reveals them, so with JS
-// off every heading and paragraph under them stayed invisible to no-JS
-// visitors and crawlers. This rule lives inside <noscript>, so browsers with
-// JS never parse it: first paint, hydration and every reveal are untouched.
-//   1. Reveal / WordReveal words / ChildStagger children
-//      (components/motion, marked with data-reveal / data-reveal-group):
-//      forced to their settled, visible state. !important is what beats the
-//      inline hidden style.
+// No-JS visibility (Web 2.1 P5, attribute-based since P7). Scroll reveals,
+// pinned scenes, flip cards and the FAQ accordion all start in a state only JS
+// can advance, so with JS off their headings and paragraphs stayed invisible
+// to no-JS visitors and crawlers. This rule lives inside <noscript>, so
+// browsers with JS never parse it: first paint, hydration and every reveal are
+// untouched. Every selector is a data attribute (never a CSS-module class, whose
+// generated name differs between build and dev and changes on rename):
+//   1. Reveal / WordReveal words / ChildStagger children (components/motion,
+//      data-reveal / data-reveal-group): forced to their settled, visible
+//      state. !important is what beats the inline hidden style.
 //   2. The /business pinned scroll scenes (§02 intro, §03 story, §05 setup)
 //      ship BOTH a runway and a static version and pick by CSS; with no JS the
 //      runway can never play, so show the static version, exactly as reduced
-//      motion does (`.runway` / `.staticSlot` in story.module.css,
-//      intro/intro.module.css, setup/setup.module.css).
-//   3. The FAQ accordion (components/paths/shared/faq.module.css) can't be
-//      opened without JS, so its answers are shown open.
-// 2 and 3 are CSS-module classes, matched by their generated names in both
-// the production build (`story_runway__<hash>`) and Turbopack dev
-// (`story-module__<hash>__runway`). Renaming one of those modules or classes
-// means updating it here.
-const moduleClass = (file: string, name: string) =>
-  `[class*="${file}_${name}__"],[class*="${file}-module__"][class*="__${name}"]`
-const NO_JS_SCENES = ['intro', 'story', 'setup']
+//      motion does (data-nojs="runway" / "static").
+//   3. /customers §02 How it works (customer/HowItWorks.tsx) has no separate
+//      static version: its runway collapses to the stage's own height, the
+//      stage unpins, all three steps show at full ink with full rails, and the
+//      phone stays on step 1 (the tap). The tap/scroll cue and page dots, which
+//      describe an interaction that can't happen, are dropped (data-nojs="walk-*").
+//   4. /customers problem flip cards (customer/FlipCards.tsx): the 3D flip is
+//      flattened and the answer face (stat, caption, source) is stacked under
+//      the question face; the "Tap to reveal" footer and the empty dock strip
+//      are dropped (data-nojs="flip-*").
+//   5. The FAQ accordion (shared/Faq.tsx) can't be opened without JS, so its
+//      answers are shown open and the +/− icon wears its open state
+//      (data-nojs="faq-*").
 const NO_JS_REVEAL_CSS = [
   '[data-reveal],[data-reveal-group]>*{opacity:1!important;transform:none!important;filter:none!important}',
   '[data-reveal="mask"]{clip-path:none!important}',
-  `${NO_JS_SCENES.map((m) => moduleClass(m, 'runway')).join(',')}{display:none!important}`,
-  `${NO_JS_SCENES.map((m) => moduleClass(m, 'staticSlot')).join(',')}{display:block!important}`,
-  `${moduleClass('faq', 'panel')}{grid-template-rows:1fr!important}`,
-  `${moduleClass('faq', 'panelClip')}{visibility:visible!important}`,
-  `${moduleClass('faq', 'answer')}{opacity:1!important;transform:none!important}`,
+  // 2. business scenes
+  '[data-nojs="runway"]{display:none!important}',
+  '[data-nojs="static"]{display:block!important}',
+  // 3. customer How it works
+  '[data-nojs="walk-runway"]{height:auto!important;margin-bottom:0!important}',
+  '[data-nojs="walk-stage"]{position:relative!important;height:auto!important;padding-block:var(--section-pad)!important}',
+  '[data-nojs="walk-step"]{opacity:1!important;transform:none!important}',
+  '[data-nojs="walk-fill"]{transform:none!important}',
+  '[data-nojs="walk-dots"],[data-nojs="walk-cue"]{display:none!important}',
+  // 4. flip cards
+  '[data-nojs="flip-card"]{height:auto!important;perspective:none!important}',
+  '[data-nojs="flip-inner"]{display:grid!important;gap:12px;height:auto!important;transform:none!important;transform-style:flat!important}',
+  '[data-nojs="flip-face"],[data-nojs="flip-back"]{position:relative!important;inset:auto!important;transform:none!important;backface-visibility:visible!important;-webkit-backface-visibility:visible!important}',
+  '[data-nojs="flip-face"]{height:var(--fc-height)}',
+  '[data-nojs="flip-result"]>*{opacity:1!important;transform:none!important;animation:none!important}',
+  '[data-nojs="flip-link"]{pointer-events:auto!important}',
+  '[data-nojs="flip-hint"],[data-nojs="flip-slot"]{display:none!important}',
+  // 5. FAQ
+  '[data-nojs="faq-panel"]{grid-template-rows:1fr!important}',
+  '[data-nojs="faq-clip"]{visibility:visible!important}',
+  '[data-nojs="faq-answer"]{opacity:1!important;transform:none!important}',
+  '[data-nojs="faq-icon"]{transform:rotate(180deg)!important;background-color:var(--orange)!important;border-color:var(--orange)!important}',
+  '[data-nojs="faq-bar"],[data-nojs="faq-bar-v"]{background:var(--navy)!important}',
+  '[data-nojs="faq-bar-v"]{transform:none!important}',
 ].join('')
 
 // Site-wide defaults, used by any route without its own metadata. Same voice

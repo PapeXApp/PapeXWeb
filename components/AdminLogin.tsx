@@ -62,6 +62,7 @@ export function AdminLogin() {
         <Button
           variant="ghost"
           size="sm"
+          aria-label="Admin sign in"
           className="opacity-30 hover:opacity-100 transition-opacity duration-300 text-white/50 hover:text-white"
         >
           <LogIn className="h-3 w-3" />

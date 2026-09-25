@@ -38,6 +38,11 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       { source: '/pos-calculator', destination: '/business', permanent: false },
+      // Straight to /business, not to /pos-calculator: chaining through it
+      // would add a second hop now that /pos-calculator itself redirects
+      // (this used to be a page.tsx `redirect("/pos-calculator?tab=full")`,
+      // now removed).
+      { source: '/pos-value-prop', destination: '/business', permanent: false },
       { source: '/waitlist', destination: '/', permanent: false },
       { source: '/contact', destination: '/about', permanent: false },
     ];
