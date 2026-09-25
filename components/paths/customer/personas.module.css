@@ -64,7 +64,10 @@
 
 .quiz {
   max-width: 780px;
-  margin: var(--gap-body) auto 0;
+  /* Nico 9/25: the heading block sits closer to the progress bars, so on a
+     laptop screen the whole quiz fits without the eyebrow hugging the nav
+     (was --gap-body, ~48px, over the progress row's own 44px). */
+  margin: clamp(8px, 1vw, 16px) auto 0;
 }
 
 /* --- Progress ------------------------------------------------------------- */
