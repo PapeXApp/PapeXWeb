@@ -4,14 +4,14 @@ import { useSyncExternalStore } from "react";
 import type { PersonaId } from "./content";
 
 /**
- * The quiz -> feature rows hand-off (both live in section 04, Personas.tsx):
+ * The quiz (section 04, Personas.tsx) -> Features (section 05) hand-off:
  * which persona the visitor's last quiz result was, or null before they
  * finish it.
  *
  * IN MEMORY ONLY, on purpose (spec §8b: "the order does not persist beyond
  * the visit"): no localStorage, no cookie, and no React provider — a module
- * variable plus useSyncExternalStore, so the quiz and the rows stay sibling
- * components and neither re-renders the whole section.
+ * variable plus useSyncExternalStore, so Personas and Features stay siblings
+ * in index.tsx and neither re-renders the page.
  *
  * `onBeforePersonaChange` listeners run synchronously inside `setPersona`,
  * BEFORE React re-renders with the new value. Features uses that moment to
@@ -53,8 +53,9 @@ export function usePersona(): PersonaId | null {
 }
 
 /**
- * "Change my answers" from the rows' header: the quiz listens and restarts at
- * Question 1 (the header then scrolls the quiz into view itself). Returns
+ * "Change my answers" from Features' header (section 05): the quiz (04)
+ * listens and restarts at Question 1 (Features then scrolls the quiz into
+ * view itself). Returns
  * true when a quiz handled it.
  */
 const retakeListeners = new Set<() => void>();

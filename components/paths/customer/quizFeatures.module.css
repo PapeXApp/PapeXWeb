@@ -1,55 +1,25 @@
 /* ==========================================================================
- * 04 "What's in it for you?" — the merged quiz + feature rows section
- * (Web 2.1 P3-C2, Nico 2026-09-25: one section about PERSONALISATION).
+ * 05 Features — the quiz's OUTCOME (Features.tsx). Section 04, the quiz
+ * (Personas.tsx + personas.module.css), is the 9ef8fd4 quiz, untouched; its
+ * result sets what this section shows (P3-C3, Nico 2026-09-25: "so what
+ * happens from the quiz changes the output of the section that follows").
  *
- *   head   the quiz (Personas.tsx; its internals stay in personas.module.css)
- *   body   the "Picked for you" header + five feature rows (Features.tsx),
- *          each a text column beside a CROPPED phone (FeatureScreens.tsx)
+ *   the "Showing / Picked for you" header, then five feature rows, each a
+ *   text column beside a CROPPED phone (FeatureScreens.tsx)
+ *
+ * The section wrapper itself (one-screen floor, rhythm tokens, padding, the
+ * 1150 column, eyebrow + headline) is the 9ef8fd4 Features wrapper:
+ * customer.module.css .screen/.rhythm plus inline styles in Features.tsx.
  *
  * NAVY ground. Ink rule (shared/flow.module.css): text on the ground uses
  * --flow-fg / --flow-fg-2 so it crossfades with the ground.
- *
- * Replaces, in customer.module.css (left there for the lead to delete at
- * merge, now unused): .featStage, .featPhone, .featRow, .featGrid,
- * .featGridMirrored, .featText, .featShotCell, .featDemo, .featPicked,
- * .featPickedHidden, .featTags, .featTag, .featLine (+ @keyframes
- * featLineIn and their reduced-motion lines).
  * ========================================================================== */
 
-.section {
-  padding: var(--section-pad-y) var(--section-pad-x);
-}
+/* --- The "Showing / Picked for you" header + rows ------------------------ */
 
-.inner {
-  width: 100%;
-  max-width: var(--section-max);
-  margin: 0 auto;
-}
-
-/* --- Head: intro beside the quiz ----------------------------------------- */
-
-.head {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--gap-body);
-  align-items: start;
-}
-@media (min-width: 960px) {
-  .head {
-    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-    gap: clamp(40px, 5vw, 80px);
-  }
-}
-.headText,
-.headQuiz {
-  min-width: 0;
-}
-
-/* --- Body: the "Picked for you" header + rows ---------------------------- */
-
+/* Under the section headline (the section's .rhythm gap). */
 .list {
-  margin-top: clamp(44px, 5vw, 72px);
-  scroll-margin-top: 96px;
+  margin-top: var(--gap-body);
 }
 
 .picked {

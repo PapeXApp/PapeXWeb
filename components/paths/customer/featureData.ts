@@ -3,7 +3,7 @@ import type { PersonaId } from "./content";
 import { DEMO_GROUP, DEMO_PERSON } from "./appui/data";
 
 /**
- * DEMO DATA for the five feature phones (section 04, under the quiz). Everything is INVENTED, and
+ * DEMO DATA for the five feature phones (section 05 Features, the quiz's outcome). Everything is INVENTED, and
  * only these names appear: the stores Tidewick Cafe, Copperpeg Hardware,
  * Mossbrook Pharmacy and Quillbrook Market (the app kit's demo stores, with
  * their monogram logos), the person Jordan Reyes and the group Housemates

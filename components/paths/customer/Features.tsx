@@ -2,7 +2,8 @@
 
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
-import { Reveal } from "@/components/motion";
+import { Reveal, WordReveal } from "@/components/motion";
+import { FlowSection } from "../shared/FlowSection";
 import { PointerLitGroup } from "../shared/PointerLit";
 import { SectionLabel } from "../shared/SectionLabel";
 import { FeatureShot } from "./FeatureScreens";
@@ -16,6 +17,7 @@ import {
   pickedHeader,
 } from "./personaFeatures";
 import { onBeforePersonaChange, requestRetake, usePersona } from "./personaStore";
+import page from "./customer.module.css";
 import styles from "./quizFeatures.module.css";
 
 /** How long a row takes to glide to its new place after the quiz re-sorts. */
@@ -26,10 +28,13 @@ const REORDER_MS = 700;
 const CHANGE_ANSWERS_LABEL = "Change my answers";
 
 /**
- * The personalised feature rows — the BODY of section 04 (Personas.tsx is the
- * section; the quiz is its head). Not a section of its own any more (P3-C2,
- * 2026-09-25: the quiz and the old 05 Features merged into one section about
- * personalisation).
+ * 05 Features — NAVY ground, right after the navy quiz (04, Personas.tsx):
+ * the quiz's OUTCOME. Nico, 2026-09-25: "so what happens from the quiz
+ * changes the output of the section that follows". The quiz is untouched
+ * (P3-C3 restored it after the P3-C2 merge); this section is where the result
+ * shows — the "Showing / Picked for you" header, then the rows in the
+ * persona's order with its lines, titles and phone data. id="features" is the
+ * footer's /customers#features target, as at 9ef8fd4.
  *
  * FIVE ROWS, ALWAYS (live features only): Find · Export · Add · Share ·
  * Deals. The quiz result (personaStore.ts, in memory only) sets their ORDER,
@@ -102,83 +107,118 @@ export function Features() {
     return () => window.clearTimeout(done);
   }, [active]);
 
-  /** Scroll the quiz into view (and, after a result, restart it). Without JS
-   *  the plain #quiz anchor still jumps there. */
+  /** Scroll the quiz (section 04, id="quiz") into view and, after a result,
+   *  restart it at Question 1. Without JS the plain #quiz anchor still jumps
+   *  there. */
   function toQuiz(event: React.MouseEvent<HTMLAnchorElement>) {
     const target = document.getElementById("quiz");
     if (!target) return;
     event.preventDefault();
     if (persona) requestRetake();
+    // Land on the section's top, pushed down just enough that the quiz's
+    // eyebrow clears the fixed nav (on phones the section's padding alone
+    // leaves it under the nav). Two reads, once, on click.
+    const navBottom = document.querySelector(".rd-nav")?.getBoundingClientRect().bottom ?? 0;
+    const sectionTop = target.getBoundingClientRect().top;
+    const lead = target.querySelector("h2")?.parentElement ?? target;
+    const leadOffset = lead.getBoundingClientRect().top - sectionTop;
+    const clearance = Math.max(0, navBottom + 12 - leadOffset);
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    target.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    window.scrollTo({
+      top: Math.round(sectionTop + window.scrollY - clearance),
+      behavior: reduce ? "auto" : "smooth",
+    });
   }
 
   return (
-    <div className={styles.list} id="your-picks">
-      {/* The header over the rows: who the list is picked for, and why it is
-          in this order. Announced politely when a result arrives. */}
-      <div className={styles.picked}>
-        <div aria-live="polite" aria-atomic="true" className={styles.pickedText}>
-          <span key={`label-${active}-${persona ? 1 : 0}`} className={cn(styles.pickedLabel, persona && styles.pickedLabelOn)}>
-            {header.label}
-          </span>
-          <p key={`sum-${active}-${persona ? 1 : 0}`} className={styles.pickedSummary}>
-            {header.summary}
-          </p>
-        </div>
-        <a href="#quiz" className={styles.pickedCta} onClick={toQuiz}>
-          <span aria-hidden="true" className={styles.pickedCtaArrow}>
-            ↑
-          </span>
-          {persona ? CHANGE_ANSWERS_LABEL : answerQuizLabel}
-        </a>
-      </div>
+    <FlowSection
+      ground="navy"
+      index="05"
+      id="features"
+      className={`${page.screen} ${page.rhythm}`}
+      style={{ padding: "var(--section-pad) clamp(20px,5vw,56px)" }}
+    >
+      {/* One 1150 column for the label, headline, header and rows, so they
+          share one left edge. `w-full` because a `margin: 0 auto` item in the
+          screen's column flexbox would otherwise shrink to its content. */}
+      <div className="w-full" style={{ maxWidth: 1150, margin: "0 auto" }}>
+        <Reveal variant="up">
+          <SectionLabel index="05">{featuresContent.eyebrow}</SectionLabel>
+          <WordReveal
+            as="h2"
+            className="max-w-[20ch] [font-family:var(--font-display)] font-bold text-[length:var(--fs-h2)] leading-[1.03] tracking-[-.02em]"
+          >
+            {featuresContent.headline}
+          </WordReveal>
+        </Reveal>
 
-      <PointerLitGroup className={styles.rows}>
-        {order.map((key, index) => {
-          const row = featuresContent.rows[key];
-          const mirrored = index % 2 === 1;
-          return (
-            <div
-              key={key}
-              className={styles.row}
-              data-feature={key}
-              ref={(el) => {
-                if (el) rowEls.current.set(key, el);
-                else rowEls.current.delete(key);
-              }}
-            >
-              {/* Two columns only when the row is wide enough (a container
-                  query in quizFeatures.module.css). Stacked, the text ALWAYS
-                  comes first, so every phone sits under its own row's words;
-                  side by side, rows alternate text/phone by position. */}
-              <Reveal variant="up" className={cn(styles.grid, mirrored && styles.gridMirrored)}>
-                <div className={styles.text}>
-                  <SectionLabel index={`04.${index + 1}`} style={{ marginBottom: 12 }}>
-                    {row.eyebrow}
-                  </SectionLabel>
-                  <h3 key={`t-${key}-${active}`} className={styles.title}>
-                    {titles[key] ?? row.title}
-                  </h3>
-                  <p key={`l-${key}-${active}`} className={styles.line}>
-                    {lines[key]}
-                  </p>
-                  <ul className={styles.tags} aria-label={`${row.eyebrow}: what's included`}>
-                    {row.tags.map((tag) => (
-                      <li key={tag} className={styles.tag}>
-                        {tag}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className={styles.shotCell}>
-                  <FeatureShot feature={key} persona={active} />
-                </div>
-              </Reveal>
+        <div className={styles.list}>
+          {/* The header over the rows: who the list is picked for, and why it is
+              in this order. Announced politely when a result arrives. */}
+          <div className={styles.picked}>
+            <div aria-live="polite" aria-atomic="true" className={styles.pickedText}>
+              <span key={`label-${active}-${persona ? 1 : 0}`} className={cn(styles.pickedLabel, persona && styles.pickedLabelOn)}>
+                {header.label}
+              </span>
+              <p key={`sum-${active}-${persona ? 1 : 0}`} className={styles.pickedSummary}>
+                {header.summary}
+              </p>
             </div>
-          );
-        })}
-      </PointerLitGroup>
-    </div>
+            <a href="#quiz" className={styles.pickedCta} onClick={toQuiz}>
+              <span aria-hidden="true" className={styles.pickedCtaArrow}>
+                ↑
+              </span>
+              {persona ? CHANGE_ANSWERS_LABEL : answerQuizLabel}
+            </a>
+          </div>
+
+          <PointerLitGroup className={styles.rows}>
+            {order.map((key, index) => {
+              const row = featuresContent.rows[key];
+              const mirrored = index % 2 === 1;
+              return (
+                <div
+                  key={key}
+                  className={styles.row}
+                  data-feature={key}
+                  ref={(el) => {
+                    if (el) rowEls.current.set(key, el);
+                    else rowEls.current.delete(key);
+                  }}
+                >
+                  {/* Two columns only when the row is wide enough (a container
+                      query in quizFeatures.module.css). Stacked, the text ALWAYS
+                      comes first, so every phone sits under its own row's words;
+                      side by side, rows alternate text/phone by position. */}
+                  <Reveal variant="up" className={cn(styles.grid, mirrored && styles.gridMirrored)}>
+                    <div className={styles.text}>
+                      <SectionLabel index={`05.${index + 1}`} style={{ marginBottom: 12 }}>
+                        {row.eyebrow}
+                      </SectionLabel>
+                      <h3 key={`t-${key}-${active}`} className={styles.title}>
+                        {titles[key] ?? row.title}
+                      </h3>
+                      <p key={`l-${key}-${active}`} className={styles.line}>
+                        {lines[key]}
+                      </p>
+                      <ul className={styles.tags} aria-label={`${row.eyebrow}: what's included`}>
+                        {row.tags.map((tag) => (
+                          <li key={tag} className={styles.tag}>
+                            {tag}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className={styles.shotCell}>
+                      <FeatureShot feature={key} persona={active} />
+                    </div>
+                  </Reveal>
+                </div>
+              );
+            })}
+          </PointerLitGroup>
+        </div>
+      </div>
+    </FlowSection>
   );
 }
