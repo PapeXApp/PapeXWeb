@@ -1,0 +1,21 @@
+/* The kit screens inside the shared iPhone (W3, 2026-09-24). The kit's
+   AppKitRoot sets --pt from --wp-w, so a 393pt kit screen fills the phone's
+   screen exactly. Two tabs cross-fade in place. */
+.root {
+  position: absolute;
+  inset: 0;
+}
+.layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.on {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .layer {
+    transition: none;
+  }
+}

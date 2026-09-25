@@ -20,8 +20,8 @@
  *      left, the side button and the flush Camera Control on the right.
  *   5. The Dynamic Island at Apple's real size (126 x 37pt, 11pt down).
  *   6. The home indicator (134 x 5pt, 8pt up).
- *   7. An iOS lock screen (appui/Clip.tsx): SF clock, date, flashlight and
- *      camera buttons, a layered-wave wallpaper in brand navy/blue/orange.
+ *   7. An iOS lock screen (appui/Clip.tsx): the iOS 26 heavy clock over the
+ *      date, flashlight and camera, an abstract PapeX-palette wallpaper (W3).
  *
  * CSS has circular corners only, so the radii approximate Apple's continuous
  * curve: the three rings are concentric, and the screen radius is 55pt on a
@@ -212,7 +212,11 @@
 }
 
 /* ==========================================================================
- * iOS LOCK SCREEN (appui/Clip.tsx ClipLockScreen)
+ * iOS LOCK SCREEN (appui/Clip.tsx ClipLockScreen) — W3, 2026-09-24.
+ * Nico: "Recreate the phone OS and the in-app PapeX screens exactly, so they
+ * look real and legit." Before the tap the lock screen carries only what iOS
+ * carries: status bar, island lock, date + clock, wallpaper, flashlight and
+ * camera. No Live Activity (the /business RetainStory still opts into one).
  * ========================================================================== */
 .lock {
   position: absolute;
@@ -220,42 +224,59 @@
   overflow: hidden;
   color: #fff;
 }
+
+/* The wallpaper: an abstract PapeX-palette gradient, NOT an Apple wallpaper
+   (no layered "Collections" waves, no photo). Soft light pools in orange and
+   blue on navy, a faint diagonal sheen, and a darker band at the top so the
+   clock reads. First layer paints on top. */
 .wall {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
+  background:
+    linear-gradient(180deg, rgba(0, 10, 18, 0.42) 0%, rgba(0, 10, 18, 0) 34%),
+    linear-gradient(122deg, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0.07) 47%, rgba(255, 255, 255, 0) 55%),
+    radial-gradient(48% 30% at 86% 30%, rgba(0, 136, 234, 0.62), rgba(0, 136, 234, 0) 72%),
+    radial-gradient(62% 36% at 6% 58%, rgba(235, 113, 0, 0.92), rgba(235, 113, 0, 0) 70%),
+    radial-gradient(56% 30% at 94% 76%, rgba(255, 150, 60, 0.7), rgba(255, 150, 60, 0) 72%),
+    radial-gradient(70% 34% at 38% 96%, rgba(127, 196, 236, 0.3), rgba(127, 196, 236, 0) 72%),
+    radial-gradient(90% 40% at 50% 44%, rgba(120, 44, 0, 0.55), rgba(120, 44, 0, 0) 70%),
+    linear-gradient(170deg, #031a2b 0%, #00121d 46%, #140a06 100%);
 }
+
+/* Date over the iOS 26 clock: the date in SF semibold, the time big and
+   HEAVY, a slightly translucent white that picks up the wallpaper like the
+   system's glass clock. */
 .clock {
   position: absolute;
   top: calc(66 * var(--u));
   left: 0;
   right: 0;
   text-align: center;
-  color: rgba(255, 255, 255, 0.96);
   pointer-events: none;
 }
 .date {
   font-family: -apple-system, "SF Pro Text", system-ui, sans-serif;
-  font-size: calc(19 * var(--u));
+  font-size: calc(21 * var(--u));
   font-weight: 600;
-  letter-spacing: 0.005em;
-  opacity: 0.92;
+  letter-spacing: 0.01em;
+  color: rgba(255, 255, 255, 0.88);
+  text-shadow: 0 calc(1 * var(--u)) calc(8 * var(--u)) rgba(0, 10, 18, 0.35);
 }
 .time {
-  font-family: -apple-system, "SF Pro Display", system-ui, sans-serif;
-  font-size: calc(112 * var(--u));
-  font-weight: 200;
+  font-family: "SF Pro Rounded", ui-rounded, -apple-system, "SF Pro Display", system-ui, sans-serif;
+  font-size: calc(104 * var(--u));
+  font-weight: 800;
   line-height: 1;
   margin-top: calc(-2 * var(--u));
-  letter-spacing: calc(-3 * var(--u));
+  letter-spacing: calc(-2.5 * var(--u));
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 calc(2 * var(--u)) calc(18 * var(--u)) rgba(0, 18, 29, 0.35);
+  color: rgba(255, 255, 255, 0.84);
+  text-shadow:
+    0 calc(1 * var(--u)) 0 rgba(255, 255, 255, 0.25),
+    0 calc(4 * var(--u)) calc(22 * var(--u)) rgba(0, 10, 18, 0.35);
 }
 
-/* Things that leave when the App Clip card arrives: the card rises into the
-   same bottom band, so iOS hides the prompt and the quick-action buttons. */
+/* Things that leave when the App Clip card arrives. */
 .leaves {
   transition: opacity 0.32s ease, transform 0.42s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -265,9 +286,7 @@
   pointer-events: none;
 }
 
-/* The idle prompt: an iOS Live Activity on the lock screen. It is what stops
-   the locked phone reading as blank (Nico: "it doesn't really prompt me to do
-   anything"), and it points at the device the visitor has to tap. */
+/* Business-only Live Activity (RetainStory passes a prompt). */
 .activity {
   position: absolute;
   left: calc(10 * var(--u));
@@ -278,22 +297,15 @@
   gap: calc(12 * var(--u));
   padding: calc(14 * var(--u)) calc(16 * var(--u)) calc(14 * var(--u)) calc(14 * var(--u));
   border-radius: calc(24 * var(--u));
-  background: rgba(8, 14, 22, 0.52);
+  background: rgba(8, 14, 22, 0.5);
   backdrop-filter: blur(22px) saturate(160%);
   -webkit-backdrop-filter: blur(22px) saturate(160%);
   box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.16), 0 calc(10 * var(--u)) calc(30 * var(--u)) rgba(0, 0, 0, 0.28);
 }
 .activityIcon {
-  flex: 0 0 auto;
   width: calc(42 * var(--u));
   height: calc(42 * var(--u));
   border-radius: calc(10 * var(--u));
-  background: linear-gradient(160deg, #0d2a42, #00121d);
-  box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: calc(5 * var(--u));
 }
 .activityText {
   flex: 1 1 auto;
@@ -304,7 +316,6 @@
   font-size: calc(15.5 * var(--u));
   font-weight: 600;
   line-height: 1.2;
-  color: #fff;
 }
 .activityBody {
   display: block;
@@ -313,48 +324,352 @@
   line-height: 1.3;
   color: rgba(255, 255, 255, 0.72);
 }
-/* NFC waves, lit one after another, travelling toward the bottom of the
-   phone — the edge that meets the device. */
-.activityWaves {
-  flex: 0 0 auto;
-  width: calc(26 * var(--u));
-  height: calc(34 * var(--u));
-  color: #eb7100;
-  transform: rotate(90deg);
-}
-.activityWaves path {
-  opacity: 0.35;
-  animation: nfcWave 1.5s ease-in-out infinite;
-}
-.activityWaves path:nth-child(1) { animation-delay: 0s; }
-.activityWaves path:nth-child(2) { animation-delay: 0.18s; }
-.activityWaves path:nth-child(3) { animation-delay: 0.36s; }
-@keyframes nfcWave {
-  0%, 100% { opacity: 0.3; }
-  40% { opacity: 1; }
-}
 
-/* Flashlight + camera — the two round buttons every iPhone lock screen has. */
+/* Flashlight + camera: iOS 26 glass circles. */
 .quick {
   position: absolute;
-  bottom: calc(40 * var(--u));
+  bottom: calc(42 * var(--u));
   width: calc(50 * var(--u));
   height: calc(50 * var(--u));
   border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(8, 14, 22, 0.42);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  box-shadow:
+    inset calc(0.8 * var(--u)) calc(0.8 * var(--u)) 0 rgba(255, 255, 255, 0.28),
+    inset calc(-0.6 * var(--u)) calc(-0.6 * var(--u)) 0 rgba(255, 255, 255, 0.08);
   color: #fff;
 }
 .quickL { left: calc(46 * var(--u)); }
 .quickR { right: calc(46 * var(--u)); }
 .quick svg {
-  width: calc(22 * var(--u));
-  height: calc(22 * var(--u));
+  width: calc(21 * var(--u));
+  height: calc(21 * var(--u));
+}
+
+/* --- the PapeX app icon (a real PNG via next/image) ----------------------- */
+.appIcon {
+  position: relative;
+  flex: 0 0 auto;
+  display: block;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.18);
+}
+.appIcon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.storeGlyph {
+  width: calc(15 * var(--u));
+  height: calc(15 * var(--u));
+  flex: 0 0 auto;
+}
+
+/* ==========================================================================
+ * THE APP CLIP CARD — iOS's card, per app-media/reference/clip-lockscreen-card.png:
+ * inset ~8pt, 3:2 header image with a glass close button, then a frosted
+ * grey-glass body: "PapeX" bold, "Tap to View Your Receipt", the periwinkle
+ * View pill; a hairline; the app icon, "Powered by / PapeX [17+]" and
+ * "App Store >". Its corners follow the screen's.
+ * ========================================================================== */
+.acard {
+  position: absolute;
+  left: calc(8 * var(--u));
+  right: calc(8 * var(--u));
+  bottom: calc(8 * var(--u));
+  border-radius: calc(38 * var(--u)) calc(38 * var(--u)) calc(47 * var(--u)) calc(47 * var(--u));
+  overflow: hidden;
+  z-index: 6;
+  background: rgba(62, 68, 80, 0.58);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  box-shadow:
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.2),
+    0 calc(-6 * var(--u)) calc(40 * var(--u)) rgba(0, 0, 0, 0.35);
+  animation: acardRise 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes acardRise {
+  from { transform: translateY(calc(120 * var(--u))); opacity: 0.2; }
+  to { transform: none; opacity: 1; }
+}
+.cardArt {
+  position: relative;
+  aspect-ratio: 3 / 2;
+}
+.cardArtSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.cardClose {
+  position: absolute;
+  top: calc(14 * var(--u));
+  right: calc(14 * var(--u));
+  width: calc(32 * var(--u));
+  height: calc(32 * var(--u));
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: inset calc(0.8 * var(--u)) calc(0.8 * var(--u)) 0 rgba(255, 255, 255, 0.35);
+}
+.cardClose svg {
+  width: calc(16 * var(--u));
+  height: calc(16 * var(--u));
+}
+.cardBody {
+  padding: calc(16 * var(--u)) calc(18 * var(--u)) calc(22 * var(--u));
+  font-family: -apple-system, "SF Pro Text", system-ui, sans-serif;
+}
+.cardRow {
+  display: flex;
+  align-items: center;
+  gap: calc(12 * var(--u));
+}
+.cardText {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.cardName {
+  display: block;
+  font-family: -apple-system, "SF Pro Display", system-ui, sans-serif;
+  font-size: calc(23 * var(--u));
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+.cardTag {
+  display: block;
+  margin-top: calc(2 * var(--u));
+  font-size: calc(15 * var(--u));
+  line-height: 1.25;
+  color: rgba(255, 255, 255, 0.82);
+}
+.cardRule {
+  height: max(1px, calc(0.5 * var(--u)));
+  margin: calc(15 * var(--u)) 0 calc(12 * var(--u));
+  background: rgba(255, 255, 255, 0.22);
+}
+.cardCredit {
+  display: flex;
+  align-items: center;
+  gap: calc(10 * var(--u));
+  color: #fff;
+}
+.cardCreditIcon {
+  width: calc(30 * var(--u));
+  height: calc(30 * var(--u));
+  border-radius: calc(7 * var(--u));
+}
+.cardCreditText {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+.cardPowered {
+  font-size: calc(12.5 * var(--u));
+  color: rgba(255, 255, 255, 0.78);
+}
+.cardCreditName {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(5 * var(--u));
+  font-size: calc(14.5 * var(--u));
+  font-weight: 700;
+}
+/* The App Store age-rating badge, as the card prints it. */
+.age {
+  display: inline-block;
+  padding: 0 calc(3 * var(--u));
+  border: max(1px, calc(1 * var(--u))) solid rgba(255, 255, 255, 0.62);
+  border-radius: calc(3 * var(--u));
+  font-size: calc(9.5 * var(--u));
+  font-weight: 600;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.82);
+}
+.cardStore {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: calc(4 * var(--u));
+  font-size: calc(15 * var(--u));
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+}
+.cardStoreChev {
+  margin-left: calc(2 * var(--u));
+  font-size: calc(18 * var(--u));
+  line-height: 1;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* The View pill: the soft periwinkle iOS paints it on this card, white
+   label. A real <button> in the hero. */
+.viewBtn {
+  position: relative;
+  flex: 0 0 auto;
+  border: 0;
+  margin: 0;
+  font: inherit;
+  font-family: -apple-system, "SF Pro Text", system-ui, sans-serif;
+  font-size: calc(19 * var(--u));
+  font-weight: 700;
+  line-height: 1;
+  padding: calc(12 * var(--u)) calc(27 * var(--u));
+  border-radius: 999px;
+  background: linear-gradient(180deg, #93aaf6, #7c96ee);
+  color: #fff;
+  box-shadow: inset 0 calc(0.8 * var(--u)) 0 rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+button.viewBtn:active {
+  filter: brightness(0.92);
+}
+.viewBtn:focus-visible {
+  outline: calc(2 * var(--u)) solid #fff;
+  outline-offset: calc(2 * var(--u));
+}
+.viewBtn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  box-shadow: 0 0 0 calc(2 * var(--u)) rgba(147, 170, 246, 0.95), 0 0 calc(12 * var(--u)) rgba(147, 170, 246, 0.6);
+  opacity: 0;
+  pointer-events: none;
+}
+/* A few rings, then it rests: an attention cue, never a forever loop. */
+.viewPulse::after {
+  animation: viewGlow 1.6s cubic-bezier(0.22, 0.61, 0.36, 1) 0.5s 4;
+}
+@keyframes viewGlow {
+  0% { opacity: 0.9; transform: scale(1); }
+  74%, 100% { opacity: 0; transform: scale(1.14); }
+}
+
+/* ==========================================================================
+ * iOS's APP CLIP LAUNCH BANNER (ClipTopBar) — the system strip over a clip
+ * that just opened: icon, "Powered by / PapeX / PapeX", "App Store >".
+ * ========================================================================== */
+.banner {
+  flex: 0 0 auto;
+  margin: calc(54 * var(--u)) calc(8 * var(--u)) 0;
+  padding: calc(11 * var(--u)) calc(16 * var(--u)) calc(11 * var(--u)) calc(11 * var(--u));
+  border-radius: calc(26 * var(--u));
+  display: flex;
+  align-items: center;
+  gap: calc(11 * var(--u));
+  color: #fff;
+  font-family: -apple-system, "SF Pro Text", system-ui, sans-serif;
+  background: rgba(70, 76, 88, 0.55);
+  backdrop-filter: blur(26px) saturate(180%);
+  -webkit-backdrop-filter: blur(26px) saturate(180%);
+  box-shadow:
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.22),
+    0 calc(8 * var(--u)) calc(24 * var(--u)) rgba(0, 0, 0, 0.3);
+  z-index: 8;
+}
+/* Pinned over a screen instead of in flow. */
+.bannerPinned {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+}
+.bannerIcon {
+  width: calc(46 * var(--u));
+  height: calc(46 * var(--u));
+  border-radius: calc(11 * var(--u));
+}
+.bannerText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.15;
+}
+.bannerPowered {
+  font-size: calc(12.5 * var(--u));
+  color: rgba(255, 255, 255, 0.78);
+}
+.bannerName {
+  font-size: calc(17 * var(--u));
+  font-weight: 700;
+}
+.bannerSub {
+  font-size: calc(12.5 * var(--u));
+  color: rgba(255, 255, 255, 0.6);
+}
+.bannerStore {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: calc(4 * var(--u));
+  font-size: calc(15 * var(--u));
+  font-weight: 600;
+}
+
+/* ==========================================================================
+ * "Reading your receipt" — Swift LoadingState on PapeXBackground.
+ * ========================================================================== */
+.reading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(26 * var(--u));
+  color: rgba(255, 255, 255, 0.9);
+  background:
+    radial-gradient(circle calc(380 * var(--u)) at 12% 7%, rgba(235, 113, 0, 0.16), transparent),
+    radial-gradient(circle calc(420 * var(--u)) at 90% 96%, rgba(235, 113, 0, 0.13), transparent),
+    #00121d;
+}
+.readingMark {
+  width: calc(100 * var(--u));
+  height: calc(100 * var(--u));
+  display: block;
+}
+.readingLabel {
+  font-family: "AK Barlow", var(--font-barlow, "Barlow"), system-ui, sans-serif;
+  font-size: calc(24 * var(--u));
+  font-weight: 700;
+}
+.readingTrack {
+  position: relative;
+  width: calc(184 * var(--u));
+  height: calc(5 * var(--u));
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.readingSeg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(78 * var(--u));
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(235, 113, 0, 0.2), #eb7100, rgba(255, 255, 255, 0.6));
+  transform: translateX(calc(-2 * var(--u)));
+  animation: readSlide 0.7s ease-in-out 1 both;
+}
+@keyframes readSlide {
+  to { transform: translateX(calc(106 * var(--u))); }
 }
 
 /* ==========================================================================
@@ -368,7 +683,7 @@
   transform-origin: 50% 100%;
 }
 .nudgeOn {
-  animation: phoneNudge 3.6s cubic-bezier(0.45, 0, 0.2, 1) 1.2s infinite;
+  animation: phoneNudge 3.6s cubic-bezier(0.45, 0, 0.2, 1) 1.2s 3;
 }
 @keyframes phoneNudge {
   0%, 62%, 100% { transform: none; }
@@ -410,10 +725,11 @@
   transition: opacity 0.3s ease;
 }
 .rdhGlowPulse {
-  animation: rdhGlow 2.4s ease-in-out infinite;
+  /* Finite (W3): a handful of breaths, then it holds at full glow. */
+  animation: rdhGlow 2.4s ease-in-out 5 both;
 }
 @keyframes rdhGlow {
-  0%, 100% { opacity: 0.55; transform: translate(-50%, -50%) scale(0.94); }
+  0%, 100% { opacity: 0.85; transform: translate(-50%, -50%) scale(0.98); }
   50% { opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
 }
 /* An isometric ellipse (the top face is a diamond, ~1.7:1), drawn ABOVE the
@@ -430,7 +746,7 @@
   opacity: 0;
 }
 .rdhRingPulse {
-  animation: rdhRing 2.4s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+  animation: rdhRing 2.4s cubic-bezier(0.22, 0.61, 0.36, 1) 5 both;
 }
 .rdhRingPulse.rdhRing2 {
   animation-delay: 1.2s;
@@ -512,7 +828,7 @@
   inset: 0;
   border-radius: 999px;
   background: #eb7100;
-  animation: chipDot 1.6s ease-out infinite;
+  animation: chipDot 1.6s ease-out 6 both;
 }
 @keyframes chipDot {
   0% { opacity: 0.7; transform: scale(1); }
@@ -543,13 +859,9 @@
    thing to tap. */
 @media (prefers-reduced-motion: reduce) {
   .nudgeOn,
-  .activityWaves path,
   .rdhGlowPulse,
   .chipDot::after {
     animation: none;
-  }
-  .activityWaves path {
-    opacity: 1;
   }
   .rdhGlowPulse {
     opacity: 1;
@@ -566,5 +878,13 @@
   .scene,
   .phoneHit {
     transition: none;
+  }
+  .acard,
+  .readingSeg,
+  .viewPulse::after {
+    animation: none;
+  }
+  .readingSeg {
+    transform: translateX(calc(53 * var(--u)));
   }
 }

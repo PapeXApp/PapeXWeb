@@ -9,6 +9,9 @@
 export { Chevron, Fab, IconButton, StatusBar, TabBar, TABS } from "./Chrome";
 export type { RowIcon, TabKey } from "./Chrome";
 export { MerchantLogo, ReceiptDetailScreen, ReceiptRow, ReceiptsScreen } from "./Screens";
-export { ClipLockScreen, ClipReading, ClipTopBar, IslandLockGlyph } from "./Clip";
+export { ClipLockScreen, ClipReading, ClipTopBar, IslandLockGlyph, PapeXAppIcon } from "./Clip";
+/* W3: the App Clip receipt and the app tabs, drawn by components/app-kit. */
+export { ClipApp, toClipData } from "./ClipApp";
+export { WalkAppScreen, walkReceipts } from "./AppScreens";
 export { DETAIL_RECEIPT, LIST_ROWS, SEARCH_QUERY, SEARCH_ROWS } from "./data";
 export type { ListRow, OriginGlyph, OriginTone } from "./data";

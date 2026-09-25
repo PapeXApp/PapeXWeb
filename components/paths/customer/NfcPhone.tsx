@@ -6,11 +6,10 @@ import { useReducedMotion } from "motion/react";
 import { parseEscPos } from "@/lib/escpos";
 import { summarizeReceipt } from "@/lib/receiptSummary";
 import { cn } from "@/lib/utils";
-import { ClipLockScreen, ClipReading } from "./appui";
+import { ClipApp, ClipLockScreen, ClipReading } from "./appui";
 import { receiptMoment } from "./appui/Clip";
 import { demoContent } from "./content";
 import { demoReceiptBytes } from "./demoReceipt";
-import { ClipReceiptScreen } from "./ReceiptCard";
 import { RdhDevice } from "./RdhDevice";
 import { PhoneChrome } from "./WalkPhone";
 import styles from "./customer.module.css";
@@ -34,20 +33,22 @@ const SAVED_MS = 1800;
  * The hero's live receipt demo — the biggest build in the customer path, and
  * the App Clip's real story beat for beat:
  *
- *   idle    the phone is LOCKED. No App Clip card yet (iOS shows one only
- *           after an NFC tap), but never blank either (2.1, 2026-09-23): an
- *           iOS Live Activity on the lock screen says "Tap to get your
- *           receipt", the phone leans toward the reader every few seconds,
+ *   idle    the phone is LOCKED: only what iOS shows (status bar, island
+ *           lock, date + clock, wallpaper, flashlight + camera). No App Clip
+ *           card yet (iOS shows one only after an NFC tap) and, since W3
+ *           (2026-09-24, Nico), no Live Activity either. The prompt lives
+ *           OFF the phone: the phone leans toward the reader a few times,
  *           the reader glows and sends NFC rings off its top face, and a chip
  *           attached under the reader says "Tap the PapeX device". Clicking
  *           the reader, the chip OR the phone starts the tap.
  *   bowing  the visitor tapped the READER (the device is the button); the
  *           phone bows onto it and the reader's LED pulses.
  *   card    the phone is back up and iOS has slid the App Clip card in from
- *           the bottom edge — "PapeX / Tap to View Your Receipt" with a blue
- *           View pill that glows on a loop until it is clicked.
- *   reading "Reading your receipt" with an orange progress bar.
- *   done    the rendered clip receipt, with "Save to PapeX".
+ *           the bottom edge — "PapeX / Tap to View Your Receipt" with the
+ *           periwinkle View pill, which rings a few times to say "click me".
+ *   reading the clip's "Reading your receipt" under iOS's launch banner.
+ *   done    the rendered clip receipt (app kit ClipReceipt, via appui
+ *           ClipApp): scrolls, ⋯ -> "View original receipt", "Save to PapeX".
  *
  * "Real" means the bytes in demoReceipt.ts go straight through THIS REPO'S
  * OWN `lib/escpos.ts` (`parseEscPos`) and `lib/receiptSummary.ts`
@@ -165,14 +166,14 @@ export function NfcPhone() {
                 card={demo === "card"}
                 pulse={!prefersReduced}
                 onView={openClip}
-                prompt={demoContent.lockPrompt}
                 moment={moment}
               />
             </div>
 
             {/* 2. the clip launching */}
             <div className={cn(styles.acLayer, demo === "reading" && styles.acLayerOn)}>
-              <ClipReading time={moment.time} />
+              {/* Mounted per beat so its one-shot progress runs when it shows. */}
+              {demo === "reading" ? <ClipReading time={moment.time} /> : null}
             </div>
 
             {/* 3. the receipt. Taps inside it belong to the receipt —
@@ -185,7 +186,18 @@ export function NfcPhone() {
               onClick={(event) => event.stopPropagation()}
               onKeyDown={(event) => event.stopPropagation()}
             >
-              <ClipReceiptScreen summary={summary} saved={saved} onSave={save} />
+              {demo === "done" ? (
+                <ClipApp
+                  summary={summary}
+                  interactive
+                  banner
+                  saved={saved}
+                  onSave={save}
+                  saveLabel={demoContent.saveLabel}
+                  savedLabel={demoContent.savedLabel}
+                  originalLabel={demoContent.sectionTitles.original}
+                />
+              ) : null}
             </div>
           </PhoneChrome>
           </div>

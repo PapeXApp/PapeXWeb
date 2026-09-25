@@ -1,149 +1,39 @@
 import { useId } from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { StatusBar } from "./Chrome";
-import s from "./appui.module.css";
-/* The interaction-only styles (the real View button + its prompt glow) live in
-   customer.module.css, not in the kit sheet — see the "APP CLIP CARD" block
-   there. Two sheets on purpose: appui.module.css is the shared app-UI kit and
-   is owned by the app restyle running in parallel. */
-import c from "../customer.module.css";
-/* Device + iOS system chrome (lock screen, Live Activity, wallpaper) lives
-   with the phone frame, in iphone.module.css (2.1, 2026-09-23). */
+/* Device + iOS system chrome (lock screen, wallpaper, the App Clip card, the
+   App Clip launch banner, the loading beat) lives with the phone frame, in
+   iphone.module.css. Nothing here reads customer.module.css any more (W3,
+   2026-09-24): that sheet belongs to the page sections. */
 import ip from "../iphone.module.css";
 
 /**
- * The App Clip beats of the tap story, rebuilt 2026-09-22 from the camera
- * shots in app-media/reference/clip-*.png (blurry on purpose — structure was
- * taken from them, not pixels).
+ * The iOS + App Clip beats of the tap story. Rebuilt W3 (2026-09-24) against
+ * app-media/reference/clip-*.png (reference only, never embedded) and the
+ * App Clip's own Swift (Papex_AppClip ReceiptView.swift):
  *
- *   1. ClipLockScreen  — the phone is locked; iOS slides the App Clip card up
- *                        from the bottom: receipt art + NFC waves, "PapeX /
- *                        Tap to View Your Receipt", a blue View pill, and the
- *                        "Powered by PapeX  ·  App Store >" credit strip.
- *   2. ClipReading     — "Reading your receipt" with the PapeX card mark and
- *                        an orange progress bar.
- *   3. ClipTopBar      — the strip that stays pinned above the rendered
- *                        receipt once the clip is open.
+ *   ClipLockScreen  the locked iPhone: iOS 26 bold clock over the date, an
+ *                   abstract PapeX-palette wallpaper (not an Apple one), the
+ *                   status bar, flashlight + camera. After a tap, iOS's App
+ *                   Clip card rises from the bottom: 3:2 card image with a
+ *                   close button, "PapeX / Tap to View Your Receipt", the
+ *                   periwinkle View pill, then "Powered by PapeX 17+" and
+ *                   "App Store >". No Live Activity on /customers (Nico:
+ *                   nothing on the lock screen before the tap but time, date
+ *                   and wallpaper); `prompt` is kept only for /business's
+ *                   RetainStory, which still passes one.
+ *   ClipReading     Swift `LoadingState`: the ReceiptMarkIcon, "Reading your
+ *                   receipt" (Barlow 24 bold) and the 184x5 track with a
+ *                   78pt sliding segment, under iOS's App Clip banner.
+ *   ClipTopBar      iOS's App Clip launch banner ("Powered by PapeX · App
+ *                   Store >"), the system strip iOS lays over a freshly
+ *                   launched clip.
  *
- * All three are presentational; the hero owns the timing.
+ * All presentational; the callers own timing.
  */
 
-/** The PapeX paper-plane-over-a-card mark, drawn (no raster asset needed). */
-function PapeXMark({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 64 64" className={className} aria-hidden="true">
-      <rect x="20" y="10" width="34" height="44" rx="5" fill="#fbfbfa" />
-      <path d="M27 22h20M27 30h20M27 38h12" stroke="#c7ced6" strokeWidth="2.6" strokeLinecap="round" />
-      <path d="M6 34 30 18l-8 18-6 1z" fill="#eb7100" />
-      <path d="m30 18-8 18 5 6z" fill="#b85a00" />
-    </svg>
-  );
-}
-
-function NfcWaves() {
-  return (
-    <svg viewBox="0 0 30 46" className={cn(s.clipWaves, c.clipWavesBrand)} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true">
-      <path d="M25 13a16 16 0 0 1 0 20" />
-      <path d="M18 18a9 9 0 0 1 0 10" />
-      <path d="M11 22a3 3 0 0 1 0 2" />
-    </svg>
-  );
-}
-
-/**
- * An iOS lock-screen wallpaper in Apple's layered style (stacked, soft-shadowed
- * wave bands, like the iOS 16-18 "Collections" gradients) but in brand navy,
- * blue and orange. 2.1 (2026-09-23): replaces a stack of radial blobs that read
- * as a generic Android gradient. Drawn, not an image; ids are per-instance
- * because the hero and the walkthrough both mount one.
- */
-function Wallpaper() {
-  const id = useId().replace(/:/g, "");
-  const g = (name: string) => `${name}-${id}`;
-  return (
-    <svg className={ip.wall} viewBox="0 0 393 852" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-      <defs>
-        <linearGradient id={g("sky")} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#00121d" />
-          <stop offset="0.55" stopColor="#04233a" />
-          <stop offset="1" stopColor="#00121d" />
-        </linearGradient>
-        {/* Each band is lit at its crest and falls into shadow below it, the
-            way Apple's layered wallpapers are shaded; the next band's drop
-            shadow then lands on that dark part. Vertical ramps, because a
-            horizontal one read as a flat flag. */}
-        <linearGradient id={g("blue")} x1="0" y1="0" x2="0.25" y2="1">
-          <stop offset="0" stopColor="#2a9df0" />
-          <stop offset="0.16" stopColor="#0079d1" />
-          <stop offset="0.42" stopColor="#063b66" />
-          <stop offset="1" stopColor="#00121d" />
-        </linearGradient>
-        <linearGradient id={g("orange")} x1="0" y1="0" x2="0.3" y2="1">
-          <stop offset="0" stopColor="#ff9d45" />
-          <stop offset="0.14" stopColor="#eb7100" />
-          <stop offset="0.42" stopColor="#8a3c02" />
-          <stop offset="1" stopColor="#1a0f0a" />
-        </linearGradient>
-        <linearGradient id={g("deep")} x1="0" y1="0" x2="0.2" y2="1">
-          <stop offset="0" stopColor="#123e5e" />
-          <stop offset="0.3" stopColor="#06243a" />
-          <stop offset="1" stopColor="#00121d" />
-        </linearGradient>
-        <radialGradient id={g("sheen")} cx="0.78" cy="0.3" r="0.7">
-          <stop offset="0" stopColor="#fff" stopOpacity="0.14" />
-          <stop offset="1" stopColor="#fff" stopOpacity="0" />
-        </radialGradient>
-        <filter id={g("lift")} x="-10%" y="-20%" width="120%" height="140%">
-          <feDropShadow dx="0" dy="-10" stdDeviation="14" floodColor="#000814" floodOpacity="0.55" />
-        </filter>
-      </defs>
-      <rect width="393" height="852" fill={`url(#${g("sky")})`} />
-      <path
-        filter={`url(#${g("lift")})`}
-        fill={`url(#${g("blue")})`}
-        d="M0 330C96 318 170 250 250 214s110-40 143-44V852H0Z"
-      />
-      <path
-        filter={`url(#${g("lift")})`}
-        fill={`url(#${g("orange")})`}
-        d="M0 540C88 520 150 452 236 420s124-10 157-14V852H0Z"
-      />
-      <path
-        filter={`url(#${g("lift")})`}
-        fill={`url(#${g("deep")})`}
-        d="M0 700C110 690 180 630 270 612s98 2 123 8V852H0Z"
-      />
-      <rect width="393" height="852" fill={`url(#${g("sheen")})`} />
-      {/* crest highlights: the thin light line along each band's top edge */}
-      <g fill="none" stroke="#fff" strokeWidth="1" strokeOpacity="0.22">
-        <path d="M0 330C96 318 170 250 250 214s110-40 143-44" />
-        <path d="M0 540C88 520 150 452 236 420s124-10 157-14" />
-        <path d="M0 700C110 690 180 630 270 612s98 2 123 8" />
-      </g>
-    </svg>
-  );
-}
-
-function FlashlightGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" aria-hidden="true">
-      <path d="M8 2.8h8v3.6l-1.8 3v11a1.4 1.4 0 0 1-1.4 1.4h-1.6a1.4 1.4 0 0 1-1.4-1.4v-11L8 6.4Z" />
-      <path d="M8 6.4h8" />
-      <circle cx="12" cy="13.2" r="1.1" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-
-function CameraGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" aria-hidden="true">
-      <path d="M3.2 8.4a2 2 0 0 1 2-2h2.6l1.5-2h5.4l1.5 2h2.6a2 2 0 0 1 2 2v9.4a2 2 0 0 1-2 2H5.2a2 2 0 0 1-2-2Z" />
-      <circle cx="12" cy="12.9" r="3.6" />
-    </svg>
-  );
-}
-
-/** Copy for the lock screen's idle Live Activity. */
+/** Copy for the (business-only) lock-screen Live Activity. */
 export type LockPrompt = { title: string; body: string };
 
 /** What the lock screen shows: "Mon Jun 8" over "10:24". */
@@ -192,21 +82,108 @@ export function receiptMoment(dateline?: string): ReceiptMoment {
   return { date, time };
 }
 
+/* --- small drawn pieces ---------------------------------------------------- */
+
 /**
- * The locked iPhone.
- *
- *   - status bar (right cluster only: an iOS lock screen has no small clock),
- *     date over a very large thin SF clock, flashlight + camera buttons, and
- *     the layered wallpaper — 2.1, 2026-09-23.
- *   - `prompt`: an iOS Live Activity near the bottom ("Tap to get your
- *     receipt / Hold your iPhone near the PapeX device"), with NFC waves that
- *     light toward the phone's bottom edge. It is what keeps the idle hero
- *     from reading as a blank phone.
- *   - `card`: the App Clip card. FALSE at rest in the hero: iOS shows it only
- *     after an NFC tap, so it is the payoff for tapping. Mounting it plays the
- *     kit's slide-up; the prompt and the quick buttons step aside for it.
- *   - `onView` makes the blue View pill a real button; `pulse` gives it the
- *     looping glow ring that says where to click next.
+ * The PapeX app icon, from the synced asset (public/app/kit/brand/
+ * papex_app_icon.png — the real icon PapeXV2 ships). next/image serves it at
+ * icon size instead of the 330 KB source.
+ */
+export function PapeXAppIcon({ className }: { className?: string }) {
+  return (
+    <span className={cn(ip.appIcon, className)} aria-hidden="true">
+      <Image src="/app/kit/brand/papex_app_icon.png" alt="" width={88} height={88} sizes="88px" draggable={false} />
+    </span>
+  );
+}
+
+/** Apple's App Store glyph (the three-stroke "A"), as the card and banner draw it. */
+function AppStoreGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" className={ip.storeGlyph} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+      <path d="M9.6 4.2 17 17.2M14.4 4.2 7 17.2M4.6 14.2h10.2M16.6 14.2h2.8" />
+    </svg>
+  );
+}
+
+function FlashlightGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M8 2.4h8a.8.8 0 0 1 .8.8v2.6a1.8 1.8 0 0 1-.4 1.1L15 9v10.8A1.8 1.8 0 0 1 13.2 21.6h-2.4A1.8 1.8 0 0 1 9 19.8V9L7.6 6.9a1.8 1.8 0 0 1-.4-1.1V3.2a.8.8 0 0 1 .8-.8Zm4 9.2a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2Z" />
+    </svg>
+  );
+}
+
+function CameraGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M9.3 4.2h5.4c.5 0 .9.2 1.2.6l1.1 1.6h2.3A2.6 2.6 0 0 1 21.9 9v8.6a2.6 2.6 0 0 1-2.6 2.6H4.7a2.6 2.6 0 0 1-2.6-2.6V9a2.6 2.6 0 0 1 2.6-2.6H7l1.1-1.6c.3-.4.7-.6 1.2-.6ZM12 9.2a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm0 1.8a2.2 2.2 0 1 1 0 4.4 2.2 2.2 0 0 1 0-4.4Z" />
+    </svg>
+  );
+}
+
+/**
+ * The App Clip card image (3:2, like the 1800x1200 header image App Store
+ * Connect asks for): a white PapeX receipt with NFC waves off its left edge,
+ * on navy. Drawn from the reference card, in brand colours.
+ */
+function CardArt() {
+  const id = useId().replace(/:/g, "");
+  return (
+    <svg viewBox="0 0 390 260" className={ip.cardArtSvg} preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <radialGradient id={`acg${id}`} cx="0.42" cy="0.2" r="0.75">
+          <stop offset="0" stopColor="#35516a" />
+          <stop offset="0.55" stopColor="#0f2638" />
+          <stop offset="1" stopColor="#05131e" />
+        </radialGradient>
+        <linearGradient id={`acp${id}`} x1="0" y1="0" x2="0.3" y2="1">
+          <stop offset="0" stopColor="#ffffff" />
+          <stop offset="1" stopColor="#e9edf1" />
+        </linearGradient>
+      </defs>
+      <rect width="390" height="260" fill={`url(#acg${id})`} />
+      <g transform="rotate(-3 212 130)">
+        <path
+          d="M160 32h108v196l-6 6-6-6-6 6-6-6-6 6-6-6-6 6-6-6-6 6-6-6-6 6-6-6-6 6-6-6-6 6-6-6-6 6-6-6-6 6-6-6Z"
+          fill={`url(#acp${id})`}
+        />
+        {/* the PapeX lockup at the top of the ticket */}
+        <path d="M184 60 206 48l-7 14-4 1Z" fill="#eb7100" />
+        <path d="m206 48-7 14 4 4Z" fill="#b85a00" />
+        <text x="209" y="64" fontFamily="'AK Barlow', Barlow, system-ui, sans-serif" fontSize="17" fontWeight="500" fill="#6b7680">
+          PapeX
+        </text>
+        <g fill="#5d6873">
+          <rect x="176" y="88" width="46" height="4.5" rx="2.2" />
+          <rect x="176" y="104" width="62" height="4.5" rx="2.2" />
+          <rect x="176" y="120" width="40" height="4.5" rx="2.2" />
+          <rect x="176" y="136" width="56" height="4.5" rx="2.2" />
+          <rect x="176" y="152" width="36" height="4.5" rx="2.2" />
+          <rect x="176" y="168" width="50" height="4.5" rx="2.2" />
+          <rect x="236" y="104" width="18" height="4.5" rx="2.2" />
+          <rect x="236" y="136" width="18" height="4.5" rx="2.2" />
+          <rect x="236" y="152" width="18" height="4.5" rx="2.2" />
+          <rect x="236" y="168" width="18" height="4.5" rx="2.2" />
+        </g>
+        <rect x="176" y="184" width="76" height="1.2" fill="#c6ced6" />
+        <rect x="176" y="196" width="22" height="5" rx="2.5" fill="#eb7100" />
+        <rect x="224" y="196" width="30" height="5" rx="2.5" fill="#eb7100" />
+      </g>
+      <g fill="none" stroke="#eb7100" strokeWidth="4.2" strokeLinecap="round">
+        {/* three concentric arcs about (104,129), opening toward the ticket */}
+        <path d="M112.5 120.5A12 12 0 0 1 112.5 137.5" />
+        <path d="M119.6 113.4A22 22 0 0 1 119.6 144.6" />
+        <path d="M126.6 106.4A32 32 0 0 1 126.6 151.6" />
+      </g>
+    </svg>
+  );
+}
+
+/**
+ * The locked iPhone, and (once `card`) iOS's App Clip card over it.
+ * `onView` makes the View pill a real button; `pulse` gives it a few glow
+ * rings (finite) pointing at the next click.
  */
 export function ClipLockScreen({
   card = true,
@@ -218,6 +195,7 @@ export function ClipLockScreen({
   card?: boolean;
   pulse?: boolean;
   onView?: () => void;
+  /** /business only — a lock-screen Live Activity. /customers never passes it. */
   prompt?: LockPrompt;
   /** Date + clock, from receiptMoment() of the receipt this tap opens. */
   moment?: ReceiptMoment;
@@ -225,7 +203,7 @@ export function ClipLockScreen({
   const view = onView ? (
     <button
       type="button"
-      className={cn(c.clipViewBtn, pulse && c.clipViewPulse)}
+      className={cn(ip.viewBtn, pulse && ip.viewPulse)}
       onClick={(event) => {
         /* The phone behind this is itself a tap target; without this the
            click would also fire the phone's own handler. */
@@ -236,12 +214,12 @@ export function ClipLockScreen({
       View
     </button>
   ) : (
-    <span className={c.clipViewBtn}>View</span>
+    <span className={ip.viewBtn}>View</span>
   );
 
   return (
     <div className={ip.lock}>
-      <Wallpaper />
+      <div className={ip.wall} aria-hidden="true" />
       <StatusBar time="" />
       <div className={ip.clock} aria-hidden="true">
         <div className={ip.date}>{moment.date}</div>
@@ -250,26 +228,11 @@ export function ClipLockScreen({
 
       {prompt ? (
         <div className={cn(ip.activity, ip.leaves, card && ip.gone)} aria-hidden={card}>
-          <span className={ip.activityIcon} aria-hidden="true">
-            <PapeXMark className="h-full w-full" />
-          </span>
+          <PapeXAppIcon className={ip.activityIcon} />
           <span className={ip.activityText}>
             <span className={ip.activityTitle}>{prompt.title}</span>
             <span className={ip.activityBody}>{prompt.body}</span>
           </span>
-          <svg
-            viewBox="0 0 30 46"
-            className={ip.activityWaves}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="3.4"
-            strokeLinecap="round"
-            aria-hidden="true"
-          >
-            <path d="M11 22a3 3 0 0 1 0 2" />
-            <path d="M18 18a9 9 0 0 1 0 10" />
-            <path d="M25 13a16 16 0 0 1 0 20" />
-          </svg>
         </div>
       ) : null}
 
@@ -281,46 +244,38 @@ export function ClipLockScreen({
       </span>
 
       {card ? (
-        <div className={s.clipCard}>
-          <div className={s.clipHero}>
-            <span className={s.clipClose} aria-hidden="true">
-              ×
+        <div className={ip.acard}>
+          <div className={ip.cardArt}>
+            <CardArt />
+            <span className={ip.cardClose} aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
+                <path d="m7 7 10 10M17 7 7 17" />
+              </svg>
             </span>
-            <div className={s.clipArt} aria-hidden="true">
-              <NfcWaves />
-              <div className={s.clipPaper}>
-                <div className={s.clipPaperMark}>PapeX</div>
-                <div className={s.clipPaperLines}>
-                  <i /><i /><i /><i /><i />
-                  <i className={cn(s.clipPaperAcc, c.clipPaperAccBrand)} />
-                </div>
-              </div>
+          </div>
+          <div className={ip.cardBody}>
+            <div className={ip.cardRow}>
+              <span className={ip.cardText}>
+                <span className={ip.cardName}>PapeX</span>
+                <span className={ip.cardTag}>Tap to View Your Receipt</span>
+              </span>
+              {view}
             </div>
-          </div>
-
-          <div className={s.clipFoot}>
-            <span>
-              <span className={s.clipName} style={{ display: "block" }}>
-                PapeX
+            <div className={ip.cardRule} aria-hidden="true" />
+            <div className={ip.cardCredit} aria-hidden="true">
+              <PapeXAppIcon className={ip.cardCreditIcon} />
+              <span className={ip.cardCreditText}>
+                <span className={ip.cardPowered}>Powered by</span>
+                <span className={ip.cardCreditName}>
+                  PapeX <span className={ip.age}>17+</span>
+                </span>
               </span>
-              <span className={s.clipTagline} style={{ display: "block" }}>
-                Tap to View Your Receipt
+              <span className={ip.cardStore}>
+                <AppStoreGlyph />
+                App Store
+                <span className={ip.cardStoreChev}>›</span>
               </span>
-            </span>
-            {view}
-          </div>
-
-          <div className={s.clipCredit} aria-hidden="true">
-            <span className={s.clipCreditMark}>
-              <PapeXMark className="h-full w-full" />
-            </span>
-            <span>
-              Powered by
-              <span className={s.clipCreditName} style={{ display: "block" }}>
-                PapeX
-              </span>
-            </span>
-            <span className={s.clipStore}>App Store ›</span>
+            </div>
           </div>
         </div>
       ) : null}
@@ -333,20 +288,49 @@ export function ClipLockScreen({
  *  PhoneChrome's `islandLock`), so it paints above the screen layers. */
 export function IslandLockGlyph() {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      className={ip.islandLock}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.2"
-      aria-hidden="true"
-    >
-      <rect x="5" y="10.5" width="14" height="10" rx="3" />
-      <path d="M8.4 10.5V7.8a3.6 3.6 0 0 1 7.2 0v2.7" />
+    <svg viewBox="0 0 24 24" className={ip.islandLock} fill="currentColor" aria-hidden="true">
+      <path d="M8.2 10V7.6a3.8 3.8 0 0 1 7.6 0V10h.4A2.3 2.3 0 0 1 18.5 12.3v6.4a2.3 2.3 0 0 1-2.3 2.3H7.8a2.3 2.3 0 0 1-2.3-2.3v-6.4A2.3 2.3 0 0 1 7.8 10Zm1.9 0h3.8V7.6a1.9 1.9 0 0 0-3.8 0Z" />
     </svg>
   );
 }
 
+/**
+ * Swift `ReceiptMarkIcon`: an orange card tucked behind a white receipt with
+ * a merchant line, body lines and an orange total. Drawn on a 100x100 box.
+ */
+function ReceiptMark({ className }: { className?: string }) {
+  const id = useId().replace(/:/g, "");
+  return (
+    <svg viewBox="0 0 100 100" className={className} aria-hidden="true">
+      <defs>
+        <linearGradient id={`rmc${id}`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#FFC487" />
+          <stop offset="0.5" stopColor="#EB7100" />
+          <stop offset="1" stopColor="#C25E00" />
+        </linearGradient>
+        <linearGradient id={`rmp${id}`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#FBFDFE" />
+          <stop offset="0.5" stopColor="#E4EBF0" />
+          <stop offset="1" stopColor="#C0CCD5" />
+        </linearGradient>
+      </defs>
+      <rect x="2" y="22" width="54" height="68" rx="10" fill={`url(#rmc${id})`} transform="rotate(-13 29 56)" />
+      <g transform="rotate(4 59 50)">
+        <path d="M27 9h64v76l-5.3 4-5.3-4-5.3 4-5.3-4-5.4 4-5.3-4-5.3 4-5.3-4-5.3 4-5.4-4-5.3 4-5.3-4Z" fill={`url(#rmp${id})`} />
+        <g fill="#3D4E59">
+          <rect x="39" y="22" width="26" height="4" rx="2" opacity="0.55" />
+          <rect x="39" y="31" width="40" height="3" rx="1.5" opacity="0.22" />
+          <rect x="39" y="39" width="33" height="3" rx="1.5" opacity="0.22" />
+          <rect x="39" y="47" width="38" height="3" rx="1.5" opacity="0.22" />
+        </g>
+        <rect x="39" y="57" width="14" height="4" rx="2" fill="#EB7100" />
+        <rect x="68" y="57" width="11" height="4" rx="2" fill="#EB7100" />
+      </g>
+    </svg>
+  );
+}
+
+/** Swift `LoadingState`, under iOS's App Clip launch banner. */
 export function ClipReading({
   label = "Reading your receipt",
   time = FALLBACK_MOMENT.time,
@@ -356,29 +340,37 @@ export function ClipReading({
   time?: string;
 }) {
   return (
-    <div className={s.reading}>
+    <div className={ip.reading}>
       <StatusBar time={time} />
-      <PapeXMark className={s.readingMark} />
-      <div className={s.readingLabel}>{label}</div>
-      <div className={s.readingTrack} aria-hidden="true">
-        <span className={s.readingFill} />
+      <ClipTopBar className={ip.bannerPinned} />
+      <ReceiptMark className={ip.readingMark} />
+      <div className={ip.readingLabel}>{label}</div>
+      <div className={ip.readingTrack} aria-hidden="true">
+        <span className={ip.readingSeg} />
       </div>
     </div>
   );
 }
 
-/** The bar pinned above the rendered receipt inside the clip. */
-export function ClipTopBar() {
+/**
+ * iOS's App Clip launch banner: app icon, "Powered by / PapeX / PapeX" and
+ * "App Store >". System UI, not the clip's own top bar (that one is in
+ * ClipApp.tsx). In flow by default; pass a className to pin it.
+ */
+export function ClipTopBar({ className }: { className?: string }) {
   return (
-    <div className={s.clipBar}>
-      <span className={s.clipCreditMark}>
-        <PapeXMark className="h-full w-full" />
+    <div className={cn(ip.banner, className)} aria-hidden="true">
+      <PapeXAppIcon className={ip.bannerIcon} />
+      <span className={ip.bannerText}>
+        <span className={ip.bannerPowered}>Powered by</span>
+        <span className={ip.bannerName}>PapeX</span>
+        <span className={ip.bannerSub}>PapeX</span>
       </span>
-      <span className={s.clipBarText}>
-        <span className={s.clipBarPowered}>Powered by</span>
-        <span className={s.clipBarName}>PapeX</span>
+      <span className={ip.bannerStore}>
+        <AppStoreGlyph />
+        App Store
+        <span className={ip.cardStoreChev}>›</span>
       </span>
-      <span className={s.clipBarStore}>App Store ›</span>
     </div>
   );
 }

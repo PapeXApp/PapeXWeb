@@ -5,11 +5,10 @@ import { useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { parseEscPos } from "@/lib/escpos";
 import { summarizeReceipt } from "@/lib/receiptSummary";
-import { ClipLockScreen, IslandLockGlyph, ReceiptsScreen, StatusBar } from "./appui";
+import { ClipApp, ClipLockScreen, IslandLockGlyph, StatusBar, WalkAppScreen } from "./appui";
 import { demoReceiptBytes } from "./demoReceipt";
 import { receiptMoment } from "./appui/Clip";
 import { demoContent } from "./content";
-import { ClipReceiptScreen } from "./ReceiptCard";
 import { AppMedia } from "../shared/AppMedia";
 import { hasAppMedia } from "../shared/appMediaIndex";
 import ip from "./iphone.module.css";
@@ -17,6 +16,9 @@ import ip from "./iphone.module.css";
 /** How long the App Clip card shows between the tap (step 1 -> 2) and the
  *  rendered receipt. Long enough to read "Tap to View Your Receipt". */
 const WALK_CARD_MS = 1100;
+/** How long step 3 shows the Receipts tab before the app moves to Coupons,
+ *  where the coupon the same tap brought sits (W3: coupons are live). */
+const WALK_COUPONS_MS = 2200;
 
 /**
  * The iPhone every phone on /customers is drawn in, and the "How it works"
@@ -28,8 +30,9 @@ const WALK_CARD_MS = 1100;
  * buttons, the Dynamic Island at its real size and the home indicator. See
  * the header of iphone.module.css for the numbers.
  *
- * Screens come from `./appui` (the app kit, owned separately) and the lock
- * screen / App Clip beats from `./appui/Clip.tsx`.
+ * Screens: the lock screen / App Clip card from `./appui/Clip.tsx`; the
+ * clip's receipt (`ClipApp`) and the app's tabs (`WalkAppScreen`) are drawn
+ * by components/app-kit, the PapeXV2/App Clip source kit (W3, 2026-09-24).
  */
 
 /**
@@ -100,8 +103,8 @@ export function WalkPhone({
   const moment = useMemo(() => receiptMoment(summary.dateline), [summary]);
   const prefersReduced = useReducedMotion();
 
-  /* Step 1 opens on the SAME idle lock screen as the hero — the Live Activity
-     prompt, no App Clip card (Nico, 2026-09-24). The card is what the tap
+  /* Step 1 opens on the SAME idle lock screen as the hero — no Live
+     Activity and no App Clip card (Nico, 2026-09-24). The card is what the tap
      produces, so it plays on the way from step 1 to step 2: HowItWorks only
      hands us `step` (it bows the phone first, then sets step 1), so WalkPhone
      notices the 0 -> 1 change itself and holds the lock screen with the card
@@ -125,6 +128,16 @@ export function WalkPhone({
 
   const lockOn = step === 0 || cardBeat;
 
+  /* Step 3: the Receipts tab first, then (once, a beat later) the Coupons
+     tab. Leaving the step resets it; reduced motion stays on Receipts. */
+  const [couponsOn, setCouponsOn] = useState(false);
+  useEffect(() => {
+    setCouponsOn(false);
+    if (step !== 2 || prefersReduced) return;
+    const t = window.setTimeout(() => setCouponsOn(true), WALK_COUPONS_MS);
+    return () => window.clearTimeout(t);
+  }, [step, prefersReduced]);
+
   /* One `walk` video, if it exists, plays across all three steps; otherwise
      each step looks for its own capture and falls back to the drawn scenes. */
   const slot = hasAppMedia("walk")
@@ -140,18 +153,27 @@ export function WalkPhone({
       {/* --- 0: ready to tap — the idle lock screen, as in the hero; the
              App Clip card rises only during the 0 -> 1 beat ------------- */}
       <div className={cn(ip.scene, lockOn && ip.sceneOn)} aria-label={tapCopy.headline}>
-        <ClipLockScreen card={cardBeat} prompt={demoContent.lockPrompt} moment={moment} />
+        <ClipLockScreen card={cardBeat} moment={moment} />
       </div>
 
       {/* --- 1: the receipt lands, rendered by the App Clip --------------- *
-       * No tab bar: the clip is not the app, it has no tabs. */}
+       * No tab bar: the clip is not the app, it has no tabs. Mounted on the
+       * step so iOS's launch banner plays each time the clip opens. */}
       <div className={cn(ip.scene, ip.sceneClip, step === 1 && !cardBeat && ip.sceneOn)}>
-        <ClipReceiptScreen summary={summary} />
+        {step === 1 ? (
+          <ClipApp
+            summary={summary}
+            banner
+            saveLabel={demoContent.saveLabel}
+            savedLabel={demoContent.savedLabel}
+            originalLabel={demoContent.sectionTitles.original}
+          />
+        ) : null}
       </div>
 
-      {/* --- 2: filed into the app's own Receipts list -------------------- */}
+      {/* --- 2: saved into the app — Receipts, then Coupons ---------------- */}
       <div className={cn(ip.scene, step === 2 && ip.sceneOn)}>
-        <ReceiptsScreen />
+        <WalkAppScreen summary={summary} coupons={couponsOn} time={moment.time} />
       </div>
     </PhoneChrome>
   );
