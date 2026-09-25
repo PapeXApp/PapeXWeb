@@ -890,7 +890,21 @@
 .walkStage {
   padding: var(--section-pad) clamp(20px, 5vw, 56px);
 }
-@media (prefers-reduced-motion: no-preference) and (min-width: 821px) and (min-height: 600px) {
+/* min-height 600 -> 850 (2026-09-24, verifier-flagged): the phone-column fit
+   below only accounts for the RIGHT column. The LEFT column (heading + 3
+   steps) is sized off WIDTH, not height, so it doesn't shrink on a short
+   screen — measured a fixed ~671px tall at every desktop width in the
+   pinnable range once the max-width:1150 grid caps it (same figure at 1440
+   and 1366; a hair shorter, ~603px, right at 1280 where the grid's own gap
+   stops being capped too — the two aren't the same lever, and a few px of
+   width can flip a text-wrap and move this by tens of px, so don't try to
+   thread a width-specific number through here). padding-top(72+--section-pad,
+   ~132) + that + padding-bottom(24) needs ~827-900px depending on width; 850
+   is a flat, content-reflow-proof floor above the worst case with a small
+   margin, below which the walkthrough falls back to the unpinned, tap-only,
+   full-height layout instead of overflowing the stage. HowItWorks.tsx's
+   PIN_QUERY reads this SAME number — keep them together. */
+@media (prefers-reduced-motion: no-preference) and (min-width: 821px) and (min-height: 850px) {
   .walkRunway {
     height: calc(100vh + (var(--walk-steps, 3) - 1) * var(--walk-per-step));
     /* The ribbon starts the instant this box ends, and the pinned stage's own
