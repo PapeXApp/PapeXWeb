@@ -100,7 +100,10 @@
   --cam-top: 92px;
   --cam-side: clamp(20px, 2.6vw, 48px);
   --cam-gap: 12px;
-  /* the print beat: printer + slip at most this share of the pin's height */
+  /* the print beat: at p = 0 the printer alone at this share of the pin's
+     width (capped to fit its height), then printer + the slip as it feeds,
+     ending at --cam-print-h of the pin's height */
+  --cam-printer-w: 0.42;
   --cam-print-h: 0.7;
   /* the last frame (laptop + phone + device): this share of the free area */
   --cam-final-fill: 0.94;

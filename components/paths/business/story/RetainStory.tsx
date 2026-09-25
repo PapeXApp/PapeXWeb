@@ -213,8 +213,8 @@ type Fill = { el: HTMLElement; key: number; kind: string }
 type Cam = { x: number; y: number; s: number; rx: number; ry: number }
 /** A box in stage px (layout, no transforms). */
 type Box = { x: number; y: number; w: number; h: number }
-/** The camera's free area in stage px, and the pin's height (px). */
-type Region = Box & { pinH: number }
+/** The camera's free area in stage px, and the pin's size (px). */
+type Region = Box & { pinH: number; pinW: number }
 
 const union = (...bs: Box[]): Box => {
   const x0 = Math.min(...bs.map((b) => b.x))
@@ -380,6 +380,11 @@ export function RetainStory() {
       lapBox: { x: 0, y: 0, w: 0, h: 0 } as Box,
       finalPair: [] as Box[],
       finalFill: 0.94,
+      /** the print frame's pieces: printer, full slip, and its two caps */
+      printerBox: { x: 0, y: 0, w: 0, h: 0 } as Box,
+      slipBox: { x: 0, y: 0, w: 0, h: 0 } as Box,
+      printW: 0.42,
+      printH: 0.7,
       /** the lid's height and the laptop's perspective (px), for its bulge */
       lidH: 0,
       persp: 1400,
@@ -400,6 +405,23 @@ export function RetainStory() {
       const m = M.persp > z ? M.persp / (M.persp - z) : 1
       const grow = Math.max(0.04 * L.w, (L.w / 2) * (m - 1))
       return fit(R, union({ ...L, x: L.x - grow, w: L.w + 2 * grow }, ...M.finalPair), M.finalFill)
+    }
+
+    /**
+     * The print frame for a printed fraction 0..1: the printer and as much
+     * slip as has come out. At 0 that is the printer alone, --cam-printer-w
+     * of the pin's width (capped to the free area's height), centred; as the
+     * slip feeds the box grows down and the camera eases back so its foot
+     * stays in frame, ending on printer + slip at --cam-print-h of the pin.
+     */
+    const printFrame = (printed: number): Cam => {
+      const R = M.region as Region
+      const P = M.printerBox
+      const S = M.slipBox
+      const b = printed > 0 ? union(P, { ...S, h: S.h * printed }) : P
+      const cam = fit(R, b, 0.96, M.printH)
+      // the printer-width cap; the box's fit (height, free area) still wins
+      return { ...cam, s: Math.min(cam.s, (M.printW * R.pinW) / P.w) }
     }
 
     const num = (cs: CSSStyleDeclaration, name: string, fallback: number) => {
@@ -535,6 +557,7 @@ export function RetainStory() {
           w: pin.clientWidth - 2 * sideX,
           h: bottom - top,
           pinH: pin.clientHeight,
+          pinW: pin.clientWidth,
         }
         M.region = R
         const postBox = (b: Box): Box => {
@@ -546,8 +569,12 @@ export function RetainStory() {
         const slip = offsetIn(paper, stage)
         M.phoneBox = phb
         M.devBox = db
-        // print: printer + the slip it will print, at most --cam-print-h of the pin
-        const kPrint = fit(R, union(prb, slip), 0.96, num(pcs, "--cam-print-h", 0.7))
+        // print: follows the slip out (printFrame); [0] is the printed slip
+        M.printerBox = prb
+        M.slipBox = slip
+        M.printW = num(pcs, "--cam-printer-w", 0.42)
+        M.printH = num(pcs, "--cam-print-h", 0.7)
+        const kPrint = printFrame(1)
         // trash: the rig shifted left, and the bin
         const kTrash = fit(R, union(shiftBox(prb, M.rigShift), shiftBox(slip, M.rigShift), bb), 0.96)
         // tap: the phone on the device, as big as the free area allows
@@ -871,7 +898,9 @@ export function RetainStory() {
       if (cams.length === 5) {
         // leads the rig's shift a touch, so the bin sliding in is framed
         const k1 = ease(seg(q, Q.shiftA - 0.06, Q.shiftB - 0.02))
-        const k2 = ease(seg(p, T.convA, T.phoneB))
+        // done soon after the phone starts rising; from there the tap frame
+        // itself tracks the rise (tapNow), so the phone is always framed
+        const k2 = ease(seg(p, T.convA, T.phoneA + 0.02))
         // leads the group's slide a touch, so the laptop fading in on the
         // left is inside the frame from its first visible frame
         const k3 = ease(seg(p, T.slideA - 0.015, T.slideB - 0.02))
@@ -881,7 +910,8 @@ export function RetainStory() {
         const tapNow =
           riseDy > 0.5 && M.region ? fit(M.region, union(shiftBox(M.phoneBox, 0, riseDy), M.devBox), TAP_FILL) : cams[2]
         const finalNow = open > 0 && open < 1 ? finalFrame(open) : open >= 1 ? cams[3] : cams[4]
-        const [a0, b0, t0] = k3 > 0 ? [cams[2], finalNow, k3] : k2 > 0 ? [cams[1], tapNow, k2] : [cams[0], cams[1], k1]
+        const [a0, b0, t0] =
+          k3 > 0 ? [cams[2], finalNow, k3] : k2 > 0 ? [cams[1], tapNow, k2] : [print < 1 ? printFrame(print) : cams[0], cams[1], k1]
         const cs = a0.s * Math.pow(b0.s / a0.s, t0)
         const cx = a0.x + (b0.x - a0.x) * t0
         const cy = a0.y + (b0.y - a0.y) * t0
