@@ -77,6 +77,39 @@ const SITE_JSON_LD = JSON.stringify({
   // Escape "<" so no value can ever close the script element.
 }).replace(/</g, '\\u003c')
 
+// No-JS visibility (Web 2.1 P5). Scroll reveals start hidden in the server
+// HTML (inline opacity 0 / blur / clip) and only JS reveals them, so with JS
+// off every heading and paragraph under them stayed invisible to no-JS
+// visitors and crawlers. This rule lives inside <noscript>, so browsers with
+// JS never parse it: first paint, hydration and every reveal are untouched.
+//   1. Reveal / WordReveal words / ChildStagger children
+//      (components/motion, marked with data-reveal / data-reveal-group):
+//      forced to their settled, visible state. !important is what beats the
+//      inline hidden style.
+//   2. The /business pinned scroll scenes (§02 intro, §03 story, §05 setup)
+//      ship BOTH a runway and a static version and pick by CSS; with no JS the
+//      runway can never play, so show the static version, exactly as reduced
+//      motion does (`.runway` / `.staticSlot` in story.module.css,
+//      intro/intro.module.css, setup/setup.module.css).
+//   3. The FAQ accordion (components/paths/shared/faq.module.css) can't be
+//      opened without JS, so its answers are shown open.
+// 2 and 3 are CSS-module classes, matched by their generated names in both
+// the production build (`story_runway__<hash>`) and Turbopack dev
+// (`story-module__<hash>__runway`). Renaming one of those modules or classes
+// means updating it here.
+const moduleClass = (file: string, name: string) =>
+  `[class*="${file}_${name}__"],[class*="${file}-module__"][class*="__${name}"]`
+const NO_JS_SCENES = ['intro', 'story', 'setup']
+const NO_JS_REVEAL_CSS = [
+  '[data-reveal],[data-reveal-group]>*{opacity:1!important;transform:none!important;filter:none!important}',
+  '[data-reveal="mask"]{clip-path:none!important}',
+  `${NO_JS_SCENES.map((m) => moduleClass(m, 'runway')).join(',')}{display:none!important}`,
+  `${NO_JS_SCENES.map((m) => moduleClass(m, 'staticSlot')).join(',')}{display:block!important}`,
+  `${moduleClass('faq', 'panel')}{grid-template-rows:1fr!important}`,
+  `${moduleClass('faq', 'panelClip')}{visibility:visible!important}`,
+  `${moduleClass('faq', 'answer')}{opacity:1!important;transform:none!important}`,
+].join('')
+
 export const metadata: Metadata = {
   title: 'PapeX | Digital Receipts Revolutionized - Paperless Receipt Solutions',
   description: 'PapeX revolutionizes digital receipts by eliminating paper waste and streamlining financial management. Our platform integrates with POS systems to deliver instant digital receipts, saving businesses money while helping the environment. Join the paperless revolution with PapeX.',
@@ -163,6 +196,10 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: SITE_JSON_LD }} />
+        {/* JS off only: see NO_JS_REVEAL_CSS above. */}
+        <noscript>
+          <style dangerouslySetInnerHTML={{ __html: NO_JS_REVEAL_CSS }} />
+        </noscript>
         {/* Google tag (gtag.js) */}
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}

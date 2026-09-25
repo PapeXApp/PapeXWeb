@@ -48,8 +48,9 @@
 // fly-out. All of it runs on `transform` / `opacity` only, and all of the
 // continuous parts are driven from ONE rAF loop (`useEffect` below) that
 // writes straight to DOM nodes — no state, no re-render, no per-element
-// listener. It is cancelled on unmount and never starts at all under
-// `prefers-reduced-motion: reduce`.
+// listener. It is cancelled on unmount, parks itself once everything has
+// settled (see DRIFT_HOLD_MS) until the next input, and never starts at all
+// under `prefers-reduced-motion: reduce`.
 //
 // The fly-out is a CSS transition kicked off imperatively at commit time
 // (FLY_MS / FADE_MS, both < COMMIT_MS) on the plane wrappers, which are NOT
@@ -120,6 +121,18 @@ const PLANE_PARALLAX = 26
 // first event), so hover is where desktop visitors actually see the approach.
 // Deliberately weaker than a real gesture, and capped well below 1.
 const HOVER_BIAS = 0.34
+
+// Idle: the loop is not allowed to run forever (no infinite animation on the
+// site, and a 60fps loop on an untouched page burns battery). The drift keeps
+// playing for DRIFT_HOLD_MS after the last input, then its clock eases to a
+// stop (DRIFT_EASE per 60Hz frame; it eases back up the same way), and once
+// the pointer, the light and the bank have also settled the loop cancels
+// itself with every layer held exactly where it is. Pointer, wheel, touch or resize wakes it; the drift clock
+// resumes from where it paused, so nothing ever jumps.
+const DRIFT_HOLD_MS = 6000
+const DRIFT_EASE = 0.95
+const SETTLED_PX = 0.05 // smoothed cursor within this of the real one
+const SETTLED_INTENT = 0.0005
 
 const FLY_MS = 520 // winning plane leaves frame...
 const FADE_MS = 380 // ...while the other recedes. Both inside COMMIT_MS.
@@ -288,8 +301,8 @@ export function Fork() {
   // --- The single rAF loop --------------------------------------------------
   // Idle drift + pointer parallax + approach bank for both halves, in one
   // callback. Never starts under reduced motion (so there is nothing to
-  // "turn off" — the markup simply keeps its CSS rest transform), and is
-  // cancelled on unmount and by flyOut().
+  // "turn off" — the markup simply keeps its CSS rest transform), is
+  // cancelled on unmount and by flyOut(), and goes idle when settled.
   useEffect(() => {
     if (prefersReduced) return
     if (typeof window === 'undefined' || !window.matchMedia) return
@@ -324,32 +337,30 @@ export function Fork() {
     }
     measure()
 
-    const onPointerMove = (event: PointerEvent) => {
-      pointer.current = { x: event.clientX, y: event.clientY }
-    }
-    if (fine) {
-      window.addEventListener('pointermove', onPointerMove, { passive: true })
-    }
-    window.addEventListener('resize', measure, { passive: true })
-
     // Start the smoothed cursor at the viewport centre so nothing snaps into
     // place on the first mousemove.
     let smoothX = window.innerWidth / 2
     let smoothY = window.innerHeight / 2
     let intent = 0
     let last = performance.now()
-    const started = last
+    // The drift clock: advances at `rate` (1 = the designed speed), so the
+    // drift can ease to a stop while idle and resume from the same phase.
+    let t = 0
+    let rate = 1
+    let lastInput = last
 
     const frame = (now: number) => {
-      raf.current = requestAnimationFrame(frame)
-
       // Frame-rate independent smoothing: a 144Hz display and a struggling
       // 30fps laptop settle at the same speed in wall-clock terms.
       const dt = Math.min(48, now - last)
       last = now
       const steps = dt / 16.667
       const k = 1 - Math.pow(0.9, steps)
-      const t = (now - started) / 1000
+      const holding = touching.current || now - lastInput < DRIFT_HOLD_MS
+      // Ease the drift clock toward full speed while active, toward 0 idle.
+      const ease = 1 - Math.pow(DRIFT_EASE, steps)
+      rate += ((holding ? 1 : 0) - rate) * ease
+      t += (dt / 1000) * rate
 
       const target = pointer.current
       if (target) {
@@ -368,7 +379,8 @@ export function Fork() {
         if (Math.abs(gesture.current) < 0.002) gesture.current = 0
       }
       const hover = fine && target ? clamp(viewY * 2, -1, 1) * HOVER_BIAS : 0
-      intent += (clamp(gesture.current + hover, -1, 1) - intent) * k
+      const intentTarget = clamp(gesture.current + hover, -1, 1)
+      intent += (intentTarget - intent) * k
 
       for (const s of sides) {
         const rect = s.rect
@@ -419,7 +431,51 @@ export function Fork() {
           1,
         ).toFixed(3)
       }
+
+      // Idle: stop once nothing would visibly move on the next frame. Every
+      // layer keeps the transform it was just given.
+      const settled =
+        !holding &&
+        rate < 0.001 &&
+        gesture.current === 0 &&
+        Math.abs(intentTarget - intent) < SETTLED_INTENT &&
+        (!target ||
+          (Math.abs(target.x - smoothX) < SETTLED_PX &&
+            Math.abs(target.y - smoothY) < SETTLED_PX))
+      if (settled) {
+        rate = 0
+        raf.current = null
+        return
+      }
+      raf.current = requestAnimationFrame(frame)
     }
+
+    const wakeLoop = () => {
+      lastInput = performance.now()
+      // lock: committed — flyOut() owns the planes now, never restart.
+      if (raf.current !== null || lock.current) return
+      // Resume the clocks from now, not from when the loop stopped.
+      last = lastInput
+      raf.current = requestAnimationFrame(frame)
+    }
+
+    const onPointerMove = (event: PointerEvent) => {
+      pointer.current = { x: event.clientX, y: event.clientY }
+      wakeLoop()
+    }
+    const onResize = () => {
+      measure()
+      wakeLoop()
+    }
+    if (fine) {
+      window.addEventListener('pointermove', onPointerMove, { passive: true })
+    }
+    window.addEventListener('resize', onResize, { passive: true })
+    // Wheel and touch feed `gesture` from the input effect above; they only
+    // need to wake the loop here.
+    window.addEventListener('wheel', wakeLoop, { passive: true })
+    window.addEventListener('touchstart', wakeLoop, { passive: true })
+    window.addEventListener('touchmove', wakeLoop, { passive: true })
 
     raf.current = requestAnimationFrame(frame)
 
@@ -427,7 +483,10 @@ export function Fork() {
       if (raf.current !== null) cancelAnimationFrame(raf.current)
       raf.current = null
       window.removeEventListener('pointermove', onPointerMove)
-      window.removeEventListener('resize', measure)
+      window.removeEventListener('resize', onResize)
+      window.removeEventListener('wheel', wakeLoop)
+      window.removeEventListener('touchstart', wakeLoop)
+      window.removeEventListener('touchmove', wakeLoop)
     }
   }, [prefersReduced])
 

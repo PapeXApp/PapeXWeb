@@ -93,7 +93,8 @@ export function WordReveal({ text, children, as = "h2", delay = 0, className, st
         }
         return (
           <span key={i} aria-hidden="true" style={wrapStyle}>
-            <span className={wordClassName} style={innerStyle}>
+            {/* data-reveal: shown by the root layout's <noscript> rule when JS is off. */}
+            <span className={wordClassName} style={innerStyle} data-reveal="">
               {word}
             </span>
             {i < words.length - 1 ? WORD_SPACE : null}

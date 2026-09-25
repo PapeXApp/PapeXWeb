@@ -112,8 +112,12 @@ export function Reveal({ children, variant = "up", delay = 0, as = "div", classN
     willChange: settled ? undefined : willChangeProp,
   }
 
+  // data-reveal marks the hidden-until-scrolled state for the root layout's
+  // <noscript> rule (NO_JS_REVEAL_CSS in app/layout.tsx): with JS off
+  // useInView never fires, so without it the content would stay at opacity 0.
+  // Inert with JS on — nothing else selects it.
   return (
-    <Tag ref={ref} className={className} style={computedStyle}>
+    <Tag ref={ref} className={className} style={computedStyle} data-reveal={isMask ? "mask" : ""}>
       {children}
     </Tag>
   )
