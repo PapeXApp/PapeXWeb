@@ -36,7 +36,7 @@ function monogram(letter: string, bg: string): string {
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
-const [, greenleaf, cityhop] = receiptsListContent.rows;
+const [, quillbrook, copperpeg] = receiptsListContent.rows;
 const tidewick = demoStore("demo-tidewick-cafe");
 const copper = demoStore("demo-copperpeg-hardware");
 const quill = demoStore("demo-quillbrook-market");
@@ -61,12 +61,12 @@ export function walkReceipts(summary: ReceiptSummary): KitReceipt[] {
     },
     {
       ...base,
-      id: "greenleaf",
-      merchantName: greenleaf.merchant,
-      logoUrl: monogram(greenleaf.initial, "#3C6E47"),
-      amount: toAmount(greenleaf.amount),
+      id: "quillbrook",
+      merchantName: quillbrook.merchant,
+      logoUrl: monogram(quillbrook.initial, "#3C6E47"),
+      amount: toAmount(quillbrook.amount),
       dateLabel: "Jun 7",
-      category: greenleaf.category,
+      category: quillbrook.category,
       source: "scanned",
       originDetail: `Shared by ${DEMO_PERSON} in ${DEMO_GROUP}`,
       isSharedWithCurrentUser: true,
@@ -86,12 +86,12 @@ export function walkReceipts(summary: ReceiptSummary): KitReceipt[] {
     },
     {
       ...base,
-      id: "cityhop",
-      merchantName: cityhop.merchant,
-      logoUrl: monogram(cityhop.initial, "#2B3440"),
-      amount: toAmount(cityhop.amount),
+      id: "copperpeg",
+      merchantName: copperpeg.merchant,
+      logoUrl: monogram(copperpeg.initial, "#2B3440"),
+      amount: toAmount(copperpeg.amount),
       dateLabel: "Jun 5",
-      category: cityhop.category,
+      category: copperpeg.category,
       source: "email",
       originDetail: "Email by you",
       section: "June 5, 2026",

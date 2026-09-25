@@ -331,9 +331,9 @@ export const howItWorksContent = {
 // a ride is "Travel", not "Gas & auto".
 export const receiptsListContent = {
   rows: [
-    { merchant: "Bluewick Coffee", initial: "B", category: "Dining", amount: "$10.90" },
-    { merchant: "Greenleaf Market", initial: "G", category: "Groceries", amount: "$63.40" },
-    { merchant: "Cityhop Rides", initial: "C", category: "Travel", amount: "$18.20" },
+    { merchant: "Tidewick Cafe", initial: "T", category: "Dining", amount: "$10.90" },
+    { merchant: "Quillbrook Market", initial: "Q", category: "Groceries", amount: "$63.40" },
+    { merchant: "Copperpeg Hardware", initial: "C", category: "Home", amount: "$18.20" },
   ],
 };
 
