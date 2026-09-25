@@ -1,0 +1,368 @@
+/* §05 "How do I get it?" (#setup) — the setup timeline.
+
+   ONE layout, the OVERVIEW, is the only thing CSS lays out: five columns on
+   a horizontal line (>= 821px) or a stacked list on a vertical rail (phones).
+   It is also the whole static fallback (reduced motion, short screens, the
+   server render). The pinned scene (SetupTimeline.tsx) never changes layout:
+   it reads these boxes once on mount/resize and moves each step's three parts
+   (art, node, text) with transform only, from a zoomed-in horizontal "travel"
+   pose back to exactly these boxes, so the zoom-out lands pixel-true.
+
+   Knobs the scene reads from `.stage` (plain numbers, not lengths):
+     --t-pitch      step spacing in travel, as a fraction of the stage width
+     --t-pitch-add  + this many px (phones: a step per screen, plus a gutter)
+     --t-ill        art width in travel (px), capped by --t-ill-frac x width
+     --t-txt        text scale in travel
+     --t-gap1       art -> line gap in travel (px), holds the minute label
+     --t-gap2       line -> text gap in travel (px)
+     --t-phone      1 on phones: the stacked overview (labels/body swap) */
+
+.wrap {
+  width: 100%;
+  max-width: calc(1150px + 2 * clamp(20px, 5vw, 56px));
+  margin-inline: auto;
+  padding-inline: clamp(20px, 5vw, 56px);
+}
+
+.static {
+  padding-block: var(--section-pad-y);
+}
+
+/* ---- the runway + pin (same pattern as story.module.css) ----------------- */
+.runway {
+  position: relative;
+}
+.pin {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  display: flex;
+  flex-direction: column;
+  /* clears the floating nav band */
+  padding-top: 84px;
+  padding-bottom: clamp(18px, 3svh, 34px);
+  /* the travel pose runs off the right edge of the screen: clip it there
+     (clip, not hidden — hidden would make this a scroll container) */
+  overflow-x: clip;
+}
+.pin > .wrap {
+  flex: none;
+}
+.pin > .stageWrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+}
+
+.stage {
+  position: relative;
+  width: 100%;
+  --t-pitch: 0.6;
+  --t-pitch-add: 0;
+  --t-ill: 300;
+  --t-ill-frac: 0.86;
+  --t-txt: 1.35;
+  --t-gap1: 46;
+  --t-gap2: 26;
+  --t-phone: 0;
+}
+.pinned .stage {
+  display: flex;
+  align-items: center;
+}
+
+/* ---- the header ---------------------------------------------------------- */
+.head {
+  padding-bottom: clamp(18px, 3svh, 40px);
+}
+.static .head {
+  padding-bottom: calc(var(--gap-body, 40px) * 1.2);
+}
+
+/* ---- the list (the overview) ---------------------------------------------- */
+.list {
+  --step-gap: clamp(20px, 2.4vw, 30px);
+  --dot: 14px;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  column-gap: var(--step-gap);
+}
+
+.step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ill,
+.node,
+.txt {
+  transform-origin: 0 0;
+}
+
+.ill {
+  /* never taller than a fifth of the screen, so the overview always fits */
+  width: min(100%, calc(20svh * 4 / 3));
+}
+.art {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  color: var(--flow-fg);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.art .acc {
+  stroke: var(--orange);
+}
+.art .soft {
+  stroke: none;
+  fill: color-mix(in srgb, var(--flow-fg) 7%, transparent);
+}
+.art .soft2 {
+  stroke: none;
+  fill: color-mix(in srgb, var(--flow-fg) 3%, transparent);
+}
+.art .accFill {
+  stroke: none;
+  fill: var(--orange);
+}
+/* the pinned scene draws the ink in; stroke-dashoffset is written per frame */
+.pinned .art [data-d] {
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+}
+.pinned .art [data-f] {
+  opacity: 0;
+}
+
+.node {
+  position: relative;
+  margin-top: 40px;
+  height: var(--dot);
+}
+.dot {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: var(--dot);
+  height: var(--dot);
+  border-radius: 50%;
+  border: 2px solid var(--orange);
+  background: var(--flow-ground);
+}
+.dotFill {
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: var(--orange);
+}
+
+/* The minute axis: "0 min" on the first node, "about 15 min" on the last. */
+.lbl {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 10px);
+  white-space: nowrap;
+  font-family: var(--font-label);
+  font-size: 13px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  color: var(--flow-fg-2);
+}
+.lblDown {
+  display: none;
+}
+
+.txt {
+  position: relative;
+  margin-top: 22px;
+}
+.num {
+  display: block;
+  font-family: var(--font-label);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  color: var(--orange);
+}
+.title {
+  margin-top: 8px;
+  font-family: var(--font-display);
+  font-size: clamp(18px, 1.5vw, 21px);
+  font-weight: 600;
+  line-height: 1.2;
+}
+.body {
+  margin-top: 8px;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--flow-fg-2);
+}
+
+/* The static line: a connector from each node to the next (orange, the
+   whole path is done). The pinned scene draws its own line instead. */
+.step:not(:last-child) .node::after {
+  content: "";
+  position: absolute;
+  left: calc(var(--dot) / 2);
+  top: calc(var(--dot) / 2 - 1px);
+  width: calc(100% + var(--step-gap));
+  height: 2px;
+  background: var(--orange);
+}
+.pinned .step .node::after {
+  display: none;
+}
+
+/* ---- the pinned scene's own line ----------------------------------------- */
+.track,
+.fill,
+.lineWrap {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+.lineWrap {
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.track,
+.fill {
+  width: 100px;
+  height: 2px;
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+}
+.track {
+  background: color-mix(in srgb, var(--flow-fg) 16%, transparent);
+}
+.fill {
+  background: var(--orange);
+}
+
+/* ---- the closing link ----------------------------------------------------- */
+.next {
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-lead);
+  font-weight: 600;
+  color: var(--flow-fg);
+  text-underline-offset: 4px;
+}
+.next:hover {
+  text-decoration: underline;
+}
+.next span {
+  color: var(--orange);
+}
+.static .next {
+  margin-top: var(--gap-body, 40px);
+}
+.pin .next {
+  margin-top: clamp(10px, 2svh, 24px);
+}
+
+/* ---- phones and tablets: a stacked list on a vertical rail --------------- */
+@media (max-width: 820px) {
+  .pin {
+    padding-top: 64px;
+  }
+  .stage {
+    --t-pitch: 1;
+    --t-pitch-add: 40;
+    --t-ill: 220;
+    --t-ill-frac: 0.64;
+    --t-txt: 1.1;
+    --t-gap1: 44;
+    --t-gap2: 22;
+    --t-phone: 1;
+  }
+  .list {
+    --dot: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    /* room for "0 min" above the rail and "about 15 min" below it */
+    padding-block: 26px;
+  }
+  .step {
+    display: grid;
+    grid-template-columns: var(--dot) minmax(0, 96px) minmax(0, 1fr);
+    column-gap: 12px;
+    align-items: start;
+  }
+  .node {
+    grid-column: 1;
+    grid-row: 1;
+    margin-top: 4px;
+    /* the node spans the row so the end label can sit below the list */
+    height: 100%;
+    align-self: stretch;
+  }
+  .ill {
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+  }
+  .art {
+    stroke-width: 2;
+  }
+  .txt {
+    grid-column: 3;
+    grid-row: 1;
+    margin-top: 0;
+  }
+  .num,
+  .lbl {
+    font-size: 14px;
+  }
+  .title {
+    margin-top: 4px;
+    font-size: 16px;
+  }
+  .body {
+    margin-top: 4px;
+    font-size: 14px;
+  }
+  /* the pinned overview shows number + title only (bodies were read in
+     travel; they stay in the DOM for AT and fade out in the zoom) */
+  .pinned .body {
+    position: absolute;
+    left: 0;
+    top: 100%;
+    width: 100%;
+  }
+  /* rail: dot centre to the next dot centre */
+  .step:not(:last-child) .node::after {
+    left: calc(var(--dot) / 2 - 1px);
+    top: calc(var(--dot) / 2);
+    width: 2px;
+    height: calc(100% + 14px);
+  }
+  /* "about 15 min" sits under the list, not above the last dot */
+  .step:last-child .lblUp {
+    display: none;
+  }
+  .pinned .step:last-child .lblUp {
+    display: block;
+  }
+  .lblDown {
+    display: block;
+    top: calc(100% + 8px);
+    bottom: auto;
+  }
+}
