@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { MousePointerClick } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PlaneMark } from "@/components/brand/plane-mark"
 import { ClipLockScreen, ClipReading } from "../../customer/appui"
@@ -11,7 +12,8 @@ import { story } from "../story"
 import { Bin, DeviceArt, Printer } from "./Furniture"
 import { FitFrame } from "./merchant/FitFrame"
 import { MerchantDemo } from "./merchant/MerchantDemo"
-import { ClipScreen, PhoneApp } from "./PhoneKit"
+import { ClipScreen } from "./PhoneKit"
+import { PhoneApp } from "./PhoneApp"
 import {
   FOLD_VECS,
   HALF_REGION,
@@ -80,7 +82,8 @@ import s from "../story.module.css"
  *
  * The dashboard is the real one (merchant/MerchantDemo.tsx: app/merchant's
  * own primitives, demo data by props), the customer's phone is the code-
- * sourced app kit (PhoneKit.tsx). The dashboard's explanation (three
+ * sourced app kit (PhoneKit.tsx; usable at rest: PhoneApp.tsx, "Try it"
+ * pills over both screens). The dashboard's explanation (three
  * columns) sits AFTER the runway, in flow, so nothing overflows the pin.
  *
  * Server render (Web 2.1 W3, same pattern as intro/IntroScene): the HTML
@@ -236,6 +239,19 @@ const fit = (R: Region, b: Box, fill: number, maxH = 1): Cam => ({
 /** The tap frame's share of the free area. */
 const TAP_FILL = 0.96
 
+/**
+ * "Try it", over a screen that is usable (the hold, or latched open): a small
+ * pill that fades in with `live`. Decorative; the screens name themselves.
+ */
+function TryIt({ on, className }: { on: boolean; className: string }) {
+  return (
+    <span className={cn(s.tryIt, className, on && s.tryOn)} aria-hidden="true">
+      <MousePointerClick className={s.tryIcon} strokeWidth={2} />
+      {story.tryIt}
+    </span>
+  )
+}
+
 /** Offset of `el` inside `root`, from layout boxes (transforms don't count). */
 function offsetIn(el: HTMLElement, root: HTMLElement) {
   let x = 0
@@ -374,6 +390,11 @@ export function RetainStory() {
       cams: [] as Cam[],
       /** the free area, and the tap pose's phone + device boxes (stage px) */
       region: null as Region | null,
+      /**
+       * the last frame's free area: the caption has faded by then, so it runs
+       * down to --cam-final-foot above the pin's bottom (stage px)
+       */
+      finalRegion: null as Region | null,
       phoneBox: { x: 0, y: 0, w: 0, h: 0 } as Box,
       devBox: { x: 0, y: 0, w: 0, h: 0 } as Box,
       /** the final frame's pieces: laptop box, the pair's post-slide boxes */
@@ -399,12 +420,18 @@ export function RetainStory() {
      * deck, 108% of the laptop — then settles in as the lid stands up.
      */
     const finalFrame = (open: number): Cam => {
-      const R = M.region as Region
+      const R = M.finalRegion as Region
       const L = M.lapBox
       const z = M.lidH * Math.cos((Math.PI / 2) * open)
       const m = M.persp > z ? M.persp / (M.persp - z) : 1
       const grow = Math.max(0.04 * L.w, (L.w / 2) * (m - 1))
-      return fit(R, union({ ...L, x: L.x - grow, w: L.w + 2 * grow }, ...M.finalPair), M.finalFill)
+      const b = union({ ...L, x: L.x - grow, w: L.w + 2 * grow }, ...M.finalPair)
+      const cam = fit(R, b, M.finalFill)
+      // BOTTOM-anchored (P3-B5): the frame's foot sits exactly on the free
+      // area's floor, --cam-final-foot above the pin's bottom, so the copy
+      // after the runway can be pulled up by that same CSS length and land a
+      // fixed gap under the screens (story.module.css .runway margin-bottom)
+      return { ...cam, ry: R.y + R.h - (cam.s * b.h) / 2 }
     }
 
     /**
@@ -545,6 +572,7 @@ export function RetainStory() {
       // --cam-side from the viewport's edges, in the stage's own coordinates.
       M.cams = []
       M.region = null
+      M.finalRegion = null
       const pcs = getComputedStyle(pin)
       if (num(cs, "--cam", 1) > 0) {
         const hint = hintRef.current
@@ -560,6 +588,8 @@ export function RetainStory() {
           pinW: pin.clientWidth,
         }
         M.region = R
+        const foot = num(pcs, "--cam-final-foot", 110)
+        M.finalRegion = { ...R, h: pin.clientHeight - foot - top }
         const postBox = (b: Box): Box => {
           const [x0, y0] = post(b.x, b.y)
           const [x1, y1] = post(b.x + b.w, b.y + b.h)
@@ -1180,6 +1210,7 @@ export function RetainStory() {
               <span className={s.keys} />
               <span className={s.pad} />
             </div>
+            <TryIt on={live} className={s.tryLaptop} />
           </div>
 
           {/* ---- phone + device, on the right (final layout); the group's
@@ -1224,6 +1255,7 @@ export function RetainStory() {
                 </div>
                 <PhoneApp summary={summary} live={live && !phoneDash} reset={reset} />
               </PhoneChrome>
+              <TryIt on={live && !phoneDash} className={s.tryPhone} />
             </div>
           </div>
 
@@ -1246,6 +1278,7 @@ export function RetainStory() {
                 </FitFrame>
               </PhoneChrome>
             </div>
+            <TryIt on={live && phoneDash} className={s.tryPd} />
           </div>
 
           {/* ---- the spark ---- */}

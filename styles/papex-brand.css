@@ -729,6 +729,12 @@ html[data-fork-skip] .rd-fork {
 .rd-marquee-run {
   animation: rd-marquee 30s linear infinite;
 }
+/* The path homes' phrase ribbon (components/paths/shared/Ribbon.tsx) is one
+   fixed height, so a layout above it can size itself to end exactly on it
+   (/business §03's closing block, business/story.module.css .after). */
+.rd {
+  --ribbon-h: 60px;
+}
 
 /* --- Flow ground tokens ----------------------------------------------------
    Registered so they interpolate as colours: the path homes' page ground and
