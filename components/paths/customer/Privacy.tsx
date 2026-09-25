@@ -38,7 +38,7 @@ type Phase = "rest" | "clear" | "redacted"
 const NEVER_COLLECTED = [
   "Your name",
   "Your email or phone number",
-  "Your card number (a receipt only shows the last 4 digits)",
+  "Your card number",
   "An account or a sign-up",
 ]
 
@@ -176,8 +176,6 @@ function RedactingReceipt() {
             <span className={styles.kept}>{KEPT_GROUP}</span>
           </span>
         </div>
-        <p className={styles.rNote}>Last 4 only, same as the paper slip.</p>
-
         <div className={styles.stamp}>Receipt only</div>
       </div>
     </div>
