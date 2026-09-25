@@ -1219,9 +1219,14 @@ export function FlipCard({ card, index }: { card: Card; index: number }) {
   const revealed = stage === "revealed";
 
   return (
-    <div data-flipcard={id} onPointerMove={onPointerMove} className={cn(styles.card, flipped && styles.cardFlipped)}>
-      <div className={styles.inner}>
-        <div className={styles.face} inert={flipped} aria-hidden={flipped}>
+    <div
+      data-flipcard={id}
+      data-nojs="flip-card"
+      onPointerMove={onPointerMove}
+      className={cn(styles.card, flipped && styles.cardFlipped)}
+    >
+      <div className={styles.inner} data-nojs="flip-inner">
+        <div className={styles.face} data-nojs="flip-face" inert={flipped} aria-hidden={flipped}>
           <button
             ref={frontBtn}
             type="button"
@@ -1239,7 +1244,7 @@ export function FlipCard({ card, index }: { card: Card; index: number }) {
             <FrontArt id={id} />
           </div>
           <p className={styles.question}>{question}</p>
-          <div className={styles.foot}>
+          <div className={styles.foot} data-nojs="flip-hint">
             <span>{hint}</span>
             <svg viewBox="0 0 16 10" className={styles.footArrow} aria-hidden="true">
               <path d="M1 5H14.5M10.5 1l4 4-4 4" />
@@ -1247,7 +1252,13 @@ export function FlipCard({ card, index }: { card: Card; index: number }) {
           </div>
         </div>
 
-        <div ref={backFace} className={cn(styles.face, styles.faceBack)} inert={!flipped} aria-hidden={!flipped}>
+        <div
+          ref={backFace}
+          className={cn(styles.face, styles.faceBack)}
+          data-nojs="flip-back"
+          inert={!flipped}
+          aria-hidden={!flipped}
+        >
           <button
             ref={backBtn}
             type="button"
@@ -1262,14 +1273,14 @@ export function FlipCard({ card, index }: { card: Card; index: number }) {
             </span>
             <FlipGlyph />
           </div>
-          <div id={resultId} className={cn(styles.result, revealed && styles.resultOn)}>
-            <div className={styles.resultTop}>
+          <div id={resultId} className={cn(styles.result, revealed && styles.resultOn)} data-nojs="flip-result">
+            <div className={styles.resultTop} data-nojs="flip-result">
               <Stat value={value} run={revealed} instant={prefersReduced} />
               <span className={styles.rule} aria-hidden="true" />
               <p className={styles.caption}>{caption}</p>
             </div>
             {/* the strip the scene docks into */}
-            <div ref={slotRef} className={styles.slot} aria-hidden="true" />
+            <div ref={slotRef} className={styles.slot} data-nojs="flip-slot" aria-hidden="true" />
             <p className={styles.source}>
               Source:{" "}
               {href ? (
@@ -1278,6 +1289,7 @@ export function FlipCard({ card, index }: { card: Card; index: number }) {
                   target="_blank"
                   rel="noopener noreferrer"
                   className={styles.sourceLink}
+                  data-nojs="flip-link"
                   tabIndex={revealed ? 0 : -1}
                   onClick={(e) => e.stopPropagation()}
                   onPointerDown={(e) => e.stopPropagation()}

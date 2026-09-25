@@ -923,7 +923,7 @@ export function RetainStory() {
   )
   const staticVersion =
     mode === "scene" ? null : (
-      <div className={s.staticSlot}>
+      <div className={s.staticSlot} data-nojs="static">
         <StaticStory />
       </div>
     )
@@ -938,7 +938,7 @@ export function RetainStory() {
   return (
     <>
     {staticVersion}
-    <div ref={runwayRef} className={s.runway} style={{ height: `${RUNWAY_VH}vh` }}>
+    <div ref={runwayRef} className={s.runway} data-nojs="runway" style={{ height: `${RUNWAY_VH}vh` }}>
       {/* The story for assistive tech: the scene itself is decorative. */}
       <ol className="sr-only">
         {Object.values(story.beats).map((line) => (

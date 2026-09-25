@@ -489,7 +489,7 @@ export function SetupTimeline({
   )
 
   const staticVersion = (
-    <div className={cn(s.static, s.wrap, mode === "ssr" && s.staticSlot)}>
+    <div className={cn(s.static, s.wrap, mode === "ssr" && s.staticSlot)} data-nojs="static">
       <div className={s.head}>{header}</div>
       <div className={s.stage}>{renderList(false)}</div>
       {next}
@@ -502,6 +502,7 @@ export function SetupTimeline({
       <div
         ref={runwayRef}
         className={cn(s.runway, s.pinned)}
+        data-nojs="runway"
         data-live={pinned ? "" : undefined}
         style={{ height: `${RUNWAY_VH}vh` }}
       >
