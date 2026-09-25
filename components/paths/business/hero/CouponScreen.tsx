@@ -48,7 +48,7 @@ const box = (b: typeof CARD): CSSProperties => ({
 export function CouponScreen({ state, time }: { state: CouponState; time?: string }) {
   return (
     <AppKitRoot style={PT} className={s.kitFill}>
-      <CouponDetail coupon={COUPON} store={STORE} mode="dark" statusBar={false} />
+      <CouponDetail coupon={COUPON} store={STORE} mode="dark" statusBar={false} showRemove={false} />
       <StatusBar time={time} />
       <span className={cn(s.cardGlow, state === "landed" && s.cardGlowPlay)} style={box(CARD)} aria-hidden="true" />
       <span className={s.stubBox} style={box(STUB)} aria-hidden="true">
