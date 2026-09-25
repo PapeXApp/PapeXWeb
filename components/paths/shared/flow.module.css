@@ -294,6 +294,10 @@
   max-width: 100%;
 }
 .ribbonBand {
+  box-sizing: border-box;
+  /* 17 + 24 (the run's line) + 17 + two hairlines; pinned, not just the sum
+     of its parts, because /business sizes the block above to end on it */
+  height: var(--ribbon-h, 60px);
   border-top: 1px solid var(--flow-hair);
   border-bottom: 1px solid var(--flow-hair);
   padding: 17px 0;
@@ -301,6 +305,18 @@
 .ribbonTrack {
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
   mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+/* ALWAYS moving (Nico, P3-B5: "the ribbon is supposed to auto-scroll at all
+   times"). Marquee.tsx runs a finite loop count by default (the P4 polish's
+   2-loops-then-rest); the ribbon overrides it to infinite here, and pauses
+   the loop only while the ribbon is off screen (Ribbon.tsx sets data-off
+   from an IntersectionObserver). Reduced motion never gets the track at all:
+   Marquee renders one still run, and motion.css drops the animation. */
+.ribbonTrack :global(.papex-marquee-track) {
+  animation-iteration-count: infinite !important;
+}
+.ribbon[data-off] .ribbonTrack :global(.papex-marquee-track) {
+  animation-play-state: paused !important;
 }
 .ribbonRun {
   display: inline-flex;

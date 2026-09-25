@@ -48,6 +48,13 @@ export const story = {
   phoneLabel: "An iPhone showing the digital receipt.",
   laptopLabel: "The PapeX merchant dashboard, updating with the new receipt.",
 
+  /**
+   * Over each screen once the story rests: both are real, usable UIs (the
+   * dashboard and the customer's phone). Decorative (aria-hidden): the
+   * screens' own regions and buttons carry the names.
+   */
+  tryIt: "Try it",
+
   /** Lock-screen Live Activity on the phone before the tap. */
   lockPrompt: { title: "Tap to get your receipt", body: "Hold your iPhone near the PapeX device" },
 } as const

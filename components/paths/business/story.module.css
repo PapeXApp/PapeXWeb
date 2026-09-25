@@ -34,7 +34,26 @@
   initial-value: 400px;
 }
 
+/* The last camera frame's foot: the screens end this far above the pin's
+   bottom, and the runway pulls the copy after it up by the same length, so
+   once the pin lets go the gap under the screens is exactly --after-gap.
+   Registered so measure() reads it resolved, in px. */
+@property --cam-final-foot {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 110px;
+}
+
 .section {
+  --cam-final-foot: clamp(88px, 14svh, 150px);
+  /* scene's foot -> the dashboard eyebrow, once the pin has let go */
+  --after-gap: clamp(56px, 5.4vw, 84px);
+  /* the one-screen block after the scene (.after): when its eyebrow sits
+     --unit-top from the viewport's top, the ribbon under it ends
+     --unit-slack above the viewport's bottom, and §04 (24px under the
+     ribbon, MarqueeBand's .storyRibbon) is still below the fold */
+  --unit-top: 100px;
+  --unit-slack: 12px;
   --gap-title: clamp(20px, 2.4vw, 36px);
   --gap-body: clamp(28px, 3.2vw, 48px);
   --gap-list: clamp(18px, 2vw, 28px);
@@ -62,6 +81,18 @@
   position: relative;
   margin-top: var(--gap-body, 40px);
   margin-inline: calc(-1 * var(--story-px));
+}
+/* P3-B5 (Nico: "a little less blank space between that and the next title").
+   The pin's last frame ends --cam-final-foot above its bottom (RetainStory
+   finalFrame), and that foot is empty: pull what follows up over it. A
+   margin on the RUNWAY, not on .after, so it vanishes with the runway
+   whenever the static story shows instead (reduced motion, no JS: the runway
+   is display: none there). Pure CSS: the server HTML is already this height.
+   The camera is off on phones, so is this. */
+@media (min-width: 821px) {
+  .runway {
+    margin-bottom: calc(-1 * var(--cam-final-foot));
+  }
 }
 /* Server render / first frame: both versions are in the HTML and CSS picks
    one (same contract as intro/intro.module.css), so the section is its final
@@ -627,17 +658,55 @@
 
 /* --- after the scene: the dashboard's heading block, then the columns ----------- */
 /* P3-B2 (Nico: "super cluttered; we need space fixing"). The pin ends on the
-   screens alone; once it lets go, this follows in flow with clear air: the
-   pin's own empty foot + the padding above the heading, then a wide gap
-   before the three columns. */
+   screens alone; once it lets go, this follows in flow: --after-gap under
+   the screens (P3-B5: the runway's margin-bottom pulls it over the pin's
+   empty foot), then the heading, then the three columns. */
 .after {
+  /* above the pin, whose empty foot it overlaps (.runway margin-bottom) */
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: clamp(56px, 6.4vw, 96px);
   max-width: 1150px;
   margin-inline: auto;
-  padding-top: clamp(56px, 7vw, 104px);
+  padding-top: var(--after-gap);
+}
+/* P3-B5 (Nico: "I can see 'Your dashboard, included' ... all the way down
+   until the ribbon, without section four peeking"). On desktop the heading
+   block, the columns and the ribbon are one screen: with the eyebrow at
+   --unit-top the block runs down to the section's padding, then the ribbon
+   (--ribbon-h, pinned in shared/flow.module.css) ends --unit-slack above the
+   fold. The columns take the middle of the room left under the heading. */
+@media (min-width: 821px) {
+  .after {
+    min-height: calc(
+      100svh - var(--unit-top) - var(--unit-slack) - var(--section-pad-y) - var(--ribbon-h, 60px) +
+        var(--after-gap)
+    );
+  }
+  .after > .cols {
+    margin-block: auto;
+  }
+  /* the columns are the block's body on a whole screen: their type grows
+     with the viewport's height, so a tall screen reads full, not empty */
+  .after .colTitle {
+    font-size: clamp(19px, 2.3svh, 26px);
+  }
+  .after .colBody {
+    margin-top: clamp(10px, 1.3svh, 16px);
+    max-width: 34ch;
+    font-size: clamp(15px, 1.75svh, 18.5px);
+  }
+  .after .colRule {
+    width: clamp(40px, 5.5svh, 64px);
+    margin-bottom: clamp(16px, 2.2svh, 26px);
+  }
+  /* the ribbon is outside .section, so its foot is set here, not there */
+  .storyRibbon {
+    margin-bottom: 24px;
+  }
 }
 .afterCopy {
   width: 100%;
@@ -690,6 +759,8 @@
 }
 .hot {
   position: absolute;
+  /* over the kit's own layers (header 10, tab bar 20, status bar 50) */
+  z-index: 60;
   padding: 0;
   border: 0;
   border-radius: calc(26 * var(--pt));
@@ -699,6 +770,146 @@
 .hot:focus-visible {
   outline: 2px solid #eb7100;
   outline-offset: 2px;
+}
+/* "Try it" (RetainStory TryIt): over each usable screen while the story
+   rests. It sits in the camera layer with its screen, so its px are divided
+   by what scales that screen (the group's --g-post-s for the phone). */
+.tryIt {
+  position: absolute;
+  left: 50%;
+  z-index: 7;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  padding: 0.42em 0.9em 0.42em 0.75em;
+  border-radius: 999px;
+  background: rgba(0, 18, 29, 0.86);
+  color: #f5f5f5;
+  font-family: var(--font-label);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow: 0 6px 18px -6px rgba(0, 18, 29, 0.45);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 6px);
+  transition:
+    opacity 0.45s ease,
+    transform 0.45s ease;
+}
+.tryOn {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  transition-delay: 0.25s;
+}
+.tryIcon {
+  width: 1.2em;
+  height: 1.2em;
+  color: #eb7100;
+}
+/* over the lid's top edge, centred on the laptop */
+.tryLaptop {
+  bottom: calc(100% + 1.4cqw);
+}
+/* over the phone's top, centred on it, at the laptop pill's size */
+.tryPhone {
+  bottom: calc(100% + 1.6cqw);
+  font-size: calc(12px / var(--g-post-s, 1));
+}
+/* phones: over the dashboard phone, in the stage's top margin */
+.tryPd {
+  top: 1.5cqw;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tryIt {
+    transition: none;
+  }
+}
+
+/* The phone's app (PhoneApp.tsx): each screen change remounts one layer,
+   which slides in like iOS (a push for a detail, a short fade for a tab or
+   Save to PapeX). One-shot, and none under reduced motion. */
+.appScreen {
+  overflow: hidden;
+}
+.appPush {
+  animation-name: appPush;
+  animation-duration: 0.32s;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.appSwap {
+  animation-name: appSwap;
+  animation-duration: 0.22s;
+  animation-timing-function: ease-out;
+}
+@keyframes appPush {
+  from {
+    transform: translateX(28%);
+    opacity: 0.4;
+  }
+}
+@keyframes appSwap {
+  from {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .appPush,
+  .appSwap {
+    animation: none;
+  }
+}
+/* A list that scrolls by drag, never by wheel (PhoneApp.tsx DragList): an
+   overflow: hidden box is not a wheel target, so a wheel over the phone
+   keeps scrolling the page. touch-action: none lets a finger drag it (the
+   component hands any leftover to the page). */
+.dragList {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.dragging,
+.dragging * {
+  cursor: grabbing !important;
+}
+/* Rows scrolled up fade out under the pinned header and the status bar
+   instead of running through the clock (the app's header sits on the same
+   ground; web stand-in for its scroll-edge effect). Under the header (10). */
+.listFade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 9;
+  pointer-events: none;
+  background: linear-gradient(180deg, var(--ak-c-background, #00121d) 62%, transparent);
+}
+/* a receipt / coupon row as a real button: no box of its own */
+.rowBtn {
+  display: block;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+.rowBtn:focus-visible {
+  outline: 2px solid #eb7100;
+  outline-offset: -2px;
+  border-radius: calc(20 * var(--pt));
+}
+.rowBtn img {
+  -webkit-user-drag: none;
 }
 
 /* The dashboard's mobile layout on a phone (<=820px; hidden on desktop).
