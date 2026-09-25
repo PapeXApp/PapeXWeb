@@ -15,6 +15,7 @@ import { FlowGround } from '@/components/paths/shared/FlowGround'
 import { FlowSection } from '@/components/paths/shared/FlowSection'
 import { BlogImage } from '@/components/blog/BlogImage'
 import { BlogCta } from '@/components/blog/BlogCta'
+import { BlogSubscribeForm } from '@/components/blog/BlogSubscribeForm'
 import { SiteFooter } from '@/components/brand/site-footer'
 import { LazyPostAdminEdit } from '@/components/blog/AdminIslands'
 import { formatPostDate } from '@/components/blog/format'
@@ -152,6 +153,7 @@ export default async function BlogPostPage({ params }: Props) {
         </FlowSection>
 
         <BlogCta />
+        <BlogSubscribeForm source="blog-post" path={`/blog/${post.slug}`} variant="card" />
       </FlowGround>
     </SiteShell>
   )

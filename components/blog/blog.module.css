@@ -384,6 +384,73 @@
   text-align: left;
 }
 
+/* --- Blog sign-up box (Web 2.1, S3b) ---------------------------------------
+   Shared by BlogSubscribeForm's "card" variant (mounted at the end of /blog
+   and each post). Same white-card language as .ctaCard/.empty above; the
+   "footer" variant of the same component uses the .rd-foot-* classes in
+   styles/papex-brand.css instead and never touches these rules. */
+.subscribeSection {
+  padding-bottom: var(--section-pad-y);
+}
+.subscribeCard {
+  width: calc(100% - 2 * clamp(20px, 5vw, 56px));
+  max-width: 640px;
+  margin: 0 auto;
+  padding: clamp(24px, 3.2vw, 36px);
+  background: var(--white);
+  color: var(--navy);
+  border: 1px solid var(--on-light-border);
+  border-radius: var(--r-card);
+}
+.subscribeTitle {
+  margin: 0 0 14px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(19px, 1.9vw, 22px);
+  color: var(--navy);
+}
+.subscribeForm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  position: relative;
+}
+.subscribeInput {
+  flex: 1 1 220px;
+  min-width: 0;
+  height: 48px;
+  padding: 0 16px;
+  border-radius: var(--r-10);
+  border: 1px solid var(--on-light-border-strong);
+  background: var(--white);
+  color: var(--navy);
+  font-size: 15px;
+  outline: none;
+}
+.subscribeInput::placeholder {
+  color: var(--on-light-muted);
+}
+.subscribeInput:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 2px;
+}
+.subscribeStatus {
+  margin: 12px 0 0;
+  min-height: 1.2em;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--on-light-text);
+}
+
+/* Footer variant: the input/button row inside the existing .rd-foot-* grid
+   cell. Kept here (not papex-brand.css) since this file owns everything the
+   shared sign-up component renders. */
+.subscribeFormFooter {
+  display: flex;
+  gap: 8px;
+  position: relative;
+}
+
 /* --- Closing CTA ------------------------------------------------------------ */
 .ctaSection {
   padding-bottom: var(--section-pad-y);

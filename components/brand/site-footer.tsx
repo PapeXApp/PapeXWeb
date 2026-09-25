@@ -32,6 +32,7 @@
 import Link from 'next/link'
 import { FullLogo } from './full-logo'
 import { AdminLogin } from '@/components/AdminLogin'
+import { BlogSubscribeForm } from '@/components/blog/BlogSubscribeForm'
 import { SALES_PHONE, SALES_PHONE_HREF, SOCIAL_LINKS, SUPPORT_EMAIL } from './links'
 
 const COLUMNS: { title: string; links: { href: string; label: string }[] }[] = [
@@ -132,15 +133,16 @@ export function SiteFooter({ inFlow = false }: { inFlow?: boolean }) {
         ))}
 
         <div>
-          {/* Newsletter signup REMOVED (Web 2.1, 2026-09-24). The old
-              "Stay in the loop" form had no backend: submit just flipped the
-              button to "Thanks" and the address was thrown away, so every
-              visitor who used it was silently lost. It comes back only once
-              it writes somewhere real (Nico, open question Q16: "wire it to
-              what?"). To restore: re-add the <form> with an email input
-              (.rd-foot-input) and a submit button (.rd-foot-join) above this
-              contact block — both classes are still in papex-brand.css —
-              and point onSubmit at the chosen destination. */}
+          {/* Newsletter signup REMOVED (Web 2.1, 2026-09-24), then RESTORED
+              (Web 2.1, S1b) once it had somewhere real to write: it now posts
+              to POST /api/signup (kind "blog"), the same route the blog's own
+              sign-up box uses — see components/blog/BlogSubscribeForm.tsx and
+              docs/SIGNUP_ROUTE.md. Reuses the existing .rd-foot-input /
+              .rd-foot-join classes from papex-brand.css. */}
+          <BlogSubscribeForm source="footer" variant="footer" />
+        </div>
+
+        <div>
           <h3 className="rd-foot-heading">Get in touch</h3>
           <div
             style={{ fontSize: 14, color: 'var(--foot-ink-2)', lineHeight: 1.7 }}

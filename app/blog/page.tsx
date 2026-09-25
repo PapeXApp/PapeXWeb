@@ -14,6 +14,7 @@ import { FlowSection } from '@/components/paths/shared/FlowSection'
 import { SectionLabel } from '@/components/paths/shared/SectionLabel'
 import { BlogImage } from '@/components/blog/BlogImage'
 import { BlogCta } from '@/components/blog/BlogCta'
+import { BlogSubscribeForm } from '@/components/blog/BlogSubscribeForm'
 import { SiteFooter } from '@/components/brand/site-footer'
 import { LazyBlogAdminCreate } from '@/components/blog/AdminIslands'
 import { formatPostDate } from '@/components/blog/format'
@@ -125,6 +126,7 @@ export default async function BlogPage() {
         </FlowSection>
 
         <BlogCta />
+        <BlogSubscribeForm source="blog-index" variant="card" />
       </FlowGround>
       <LazyBlogAdminCreate />
     </SiteShell>
