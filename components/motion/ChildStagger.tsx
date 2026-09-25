@@ -59,8 +59,11 @@ export function ChildStagger({ children, as = "div", className, style, delay = 0
     )
   }
 
+  // data-reveal-group: its direct children are shown by the root layout's
+  // <noscript> rule when JS is off (the children may be components, so the
+  // marker lives on the wrapper rather than being cloned onto each child).
   return (
-    <Tag ref={ref} className={className} style={style}>
+    <Tag ref={ref} className={className} style={style} data-reveal-group="">
       {items.map((child, i) => {
         if (!isValidElement(child)) return child
         const el = child as ReactElement<StyleableProps>
