@@ -8,31 +8,33 @@ import { PhoneChrome } from "../../customer/WalkPhone"
 import { ClipReceiptScreen } from "../../customer/ReceiptCard"
 import { ClipLockScreen } from "../../customer/appui"
 import { receiptMoment } from "../../customer/appui/Clip"
-import { CouponsScreen, type CouponState } from "./CouponsScreen"
-import { Cashier, CheckGlyph, HandBack, HandFront } from "./SceneArt"
+import { CouponScreen, type CouponState } from "./CouponScreen"
+import { CashierBody, CashierHands, HandBack, HandFront } from "./SceneArt"
 import { loop } from "./loop"
 import s from "./hero.module.css"
 
 /**
  * The /business hero visual — "CLOSE THE LOOP", a slow looped story at a
- * checkout counter (P3-B1, 2026-09-25). Replaces the one-pass ring (~5.9s,
- * then held), which Nico found too fast and unclear.
+ * checkout counter (P3-B1, 2026-09-25; art and guide redone in P3-B6).
  *
  *   1 Tap             a hand brings the phone down onto the PapeX device on
  *                     the counter; a ripple; the App Clip card rises
  *   2 Receipt         the receipt opens, the view zooms into the phone and
  *                     the screen slowly scrolls down the receipt to "Saved"
- *   3 Coupon          the app's Coupons tab slides in; the coupon for the
- *                     next visit drops into the list
- *   4 They come back  the phone shrinks back into the hand, now held up to
- *                     the person behind the counter ("Next visit"): the
- *                     coupon is used; the hand leaves, and round again
+ *   3 Coupon          the coupon for the next visit rises onto the screen
+ *                     (the app's coupon detail) and the view moves in on it,
+ *                     so it reads big: store, "$2 off your next visit",
+ *                     expiry, barcode
+ *   4 They come back  the phone shrinks back into the hand, held up at the
+ *                     counter; the barcode is scanned and the screen says
+ *                     "Coupon used"; the hand leaves, and round again
  *
- * One caption above the scene says the current beat in a sentence; the four
- * numbered steps under it show where we are (and ARE the text for screen
- * readers and the still frame).
+ * ONE text guide (P3-B6, Nico: "too many labels"): the four numbered steps
+ * under the scene, with the playing step's sentence right under them. The
+ * steps list IS the text for screen readers and the still frame; "Demo data"
+ * sits at the end of the sentence line.
  *
- * MOTION. A timer walks TIMELINE (one cycle = CYCLE_MS, 19.6s); every beat is
+ * MOTION. A timer walks TIMELINE (one cycle = CYCLE_MS, 19.9s); every beat is
  * a class/attribute change, and CSS transitions do the moving — transform and
  * opacity only, nothing reads layout per frame, no rAF loop. The one layout
  * read is the receipt's scroll distance, once per cycle. It runs only while
@@ -41,11 +43,12 @@ import s from "./hero.module.css"
  * is paused (Element.getAnimations), and both resume where they left off.
  *
  * STILL FRAME. The server render, no-JS and prefers-reduced-motion all show
- * beat 4 complete (the coupon shown at the counter, used) with all four steps
- * listed — one picture that tells the whole loop. With motion allowed the
- * stage starts hidden (CSS, keyed on `data-mode`), rewinds to the empty
- * counter with transitions off, and fades in, so the still frame never
- * flashes. The stage's box is the same size in every mode (0px jump).
+ * beat 4 complete (the phone held up at the counter, the coupon on screen,
+ * stamped "Coupon used") with all four steps listed — one picture that tells
+ * the whole loop. With motion allowed the stage starts hidden (CSS, keyed on
+ * `data-mode`), rewinds to the empty counter with transitions off, and fades
+ * in, so the still frame never flashes. The stage's box is the same size in
+ * every mode (0px jump).
  */
 
 type Beat =
@@ -61,6 +64,7 @@ type Beat =
   | "coupon"
   | "landed"
   | "back"
+  | "scan"
   | "used"
   | "leave"
 
@@ -74,13 +78,14 @@ const TIMELINE: [Beat, number][] = [
   ["zoom", 4900], // into the phone (1.5s)
   ["scroll", 6600], // slow scroll down the receipt (3.8s)
   ["saved", 10500], // "Saved"
-  ["coupon", 11200], // the Coupons tab slides in (0.8s)
-  ["landed", 12000], // the coupon drops into the list
-  ["back", 14800], // out again, held up at the counter (1.5s)
-  ["used", 16500], // the coupon is used at the counter
-  ["leave", 18600], // the hand leaves (0.9s)
+  ["coupon", 11200], // the coupon rises onto the screen (1.2s)
+  ["landed", 12100], // in on the coupon card (1.4s) + a glow round it
+  ["back", 15000], // out again, held up at the counter (1.5s)
+  ["scan", 16700], // the barcode is scanned (0.9s)
+  ["used", 17600], // "Coupon used"
+  ["leave", 19000], // the hand leaves (0.9s)
 ]
-const CYCLE_MS = 19600
+const CYCLE_MS = 19900
 
 const ORDER: Beat[] = TIMELINE.map(([b]) => b)
 const idx = (b: Beat) => (b === "still" ? ORDER.indexOf("used") : ORDER.indexOf(b))
@@ -112,14 +117,25 @@ function poseOf(b: Beat): string {
     case "scroll":
     case "saved":
     case "coupon":
-    case "landed":
       return "zoom"
+    case "landed":
+      return "focus"
+    case "scan":
     case "used":
     case "still":
       return "give"
     default:
       return "show"
   }
+}
+
+/** What the coupon screen shows. */
+function couponStateOf(b: Beat): CouponState {
+  if (b === "used" || b === "still" || b === "leave") return "used"
+  if (b === "scan") return "scan"
+  if (b === "back") return "shown"
+  if (b === "landed") return "landed"
+  return "pending"
 }
 
 export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock: string }) {
@@ -229,24 +245,11 @@ export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock:
   const step = stepOf(beat)
   const pose = poseOf(beat)
   const moment = receiptMoment(summary.dateline)
-  const couponState: CouponState = from(beat, "used") ? "used" : from(beat, "landed") ? "landed" : "pending"
   const isStatic = mode === "static"
+  const zoomed = pose === "zoom" || pose === "focus"
 
   return (
     <figure ref={figRef} className={s.visual} aria-label={loop.description}>
-      {/* The current beat, as a sentence. aria-hidden: the steps list below
-          says the same thing without changing every few seconds. */}
-      <div className={s.caption} data-hero-loop="" data-mode={mode} aria-hidden="true">
-        {loop.steps.map((st, i) => (
-          <p key={st.label} className={cn(s.capLine, i === step && s.capOn)}>
-            <span className={s.capNum}>{i + 1}</span>
-            <span className={s.capText}>
-              <strong className={s.capLabel}>{st.label}</strong> {st.sub}
-            </span>
-          </p>
-        ))}
-      </div>
-
       <div
         ref={stageRef}
         className={s.stage}
@@ -256,10 +259,13 @@ export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock:
         aria-hidden="true"
       >
         {/* --- the counter scene (the "world"): fades back when we zoom in -- */}
-        <div className={cn(s.world, pose === "zoom" && s.worldAway)}>
-          <Cashier className={s.cashier} />
+        <div className={cn(s.world, zoomed && s.worldAway)}>
+          <CashierBody className={s.cashier} />
           <div className={s.counterTop} />
+          <div className={s.counterLip} />
           <div className={s.counterFront} />
+          <CashierHands className={s.cashier} />
+          <div className={s.deviceShadow} />
           <div className={s.device}>
             <Image src="/product/rdh-device.svg" alt="" width={170} height={138} className={s.deviceImg} priority />
           </div>
@@ -278,7 +284,7 @@ export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock:
           data-pose={pose}
           inert
         >
-          <HandBack className={cn(s.hand, s.handBack, pose === "zoom" && s.handAway)} />
+          <HandBack className={cn(s.hand, s.handBack, zoomed && s.handAway)} />
           <PhoneChrome islandLock={!from(beat, "receipt")}>
             {/* 1: the lock screen; the App Clip card rises on the tap */}
             <div className={s.layer}>
@@ -291,22 +297,14 @@ export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock:
             >
               <ClipReceiptScreen summary={summary} saved={from(beat, "saved") && beat !== "still"} className={s.recScroll} />
             </div>
-            {/* 3: the app's Coupons tab, sliding in over it */}
-            <div className={cn(s.layer, s.layerSlide, (from(beat, "coupon") || isStatic) && s.layerIn)}>
-              <CouponsScreen state={isStatic ? "used" : couponState} time={clock} />
+            {/* 3: the coupon, rising onto the screen as it lands */}
+            <div className={cn(s.layer, s.layerRise, (from(beat, "coupon") || isStatic) && s.layerIn)}>
+              <CouponScreen state={isStatic ? "used" : couponStateOf(beat)} time={clock} />
             </div>
           </PhoneChrome>
-          <HandFront className={cn(s.hand, s.handFront, pose === "zoom" && s.handAway)} />
+          <HandFront className={cn(s.hand, s.handFront, zoomed && s.handAway)} />
         </div>
 
-        {/* --- beat 4: the time jump, and the counter's confirmation -------- */}
-        <span className={cn(s.nextVisit, (within(beat, "back", "used") || isStatic) && s.popOn)}>
-          {loop.nextVisit}
-        </span>
-        <span className={cn(s.applied, (beat === "used" || isStatic) && s.popOn)}>
-          <CheckGlyph className={s.appliedGlyph} />
-          {loop.applied}
-        </span>
       </div>
 
       <figcaption className={s.foot}>
@@ -316,7 +314,7 @@ export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock:
               key={st.label}
               className={cn(
                 s.step,
-                isStatic ? s.stepDone : i === step ? s.stepActive : i < step ? s.stepDone : s.stepAhead,
+                i === step ? s.stepActive : isStatic || i < step ? s.stepDone : s.stepAhead,
               )}
             >
               <span className={s.stepNum} aria-hidden="true">
@@ -332,7 +330,19 @@ export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock:
             ↺
           </li>
         </ol>
-        <span className={s.demoTag}>{loop.demoTag}</span>
+        {/* The playing step, as a sentence, right under its number.
+            aria-hidden: the list above says the same without changing every
+            few seconds. Hidden like the stage until the loop runs. */}
+        <div className={s.sayRow}>
+          <p className={s.say} data-hero-loop="" data-mode={mode} aria-hidden="true">
+            {loop.steps.map((st, i) => (
+              <span key={st.label} className={cn(s.sayLine, i === step && s.sayOn)}>
+                <strong className={s.sayLabel}>{st.label}</strong> {st.sub}
+              </span>
+            ))}
+          </p>
+          <span className={s.demoTag}>{loop.demoTag}</span>
+        </div>
       </figcaption>
     </figure>
   )

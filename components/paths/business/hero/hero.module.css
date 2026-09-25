@@ -1,6 +1,7 @@
 /* ==========================================================================
  * /business hero visual — "CLOSE THE LOOP" (LoopVisual.tsx, P3-B1,
- * 2026-09-25): a slow looped story at a checkout counter.
+ * 2026-09-25; art, coupon beat and guide redone in P3-B6): a slow looped
+ * story at a checkout counter.
  *
  * GEOMETRY. One free variable, --hero-sh: the SCENE's height. It is a
  * registered <length>, so it resolves to px HERE (against the .visual
@@ -43,58 +44,6 @@
   align-items: center;
 }
 
-/* --- the caption: the current beat, as a sentence -------------------------- */
-.caption {
-  display: grid;
-  width: 100%;
-  height: 50px;
-  margin-bottom: 8px;
-  align-items: center;
-  justify-items: center;
-  transition: opacity 0.6s ease;
-}
-.capLine {
-  grid-area: 1 / 1;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0;
-  max-width: 100%;
-  opacity: 0;
-  transform: translateY(8px);
-  transition:
-    opacity 0.55s ease,
-    transform 0.55s ease;
-}
-.capOn {
-  opacity: 1;
-  transform: none;
-}
-.capNum {
-  flex: 0 0 auto;
-  width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-label, ui-monospace, monospace);
-  font-size: 13px;
-  font-weight: 700;
-  background: #eb7100;
-  color: #00121d;
-  box-shadow: 0 0 18px rgba(235, 113, 0, 0.45);
-}
-.capText {
-  font-size: 18px;
-  line-height: 1.25;
-  color: var(--flow-fg-2);
-}
-.capLabel {
-  font-weight: 700;
-  color: var(--flow-fg);
-}
-
 /* --- the stage --------------------------------------------------------------- */
 .stage {
   --hero-sh: clamp(300px, min(calc(100cqi * 1.16), calc(100svh - 292px)), 600px);
@@ -131,13 +80,13 @@
 @media (prefers-reduced-motion: no-preference) {
   .stage[data-mode="static"],
   .stage[data-mode="rewind"],
-  .caption[data-mode="static"],
-  .caption[data-mode="rewind"] {
+  .say[data-mode="static"],
+  .say[data-mode="rewind"] {
     opacity: 0;
   }
 }
 .stage[data-mode="rewind"] *,
-.caption[data-mode="rewind"] * {
+.say[data-mode="rewind"] * {
   transition: none !important;
 }
 
@@ -159,37 +108,59 @@
     opacity 0.8s ease,
     transform 1.5s cubic-bezier(0.65, 0, 0.35, 1);
 }
-/* The person behind the counter (SceneArt.tsx Cashier, 120x130 box whose
-   y=112 line sits on the counter's top edge at +0.06). */
+/* The person behind the counter (SceneArt.tsx CashierBody / CashierHands:
+   one 400x600 box, 1 unit = 0.001 of the scene's height, whose y=500 is the
+   counter's back edge and y=600 its front lip). The body is painted before
+   the counter, the hands after it, so the forearms lie on the counter top. */
 .cashier {
   position: absolute;
   left: calc(50% - 0.42 * var(--hero-sx));
-  top: calc(50% - 0.2846 * var(--hero-sh));
+  top: calc(50% - 0.48 * var(--hero-sh));
   width: calc(0.4 * var(--hero-sh));
-  height: calc(0.4333 * var(--hero-sh));
+  height: calc(0.6 * var(--hero-sh));
   overflow: visible;
 }
+/* The counter, in simple perspective: a top surface running back from the
+   front lip to a fainter back edge, the rounded lip (the brightest line, in
+   the art's own ink), and the front face falling away into the ground.
+   Opaque: the person is behind it. It runs off both sides of the stage, whose
+   soft sides fade it out. */
 .counterTop,
+.counterLip,
 .counterFront {
   position: absolute;
   left: 0;
   right: 0;
 }
-/* Opaque (the person is behind it): the navy ground, a step lighter. */
 .counterTop {
-  top: calc(50% + 0.06 * var(--hero-sh));
-  height: calc(0.065 * var(--hero-sh));
-  background: linear-gradient(180deg, #1c2e3a, #14252f);
-  border-top: 1.5px solid rgba(233, 238, 242, 0.6);
+  top: calc(50% + 0.02 * var(--hero-sh));
+  height: calc(0.1 * var(--hero-sh));
+  background: linear-gradient(180deg, #112633, #1a3544);
+  border-top: 1px solid rgba(233, 238, 242, 0.3);
+}
+.counterLip {
+  top: calc(50% + 0.12 * var(--hero-sh));
+  height: calc(0.018 * var(--hero-sh));
+  background: linear-gradient(180deg, #2a4655, #1a3140);
+  border-top: 1.6px solid rgba(233, 238, 242, 0.85);
+  border-bottom: 1px solid rgba(233, 238, 242, 0.2);
 }
 .counterFront {
-  top: calc(50% + 0.125 * var(--hero-sh));
+  top: calc(50% + 0.138 * var(--hero-sh));
   bottom: 0;
-  background: linear-gradient(180deg, #0c1f2a 0%, #0a1c27 55%, rgba(0, 18, 29, 0) 100%);
-  border-top: 1px solid rgba(233, 238, 242, 0.22);
+  background: linear-gradient(180deg, #0d2230 0%, rgba(0, 18, 29, 0) 100%);
 }
-/* The PapeX device, standing on the counter (the same artwork as section
-   04: public/product/rdh-device.svg, 169.5x138). */
+/* The PapeX device, standing on the counter top (the same artwork as section
+   04: public/product/rdh-device.svg, 169.5x138), with a soft contact shadow
+   under it. */
+.deviceShadow {
+  position: absolute;
+  left: calc(50% - 0.14 * var(--hero-sx) - 0.01 * var(--hero-sh));
+  top: calc(50% + 0.045 * var(--hero-sh));
+  width: calc(0.36 * var(--hero-sh));
+  height: calc(0.08 * var(--hero-sh));
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0));
+}
 .device {
   position: absolute;
   left: calc(50% - 0.14 * var(--hero-sx));
@@ -202,40 +173,55 @@
   height: auto;
 }
 
-/* Line art (SceneArt.tsx). */
-.inkFill {
-  fill: #16303e;
-  stroke: rgba(233, 238, 242, 0.82);
-  stroke-width: 1.6;
-  stroke-linejoin: round;
-}
-.inkLine {
-  fill: none;
-  stroke: rgba(233, 238, 242, 0.6);
-  stroke-width: 1.4;
-  stroke-linecap: round;
-}
-.accFill {
-  fill: rgba(235, 113, 0, 0.28);
-}
-.accLine {
-  fill: none;
-  stroke: #eb7100;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.handFill {
-  fill: #1b2c38;
+/* Line art (SceneArt.tsx), the setup illustrations' language on navy: one
+   stroke weight per drawing (the cashier's box is 400 units wide, so 3 units
+   ~ 1.6px; the hand's box is the phone frame's 100 units, so 1.6 units ~
+   1.7px in the hand), round caps and joins, fills a step lighter than the
+   ground, softer ink for inner lines. */
+.artFill,
+.artHair,
+.artApron,
+.artSleeve,
+.artCuff,
+.artInk,
+.artInkSoft {
   stroke: rgba(233, 238, 242, 0.85);
-  stroke-width: 1.8;
+  stroke-width: 3;
+  stroke-linecap: round;
   stroke-linejoin: round;
 }
-.handCrease {
+.artFill {
+  fill: #16303e;
+}
+.artFillOnly {
+  fill: #16303e;
+  stroke: none;
+}
+.artHair {
+  fill: #0a1d29;
+}
+.artApron {
+  fill: #1f3a49;
+}
+.artSleeve {
+  fill: #10283a;
+}
+.artCuff {
+  fill: #1d3a4c;
+}
+.artInk,
+.artInkSoft {
   fill: none;
-  stroke: rgba(233, 238, 242, 0.55);
-  stroke-width: 1.4;
-  stroke-linecap: round;
+}
+.artInkSoft {
+  stroke: rgba(233, 238, 242, 0.5);
+}
+.hand .artFill,
+.hand .artSleeve,
+.hand .artCuff,
+.hand .artInk,
+.hand .artInkSoft {
+  stroke-width: 1.6;
 }
 
 /* --- the tap ------------------------------------------------------------------
@@ -335,16 +321,36 @@
   --pt: 1.5s;
   --pe: cubic-bezier(0.65, 0, 0.35, 1);
 }
-/* Next visit: back in the hand, held up to the person behind the counter. */
+/* Closer still, on the coupon card that just landed (the top of the screen):
+   the card fills the scene's width and its text reads big. The phone runs
+   off the stage's foot, which the stage clips. */
+.held[data-pose="focus"] {
+  --px: 0;
+  --py: 0.237;
+  --pr: 0deg;
+  --pk: 1.5;
+  --pt: 1.4s;
+  --pe: cubic-bezier(0.45, 0, 0.25, 1);
+}
+/* Next visit: back in the hand, held up at the counter, screen to the
+   person behind it. */
 .held[data-pose="show"] {
-  --px: 0.16;
+  --px: 0.2;
   --py: -0.07;
-  --pr: -9deg;
-  --pk: 0.48;
+  --pr: -8deg;
+  --pk: 0.6;
   --pt: 1.5s;
   --pe: cubic-bezier(0.65, 0, 0.35, 1);
 }
-/* ("give" = the defaults above: a nudge towards them as it is used.) */
+/* Scanned and used: a small nudge towards the counter. */
+.held[data-pose="give"] {
+  --px: 0.17;
+  --py: -0.085;
+  --pr: -10deg;
+  --pk: 0.6;
+  --pt: 0.9s;
+  --pe: cubic-bezier(0.45, 0, 0.35, 1);
+}
 
 /* The whole cycle resets here, off stage: no transition may run back. */
 .snap,
@@ -386,12 +392,16 @@
 .layerOn {
   opacity: 1;
 }
-/* The Coupons tab pushes in from the right, like a screen change. */
-.layerSlide {
-  transform: translateX(100%);
-  transition: transform 0.8s cubic-bezier(0.3, 0, 0.2, 1);
+/* The coupon rises onto the screen, slowly, as if it just landed. */
+.layerRise {
+  opacity: 0;
+  transform: translateY(14%) scale(0.9);
+  transition:
+    opacity 0.7s ease,
+    transform 1.2s cubic-bezier(0.2, 0.9, 0.25, 1.04);
 }
 .layerIn {
+  opacity: 1;
   transform: none;
 }
 /* The receipt scrolls by TRANSFORM (the clip's own list would scroll with
@@ -404,79 +414,112 @@
   transition: transform 3.8s cubic-bezier(0.45, 0.05, 0.3, 1);
 }
 
-/* --- beat 4 labels ---------------------------------------------------------- */
-.nextVisit,
-.applied {
+/* --- the coupon screen (CouponScreen.tsx): the kit's CouponDetail + hero
+   layers, all in app points (--pt) ------------------------------------------ */
+.kitFill {
   position: absolute;
-  z-index: 6;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-  border-radius: 999px;
+  inset: 0;
+}
+/* One-shot glow round the card as it lands (its own layer: opacity only). */
+.cardGlow {
+  position: absolute;
+  z-index: 20;
+  box-shadow:
+    0 0 0 calc(2 * var(--pt)) #eb7100,
+    0 0 calc(28 * var(--pt)) rgba(235, 113, 0, 0.6);
   opacity: 0;
-  transform: translate(-50%, -50%) scale(0.85);
-  transition:
-    opacity 0.5s ease,
-    transform 0.6s cubic-bezier(0.2, 1.3, 0.4, 1);
+  pointer-events: none;
 }
-.popOn {
-  opacity: 1;
-  transform: translate(-50%, -50%);
+.cardGlowPlay {
+  animation: heroCardGlow 2.2s ease 0.5s both;
 }
-/* The time jump, top right. */
-.nextVisit {
-  left: calc(50% + 0.2 * var(--hero-sx));
-  top: calc(50% - 0.44 * var(--hero-sh));
-  padding: 5px 12px;
-  font-family: var(--font-label, ui-monospace, monospace);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #e9eef2;
-  background: rgba(0, 18, 29, 0.7);
-  border: 1px solid rgba(233, 238, 242, 0.3);
+@keyframes heroCardGlow {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
-/* The counter's confirmation, over the person's head. */
-.applied {
-  left: calc(50% - 0.22 * var(--hero-sx));
-  top: calc(50% - 0.4 * var(--hero-sh));
-  padding: 7px 14px 7px 8px;
-  font-size: 14px;
+/* The barcode stub: the scan line and the stamp live in its box. */
+.stubBox {
+  position: absolute;
+  z-index: 20;
+  overflow: hidden;
+  pointer-events: none;
+}
+.scanLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: calc(3 * var(--pt));
+  background: #eb7100;
+  box-shadow: 0 0 calc(12 * var(--pt)) calc(2 * var(--pt)) rgba(235, 113, 0, 0.7);
+  animation: heroScan 0.9s cubic-bezier(0.45, 0, 0.55, 1) both;
+}
+@keyframes heroScan {
+  0% {
+    opacity: 0;
+    transform: translateY(calc(6 * var(--pt)));
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(calc(92 * var(--pt)));
+  }
+}
+/* "Coupon used", stamped over the barcode: the used coupon can't be scanned
+   again. A soft navy veil over the stub, and the app's orange check. */
+.stamp {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(10 * var(--pt));
+  font-family: var(--ak-font-barlow, inherit);
+  font-size: calc(40 * var(--pt));
   font-weight: 700;
-  color: #00121d;
-  background: #f5f5f5;
-  box-shadow: 0 10px 26px -8px rgba(0, 0, 0, 0.6), 0 0 0 3px rgba(235, 113, 0, 0.35);
+  letter-spacing: -0.01em;
+  color: #fff;
+  background: rgba(0, 18, 29, 0.8);
+  opacity: 0;
+  transform: scale(1.15);
+  transition:
+    opacity 0.4s ease,
+    transform 0.55s cubic-bezier(0.2, 1.3, 0.4, 1);
 }
-.appliedGlyph {
-  width: 20px;
-  height: 20px;
-  padding: 3px;
+.stampOn {
+  opacity: 1;
+  transform: none;
+}
+.stampGlyph {
+  width: calc(50 * var(--pt));
+  height: calc(50 * var(--pt));
+  padding: calc(8 * var(--pt));
   border-radius: 999px;
   background: #eb7100;
   color: #fff;
+  flex: 0 0 auto;
 }
 
-.demoTag {
-  padding: 3px 9px;
-  border-radius: 999px;
-  font-family: var(--font-label, ui-monospace, monospace);
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.7);
-  background: rgba(0, 18, 29, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-}
-
-/* --- the four steps, under the scene ------------------------------------------ */
+/* --- the guide: four steps, and the playing one as a sentence under them -- */
 .foot {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   margin-top: 12px;
+  width: 100%;
 }
 .steps {
   display: flex;
@@ -549,6 +592,52 @@
   line-height: 1;
   color: #eb7100;
 }
+/* The sentence line: every step's sentence stacked in one grid cell (so the
+   line's size never changes), the playing one faded in; "Demo data" after
+   it, quiet. */
+.sayRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  gap: 4px 10px;
+  max-width: 100%;
+}
+.say {
+  display: grid;
+  margin: 0;
+  max-width: 100%;
+  transition: opacity 0.6s ease;
+}
+.sayLine {
+  grid-area: 1 / 1;
+  justify-self: center;
+  text-align: center;
+  font-size: 16.5px;
+  line-height: 1.3;
+  color: var(--flow-fg-2);
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 0.55s ease,
+    transform 0.55s ease;
+}
+.sayOn {
+  opacity: 1;
+  transform: none;
+}
+.sayLabel {
+  font-weight: 700;
+  color: var(--flow-fg);
+}
+.demoTag {
+  font-family: var(--font-label, ui-monospace, monospace);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--flow-fg-3);
+}
 
 @container (max-width: 439px) {
   .stage {
@@ -556,8 +645,14 @@
        the close-up phone is as big as the width allows. */
     --hero-sh: clamp(300px, min(calc(100cqi * 1.39), calc(100svh - 270px)), 600px);
   }
-  .capText {
-    font-size: 16px;
+  .sayLine {
+    font-size: 15px;
+  }
+  /* No room beside the sentence: "Demo data" goes under it. */
+  .sayRow {
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
   }
   .step {
     font-size: 13px;
@@ -566,248 +661,6 @@
   .steps {
     gap: 6px 8px;
   }
-}
-
-/* ==========================================================================
- * The app's Coupons tab (CouponsScreen.tsx). Every size is iPhone points via
- * appui's --u. Row anatomy copied from the retain-intro section's
- * intro.module.css (PapeXV2 CouponRow.tsx + CouponStoreThumb.tsx): 91.2pt
- * tall, 24pt radius, 76pt stub, 52pt seal, 7pt notches at the seam, 2.5pt
- * perforation every 6pt, text inset 14pt past the seam, 28pt trailing slots.
- * ========================================================================== */
-.rowWrap {
-  position: relative;
-  margin: 0 calc(16 * var(--u));
-}
-.rowPending {
-  opacity: 0;
-  transform: translateY(calc(-64 * var(--u))) scale(1.12);
-}
-.rowIn {
-  opacity: 1;
-  transform: none;
-  transition:
-    opacity 0.35s ease 0.12s,
-    transform 0.8s cubic-bezier(0.2, 1.25, 0.35, 1) 0.12s;
-}
-.rowGlow {
-  position: absolute;
-  inset: 0;
-  border-radius: calc(24 * var(--u));
-  box-shadow:
-    0 0 0 2px #eb7100,
-    0 0 calc(24 * var(--u)) rgba(235, 113, 0, 0.55);
-  opacity: 0;
-  pointer-events: none;
-}
-.rowGlowPlay {
-  animation: rowGlow 1.7s ease 0.45s both;
-}
-@keyframes rowGlow {
-  0% {
-    opacity: 0;
-  }
-  30% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-.cRow {
-  position: relative;
-  height: calc(91.2 * var(--u));
-  border-radius: calc(24 * var(--u));
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-  background:
-    linear-gradient(128deg, rgba(255, 255, 255, 0.062) 0%, rgba(255, 255, 255, 0.026) 50%, rgba(255, 255, 255, 0.062) 100%),
-    linear-gradient(rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.055)),
-    #00121d;
-  /* the notches: half-discs bitten out of both long edges at the seam */
-  -webkit-mask-image:
-    radial-gradient(circle at calc(76 * var(--u)) 0, transparent calc(7 * var(--u)), #000 calc(7 * var(--u) + 0.5px)),
-    radial-gradient(circle at calc(76 * var(--u)) 100%, transparent calc(7 * var(--u)), #000 calc(7 * var(--u) + 0.5px));
-  -webkit-mask-composite: source-in;
-  mask-image:
-    radial-gradient(circle at calc(76 * var(--u)) 0, transparent calc(7 * var(--u)), #000 calc(7 * var(--u) + 0.5px)),
-    radial-gradient(circle at calc(76 * var(--u)) 100%, transparent calc(7 * var(--u)), #000 calc(7 * var(--u) + 0.5px));
-  mask-composite: intersect;
-}
-/* The corner-lit rim, lit top-left like a reviewed receipt row. */
-.cRow::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  border-radius: inherit;
-  padding: 1.5px;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.7) 0%,
-    rgba(255, 255, 255, 0.7) 12%,
-    rgba(255, 255, 255, 0.18) 28%,
-    rgba(255, 255, 255, 0) 45%
-  );
-  -webkit-mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
-  -webkit-mask-clip: content-box, border-box;
-  -webkit-mask-composite: xor;
-  mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
-  mask-clip: content-box, border-box;
-  mask-composite: exclude;
-  pointer-events: none;
-}
-.stub {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: calc(76 * var(--u));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.seal {
-  width: calc(52 * var(--u));
-  height: calc(52 * var(--u));
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.72);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(22 * var(--u));
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.94);
-}
-.perf {
-  position: absolute;
-  top: calc(11 * var(--u));
-  bottom: calc(11 * var(--u));
-  left: calc(74.75 * var(--u));
-  width: calc(2.5 * var(--u));
-  background: radial-gradient(circle closest-side, rgba(0, 18, 29, 0.85) 92%, rgba(0, 18, 29, 0)) 0 0 /
-    calc(2.5 * var(--u)) calc(6 * var(--u)) repeat-y;
-}
-.cBody {
-  position: relative;
-  flex: 1 1 auto;
-  min-width: 0;
-  margin-left: calc(90 * var(--u));
-  display: flex;
-  flex-direction: column;
-  line-height: 1.2;
-}
-.cIdentity {
-  display: flex;
-  align-items: center;
-  gap: calc(6 * var(--u));
-  min-width: 0;
-}
-.cStore {
-  font-size: calc(17 * var(--u));
-  font-weight: 500;
-  color: var(--ink);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.kind {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  gap: calc(3 * var(--u));
-  height: calc(20 * var(--u));
-  padding: 0 calc(7 * var(--u));
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.08);
-  font-size: calc(11 * var(--u));
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--ink);
-  white-space: nowrap;
-}
-.kindGlyph {
-  width: calc(11 * var(--u));
-  height: calc(11 * var(--u));
-}
-.cTitle {
-  margin-top: calc(1 * var(--u));
-  font-size: calc(15 * var(--u));
-  font-weight: 400;
-  color: var(--ink);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-/* Expiry and "Used" share one cell and crossfade. */
-.cDetailCell {
-  display: grid;
-  margin-top: calc(1 * var(--u));
-}
-.cDetailCell > * {
-  grid-area: 1 / 1;
-  transition: opacity 0.4s ease;
-}
-.cDetail {
-  font-size: calc(12 * var(--u));
-  font-weight: 500;
-  color: var(--ink-2);
-  white-space: nowrap;
-}
-.cUsed {
-  display: inline-flex;
-  align-items: center;
-  gap: calc(3 * var(--u));
-  font-size: calc(12 * var(--u));
-  font-weight: 600;
-  color: #eb7100;
-  white-space: nowrap;
-}
-.cUsedGlyph {
-  width: calc(13 * var(--u));
-  height: calc(13 * var(--u));
-}
-.fadeOut {
-  opacity: 0;
-}
-.trail {
-  position: relative;
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  gap: calc(6 * var(--u));
-  margin: 0 calc(16 * var(--u)) 0 calc(8 * var(--u));
-}
-.trailSlot {
-  width: calc(28 * var(--u));
-  height: calc(28 * var(--u));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--ink-2);
-}
-.trailSlot > span {
-  border-top-color: var(--ink-2);
-  border-right-color: var(--ink-2);
-  margin-left: calc(3 * var(--u));
-}
-.trailHeart {
-  width: calc(18 * var(--u));
-  height: calc(18 * var(--u));
-}
-.headerPair {
-  gap: calc(8 * var(--u));
-}
-.controls {
-  display: flex;
-  align-items: center;
-  gap: calc(8 * var(--u));
-}
-.controlsSearch {
-  flex: 1 1 auto;
-  min-width: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
