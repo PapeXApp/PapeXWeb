@@ -39,6 +39,22 @@
   overflow-x: clip;
 }
 
+/* --- the section heading ----------------------------------------------------
+   IntroScene places it twice; exactly one shows. Default (phones, short
+   screens, reduced motion, no-JS via data-nojs="static"): in flow above the
+   runway, with the section's top padding; the runway / static version carry
+   the bottom padding. Tall-enough desktop: at the top of the pin (below). */
+.flowHead {
+  padding-top: var(--section-pad-y);
+}
+.pinHead {
+  display: none;
+}
+.runway,
+.staticSlot {
+  margin-bottom: var(--section-pad-y);
+}
+
 .layout {
   width: 100%;
   display: grid;
@@ -583,5 +599,40 @@
 @media (prefers-reduced-motion: reduce) {
   .mBody {
     transition: none;
+  }
+}
+
+/* Desktop with room for the heading in the pin (>= 821 x 680): the pin is a
+   column — the heading on top, then the layout, which takes the height left
+   (a size container, capped at the phone's full size) and sizes the phone to
+   it in cqh. The two are centred together, so on a very tall screen the spare
+   room splits above and below instead of opening a gap between them. The
+   runway drops its bottom margin: the pin's own 24px is the only space before
+   §03, and the section has no top padding (the pin's 84px clears the nav). */
+@media (min-width: 821px) and (min-height: 680px) and (prefers-reduced-motion: no-preference) {
+  .flowHead {
+    display: none;
+  }
+  .runway {
+    margin-bottom: 0;
+  }
+  .pin {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .pinHead {
+    display: block;
+    flex: none;
+    padding-bottom: clamp(20px, 3.4svh, 36px);
+  }
+  .layout {
+    flex: 1 1 0;
+    min-height: 0;
+    /* the phone's frame is ~1.047x its screen (iphone.module.css) */
+    max-height: calc(560px * 1.05);
+    container-type: size;
+  }
+  .phone {
+    --wp-size: min(560px, calc(100cqh / 1.05));
   }
 }
