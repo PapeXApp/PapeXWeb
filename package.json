@@ -9,6 +9,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "app:sync": "node scripts/app-source/sync.mjs",
     "media:import": "node scripts/import-app-media.mjs",
     "migrate:images": "tsx scripts/migrateBlogImages.ts",
     "migrate:images:dry": "tsx scripts/migrateBlogImages.ts --dry-run",
