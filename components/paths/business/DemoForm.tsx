@@ -210,15 +210,16 @@ export function DemoForm() {
         as="div"
         className="mx-auto grid w-full max-w-[1100px] grid-cols-1 items-start gap-[clamp(30px,5vw,70px)] min-[821px]:grid-cols-2"
       >
-        {/* Left column is TOP-aligned with the form (Web 2.1, W-B5; Nico:
-            "Get started should be aligned with Your name"): with the grid's
-            shared `items-start` line, the eyebrow (this column's first child)
-            and the "Your name" label (the form's first flow child — its status
-            line is sr-only until an error) share the same top edge. */}
-        <div className="relative">
+        {/* Nico 9/25: the title sits level with the first input box, not its
+            label. On desktop the eyebrow hangs above the title (absolute), and
+            the column starts one label + label gap down (the form's 17px
+            "Your name" line + 8px), so the title's top = the first input's. */}
+        <div className="relative min-[821px]:pt-[25px]">
           {/* No index: the form is the second half of 05 "How do I get it?"
               (setup -> demo), not a section of its own. */}
-          <SectionLabel className="mb-[10px]">{demo.eyebrow}</SectionLabel>
+          <SectionLabel className="mb-[10px] min-[821px]:absolute min-[821px]:bottom-[calc(100%-25px)] min-[821px]:left-0">
+            {demo.eyebrow}
+          </SectionLabel>
           <h2
             className="text-[length:var(--fs-h1-merchant)] font-bold leading-[1.03] tracking-[-.02em]"
             style={{ fontFamily: "var(--font-display)" }}

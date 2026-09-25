@@ -48,9 +48,6 @@
   --cam-final-foot: clamp(88px, 14svh, 150px);
   /* scene's foot -> the dashboard eyebrow, once the pin has let go */
   --after-gap: clamp(56px, 5.4vw, 84px);
-  /* the one-screen unit after the scene (.unit): when its eyebrow sits
-     --unit-top from the viewport's top, §04 is still below the fold */
-  --unit-top: 100px;
   /* heading -> columns -> ribbon */
   --after-step: clamp(32px, 4.5svh, 52px);
   --gap-title: clamp(20px, 2.4vw, 36px);
@@ -684,15 +681,10 @@
   margin-top: var(--after-step);
   margin-inline: calc(-1 * var(--story-px));
 }
-/* P3-B5 (Nico: "... all the way down until the ribbon, without section four
-   peeking"). On desktop the unit is at least one screen from the eyebrow
-   down: with the eyebrow at --unit-top, the ribbon sits inside the screen
-   and §04 starts below the fold. Spare room on a tall screen collects AFTER
-   the ribbon (the section's own foot), not inside the text. */
+/* Desktop: the unit is only as tall as its text (Nico 9/25: "huge space
+   here too", ribbon -> §04). The ribbon ends the section; §04's own top
+   padding is the only air after it. */
 @media (min-width: 821px) {
-  .unit {
-    min-height: calc(100svh - var(--unit-top) + var(--after-gap) + 16px);
-  }
   .section {
     padding-bottom: 0;
   }
