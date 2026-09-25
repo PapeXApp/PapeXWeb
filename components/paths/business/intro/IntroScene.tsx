@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
-import { useSafeReducedMotion } from "@/components/motion/useSafeReducedMotion"
 import { ClipLockScreen } from "../../customer/appui"
 import { receiptMoment } from "../../customer/appui/Clip"
 import { ClipReceiptScreen } from "../../customer/ReceiptCard"
@@ -98,9 +97,13 @@ function offsetIn(el: HTMLElement, root: HTMLElement) {
 const bump = (p: number, a: number, b: number, c: number) => (p <= b ? seg(p, a, b) : 1 - seg(p, b, c))
 
 export function IntroScene() {
-  const reduced = useSafeReducedMotion()
-  // Client-only: the server (and reduced motion) renders the static version.
-  const [pinned, setPinned] = useState(false)
+  // "ssr": the server render and first client frame carry BOTH versions and
+  // CSS shows one (intro.module.css: the runway unless prefers-reduced-motion,
+  // then the static composition). So the section is its final height from the
+  // first paint and never grows at hydration — anchors like #how land true.
+  // After mount JS keeps only the one CSS is showing ("scene" | "static").
+  const [mode, setMode] = useState<"ssr" | "scene" | "static">("ssr")
+  const pinned = mode === "scene"
   const [half, setHalf] = useState<Half>("receipts")
   const [locked, setLocked] = useState(true)
   const summary = useDemoReceipt()
@@ -122,8 +125,12 @@ export function IntroScene() {
   const geo = useRef({ runTop: 0, runTotal: 0 })
 
   useEffect(() => {
-    setPinned(!reduced)
-  }, [reduced])
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)")
+    const apply = () => setMode(mq.matches ? "static" : "scene")
+    apply()
+    mq.addEventListener("change", apply)
+    return () => mq.removeEventListener("change", apply)
+  }, [])
 
   useEffect(() => {
     if (!pinned) return
@@ -301,9 +308,17 @@ export function IntroScene() {
     window.scrollTo({ top: Math.round(runTop + JUMP[key] * runTotal), behavior: "smooth" })
   }, [])
 
-  if (!pinned) return <IntroStatic />
+  const staticVersion =
+    mode === "scene" ? null : (
+      <div className={s.staticSlot}>
+        <IntroStatic />
+      </div>
+    )
+  if (mode === "static") return staticVersion
 
   return (
+    <>
+    {staticVersion}
     <div ref={runwayRef} className={s.runway} style={{ height: `${RUNWAY_VH}vh` }}>
       <div className={s.pin} ref={pinRef}>
         <div className={s.layout}>
@@ -365,5 +380,6 @@ export function IntroScene() {
         </div>
       </div>
     </div>
+    </>
   )
 }

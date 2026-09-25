@@ -11,6 +11,22 @@
 .runway {
   position: relative;
 }
+/* Server render / first frame: both versions are in the HTML and CSS picks
+   one, so the section never changes height when JS arrives. The static
+   composition only for reduced motion; everyone else gets the runway (its
+   height is the inline RUNWAY_VH) with the scene drawn at p = 0 by these
+   CSS defaults, identical to the first JS frame. */
+.staticSlot {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .runway {
+    display: none;
+  }
+  .staticSlot {
+    display: block;
+  }
+}
 .pin {
   position: sticky;
   top: 0;
