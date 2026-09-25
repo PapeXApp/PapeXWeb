@@ -1,27 +1,31 @@
-// Copy for the /business hero visual: the RETURN-VISIT LOOP (Web 2.1 wave 3,
-// Nico 2026-09-24). The hero no longer shows the PapeX device box ("we don't
-// want to make it seem like we're a hardware company"); it shows what the
-// merchant gets out of a tap instead, on ONE phone:
-//   1. Tap        - a tap at checkout puts the receipt on the customer's phone
-//   2. Coupon     - a coupon for their next visit lands in their PapeX app
-//   3. Comes back - they return, and the coupon is used
+// Copy for the /business hero visual: the "CLOSE THE LOOP" animation (P3-B1,
+// 2026-09-25). Nico on the one-pass ring version: "It's not clear, not
+// intuitive. This needs to be idiot proof. The animation moves too fast; I
+// don't have time to register what's going on." So it is now a slow, LOOPED
+// story told at a checkout counter, one beat at a time:
+//   1. Tap            a hand taps the phone on the PapeX device on the counter
+//   2. Receipt        the view zooms into the phone: the receipt, scrolled
+//   3. Coupon         a coupon for the next visit lands in their PapeX app
+//   4. They come back back at the counter, the coupon is shown and used
+// ...and round again. Timing lives in LoopVisual.tsx (TIMELINE).
 //
 // CLAIM RULES (same as content.ts): coupons are live (merchants set them up in
 // their dashboard; at partner stores a tap sends the customer one for their
 // next visit), so nothing here says "Coming soon". The store is the invented
 // "Tidewick Cafe" used everywhere else on the site, and the visual carries a
-// "Demo data" tag. No figures, no retention metric, no real merchants.
-//
-// The hero's own copy (eyebrow, H1, lead, paper line) lives in content.ts and
-// is owned elsewhere; this file is only what the visual draws.
+// "Demo data" tag. No figures, no retention metric, no real merchants, and
+// nothing that reads as collecting the shopper's data (a shopper may read it).
+// Wording is provisional: Phase 4 finalises the words.
 
 export const loop = {
-  /** The three stops around the phone, in order. Short on purpose: they have
-   *  to read at a glance in the static final frame. */
-  stops: [
-    { label: "Tap", sub: "Receipt" },
-    { label: "Coupon", sub: "For next visit" },
-    { label: "Comes back", sub: "Uses it" },
+  /** The four beats, in order. `label` is the step's name (the row under the
+   *  scene, and the big caption above it); `sub` finishes the sentence in the
+   *  caption. Short on purpose: each must read at a glance. */
+  steps: [
+    { label: "Tap", sub: "their phone on the PapeX device" },
+    { label: "Receipt", sub: "lands on their phone" },
+    { label: "Coupon", sub: "for their next visit" },
+    { label: "They come back", sub: "and use it at the counter" },
   ],
   /** The demo coupon, in the app's Coupons tab (PapeXV2 CouponRow anatomy). */
   coupon: {
@@ -32,9 +36,12 @@ export const loop = {
     expiry: "Expires in 30 days",
     used: "Used",
   },
+  /** Beat 4: a chip that marks the time jump, and the counter's confirmation. */
+  nextVisit: "Next visit",
+  applied: "Coupon used",
   demoTag: "Demo data",
-  /** Screen-reader description of the whole visual (the phone itself is
-   *  aria-hidden: its strings are app furniture, not content). */
+  /** Screen-reader description of the whole visual (the drawing itself is
+   *  aria-hidden: the numbered steps under it carry the words). */
   description:
-    "Demo with an invented store: a customer taps their phone at checkout and gets a Tidewick Cafe receipt, a coupon for $2 off their next visit lands in their PapeX app, and when they come back they use it.",
+    "Demo with an invented store, Tidewick Cafe: at checkout a customer taps their phone on the PapeX device and the receipt appears on their phone, then a coupon for $2 off their next visit lands in their PapeX app, and on their next visit they show it at the counter and use it.",
 } as const

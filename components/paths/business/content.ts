@@ -43,12 +43,14 @@ import { SALES_PHONE, SALES_PHONE_HREF } from "@/components/brand/links"
 // safe? (device) · 05 How do I get it? (setup -> demo) · 06 FAQ.
 
 export const hero = {
-  // "What is this?" (Nico, 2026-09-24): the offer and the category lead the
-  // H1, and it repeats the fork's business line so the promise carries
-  // through. "Tap to Retain" stays as the eyebrow, next to the brand. No
-  // "coupons" here: merchant-sent coupons are still "Coming soon".
+  // H1 (P3-B1, 2026-09-25, provisional — Phase 4 finalises the words): the
+  // hero visual now tells the "close the loop" story (tap -> receipt ->
+  // coupon for next time -> they come back), so the H1 names it. It says
+  // nothing about collecting shopper data (a shopper may read it). "Tap to
+  // Retain" stays as the eyebrow, next to the brand; the offer ("free") is
+  // carried by the lead.
   eyebrow: "Tap to Retain, by PapeX",
-  heading: "Free digital receipts for your store.",
+  heading: "Close the loop on every sale.",
   lead: "A free PapeX device (RDH, Receipt Data Hub) joins your POS as a printer. Customers tap their phone for a digital receipt; you get a dashboard of every sale.",
   // Nico's approved paper wording (§6a round 2). No longer a required pair
   // (the H1 no longer says "Zero paper"), kept as the hero's sub-line. If
