@@ -16,7 +16,7 @@
 
 export const DEFAULT_POST_IMAGE = '/blog/blog_image.png'
 export const SITE_ORIGIN = 'https://papex.app'
-export const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}/og-image-v2.png`
+export const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}/og-image-v3.png`
 
 // Mirrors next.config.ts images.remotePatterns (read-only here).
 const OPTIMIZED_HOSTS: readonly RegExp[] = [

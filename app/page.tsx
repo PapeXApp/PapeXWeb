@@ -25,10 +25,10 @@ const TITLE = 'Digital Receipts, One Tap at Checkout | PapeX'
 const DESCRIPTION =
   'Tap your phone at checkout and your receipt opens. Shoppers keep every receipt in the free PapeX app. Stores get a free digital receipt device.'
 const OG_IMAGE = {
-  url: 'https://papex.app/og-image-v2.png',
+  url: 'https://papex.app/og-image-v3.png',
   width: 1200,
   height: 630,
-  alt: 'PapeX digital receipts: a phone showing a receipt beside a pile of paper receipts',
+  alt: 'The PapeX logo and the words Your receipt, one tap away, beside an iPhone showing a PapeX receipt',
   type: 'image/png',
 }
 

@@ -28,10 +28,10 @@ const TITLE = 'Tap to Retain | Free Digital Receipts for Business | PapeX'
 const DESCRIPTION =
   'NFC digital receipts for small business: customers tap their phone, you get a dashboard of every receipt. Free device, installed free in about 15 minutes.'
 const OG_IMAGE = {
-  url: 'https://papex.app/og-image-v2.png',
+  url: 'https://papex.app/og-image-v3.png',
   width: 1200,
   height: 630,
-  alt: 'PapeX digital receipts: a phone showing a receipt beside a pile of paper receipts',
+  alt: 'The PapeX logo and the words Your receipt, one tap away, beside an iPhone showing a PapeX receipt',
   type: 'image/png',
 }
 
