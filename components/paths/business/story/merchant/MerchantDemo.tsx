@@ -556,7 +556,7 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
               >
                 {coupons[i] ? c.coupons.on : c.coupons.off}
                 <span className="relative h-5 w-9 rounded-full transition" style={{ background: coupons[i] ? T.orange : "rgba(255,255,255,0.14)" }}>
-                  <span className="absolute top-0.5 h-4 w-4 rounded-full bg-white transition-[left]" style={{ left: coupons[i] ? 18 : 2 }} />
+                  <span className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white transition-transform" style={{ transform: coupons[i] ? "translateX(16px)" : "none" }} />
                 </span>
               </button>
             </div>
