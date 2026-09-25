@@ -3,16 +3,15 @@
 import { useEffect, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
 import { PlaneMark } from "@/components/brand/plane-mark"
-import { useSafeReducedMotion } from "@/components/motion/useSafeReducedMotion"
 import { ClipLockScreen, ClipReading } from "../../customer/appui"
 import { receiptMoment } from "../../customer/appui/Clip"
-import { ClipReceiptScreen } from "../../customer/ReceiptCard"
 import { PhoneChrome } from "../../customer/WalkPhone"
 import { CustomerLine, DashboardColumns, DashboardCopy } from "../DashboardPreview"
 import { story } from "../story"
-import { Dashboard } from "./Dashboard"
-import { PhoneDashboard } from "./PhoneDashboard"
 import { Bin, DeviceArt, Printer } from "./Furniture"
+import { FitFrame } from "./merchant/FitFrame"
+import { MerchantDemo } from "./merchant/MerchantDemo"
+import { ClipScreen, PhoneApp } from "./PhoneKit"
 import {
   FOLD_VECS,
   HALF_REGION,
@@ -55,16 +54,28 @@ import s from "../story.module.css"
  *                       to the laptop and its lid opens. On phones (<=820px)
  *                       there is no laptop: the pair shrinks, whole, into the
  *                       top-right corner, the spark runs down to the lower
- *                       left, and the PHONE DASHBOARD card (PhoneDashboard)
+ *                       left, and the DASHBOARD PHONE (the real mobile layout)
  *                       blooms open from where it lands (a clip-path circle),
  *                       covering the stage while the pair fades under it.
- *   0.72-0.82  DELIVER  the sale lands on the drawn dashboard: new-receipt
- *                       row, the four tiles, its hour's bar, its items
- *   0.83-1.00  VALUE    the three-part row settles to the top of the pin and
- *                       the dashboard info rises in under it. On phones only
- *                       the dashboard card docks, at 1:1 (never scaled, so
- *                       its type stays real phone sizes), top-aligned in the
- *                       slot, which measure() sizes to the card.
+ *   0.72-0.80  DELIVER  the sale lands on the dashboard: its row slides into
+ *                       the top of Transactions and the count ticks up
+ *   0.80-0.86  HOLD     nothing moves: laptop (phone dashboard on phones) and
+ *                       the customer's phone are USABLE here, full size
+ *   0.86-1.00  VALUE    the row shrinks to the top of the pin and the
+ *                       dashboard's heading rises in under it; the story
+ *                       latches open and both screens are usable again. On
+ *                       phones only the dashboard phone docks, scaled to fit.
+ *
+ * The dashboard is the real one (merchant/MerchantDemo.tsx: app/merchant's
+ * own primitives, demo data by props), the customer's phone is the code-
+ * sourced app kit (PhoneKit.tsx). The dashboard's explanation (three
+ * columns) sits AFTER the runway, in flow, so nothing overflows the pin.
+ *
+ * Server render (Web 2.1 W3, same pattern as intro/IntroScene): the HTML
+ * carries BOTH this runway and the static story, and CSS picks one by
+ * prefers-reduced-motion, so the section is its final height before JS and
+ * never jumps at hydration (deep links like #setup land true). After mount,
+ * JS drops the one CSS hid.
  *
  * Phones (B6, Nico: "I want to see a full phone... we have a lot of blank
  * space, use it well"): the stage is a 1:2 box as tall as the pin allows under
@@ -82,7 +93,7 @@ import s from "../story.module.css"
  */
 
 /** Scroll budget in viewport heights for the story itself. */
-const SCROLL_VH = 300
+const SCROLL_VH = 320
 /**
  * After the story ends, the open laptop + dashboard stay pinned for this much
  * more scroll before the page releases them and scrolls on (round 2: "the
@@ -98,6 +109,9 @@ const RUNWAY_VH = 100 + SCROLL_VH + DWELL_VH
  * the story is scroll-linked again, closing in reverse. One constant, in vh.
  */
 const REVERSE_VH = 28
+/** The laptop dashboard's virtual screen (its own px), scaled to the lid. */
+const DASH_W = 960
+const DASH_H = 600
 /** Easing time-constant for the catch-up across a latch change (ms). */
 const CATCH_TAU_MS = 110
 
@@ -133,18 +147,14 @@ const T = {
   sparkB: 0.68,
   openA: 0.665,
   openB: 0.73,
-  // delivery onto the dashboard
+  // delivery onto the dashboard, then the usable hold (fillB..dockA)
   fillA: 0.72,
-  fillB: 0.82,
+  fillB: 0.8,
   // value
-  dockA: 0.83,
-  dockB: 0.92,
-  copyA: 0.86,
-  copyB: 0.93,
-  colsA: 0.88,
-  colsB: 0.95,
-  custA: 0.9,
-  custB: 0.965,
+  dockA: 0.86,
+  dockB: 0.93,
+  copyA: 0.89,
+  copyB: 0.96,
 } as const
 
 /** Act 1's own clock (fractions of 0..T.act1), the old scene's beats, compressed. */
@@ -196,12 +206,19 @@ function offsetIn(el: HTMLElement, root: HTMLElement) {
 }
 
 export function RetainStory() {
-  const reduced = useSafeReducedMotion()
-  // Client-only: the server renders the static story (see StaticStory.tsx).
-  const [pinned, setPinned] = useState(false)
+  // "ssr": server render + first client frame carry BOTH versions and CSS
+  // shows one (story.module.css .runway / .staticSlot). After mount JS keeps
+  // only the one CSS is showing.
+  const [mode, setMode] = useState<"ssr" | "scene" | "static">("ssr")
+  const pinned = mode === "scene"
   const [phase, setPhase] = useState<Phase>("idle")
-  // true while the story is latched open: the dashboard is usable
+  // true while the scene is at rest (the hold, or latched open): usable
   const [live, setLive] = useState(false)
+  // phones: the customer's phone has faded under the dashboard phone, so
+  // only the dashboard is usable there
+  const [phoneDash, setPhoneDash] = useState(false)
+  // bumped when the story runs back into the delivery: screens reset
+  const [reset, setReset] = useState(0)
   const summary = useDemoReceipt()
   const moment = receiptMoment(summary.dateline)
 
@@ -247,13 +264,14 @@ export function RetainStory() {
   const infoInnerRef = useRef<HTMLDivElement>(null)
   const slotRef = useRef<HTMLDivElement>(null)
   const copyRef = useRef<HTMLDivElement>(null)
-  const colsRef = useRef<HTMLDivElement>(null)
-  const custRef = useRef<HTMLDivElement>(null)
-  const tailRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    setPinned(!reduced)
-  }, [reduced])
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)")
+    const apply = () => setMode(mq.matches ? "static" : "scene")
+    apply()
+    mq.addEventListener("change", apply)
+    return () => mq.removeEventListener("change", apply)
+  }, [])
 
   useEffect(() => {
     if (!pinned) return
@@ -315,7 +333,6 @@ export function RetainStory() {
       dockTx: 0,
       dockTy: 0,
       dockS: 1,
-      overflow: 0,
       runTop: 0,
       runTotal: 0,
     }
@@ -341,6 +358,7 @@ export function RetainStory() {
       M.dockGroup = num(cs, "--dock-group", 1) > 0
       M.phoneDash = num(cs, "--phone-dash", 0) > 0
       M.bowRot = num(cs, "--bow-rot", 7)
+      setPhoneDash(M.phoneDash)
 
       const paper = paperRef.current
       const fold = foldRef.current
@@ -440,11 +458,8 @@ export function RetainStory() {
       const inner = infoInnerRef.current
       if (!slot || !info || !inner) return
       // desktop docks the whole three-part row; a phone docks the dashboard
-      // card alone (the phone + device fade: they have delivered their receipt)
-      const la = M.phoneDash ? cb : offsetIn(laptop, stage)
-      // the phone card docks at 1:1, so the slot is made exactly its height
-      // (a measure-time write, never per frame; "" hands it back to the CSS)
-      slot.style.minHeight = M.phoneDash ? `${Math.ceil(cb.h)}px` : ""
+      // phone alone (the customer's phone + device fade: they have delivered)
+      const la = M.phoneDash ? offsetIn(card.firstElementChild as HTMLElement, stage) : offsetIn(laptop, stage)
       const [gx0, gy0] = post(gb.x, gb.y)
       const [gx1, gy1] = post(gb.x + gb.w, gb.y + gb.h)
       const bx = M.dockGroup ? Math.min(la.x, gx0) : la.x
@@ -455,16 +470,11 @@ export function RetainStory() {
       const sr = slot.getBoundingClientRect()
       const sx = sr.left - pr.left
       const sy = sr.top - pr.top
-      const sc = M.phoneDash ? 1 : Math.min(sr.width / bw, sr.height / bh) || 1
+      // never scaled UP: the docked row is at most its full-size self
+      const sc = Math.min(1, sr.width / bw, sr.height / bh) || 1
       M.dockS = sc
       M.dockTx = sx + sr.width / 2 - sc * (bx + bw / 2) - stage.offsetLeft
-      M.dockTy = M.phoneDash ? sy - by - stage.offsetTop : sy + sr.height / 2 - sc * (by + bh / 2) - stage.offsetTop
-      // A screen too short for laptop + info: the info simply continues below
-      // the pin (never scrolled up inside it, which would push the open
-      // dashboard under the nav), and a spacer after the runway gives it
-      // room, so it scrolls up with the page once the dwell ends.
-      M.overflow = Math.max(0, inner.scrollHeight - inner.clientHeight, inner.offsetHeight - info.clientHeight)
-      if (tailRef.current) tailRef.current.style.height = `${Math.ceil(M.overflow)}px`
+      M.dockTy = sy + sr.height / 2 - sc * (by + bh / 2) - stage.offsetTop
     }
 
     // Every write goes through set(): unchanged values are dropped, and the
@@ -794,8 +804,6 @@ export function RetainStory() {
         set(el, "transform", `translateY(${(26 * (1 - t)).toFixed(1)}px)`, `${key}T`)
       }
       rise3(copyRef.current, ease(seg(p, T.copyA, T.copyB)), "copy")
-      rise3(colsRef.current, ease(seg(p, T.colsA, T.colsB)), "cols")
-      rise3(custRef.current, ease(seg(p, T.custA, T.custB)), "cust")
 
       setPhaseOnce(
         ai > 0
@@ -824,13 +832,14 @@ export function RetainStory() {
     // is held at the fully-open end state, and (b) for the few hundred ms of
     // an eased catch-up right after the latch engages or lets go, so the
     // switch never snaps. Everything else stays a pure function of scroll.
-    const P_LATCH = T.custB
+    const P_LATCH = T.copyB
     const P_RELEASE = P_LATCH - REVERSE_VH / SCROLL_VH
     let latched = false
     let catching = false
     let shown = -1
     let lastT = 0
     let isLive = false
+    let armed = false
     const runway = runwayRef.current
     const setLiveOnce = (next: boolean) => {
       if (isLive === next) return
@@ -862,7 +871,15 @@ export function RetainStory() {
       lastT = now
       draw(shown)
       if (runway) runway.dataset.settled = catching ? "0" : "1"
-      setLiveOnce(latched && !catching)
+      // usable only at rest: the hold between delivery and dock, or latched
+      const hold = shown >= T.fillB && shown <= T.dockA
+      setLiveOnce(!catching && (latched || hold))
+      // running back into the delivery: put both screens back to its frame
+      if (shown >= T.fillB) armed = true
+      else if (armed) {
+        armed = false
+        setReset((n) => n + 1)
+      }
       // the catch-up is the only thing that animates without a scroll event
       if (catching && raf === null) raf = requestAnimationFrame(update)
     }
@@ -896,10 +913,31 @@ export function RetainStory() {
     }
   }, [pinned])
 
-  if (!pinned) return <StaticStory />
+  // The dashboard's explanation, after the scene in both versions (in flow,
+  // so the pinned screen never has to hold it).
+  const after = (
+    <div className={s.after}>
+      <DashboardColumns />
+      <CustomerLine />
+    </div>
+  )
+  const staticVersion =
+    mode === "scene" ? null : (
+      <div className={s.staticSlot}>
+        <StaticStory />
+      </div>
+    )
+  if (mode === "static")
+    return (
+      <>
+        {staticVersion}
+        {after}
+      </>
+    )
 
   return (
     <>
+    {staticVersion}
     <div ref={runwayRef} className={s.runway} style={{ height: `${RUNWAY_VH}vh` }}>
       {/* The story for assistive tech: the scene itself is decorative. */}
       <ol className="sr-only">
@@ -910,9 +948,10 @@ export function RetainStory() {
 
       <div className={s.pin} ref={pinRef}>
         {/* Every piece of art is decorative (the <ol> above tells the story)
-            and inert — the reused clip receipt carries a <summary> that must
-            never take focus. The one exception is the laptop's dashboard,
-            which becomes a real, focusable UI while the story is latched. */}
+            and inert while it moves. The exceptions are the two screens —
+            the laptop's dashboard (the phone dashboard on phones) and the
+            customer's phone — which become real, focusable UIs while the
+            scene is at rest (the hold, or latched open). */}
         <div className={s.stage} ref={stageRef}>
           <span className={s.ground} ref={groundRef} aria-hidden="true" />
 
@@ -997,7 +1036,9 @@ export function RetainStory() {
           >
             <div className={s.lid} ref={lidRef}>
               <div className={s.screen}>
-                <Dashboard live={live} />
+                <FitFrame width={DASH_W} height={DASH_H} fallback={0.58}>
+                  <MerchantDemo layout="desktop" reset={reset} />
+                </FitFrame>
                 <span className={s.screenDim} ref={dimRef} />
               </div>
             </div>
@@ -1009,7 +1050,14 @@ export function RetainStory() {
 
           {/* ---- phone + device, on the right (final layout); the group's
                  pre-slide pose is a transform from measured numbers ---- */}
-          <div className={s.group} ref={groupRef} aria-hidden="true" inert>
+          <div
+            className={s.group}
+            ref={groupRef}
+            aria-hidden={!(live && !phoneDash)}
+            inert={!(live && !phoneDash)}
+            role={live && !phoneDash ? "region" : undefined}
+            aria-label={live && !phoneDash ? story.phoneLabel : undefined}
+          >
             <div className={s.device}>
               <span className={s.deviceGlow} ref={glowRef} />
               <span className={s.slab} ref={slabRef} />
@@ -1038,24 +1086,33 @@ export function RetainStory() {
                   <ClipReading time={moment.time} />
                 </div>
                 <div className={cn(s.layer, s.layerClip)} ref={rcptRef}>
-                  <ClipReceiptScreen summary={summary} />
+                  <ClipScreen summary={summary} />
                 </div>
+                <PhoneApp summary={summary} live={live && !phoneDash} reset={reset} />
               </PhoneChrome>
             </div>
           </div>
 
-          {/* ---- phones (<=820px): the dashboard card, in place of the
-                 laptop (hidden there). Painted after the group, so it covers
-                 the pair as it blooms; the spark (z 6) stays above it. ---- */}
-          <PhoneDashboard
-            live={live}
+          {/* ---- phones (<=820px): the dashboard's own mobile layout on a
+                 phone, in place of the laptop (hidden there). Painted after
+                 the group, so it covers the pair as it blooms; the spark
+                 (z 6) stays above it. ---- */}
+          <div
             className={s.pdScene}
             ref={cardDashRef}
             aria-hidden={!live}
             inert={!live}
             role={live ? "region" : undefined}
             aria-label={live ? story.laptopLabel : undefined}
-          />
+          >
+            <div className={s.pdPhone}>
+              <PhoneChrome>
+                <FitFrame width={393} height={852} fallback={0.68}>
+                  <MerchantDemo layout="mobile" reset={reset} />
+                </FitFrame>
+              </PhoneChrome>
+            </div>
+          </div>
 
           {/* ---- the spark ---- */}
           <div className={s.spark} aria-hidden="true">
@@ -1083,17 +1140,11 @@ export function RetainStory() {
           <div className={s.infoInner} ref={infoInnerRef}>
             <div className={s.slot} ref={slotRef} aria-hidden="true" />
             <DashboardCopy className={s.infoCopy} ref={copyRef} />
-            <DashboardColumns className={s.infoCols} ref={colsRef} />
-            <div ref={custRef} className={s.infoCust}>
-              <CustomerLine />
-              <p className={s.paperNote}>{story.paperNote}</p>
-            </div>
           </div>
         </div>
       </div>
     </div>
-    {/* room for info that runs past a short screen (height set by measure()) */}
-    <div ref={tailRef} aria-hidden="true" />
+    {after}
     </>
   )
 }

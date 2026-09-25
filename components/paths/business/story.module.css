@@ -7,7 +7,8 @@
               the pin still fits under the nav (height-capped).
      <=820px  1:2 stage as tall as the pin allows: a whole, large iPhone with
               the device under it; no laptop — the phone dashboard card
-              (.pd*, PhoneDashboard.tsx) blooms over the stage instead (B6).
+              (.pdScene: the dashboard's real mobile layout on a phone)
+              blooms over the stage instead.
    Everything below is the scene's RESTING geometry = its final layout (the
    laptop on the left, phone + device on the right). The component measures
    these boxes once (measure()) and every motion is a transform from them.
@@ -51,6 +52,22 @@
 .runway {
   position: relative;
   margin-top: var(--gap-body, 40px);
+}
+/* Server render / first frame: both versions are in the HTML and CSS picks
+   one (same contract as intro/intro.module.css), so the section is its final
+   height before JS: the runway (inline RUNWAY_VH) for everyone, the static
+   story only for reduced motion. The scene's p = 0 frame is these CSS
+   defaults (slip unprinted, laptop / phone / device hidden). */
+.staticSlot {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .runway {
+    display: none;
+  }
+  .staticSlot {
+    display: block;
+  }
 }
 .pin {
   position: sticky;
@@ -171,6 +188,11 @@
   position: relative;
   transform-origin: 50% 44%;
   will-change: transform;
+  /* p = 0 before JS: nothing printed yet (the frame overwrites this) */
+  clip-path: inset(0 0 100% 0);
+}
+.paperShadow {
+  clip-path: inset(-12% -20% 100% -20%);
 }
 
 /* The slip, at the fixed 1:2.04 the fold keys (fold.ts) are tuned to. Type
@@ -558,30 +580,28 @@
   height: 7cqw;
 }
 
-/* --- the value: docked row + info -------------------------------------------- */
+/* --- the value: docked row + heading ------------------------------------------ */
+/* The pinned screen only holds the docked row and the heading under it; the
+   columns follow the runway in flow (.after), so nothing here can overflow
+   the pin and no JS spacer is ever needed (no height change at hydration). */
 .info {
   position: absolute;
   inset: 0;
   z-index: 7;
-  /* sideways only: on a screen too short for laptop + info the info runs on
-     below the pin (a spacer after the runway makes the room) */
-  overflow-x: clip;
+  overflow: hidden;
   pointer-events: none;
 }
 .infoInner {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: clamp(14px, 2.2svh, 28px);
+  gap: clamp(16px, 2.6svh, 32px);
   height: 100%;
-  padding: clamp(84px, 11svh, 100px) 0 clamp(18px, 3.5svh, 40px);
-  will-change: transform;
+  padding: clamp(84px, 11svh, 100px) 0 clamp(24px, 5svh, 56px);
 }
 .slot {
   flex: 1 1 0;
-  /* the dashboard is usable at the end, so it gets at least half the screen;
-     what doesn't fit of the info continues below the pin */
-  min-height: max(170px, 50svh);
+  min-height: 120px;
   width: 100%;
 }
 .infoCopy {
@@ -590,32 +610,29 @@
   text-align: center;
   opacity: 0;
 }
-.infoCols {
-  flex: none;
-  width: 100%;
-  opacity: 0;
-}
-.infoCust {
-  flex: none;
-  width: 100%;
-  opacity: 0;
-}
-.static .infoCopy,
-.static .infoCols,
-.static .infoCust {
+.static .infoCopy {
   opacity: 1;
 }
 
+/* --- after the scene: the three columns + the customer line ------------------ */
+.after {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(40px, 5vw, 72px);
+  padding-top: clamp(48px, 7vw, 104px);
+}
 .cols {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(24px, 3vw, 44px);
+  gap: clamp(32px, 4.5vw, 72px);
+  width: 100%;
   text-align: left;
 }
 .colRule {
   width: 40px;
   height: 1px;
-  margin-bottom: 10px;
+  margin-bottom: 16px;
   background: var(--orange);
 }
 .colTitle {
@@ -625,505 +642,78 @@
   line-height: 1.2;
 }
 .colBody {
-  margin-top: 6px;
+  margin-top: 10px;
+  max-width: 36ch;
   font-size: 15px;
-  line-height: 1.5;
+  line-height: 1.6;
   color: var(--flow-fg-2);
 }
 .customerLine {
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  max-width: 60ch;
   text-align: center;
   font-size: 16px;
-  line-height: 1.45;
+  line-height: 1.5;
   color: var(--flow-fg-2);
 }
 .customerLine strong {
   color: var(--flow-fg);
   font-weight: 700;
 }
-.customerDot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--orange);
-  transform: translateY(-1px);
-}
-.paperNote {
-  margin-top: 4px;
-  text-align: center;
-  font-family: var(--font-label);
-  font-size: 12px;
-  letter-spacing: 0.03em;
-  color: var(--flow-fg-3);
-}
 
-/* --- the dashboard on the laptop (a working demo of app/merchant) ---------- */
-/* Lives in .screen / .staticScreen (container, 16:10). ONE size knob:
-   --dash-fs, the base font in cqw of the screen; everything inside is in em,
-   so the whole UI scales with the laptop and a phone can bump one number.
-   The dashboard's own palette (app/merchant/ui/tokens.ts). CSS defaults are
-   the FILLED screen: the scene drives the delivery, reduced motion shows it
-   as is. */
-@property --story-dash-u {
-  syntax: "<length>";
-  inherits: true;
-  initial-value: 1px;
-}
-@property --story-dash-ac {
-  syntax: "<length>";
-  inherits: true;
-  initial-value: 1px;
-}
-.dash {
-  --dash-fs: 2.5cqw;
+/* --- the screens' interactive layers ------------------------------------------ */
+/* The app kit (components/app-kit) fills a phone screen: --pt comes from
+   PhoneKit.tsx (the frame's --wp-w / 393). */
+.kitFill {
   position: absolute;
   inset: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.7em;
-  padding: 1.1em 1.2em;
-  overflow: hidden;
-  background: #181a20;
-  color: #f4f4f4;
-  font-family: var(--font-ui);
-  font-size: var(--dash-fs);
-  font-weight: 500;
-  line-height: 1.25;
-  text-align: left;
 }
-.dash button,
-.dash input,
-.dash select {
-  font: inherit;
-  color: inherit;
+.layerOn {
+  opacity: 1;
+  z-index: 6;
 }
-.dash button {
+/* Hotspots over the kit's drawn buttons, only rendered while the scene is at
+   rest; the drawing underneath is what they look like. */
+.hotspots {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+}
+.hot {
+  position: absolute;
+  padding: 0;
+  border: 0;
+  border-radius: calc(26 * var(--pt));
+  background: transparent;
   cursor: pointer;
 }
-.dash :focus-visible {
-  outline: 2px solid #fb8500;
-  outline-offset: 1px;
+.hot:focus-visible {
+  outline: 2px solid #eb7100;
+  outline-offset: 2px;
 }
-.dash [hidden] {
-  display: none !important;
-}
-.dashTop {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 0.9em;
-}
-.dashBrand {
-  display: flex;
-  align-items: center;
-  gap: 0.3em;
-  font-size: 1.15em;
-  font-weight: 600;
-}
-.dashBrand i {
-  width: 0.4em;
-  height: 0.4em;
-  border-radius: 0.1em;
-  background: #fb8500;
-}
-.dashBrand small {
-  font-size: 0.55em;
-  letter-spacing: 0.08em;
-  color: #9aa1a8;
-}
-.dashTabs {
-  display: flex;
-  gap: 0.2em;
-  padding: 0.18em;
-  border-radius: 99px;
-  background: rgba(255, 255, 255, 0.06);
-}
-.dashTabs button {
-  padding: 0.3em 0.85em;
-  border: 0;
-  border-radius: 99px;
-  background: none;
-  color: #c4c7cc;
-}
-.dashTabs .dashTabOn {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
-}
-.dashDemo {
-  margin-left: auto;
-  padding: 0.2em 0.6em;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 99px;
-  font-size: 0.72em;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #9aa1a8;
-}
-.dashPanel {
-  flex: 1 1 0;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.7em;
-}
-.dashHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1em;
-}
-.dashSub {
-  font-size: 0.85em;
-  font-weight: 400;
-  color: #c4c7cc;
-}
-.dashRanges {
-  display: flex;
-  flex: none;
-  padding: 0.15em;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 99px;
-  font-size: 0.82em;
-}
-.dashRanges button {
-  padding: 0.25em 0.8em;
-  border: 0;
-  border-radius: 99px;
-  background: none;
-  color: #c4c7cc;
-}
-.dashRanges .dashRangeOn {
-  background: #fb8500;
-  color: #fff;
-}
-.dashTiles {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.55em;
-}
-.dashTile,
-.dashCard {
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 0.6em;
-  background: rgba(20, 26, 36, 0.6);
-}
-.dashTile {
-  padding: 0.55em 0.65em;
-}
-.dashLabel,
-.dashCardTitle {
-  font-size: 0.68em;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #9aa1a8;
-  white-space: nowrap;
-}
-.dashValueBox {
-  position: relative;
-  height: 1.35em;
-  margin-top: 0.2em;
-  font-size: 1.45em;
-}
-.dashValueEmpty,
-.dashValue {
-  position: absolute;
-  left: 0;
-  top: 0;
-  white-space: nowrap;
-}
-.dashValueEmpty {
-  color: #5f6670;
-  opacity: 0;
-}
-.dashNote {
-  font-size: 0.62em;
-  font-weight: 400;
-  color: #c4c7cc;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.dashRow {
-  flex: 1 1 0;
-  min-height: 0;
-  display: grid;
-  grid-template-columns: 1.15fr 1fr;
-  gap: 0.55em;
-}
-.dashCard {
-  display: flex;
-  flex-direction: column;
-  padding: 0.6em 0.7em;
-  min-height: 0;
-}
-.dashCardTitle {
-  margin-bottom: 0.45em;
-}
-.dashBars {
-  position: relative;
-  flex: 1 1 0;
-  display: flex;
-  align-items: stretch;
-  gap: 0.1em;
-  min-height: 2.5em;
-}
-.dashBarSlot {
-  position: relative;
-  flex: 1 1 0;
-  padding: 0;
-  border: 1px solid rgba(251, 133, 0, 0.35);
-  border-radius: 0.18em;
-  background: none;
-}
-.dashBarBtn:hover,
-.dashBarBtn:focus-visible {
-  border-color: #fb8500;
-}
-.dashBar {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(251, 133, 0, 0.62);
-  border-top: 2px solid #fb8500;
-  transform-origin: 50% 100%;
-}
-.dashTip {
-  position: absolute;
-  bottom: calc(100% + 0.35em);
-  left: 50%;
-  z-index: 2;
-  transform: translateX(-50%);
-  padding: 0.3em 0.55em;
-  border-radius: 0.35em;
-  background: #f4f4f4;
-  color: #181a20;
-  font-size: 0.72em;
-  white-space: nowrap;
-  pointer-events: none;
-}
-.dashAxis {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 0.3em;
-  font-size: 0.62em;
-  color: #9aa1a8;
-}
-.dashItem {
-  display: grid;
-  grid-template-columns: 0.8em minmax(0, 6.6em) minmax(0, 1fr) 1em;
-  align-items: center;
-  gap: 0.45em;
-  margin-top: 0.4em;
-  font-size: 0.82em;
-}
-.dashItemRank,
-.dashItemQty {
-  color: #9aa1a8;
-}
-.dashItemQty {
-  text-align: right;
-}
-.dashItemName {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.dashItemTrack {
-  height: 0.35em;
-  border-radius: 99px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.06);
-}
-.dashItemTrack i {
-  display: block;
-  height: 100%;
-  border-radius: 99px;
-  background: #fb8500;
-  transform-origin: 0 50%;
-}
-.dashToast {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 0.55em;
-  width: 100%;
-  padding: 0.5em 0.7em;
-  border: 1px solid rgba(251, 133, 0, 0.55);
-  border-radius: 0.55em;
-  background: rgba(251, 133, 0, 0.12);
-  font-size: 0.85em;
-  text-align: left;
-}
-.dashToast:hover {
-  background: rgba(251, 133, 0, 0.2);
-}
-.dashToastDot {
-  flex: none;
-  width: 0.5em;
-  height: 0.5em;
-  border-radius: 50%;
-  background: #fb8500;
-  box-shadow: 0 0 0.5em #fb8500;
-}
-.dashToastLead {
-  flex: none;
-  color: #fb8500;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-size: 0.8em;
-}
-.dashToastText {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.dashToastAmt {
-  flex: none;
-  font-weight: 600;
-}
-.dashToastTag,
-.dashSaleTag {
-  flex: none;
-  padding: 0.12em 0.5em;
-  border-radius: 99px;
-  background: rgba(0, 136, 234, 0.18);
-  color: #7fc4ec;
-  font-size: 0.78em;
-}
-/* --- Receipts view --- */
-.dashFilters {
-  flex: none;
-  display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 1fr);
-  gap: 0.4em;
-  font-size: 0.85em;
-}
-.dashFilters input,
-.dashFilters select {
-  min-width: 0;
-  height: 2em;
-  padding: 0 0.6em;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 0.5em;
-  background: rgba(20, 26, 36, 0.8);
-}
-.dashFilters input::placeholder {
-  color: #6b7280;
-}
-.dashListHead {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 0.6em;
-  font-size: 0.75em;
-  color: #9aa1a8;
-}
-.dashChip {
-  padding: 0.1em 0.6em;
-  border: 1px solid rgba(251, 133, 0, 0.6);
-  border-radius: 99px;
-  background: rgba(251, 133, 0, 0.12);
-  color: #fb8500;
-}
-.dashList {
-  flex: 1 1 0;
-  min-height: 0;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  overflow-y: auto;
-}
-.dashSale {
-  display: grid;
-  grid-template-columns: 7.2em minmax(0, 1fr) 3.4em 5em 3.8em;
-  align-items: center;
-  gap: 0.5em;
-  width: 100%;
-  padding: 0.45em 0.5em;
-  border: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: none;
-  font-size: 0.85em;
-  text-align: left;
-}
-.dashSale:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-.dashSaleWhen,
-.dashSaleCard {
-  color: #9aa1a8;
-  white-space: nowrap;
-}
-.dashSaleWhat {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.dashSaleTag {
-  justify-self: start;
-}
-.dashSaleTagOff {
-  background: rgba(255, 255, 255, 0.07);
-  color: #9aa1a8;
-}
-.dashSaleAmt {
-  text-align: right;
-  font-weight: 600;
-}
-.dashEmpty {
-  padding: 1.2em 0.5em;
-  font-size: 0.85em;
-  color: #9aa1a8;
-}
-/* --- a receipt, as the customer saw it: the App Clip's own receipt view,
-   in a sheet inside the laptop. The kit sizes itself in --u / --ac-u, set
-   here through registered lengths so they reach it as px. --- */
-.dashSheet {
+
+/* The dashboard's mobile layout on a phone (<=820px; hidden on desktop).
+   In the scene it covers the stage (blooming from where the spark lands) and
+   the phone is centred in it, as tall as the stage allows. The phone's
+   height is a REGISTERED length so the cqw resolves here, against the stage,
+   never inside a nested container. */
+.pdScene {
   position: absolute;
   inset: 0;
   z-index: 5;
-  display: flex;
-  flex-direction: column;
-  background: rgba(10, 12, 16, 0.94);
-  /* the clip's receipt is phone-scale UI: ~half the screen wide here */
-  --story-dash-u: 0.125cqw;
-  --story-dash-ac: 0.142cqw;
-  --u: var(--story-dash-u);
-  --ac-u: var(--story-dash-ac);
-}
-.dashSheetBar {
-  flex: none;
-  display: flex;
+  display: none;
   align-items: center;
-  justify-content: space-between;
-  gap: 1em;
-  padding: 0.55em 0.9em;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  font-size: 0.85em;
-  color: #c4c7cc;
+  justify-content: center;
+  opacity: 0;
 }
-.dashSheetBar button {
-  width: 1.8em;
-  height: 1.8em;
-  border: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
-  font-size: 1.1em;
-  line-height: 1;
+.pdPhone {
+  --story-phone-h: 176cqw;
+  --wp-size: var(--story-phone-h);
 }
-.dashSheetBody {
-  flex: 1 1 0;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 0.8em 24%;
+.pdStatic {
+  display: none;
+  justify-content: center;
+  --story-phone-h: min(620px, 150vw);
+  --wp-size: var(--story-phone-h);
 }
 
 /* --- reduced motion / no JS / server HTML ------------------------------------ */
@@ -1205,14 +795,6 @@
   border-radius: 14px;
   background: #181a20;
 }
-/* the still laptop is wider than the docked one: a smaller base size */
-.staticScreen .dash {
-  --dash-fs: 1.75cqw;
-}
-.staticScreen .dashSheet {
-  --story-dash-u: 0.1cqw;
-  --story-dash-ac: 0.114cqw;
-}
 .staticDeck {
   width: 108%;
   height: 16px;
@@ -1220,514 +802,11 @@
   clip-path: polygon(3% 0, 97% 0, 100% 100%, 0 100%);
   background: linear-gradient(180deg, #46525f, #222c36);
 }
-.staticInfo {
-  display: flex;
-  flex-direction: column;
-  gap: var(--gap-body, 40px);
-}
 
 @media (min-width: 821px) {
   .staticRow {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-}
-
-/* --- the phone dashboard card (<=820px only; hidden on desktop) -------------
-   story/PhoneDashboard.tsx. Replaces the laptop on phones (Web 2.1 B6): the
-   scaled laptop put the dashboard's text at ~6px on a 390px screen, so this
-   card is laid out for a phone at REAL sizes (body 13-14px, labels 11px, key
-   numbers 22px, search 16px so iOS never zooms on focus) and is never scaled.
-   Same palette as the laptop's dashboard (app/merchant/ui/tokens.ts).
-   Both uses are fixed-height `pdash` size containers: the scene's fills the
-   stage, the static one is 660px; the hour bars take any spare height, and
-   the top items drop out (never get cut) when the card is too short. */
-.pd {
-  display: none;
-  flex-direction: column;
-  gap: 8px;
-  overflow: hidden;
-  padding: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  background: #181a20;
-  box-shadow: 0 24px 48px -20px rgba(0, 18, 29, 0.55);
-  color: #f4f4f4;
-  font-family: var(--font-ui);
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 1.3;
-  text-align: left;
-}
-.pd button,
-.pd input {
-  font: inherit;
-  color: inherit;
-}
-.pd button {
-  cursor: pointer;
-}
-.pd :focus-visible {
-  outline: 2px solid #fb8500;
-  outline-offset: 1px;
-}
-.pd [hidden] {
-  display: none !important;
-}
-/* in the scene: the whole stage, capped for tall tablets and centred there */
-.pdScene {
-  position: absolute;
-  inset: 0;
-  height: min(100%, 760px);
-  margin-block: auto;
-  z-index: 5;
-  opacity: 0;
-  container: pdash / size;
-}
-/* reduced motion: a still card under the tap figure */
-.pdStatic {
-  position: relative;
-  width: 100%;
-  max-width: 480px;
-  height: 660px;
-  margin: 0 auto;
-  container: pdash / size;
-}
-.pdTop {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  min-height: 24px;
-}
-.pdBrand {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 17px;
-  font-weight: 600;
-}
-.pdBrand i {
-  width: 7px;
-  height: 7px;
-  border-radius: 2px;
-  background: #fb8500;
-}
-.pdBrand small {
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  color: #9aa1a8;
-}
-.pdDemo {
-  padding: 3px 9px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 99px;
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #9aa1a8;
-}
-.pdTabs {
-  flex: none;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 3px;
-  padding: 3px;
-  border-radius: 99px;
-  background: rgba(255, 255, 255, 0.06);
-}
-.pdTabs button {
-  height: 30px;
-  border: 0;
-  border-radius: 99px;
-  background: none;
-  color: #c4c7cc;
-  font-size: 14px;
-}
-.pdTabs .pdOn {
-  background: rgba(255, 255, 255, 0.14);
-  color: #fff;
-}
-.pdPanel {
-  flex: 1 1 0;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.pdRanges {
-  flex: none;
-  align-self: flex-start;
-  display: flex;
-  padding: 3px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 99px;
-}
-.pdRanges button {
-  height: 26px;
-  padding: 0 14px;
-  border: 0;
-  border-radius: 99px;
-  background: none;
-  color: #c4c7cc;
-  font-size: 13px;
-}
-.pdRanges .pdRangeOn {
-  background: #fb8500;
-  color: #fff;
-}
-.pdToast {
-  flex: none;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid rgba(251, 133, 0, 0.55);
-  border-radius: 12px;
-  background: rgba(251, 133, 0, 0.12);
-  text-align: left;
-}
-.pdToast:hover {
-  background: rgba(251, 133, 0, 0.2);
-}
-.pdToastLine {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-width: 0;
-}
-.pdToastDot {
-  flex: none;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #fb8500;
-  box-shadow: 0 0 6px #fb8500;
-}
-.pdToastLead {
-  flex: 1;
-  color: #fb8500;
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-.pdToastText {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 14px;
-}
-.pdToastAmt {
-  flex: none;
-  font-size: 15px;
-  font-weight: 600;
-}
-.pdTag {
-  flex: none;
-  padding: 2px 8px;
-  border-radius: 99px;
-  background: rgba(0, 136, 234, 0.18);
-  color: #7fc4ec;
-  font-size: 11px;
-}
-.pdTagOff {
-  background: rgba(255, 255, 255, 0.07);
-  color: #9aa1a8;
-}
-.pdTiles {
-  flex: none;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-.pdTile,
-.pdCard {
-  min-width: 0;
-  padding: 9px 11px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
-  background: rgba(20, 26, 36, 0.6);
-}
-.pdLabel {
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #9aa1a8;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.pdValueBox {
-  position: relative;
-  height: 28px;
-  margin-top: 3px;
-  font-size: 22px;
-  font-weight: 600;
-  line-height: 28px;
-}
-.pdValueEmpty,
-.pdValue {
-  position: absolute;
-  left: 0;
-  top: 0;
-  white-space: nowrap;
-}
-.pdValueEmpty {
-  color: #5f6670;
-  opacity: 0;
-}
-/* wraps on a narrow card rather than losing words */
-.pdNote {
-  margin-top: 1px;
-  font-size: 11px;
-  font-weight: 400;
-  line-height: 1.25;
-  color: #c4c7cc;
-}
-.pdCard {
-  display: flex;
-  flex-direction: column;
-}
-/* the only part that grows: spare card height goes to the bars */
-.pdHours {
-  flex: 1 1 auto;
-  min-height: 0;
-}
-.pdBars {
-  position: relative;
-  flex: 1 1 auto;
-  min-height: 56px;
-  max-height: 240px;
-  display: flex;
-  align-items: stretch;
-  gap: 2px;
-  margin-top: 8px;
-}
-.pdBarSlot {
-  position: relative;
-  flex: 1 1 0;
-  min-width: 0;
-  padding: 0;
-  border: 1px solid rgba(251, 133, 0, 0.3);
-  border-radius: 3px;
-  background: none;
-}
-.pdBarBtn:hover,
-.pdBarBtn:focus-visible {
-  border-color: #fb8500;
-}
-.pdBar {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(251, 133, 0, 0.62);
-  border-top: 2px solid #fb8500;
-  transform-origin: 50% 100%;
-}
-.pdTip {
-  position: absolute;
-  bottom: calc(100% + 6px);
-  left: 50%;
-  z-index: 2;
-  transform: translateX(-50%);
-  padding: 4px 8px;
-  border-radius: 6px;
-  background: #f4f4f4;
-  color: #181a20;
-  font-size: 12px;
-  white-space: nowrap;
-  pointer-events: none;
-}
-.pdTipStart {
-  left: 0;
-  transform: none;
-}
-.pdTipEnd {
-  left: auto;
-  right: 0;
-  transform: none;
-}
-.pdAxis {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 5px;
-  font-size: 11px;
-  color: #9aa1a8;
-}
-.pdItems {
-  flex: none;
-}
-.pdItem {
-  display: grid;
-  grid-template-columns: 14px minmax(0, 8.5em) minmax(0, 1fr) 18px;
-  align-items: center;
-  gap: 8px;
-  height: 20px;
-  margin-top: 3px;
-  font-size: 13px;
-}
-.pdItemRank,
-.pdItemQty {
-  color: #9aa1a8;
-}
-.pdItemQty {
-  text-align: right;
-}
-.pdItemName {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.pdItemTrack {
-  height: 5px;
-  border-radius: 99px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.06);
-}
-.pdItemTrack i {
-  display: block;
-  height: 100%;
-  border-radius: 99px;
-  background: #fb8500;
-  transform-origin: 0 50%;
-}
-/* a card too short for everything: the top items go, whole (never cut).
-   Measured: with them the content needs 600px at the bars' 56px minimum,
-   ~614px if the tap-rate note wraps on a narrow card
-   (a container query reads the CONTENT box: card height - 26px) */
-@container pdash (max-height: 614px) {
-  .pdItems {
-    display: none;
-  }
-}
-/* --- Receipts: one search field, then the sales --- */
-.pd .pdSearch {
-  flex: none;
-  width: 100%;
-  height: 40px;
-  padding: 0 12px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 10px;
-  background: rgba(20, 26, 36, 0.8);
-  /* 16px: the placeholder fits whole at ~200px, and iOS doesn't zoom */
-  font-size: 16px;
-}
-.pdSearch::placeholder {
-  color: #7b828c;
-}
-.pdListHead {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 22px;
-  font-size: 12px;
-  color: #9aa1a8;
-}
-.pdChip {
-  padding: 2px 10px;
-  border: 1px solid rgba(251, 133, 0, 0.6);
-  border-radius: 99px;
-  background: rgba(251, 133, 0, 0.12);
-  color: #fb8500;
-}
-.pdList {
-  flex: 1 1 0;
-  min-height: 0;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  overflow-y: auto;
-}
-.pdSale {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  column-gap: 10px;
-  row-gap: 3px;
-  width: 100%;
-  padding: 9px 4px;
-  border: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: none;
-  text-align: left;
-}
-.pdSale:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-.pdSaleWhat {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 13px;
-}
-.pdSaleAmt {
-  text-align: right;
-  font-size: 13px;
-  font-weight: 600;
-}
-.pdSaleWhen {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 11.5px;
-  color: #9aa1a8;
-}
-.pdSale .pdTag {
-  justify-self: end;
-}
-.pdEmpty {
-  padding: 16px 4px;
-  font-size: 13px;
-  color: #9aa1a8;
-}
-/* a receipt as the customer saw it, over the whole card; the App Clip kit's
-   units in cqw of the card (registered, so they reach it as px): ~310px of
-   receipt on a 335px card, the width it is drawn for on a phone */
-.pdSheet {
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  display: flex;
-  flex-direction: column;
-  border-radius: inherit;
-  background: rgba(10, 12, 16, 0.97);
-  --story-dash-u: 0.235cqw;
-  --story-dash-ac: 0.27cqw;
-  --u: var(--story-dash-u);
-  --ac-u: var(--story-dash-ac);
-}
-.pdSheetBar {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 10px 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  font-size: 13px;
-  color: #c4c7cc;
-}
-.pdSheetBar button {
-  flex: none;
-  width: 32px;
-  height: 32px;
-  border: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
-  font-size: 18px;
-  line-height: 1;
-}
-.pdSheetBody {
-  flex: 1 1 0;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 10px 12px 14px;
 }
 
 /* --- phones and tablets ------------------------------------------------------- */
@@ -1796,13 +875,14 @@
     top: 164cqw;
     width: 38cqw;
   }
-  /* no laptop on phones: the dashboard card takes its place */
+  /* no laptop on phones: the dashboard phone takes its place */
   .laptop,
   .staticScreen,
   .staticDeck {
     display: none;
   }
-  .pd {
+  .pdScene,
+  .pdStatic {
     display: flex;
   }
   .dot {
@@ -1815,11 +895,6 @@
     height: 3.2cqw;
     margin: -1.6cqw 0 0 -1.6cqw;
   }
-  /* measure() sizes the slot to the card (it docks at 1:1); the info
-     continues below it */
-  .slot {
-    min-height: 36svh;
-  }
   /* the pinned info must fit one phone screen under the docked laptop: the
      lead repeats the beat line just above it, so it goes (the static
      version keeps it) */
@@ -1831,21 +906,21 @@
   }
   .cols {
     grid-template-columns: minmax(0, 1fr);
-    gap: 12px;
+    gap: 32px;
   }
   .colTitle {
-    font-size: 16px;
+    font-size: 17px;
   }
   .colBody {
-    margin-top: 2px;
-    font-size: 14px;
-    line-height: 1.4;
+    margin-top: 6px;
+    font-size: 15px;
+    line-height: 1.55;
   }
   .colRule {
-    margin-bottom: 6px;
+    margin-bottom: 12px;
   }
   .customerLine {
-    font-size: 14.5px;
+    font-size: 15px;
   }
   .staticArt {
     min-height: 0;
