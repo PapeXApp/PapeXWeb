@@ -48,12 +48,11 @@
   --cam-final-foot: clamp(88px, 14svh, 150px);
   /* scene's foot -> the dashboard eyebrow, once the pin has let go */
   --after-gap: clamp(56px, 5.4vw, 84px);
-  /* the one-screen block after the scene (.after): when its eyebrow sits
-     --unit-top from the viewport's top, the ribbon under it ends
-     --unit-slack above the viewport's bottom, and §04 (24px under the
-     ribbon, MarqueeBand's .storyRibbon) is still below the fold */
+  /* the one-screen unit after the scene (.unit): when its eyebrow sits
+     --unit-top from the viewport's top, §04 is still below the fold */
   --unit-top: 100px;
-  --unit-slack: 12px;
+  /* heading -> columns -> ribbon */
+  --after-step: clamp(32px, 4.5svh, 52px);
   --gap-title: clamp(20px, 2.4vw, 36px);
   --gap-body: clamp(28px, 3.2vw, 48px);
   --gap-list: clamp(18px, 2vw, 28px);
@@ -656,38 +655,46 @@
   height: 7cqw;
 }
 
-/* --- after the scene: the dashboard's heading block, then the columns ----------- */
+/* --- after the scene: the dashboard's heading block, the columns, the ribbon -- */
 /* P3-B2 (Nico: "super cluttered; we need space fixing"). The pin ends on the
    screens alone; once it lets go, this follows in flow: --after-gap under
    the screens (P3-B5: the runway's margin-bottom pulls it over the pin's
-   empty foot), then the heading, then the three columns. */
-.after {
+   empty foot), then the heading, the three columns and the ribbon.
+   P3 9/25 (Nico: "shrink the 2 spaces between the text ... so the title
+   doesn't get cut off when I want to see it all"): heading -> columns ->
+   ribbon are one fixed, compact step (--after-step) apart. */
+.unit {
   /* above the pin, whose empty foot it overlaps (.runway margin-bottom) */
   position: relative;
   z-index: 1;
+}
+.after {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: clamp(56px, 6.4vw, 96px);
+  gap: var(--after-step);
   max-width: 1150px;
   margin-inline: auto;
   padding-top: var(--after-gap);
 }
-/* P3-B5 (Nico: "I can see 'Your dashboard, included' ... all the way down
-   until the ribbon, without section four peeking"). On desktop the heading
-   block, the columns and the ribbon are one screen: with the eyebrow at
-   --unit-top the block runs down to the section's padding, then the ribbon
-   (--ribbon-h, pinned in shared/flow.module.css) ends --unit-slack above the
-   fold. The columns take the middle of the room left under the heading. */
+/* The ribbon closes the unit, edge to edge (the section's gutter cancelled;
+   the ribbon brings its own). */
+.unit > .storyRibbon {
+  max-width: none;
+  margin-top: var(--after-step);
+  margin-inline: calc(-1 * var(--story-px));
+}
+/* P3-B5 (Nico: "... all the way down until the ribbon, without section four
+   peeking"). On desktop the unit is at least one screen from the eyebrow
+   down: with the eyebrow at --unit-top, the ribbon sits inside the screen
+   and §04 starts below the fold. Spare room on a tall screen collects AFTER
+   the ribbon (the section's own foot), not inside the text. */
 @media (min-width: 821px) {
-  .after {
-    min-height: calc(
-      100svh - var(--unit-top) - var(--unit-slack) - var(--section-pad-y) - var(--ribbon-h, 60px) +
-        var(--after-gap)
-    );
+  .unit {
+    min-height: calc(100svh - var(--unit-top) + var(--after-gap) + 16px);
   }
-  .after > .cols {
-    margin-block: auto;
+  .section {
+    padding-bottom: 0;
   }
   /* the columns are the block's body on a whole screen: their type grows
      with the viewport's height, so a tall screen reads full, not empty */
@@ -702,10 +709,6 @@
   .after .colRule {
     width: clamp(40px, 5.5svh, 64px);
     margin-bottom: clamp(16px, 2.2svh, 26px);
-  }
-  /* the ribbon is outside .section, so its foot is set here, not there */
-  .storyRibbon {
-    margin-bottom: 24px;
   }
 }
 .afterCopy {

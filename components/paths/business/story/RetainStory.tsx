@@ -8,6 +8,7 @@ import { ClipLockScreen, ClipReading } from "../../customer/appui"
 import { receiptMoment } from "../../customer/appui/Clip"
 import { PhoneChrome } from "../../customer/WalkPhone"
 import { DashboardColumns, DashboardCopy } from "../DashboardPreview"
+import { MarqueeBand } from "../MarqueeBand"
 import { story } from "../story"
 import { Bin, DeviceArt, Printer } from "./Furniture"
 import { FitFrame } from "./merchant/FitFrame"
@@ -1076,11 +1077,16 @@ export function RetainStory() {
 
   // The dashboard's explanation, after the scene in both versions (in flow,
   // so the pinned screen never has to hold it): the heading block (its lead
-  // carries the customer line), air, then the three columns.
+  // carries the customer line), air, then the three columns, then the
+  // ribbon: one unit, so any spare room on a tall screen falls AFTER the
+  // ribbon (story.module.css .unit), never between the lines of text.
   const after = (
-    <div className={s.after}>
-      <DashboardCopy className={s.afterCopy} />
-      <DashboardColumns />
+    <div className={s.unit}>
+      <div className={s.after}>
+        <DashboardCopy className={s.afterCopy} />
+        <DashboardColumns />
+      </div>
+      <MarqueeBand />
     </div>
   )
   const staticVersion =

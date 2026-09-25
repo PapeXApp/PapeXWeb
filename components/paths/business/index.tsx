@@ -3,7 +3,6 @@ import { Faq } from "../shared/Faq"
 import { SiteFooter } from "@/components/brand/site-footer"
 import { Hero } from "./Hero"
 import { WhyMerchants } from "./WhyMerchants"
-import { MarqueeBand } from "./MarqueeBand"
 import { HowItWorks } from "./HowItWorks"
 import { RdhDevice } from "./RdhDevice"
 import { DemoForm } from "./DemoForm"
@@ -40,7 +39,6 @@ export function BusinessPath() {
         <WhyMerchants />
       </div>
       {/* SLOT: merchant value calculator (coming soon) */}
-      <MarqueeBand />
       <RdhDevice />
       <HowItWorks />
       <DemoForm />

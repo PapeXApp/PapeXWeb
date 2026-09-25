@@ -4,8 +4,8 @@ import s from "./story.module.css"
 
 /**
  * 3.3 Marquee — a mono ribbon on the running ground (see shared/Ribbon.tsx).
- * On /business it closes §03's one-screen block (story.module.css .after), so
- * it carries that block's foot: a little air before §04 starts.
+ * On /business it closes §03's one-screen unit: RetainStory renders it
+ * inside story.module.css .unit, right under the dashboard columns.
  */
 export function MarqueeBand() {
   return <Ribbon phrases={marquee.phrases} duration={marquee.durationSeconds} className={s.storyRibbon} />
