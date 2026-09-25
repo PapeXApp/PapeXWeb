@@ -208,19 +208,33 @@ export function DemoForm() {
     >
       <Reveal
         as="div"
-        className="mx-auto grid w-full max-w-[1100px] grid-cols-1 items-start gap-[clamp(30px,5vw,70px)] min-[821px]:grid-cols-2 min-[821px]:items-center"
+        className="mx-auto grid w-full max-w-[1100px] grid-cols-1 items-start gap-[clamp(30px,5vw,70px)] min-[821px]:grid-cols-2"
       >
-        <div>
+        {/* Left column is TOP-aligned with the form (Web 2.1, W-B5; Nico:
+            "Get started should be aligned with Your name"): with the grid's
+            shared `items-start` line, the eyebrow (this column's first child)
+            and the "Your name" label (the form's first flow child — its status
+            line is sr-only until an error) share the same top edge. */}
+        <div className="relative">
           {/* No index: the form is the second half of 05 "How do I get it?"
               (setup -> demo), not a section of its own. */}
-          <SectionLabel>{demo.eyebrow}</SectionLabel>
+          <SectionLabel className="mb-[10px]">{demo.eyebrow}</SectionLabel>
           <h2
             className="text-[length:var(--fs-h1-merchant)] font-bold leading-[1.03] tracking-[-.02em]"
             style={{ fontFamily: "var(--font-display)" }}
           >
             {demo.heading}
           </h2>
-          <p className="mt-[var(--gap-title)] max-w-[34ch] text-[length:var(--fs-lead)] leading-[1.55]" style={{ color: "var(--flow-fg-2)" }}>
+          {/* "Live in the Bay Area." (Web 2.1, W-B5): moved here, directly
+              under the title, from its old spot above the form on the right. */}
+          <p
+            className="mt-[var(--gap-title)] inline-flex items-center gap-2.5 rounded-full border px-4 py-2 text-[14px] font-semibold"
+            style={{ borderColor: "var(--flow-hair)", color: "var(--flow-fg)" }}
+          >
+            <span aria-hidden="true" className="h-2 w-2 rounded-full" style={{ background: "var(--orange)" }} />
+            {demo.proof}
+          </p>
+          <p className="mt-[var(--gap-body)] max-w-[34ch] text-[length:var(--fs-lead)] leading-[1.55]" style={{ color: "var(--flow-fg-2)" }}>
             {demo.body}
           </p>
           <p className="mt-[var(--gap-body)] text-[16px] font-semibold" style={{ color: "var(--flow-fg)" }}>
@@ -228,17 +242,9 @@ export function DemoForm() {
           </p>
         </div>
 
-        {/* Right column: the proof line (Web 2.1, Nico: "Live in the Bay
-            Area." and nothing more), then the form or its success state.
-            Copy only; the form's mechanics are unchanged. */}
+        {/* Right column: the form or its success state. Copy only; the
+            form's mechanics are unchanged. */}
         <div>
-          <p
-            className="mb-[var(--gap-list)] inline-flex items-center gap-2.5 rounded-full border px-4 py-2 text-[14px] font-semibold"
-            style={{ borderColor: "var(--flow-hair)", color: "var(--flow-fg)" }}
-          >
-            <span aria-hidden="true" className="h-2 w-2 rounded-full" style={{ background: "var(--orange)" }} />
-            {demo.proof}
-          </p>
           {status === "success" ? (
             <div role="status" aria-live="polite" className="rounded-[12px] border border-[rgba(0,18,29,.14)] bg-white p-6">
               <p className="text-[16px] font-semibold" style={{ color: "var(--ink)" }}>
@@ -253,10 +259,17 @@ export function DemoForm() {
               >
                 <input ref={honeypotRef} type="text" name={HONEYPOT_FIELD} tabIndex={-1} autoComplete="off" defaultValue="" />
               </div>
+              {/* Out of flow (sr-only) until there's actually a message
+                  (Web 2.1, W-B5): this used to always reserve a min-h-[1em]
+                  line, which is what pushed the "Your name" field down and
+                  broke the heading/field top-alignment above. Screen readers
+                  still get it — aria-live announces a content change on an
+                  sr-only node the same as a visible one — it just no longer
+                  costs the sighted layout a line it isn't using. */}
               <p
                 id={formErrorId}
                 aria-live="assertive"
-                className="min-h-[1em] text-[14px] font-medium"
+                className={status === "error" ? "min-h-[1em] text-[14px] font-medium" : "sr-only"}
                 style={{ color: status === "error" ? ERROR_INK : "transparent" }}
               >
                 {status === "error" ? statusMessage : ""}
