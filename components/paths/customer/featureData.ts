@@ -3,7 +3,7 @@ import type { PersonaId } from "./content";
 import { DEMO_GROUP, DEMO_PERSON } from "./appui/data";
 
 /**
- * DEMO DATA for the four Features phones (05). Everything is INVENTED, and
+ * DEMO DATA for the five feature phones (section 04, under the quiz). Everything is INVENTED, and
  * only these names appear: the stores Tidewick Cafe, Copperpeg Hardware,
  * Mossbrook Pharmacy and Quillbrook Market (the app kit's demo stores, with
  * their monogram logos), the person Jordan Reyes and the group Housemates
@@ -14,8 +14,9 @@ import { DEMO_GROUP, DEMO_PERSON } from "./appui/data";
  * `originDetail` is worded the way `buildReceiptOriginSummary` words it.
  *
  * THE QUIZ CHANGES THE DATA, not just the order: each persona searches for a
- * different store in the Find shot, and the Deals shot opens on the tab that
- * persona cares about (see `dealsTab`). Before the quiz the page shows
+ * different store in the Find shot, the Export shot selects a different set
+ * of receipts, and the Deals shot opens on the tab that persona cares about
+ * (see `dealsTab`). Before the quiz the page shows
  * `casual`, and so does the server render, so first paint never changes.
  */
 
@@ -46,7 +47,10 @@ function visits(
 const SHARED_IN = `Shared by ${DEMO_PERSON} in ${DEMO_GROUP}`;
 
 /** FIND — the query each persona types, and the receipts it filters to.
- *  Search FILTERS (app-reference.md §1.7), so every row matches the query. */
+ *  Search FILTERS (app-reference.md §1.7), so every row matches the query.
+ *  The Keeper searches the grocer they track (every row auto-filed under
+ *  Groceries); the Non-Keeper searches the hardware store for a RETURN (their
+ *  row title is "Find it for a return."); the Casual looks up a café. */
 export const FIND_BY_PERSONA: Record<PersonaId, { query: string; rows: KitReceipt[] }> = {
   casual: {
     query: "tidewick",
@@ -59,16 +63,6 @@ export const FIND_BY_PERSONA: Record<PersonaId, { query: string; rows: KitReceip
     ]),
   },
   keeper: {
-    query: "copperpeg",
-    rows: visits(copper, "Home", [
-      { id: "f-c1", amount: 38.17, dateLabel: "Sep 23", section: "September 23, 2026", source: "scanned", originDetail: `Scanned by you • ${DEMO_GROUP}`, isSharedByCurrentUser: true, reviewed: false },
-      { id: "f-c2", amount: 112.6, dateLabel: "Sep 12", section: "September 12, 2026", source: "email", originDetail: "Email by you" },
-      { id: "f-c3", amount: 24.99, dateLabel: "Aug 30", section: "August 30, 2026", source: "rdh", originDetail: "Tapped by you" },
-      { id: "f-c4", amount: 9.48, dateLabel: "Aug 18", section: "August 18, 2026", source: "scanned", originDetail: SHARED_IN, isSharedWithCurrentUser: true },
-      { id: "f-c5", amount: 57.3, dateLabel: "Aug 4", section: "August 4, 2026", source: "scanned", originDetail: "Scanned by you" },
-    ]),
-  },
-  non: {
     query: "quillbrook",
     rows: visits(quill, "Groceries", [
       { id: "f-q1", amount: 54.82, dateLabel: "Sep 22", section: "September 22, 2026", source: "rdh", originDetail: "Tapped by you", reviewed: false },
@@ -76,6 +70,16 @@ export const FIND_BY_PERSONA: Record<PersonaId, { query: string; rows: KitReceip
       { id: "f-q3", amount: 68.4, dateLabel: "Sep 6", section: "September 6, 2026", source: "scanned", originDetail: SHARED_IN, isSharedWithCurrentUser: true },
       { id: "f-q4", amount: 19.75, dateLabel: "Aug 29", section: "August 29, 2026", source: "rdh", originDetail: "Tapped by you" },
       { id: "f-q5", amount: 42.13, dateLabel: "Aug 21", section: "August 21, 2026", source: "email", originDetail: "Email by you" },
+    ]),
+  },
+  non: {
+    query: "copperpeg",
+    rows: visits(copper, "Home", [
+      { id: "f-c1", amount: 38.17, dateLabel: "Sep 23", section: "September 23, 2026", source: "scanned", originDetail: `Scanned by you • ${DEMO_GROUP}`, isSharedByCurrentUser: true, reviewed: false },
+      { id: "f-c2", amount: 112.6, dateLabel: "Sep 12", section: "September 12, 2026", source: "email", originDetail: "Email by you" },
+      { id: "f-c3", amount: 24.99, dateLabel: "Aug 30", section: "August 30, 2026", source: "rdh", originDetail: "Tapped by you" },
+      { id: "f-c4", amount: 9.48, dateLabel: "Aug 18", section: "August 18, 2026", source: "scanned", originDetail: SHARED_IN, isSharedWithCurrentUser: true },
+      { id: "f-c5", amount: 57.3, dateLabel: "Aug 4", section: "August 4, 2026", source: "scanned", originDetail: "Scanned by you" },
     ]),
   },
 };
@@ -156,4 +160,35 @@ export const dealsTab: Record<PersonaId, "stores" | "coupons"> = {
   keeper: "stores",
   casual: "coupons",
   non: "coupons",
+};
+
+/** EXPORT — the Receipts tab in SELECT MODE (app-reference.md §1.4 and
+ *  "Select mode": title row [✕] [N Selected] [•••], checkboxes on every row,
+ *  the SelectionFAB with a share glyph + count badge, whose menu's first item,
+ *  Share, builds one PDF — PapeXV2 services/receiptExport.ts). `selected` are
+ *  the ids ticked; the menu is drawn open. The Keeper exports a month of
+ *  groceries; everyone else a couple of receipts. */
+const EXPORT_ROWS: KitReceipt[] = [
+  ...visits(quill, "Groceries", [
+    { id: "e-q1", amount: 54.82, dateLabel: "Sep 22", section: "September 22, 2026", source: "rdh", originDetail: "Tapped by you" },
+    { id: "e-q2", amount: 31.06, dateLabel: "Sep 14", section: "September 14, 2026", source: "rdh", originDetail: "Tapped by you" },
+  ]),
+  ...visits(copper, "Home", [
+    { id: "e-c1", amount: 38.17, dateLabel: "Sep 12", section: "September 12, 2026", source: "scanned", originDetail: "Scanned by you" },
+  ]),
+  ...visits(quill, "Groceries", [
+    { id: "e-q3", amount: 68.4, dateLabel: "Sep 6", section: "September 6, 2026", source: "email", originDetail: "Email by you" },
+  ]),
+  ...visits(moss, "Health", [
+    { id: "e-m1", amount: 12.85, dateLabel: "Sep 3", section: "September 3, 2026", source: "email", originDetail: "Email by you" },
+  ]),
+  ...visits(tidewick, "Dining", [
+    { id: "e-t1", amount: 12.42, dateLabel: "Aug 30", section: "August 30, 2026", source: "rdh", originDetail: "Tapped by you" },
+  ]),
+];
+
+export const EXPORT_BY_PERSONA: Record<PersonaId, { rows: KitReceipt[]; selected: string[] }> = {
+  keeper: { rows: EXPORT_ROWS, selected: ["e-q1", "e-q2", "e-q3"] },
+  casual: { rows: EXPORT_ROWS, selected: ["e-c1", "e-m1"] },
+  non: { rows: EXPORT_ROWS, selected: ["e-c1", "e-m1"] },
 };

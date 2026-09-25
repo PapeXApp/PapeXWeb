@@ -33,13 +33,13 @@ export function Vision() {
   return (
     <FlowSection
       ground="navy"
-      index="07"
+      index="06"
       className={`${styles.screen} ${styles.rhythm}`}
       style={{ padding: "var(--section-pad) clamp(20px,5vw,56px)" }}
     >
       <div className="w-full" style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
         <Reveal variant="up">
-          <SectionLabel index="07">{visionContent.eyebrow}</SectionLabel>
+          <SectionLabel index="06">{visionContent.eyebrow}</SectionLabel>
           <ScrollLit
             as="h2"
             text={visionContent.headline}

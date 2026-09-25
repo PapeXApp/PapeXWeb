@@ -7,9 +7,11 @@ import { FlowSection } from "../shared/FlowSection";
 import { PointerLitGroup } from "../shared/PointerLit";
 import { SectionLabel } from "../shared/SectionLabel";
 import { heroContent, personasContent, type PersonaId } from "./content";
-import { setPersona } from "./personaStore";
+import { Features } from "./Features";
+import { onRetakeRequest, setPersona } from "./personaStore";
 import { useStoreUrl } from "./Hero";
 import styles from "./personas.module.css";
+import qf from "./quizFeatures.module.css";
 
 /** Tried casual-first so it wins ties by design — the middle ground / safest read. */
 const TIE_BREAK_ORDER: PersonaId[] = ["casual", "keeper", "non"];
@@ -46,17 +48,21 @@ function scoreAnswers(answers: (number | null)[]): PersonaId {
 }
 
 /**
- * 04 Personas (quiz) — the page's FIRST navy beat (Nico, 2026-09-23: "this is when it
- * should change to blue for the first time").
+ * 04 "What's in it for you?" — ONE section about PERSONALISATION (P3-C2,
+ * Nico 2026-09-25): "section four gives you a personalization for section
+ * five, because that's what PapeX is about." The quiz is the section's HEAD;
+ * the feature rows (Features.tsx) are its BODY, and the quiz result reorders
+ * them, swaps their lines and titles, and changes what their phones show
+ * (personaStore.ts hands the result over, in memory only).
  *
- * One question at a time: a progress bar ("Question 1 of 3" + three steps),
- * four full-card answers, auto-advance after a short beat, a Back button, and
- * a result screen that says what the persona means and ends on ONE action
- * (the page's own "Download the app" CTA) plus "Take it again".
+ * NAVY ground (Nico, 2026-09-23: the page's first navy beat). id="features"
+ * stays on the section so the footer's /customers#features link still lands.
  *
- * Web 2.1: the eyebrow is "What's in it for you?", and the result is handed
- * to Features through personaStore.ts (in memory only), which re-orders the
- * four feature rows for that persona.
+ * The quiz, one question at a time: a progress bar ("Question 1 of 3" + three
+ * steps that start EMPTY and fill one per answer), four full-card answers,
+ * auto-advance after a short beat, a Back button, and a result panel that
+ * names the persona, points down to the re-ordered list, and offers the
+ * page's "Download the app" CTA plus "Take it again".
  *
  * Ink: everything that sits on the ground uses --flow-fg / --flow-fg-2 so it
  * crossfades with the ground. The only fixed colours are the orange selected
@@ -111,10 +117,10 @@ export function Personas() {
     setPending(false);
     if (nextStep >= questionCount) {
       const id = scoreAnswers(nextAnswers);
-      // Hand the result to Features (section 05): it re-orders its four rows
-      // and swaps in this persona's benefit lines. "Take it again" keeps the
-      // last result until the new one lands, so the rows never snap back to
-      // the default mid-retake.
+      // Hand the result to the rows below (Features.tsx): they re-order and
+      // swap in this persona's lines, titles and phone content. "Take it
+      // again" keeps the last result until the new one lands, so the rows
+      // never snap back to the default mid-retake.
       setPersona(id);
       const r = personasContent.results.find((x) => x.id === id);
       setAnnouncement(r ? `Your result: ${r.eyebrow}. ${r.title}` : "");
@@ -154,6 +160,12 @@ export function Personas() {
     goTo(0, cleared, "back");
   }
 
+  // "Change my answers" in the rows' header restarts the quiz. The ref keeps
+  // the subscription stable while `restart` is re-created every render.
+  const restartRef = useRef(restart);
+  restartRef.current = restart;
+  useEffect(() => onRetakeRequest(() => restartRef.current()), []);
+
   // The first paint (server + hydration) shows Question 1 at rest; only
   // panels the visitor navigated to get the slide-in.
   const panelMotion = interacted
@@ -165,115 +177,123 @@ export function Personas() {
   const question = isResult ? null : questions[step];
 
   return (
-    <FlowSection ground="navy" index="04" className={styles.section}>
-      <div className={styles.inner}>
-        <Reveal variant="up" style={{ textAlign: "center" }}>
-          <SectionLabel index="04">{personasContent.eyebrow}</SectionLabel>
-          <WordReveal
-            as="h2"
-            className="mx-auto max-w-[24ch] [font-family:var(--font-display)] font-bold text-[length:var(--fs-h2)] leading-[1.03] tracking-[-.02em]"
-          >
-            {personasContent.headline}
-          </WordReveal>
-          <p className={styles.intro}>{personasContent.intro}</p>
-        </Reveal>
+    <FlowSection ground="navy" index="04" id="features" className={cn(styles.section, qf.section)}>
+      <div className={qf.inner}>
+        <div className={qf.head}>
+          <Reveal variant="up" className={qf.headText}>
+            <SectionLabel index="04">{personasContent.eyebrow}</SectionLabel>
+            <WordReveal
+              as="h2"
+              className="max-w-[16ch] [font-family:var(--font-display)] font-bold text-[length:var(--fs-h2)] leading-[1.03] tracking-[-.02em]"
+            >
+              {personasContent.headline}
+            </WordReveal>
+            <p className={styles.intro}>{personasContent.intro}</p>
+          </Reveal>
 
-        <Reveal variant="up">
-          <div className={styles.quiz} role="group" aria-label="Receipt personality quiz, three questions">
-            {/* Progress: Back on the left, "Question N of 3" on the right,
-                three steps underneath. The steps are decoration for sighted
-                visitors; the text line is the accessible progress. */}
-            <div className={styles.progress}>
-              <div className={styles.progressRow}>
-                <button
-                  type="button"
-                  className={cn(styles.back, step === 0 && styles.backHidden)}
-                  onClick={back}
-                  disabled={step === 0}
-                  aria-hidden={step === 0 || undefined}
-                >
-                  <span aria-hidden="true" className={styles.backArrow}>
-                    ←
-                  </span>
-                  Back
-                </button>
-                <span className={styles.progressText}>
-                  {isResult ? "Your result" : `Question ${step + 1} of ${questionCount}`}
-                </span>
-              </div>
-              <ol className={styles.steps} aria-hidden="true">
-                {questions.map((q, i) => (
-                  <li
-                    key={q.prompt}
-                    className={cn(styles.stepSeg, (i < step || isResult) && styles.stepDone)}
-                  />
-                ))}
-              </ol>
-            </div>
-
-            <p className={styles.srOnly} aria-live="polite" aria-atomic="true">
-              {announcement}
-            </p>
-
-            <div className={styles.stage}>
-              {question ? (
-                <div key={`q-${step}`} className={cn(styles.panel, panelMotion)}>
-                  <h3 ref={headingRef} tabIndex={-1} id={`quiz-q-${step}`} className={styles.prompt}>
-                    {question.prompt}
-                  </h3>
-                  <p className={styles.hint}>{personasContent.tapHint}</p>
-                  <PointerLitGroup
-                    className={cn(styles.options, pending && styles.optionsPending)}
-                    role="group"
-                    aria-labelledby={`quiz-q-${step}`}
+          <Reveal variant="up" className={qf.headQuiz}>
+            <div id="quiz" className={styles.quiz} role="group" aria-label="Receipt personality quiz, three questions">
+              {/* Progress: Back on the left, "Question N of 3" on the right,
+                  three steps underneath. The steps are decoration for sighted
+                  visitors; the text line is the accessible progress. */}
+              <div className={styles.progress}>
+                <div className={styles.progressRow}>
+                  <button
+                    type="button"
+                    className={cn(styles.back, step === 0 && styles.backHidden)}
+                    onClick={back}
+                    disabled={step === 0}
+                    aria-hidden={step === 0 || undefined}
                   >
-                    {question.options.map((option, oi) => {
-                      const selected = answers[step] === oi;
-                      return (
-                        <button
-                          key={option.label}
-                          type="button"
-                          data-lit="dark"
-                          className={cn(styles.option, selected && styles.optionSelected)}
-                          onClick={() => pick(step, oi)}
-                          aria-pressed={selected}
-                          aria-disabled={pending || undefined}
-                        >
-                          <span className={styles.optionLetter} aria-hidden="true">
-                            {LETTERS[oi]}
-                          </span>
-                          <span className={styles.optionLabel}>{option.label}</span>
-                          <span className={styles.optionCheck} aria-hidden="true" />
-                        </button>
-                      );
-                    })}
-                  </PointerLitGroup>
-                </div>
-              ) : result ? (
-                <div key="result" className={cn(styles.panel, styles.resultPanel, panelMotion)}>
-                  <div className={styles.resultCard}>
-                    <span className={styles.resultTag}>{result.tag}</span>
-                    <div className={styles.resultEyebrow}>{result.eyebrow}</div>
-                    <h3 ref={headingRef} tabIndex={-1} className={styles.resultTitle}>
-                      {result.title}
-                    </h3>
-                    <p className={styles.resultBody}>{result.body}</p>
-                  </div>
-                  <div className={styles.resultActions}>
-                    <a href={storeUrl} target="_blank" rel="noopener noreferrer" className={styles.cta}>
-                      {heroContent.ctaLabel}
-                    </a>
-                    <span className={styles.ctaSub}>{heroContent.ctaSubtext}</span>
-                  </div>
-                  <button type="button" className={styles.retake} onClick={restart}>
-                    <span aria-hidden="true">↺</span>
-                    {personasContent.restartLabel}
+                    <span aria-hidden="true" className={styles.backArrow}>
+                      ←
+                    </span>
+                    Back
                   </button>
+                  <span className={styles.progressText}>
+                    {isResult ? "Your result" : `Question ${step + 1} of ${questionCount}`}
+                  </span>
                 </div>
-              ) : null}
+                <ol className={styles.steps} aria-hidden="true">
+                  {questions.map((q, i) => (
+                    <li
+                      key={q.prompt}
+                      className={cn(styles.stepSeg, (i < step || isResult) && styles.stepDone)}
+                    />
+                  ))}
+                </ol>
+              </div>
+
+              <p className={styles.srOnly} aria-live="polite" aria-atomic="true">
+                {announcement}
+              </p>
+
+              <div className={styles.stage}>
+                {question ? (
+                  <div key={`q-${step}`} className={cn(styles.panel, panelMotion)}>
+                    <h3 ref={headingRef} tabIndex={-1} id={`quiz-q-${step}`} className={styles.prompt}>
+                      {question.prompt}
+                    </h3>
+                    <p className={styles.hint}>{personasContent.tapHint}</p>
+                    <PointerLitGroup
+                      className={cn(styles.options, pending && styles.optionsPending)}
+                      role="group"
+                      aria-labelledby={`quiz-q-${step}`}
+                    >
+                      {question.options.map((option, oi) => {
+                        const selected = answers[step] === oi;
+                        return (
+                          <button
+                            key={option.label}
+                            type="button"
+                            data-lit="dark"
+                            className={cn(styles.option, selected && styles.optionSelected)}
+                            onClick={() => pick(step, oi)}
+                            aria-pressed={selected}
+                            aria-disabled={pending || undefined}
+                          >
+                            <span className={styles.optionLetter} aria-hidden="true">
+                              {LETTERS[oi]}
+                            </span>
+                            <span className={styles.optionLabel}>{option.label}</span>
+                            <span className={styles.optionCheck} aria-hidden="true" />
+                          </button>
+                        );
+                      })}
+                    </PointerLitGroup>
+                  </div>
+                ) : result ? (
+                  <div key="result" className={cn(styles.panel, styles.resultPanel, panelMotion)}>
+                    <div className={styles.resultCard}>
+                      <span className={styles.resultTag}>{result.tag}</span>
+                      <div className={styles.resultEyebrow}>{result.eyebrow}</div>
+                      <h3 ref={headingRef} tabIndex={-1} className={styles.resultTitle}>
+                        {result.title}
+                      </h3>
+                      <p className={styles.resultBody}>{result.body}</p>
+                      <a href="#your-picks" className={styles.seeList}>
+                        {personasContent.seeListLabel}
+                        <span aria-hidden="true">↓</span>
+                      </a>
+                    </div>
+                    <div className={styles.resultActions}>
+                      <a href={storeUrl} target="_blank" rel="noopener noreferrer" className={styles.cta}>
+                        {heroContent.ctaLabel}
+                      </a>
+                      <span className={styles.ctaSub}>{heroContent.ctaSubtext}</span>
+                      <button type="button" className={styles.retake} onClick={restart}>
+                        <span aria-hidden="true">↺</span>
+                        {personasContent.restartLabel}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
             </div>
-          </div>
-        </Reveal>
+          </Reveal>
+        </div>
+
+        <Features />
       </div>
     </FlowSection>
   );

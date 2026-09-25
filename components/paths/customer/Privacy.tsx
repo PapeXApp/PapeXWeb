@@ -57,8 +57,7 @@ export function Privacy({ eyebrowIndex }: { eyebrowIndex: string }) {
               Your receipt, not your identity.
             </WordReveal>
             <p className={styles.lead}>
-              A tap sends your receipt, and only your receipt. No sign-up, no personal info, and never more of your
-              card than the last 4 digits already printed on paper.
+              A tap sends your receipt, and only your receipt. No sign-up, no personal info.
             </p>
             <p className={styles.body}>
               Save it to the PapeX app and it&apos;s yours: delete a receipt, or your whole account, any time.
