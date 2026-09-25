@@ -1,13 +1,13 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { ClipReceiptScreen } from "../../customer/ReceiptCard"
 import { PhoneChrome } from "../../customer/WalkPhone"
-import { CustomerLine, DashboardColumns, DashboardCopy } from "../DashboardPreview"
+import { DashboardCopy } from "../DashboardPreview"
 import { story } from "../story"
-import { Dashboard } from "./Dashboard"
-import { PhoneDashboard } from "./PhoneDashboard"
 import { DeviceArt } from "./Furniture"
+import { FitFrame } from "./merchant/FitFrame"
+import { MerchantDemo } from "./merchant/MerchantDemo"
+import { ClipScreen, PhoneApp } from "./PhoneKit"
 import { useDemoReceipt } from "./receipt"
 import { SlipBody } from "./Slip"
 import s from "../story.module.css"
@@ -17,9 +17,11 @@ import s from "../story.module.css"
  * straight away): what the server renders, what a no-JS visitor
  * keeps, and what `prefers-reduced-motion` gets instead of the pinned scene.
  * Same three moments, stacked — the paper receipt, the phone with the same
- * receipt on it at the PapeX device, and the dashboard it lands on — then the
- * same dashboard info the scene ends on. Every piece of copy the scene carries
- * is here, so nothing is lost for search or assistive tech.
+ * receipt on it at the PapeX device (usable: Save to PapeX, the app's
+ * Receipts tab, the receipt), and the dashboard it lands on (usable) — then
+ * the same heading the scene ends on. The three columns follow both versions
+ * (RetainStory renders them once, after). Every piece of copy the scene
+ * carries is here, so nothing is lost for search or assistive tech.
  */
 export function StaticStory() {
   const summary = useDemoReceipt()
@@ -45,15 +47,13 @@ export function StaticStory() {
 
         <figure className={s.staticStep}>
           <div className={cn(s.staticArt, s.staticTap)}>
-            <div className={s.staticPhone} role="img" aria-label={story.phoneLabel}>
-              {/* inert: a picture of the screen; its <summary> must not take focus */}
-              <div inert>
-                <PhoneChrome>
-                  <div className={cn(s.layer, s.layerClip)} style={{ opacity: 1 }}>
-                    <ClipReceiptScreen summary={summary} />
-                  </div>
-                </PhoneChrome>
-              </div>
+            <div className={s.staticPhone} role="region" aria-label={story.phoneLabel}>
+              <PhoneChrome>
+                <div className={cn(s.layer, s.layerClip)} style={{ opacity: 1 }}>
+                  <ClipScreen summary={summary} />
+                </div>
+                <PhoneApp summary={summary} live reset={0} />
+              </PhoneChrome>
             </div>
             <div className={s.staticDevice} role="img" aria-label={story.deviceLabel}>
               <DeviceArt className={s.fill} />
@@ -71,11 +71,20 @@ export function StaticStory() {
             and role="img" would make its controls presentational */}
         <div className={s.staticLaptop} role="region" aria-label={story.laptopLabel}>
           <div className={s.staticScreen}>
-            <Dashboard live />
+            <FitFrame width={960} height={600} fallback={0.9}>
+              <MerchantDemo layout="desktop" />
+            </FitFrame>
           </div>
           <div className={s.staticDeck} aria-hidden="true" />
-          {/* <=820px: the phone card instead of the laptop (CSS shows one) */}
-          <PhoneDashboard live className={s.pdStatic} />
+          {/* <=820px: the dashboard's mobile layout on a phone instead of the
+              laptop (CSS shows one) */}
+          <div className={s.pdStatic}>
+            <PhoneChrome>
+              <FitFrame width={393} height={852} fallback={0.68}>
+                  <MerchantDemo layout="mobile" />
+                </FitFrame>
+            </PhoneChrome>
+          </div>
         </div>
         <figcaption className={s.staticCap}>
           <strong>{dash.title}</strong>
@@ -83,14 +92,7 @@ export function StaticStory() {
         </figcaption>
       </figure>
 
-      <div className={s.staticInfo}>
-        <DashboardCopy className={s.infoCopy} />
-        <DashboardColumns />
-        <div className={s.infoCust}>
-          <CustomerLine />
-          <p className={s.paperNote}>{story.paperNote}</p>
-        </div>
-      </div>
+      <DashboardCopy className={s.infoCopy} />
     </div>
   )
 }

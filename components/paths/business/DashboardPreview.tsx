@@ -5,11 +5,11 @@ import { storyDashboard } from "./story"
 import s from "./story.module.css"
 
 // The dashboard's info — the last beat of the "Tap to Retain" scroll story
-// (story/RetainStory.tsx). It is not its own section: the laptop the spark
-// opens settles to the top of the screen and these pieces rise in directly
-// under it, so the reveal and the explanation are one moment. The reduced-
-// motion version (story/StaticStory.tsx) renders the same three pieces under
-// a still laptop.
+// (story/RetainStory.tsx). The heading (DashboardCopy) rises in under the
+// docked laptop inside the pinned screen; the three columns and the customer
+// line follow the scene in normal flow, with room around them (W3, Nico:
+// "too cluttered; add space"), in both the scene and the reduced-motion
+// version (story/StaticStory.tsx).
 //
 // Copy lives in story.ts (B5's file), not business/content.ts. All text sits
 // on the running ground, so it takes --flow-* ink.
@@ -74,7 +74,6 @@ export function CustomerLine({
 }) {
   return (
     <p ref={ref} className={cn(s.customerLine, className)} style={style}>
-      <span className={s.customerDot} aria-hidden="true" />
       <strong>{storyDashboard.customerLine.lead}</strong> {storyDashboard.customerLine.body}
     </p>
   )
