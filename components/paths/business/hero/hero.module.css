@@ -1,0 +1,679 @@
+/* ==========================================================================
+ * /business hero visual — the RETURN-VISIT LOOP (LoopVisual.tsx).
+ * Web 2.1 wave 3, 2026-09-24. Replaces the floating device box.
+ *
+ * GEOMETRY. One free variable, --ph: the phone SCREEN's height. The iPhone
+ * frame (customer/iphone.module.css) is 1.046 ph tall and 0.507 ph wide
+ * (screen 393:852 + 5% band/bezel per side). --frac is how much of the
+ * stage's width the phone takes; the rest is the ring on either side. So:
+ *   stage width  = 0.507 ph / frac
+ *   stage height = 1.05 ph
+ *   ph           = min(column-limited, height-limited, 600px)
+ * The column is a size container (.visual), so the phone is sized by the
+ * column it actually has, never by a guess about the viewport.
+ *
+ * TWO LAYOUTS, one container query (column < 440px = "row"):
+ *   ring  the three stops sit ON the ring, beside the phone (frac .52)
+ *   row   the stops move to a numbered row under the phone and the phone
+ *         grows (frac .70) — mobile, and the 900-1190px desktop band where
+ *         the column is too narrow for labels beside a whole phone.
+ *
+ * MOTION: opacity, transform and clip-path only, every animation finite.
+ * Reduced motion never reaches the "play" mode (LoopVisual.tsx) and the
+ * @media block at the bottom switches every transition off anyway.
+ * ========================================================================== */
+
+.visual {
+  container-type: inline-size;
+  width: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stage {
+  --frac: 0.52;
+  --ph: min(calc(100cqi * var(--frac) / 0.507), max(340px, calc(100svh - 300px)), 600px);
+  /* PhoneChrome reads its screen height from --wp-size. */
+  --wp-size: var(--ph);
+  /* The App Clip receipt body's own unit (customer.module.css .acBody),
+     same formula as the /customers hero's stage. */
+  --ac-u: max(0.72px, calc(var(--ph) * 393 / 852 / 346));
+
+  position: relative;
+  width: calc(var(--ph) * 0.507 / var(--frac));
+  height: calc(var(--ph) * 1.05);
+  transition: opacity 0.6s ease;
+}
+
+/* First paint (see LoopVisual.tsx "FIRST PAINT"): with motion allowed the
+   server-rendered final frame stays hidden until the rewound beat 1 is
+   painted, then fades in. The <noscript> rule in Hero.tsx undoes this when
+   JS is off. Reduced motion: never hidden. */
+@media (prefers-reduced-motion: no-preference) {
+  .stage[data-mode="static"],
+  .stage[data-mode="rewind"] {
+    opacity: 0;
+  }
+}
+.stage[data-mode="rewind"],
+.stage[data-mode="rewind"] * {
+  transition: none !important;
+}
+
+/* --- the ring --------------------------------------------------------------
+   An ellipse in a box inset 12% / 3% from the stage. Stops and arrows are
+   placed at points of that ellipse: angle θ (clockwise, 0 = right) sits at
+   (50 + 50cosθ %, 50 + 50sinθ %) of the box.
+     Tap 215°  ·  Coupon 320°  ·  Comes back 40°   (clockwise = the story)
+   Each arc is the same ellipse, clipped to its wedge (points at 72% of the
+   half-box, no two more than 60° apart, so the wedge always covers the
+   stroke) and faded in when its beat plays. */
+.ring,
+.stopsRing {
+  position: absolute;
+  inset: 12% 3%;
+}
+.ring {
+  z-index: 0;
+}
+.track,
+.arc {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+}
+.track {
+  border: 1.5px dashed rgba(255, 255, 255, 0.2);
+}
+.arc {
+  border: 2px solid rgba(235, 113, 0, 0.85);
+  filter: drop-shadow(0 0 6px rgba(235, 113, 0, 0.45));
+  opacity: 0;
+  transition: opacity 0.7s ease;
+}
+/* Tap 215° -> Coupon 320°, over the top */
+.arc1 {
+  clip-path: polygon(50% 50%, -8.98% 8.7%, 46.86% -21.93%, 105.15% 3.72%);
+}
+/* Coupon 320° -> Comes back 40°, down the right side */
+.arc2 {
+  clip-path: polygon(50% 50%, 105.15% 3.72%, 122% 50%, 105.15% 96.28%);
+}
+/* Comes back 40° -> Tap 215°, under the bottom and up the left: the close */
+.arc3 {
+  clip-path: polygon(50% 50%, 105.15% 96.28%, 39.57% 121.24%, -16.11% 78.52%, -8.98% 8.7%);
+}
+.arcOn {
+  opacity: 1;
+}
+/* Direction arrows where the ellipse is vertical, so they are exact at any
+   aspect ratio: 0° points down, 180° points up. */
+.arrow {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  color: #eb7100;
+  opacity: 0;
+  transition: opacity 0.7s ease;
+}
+.arrowRight {
+  left: 100%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+.arrowLeft {
+  left: 0;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(180deg);
+}
+.arrow.arcOn {
+  opacity: 1;
+}
+
+/* --- the phone ------------------------------------------------------------ */
+.phone {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 2;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 30px 50px rgba(0, 0, 0, 0.45));
+}
+.scene {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.45s ease;
+}
+.sceneClip {
+  display: flex;
+  flex-direction: column;
+}
+.sceneOn {
+  opacity: 1;
+}
+
+/* The tap: two rings spreading from the phone's top edge, played once per
+   mount (LoopVisual mounts one per tap). */
+.ripple {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: calc(var(--ph) * 0.36);
+  height: calc(var(--ph) * 0.12);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 3;
+}
+.rippleRing {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 140, 40, 0.95);
+  box-shadow: 0 0 14px rgba(235, 113, 0, 0.55);
+  opacity: 0;
+  animation: heroTap 0.95s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+.rippleRing2 {
+  animation-delay: 0.18s;
+}
+@keyframes heroTap {
+  0% {
+    opacity: 0.95;
+    transform: scale(0.3);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.3);
+  }
+}
+
+/* --- the stops ------------------------------------------------------------ */
+.stopsRing {
+  z-index: 3;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+}
+.stop {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px 5px 5px;
+  border-radius: 999px;
+  background: rgba(0, 18, 29, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 10px 26px -10px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #fff;
+  white-space: nowrap;
+  transition: opacity 0.5s ease;
+}
+/* The current stop's orange ring + glow: its own layer, so only its opacity
+   animates. */
+.stop::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  border: 1.5px solid #eb7100;
+  box-shadow: 0 0 22px rgba(235, 113, 0, 0.45);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+.stopActive::after {
+  opacity: 1;
+}
+.stopAhead {
+  opacity: 0.45;
+}
+.stopNum {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-label, ui-monospace, monospace);
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+.stopActive .stopNum {
+  background: #eb7100;
+  color: #00121d;
+}
+.stopText {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+.stopLabel {
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+}
+.stopSub {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.66);
+}
+
+/* On the ring, the number badge sits ON the ring point (badge centre is
+   5px pad + 1px border + 10px = 16px in from the chip's edge) and the chip
+   extends OUTWARD, away from the phone. */
+.stop1 {
+  left: 9.04%;
+  top: 21.3%;
+  flex-direction: row-reverse;
+  padding: 5px 5px 5px 12px;
+  text-align: right;
+  transform: translate(calc(-100% + 16px), -50%);
+}
+.stop1 .stopText {
+  align-items: flex-end;
+}
+.stop2 {
+  left: 88.3%;
+  top: 17.86%;
+  transform: translate(-16px, -50%);
+}
+.stop3 {
+  left: 88.3%;
+  top: 82.14%;
+  transform: translate(-16px, -50%);
+}
+
+/* --- under the stage: the row (narrow only) + the demo tag ----------------- */
+.foot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+.stopsRow {
+  display: none;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rowItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+/* A row stop is a small column (badge over label over sub), not a chip. */
+.stopInRow {
+  position: relative;
+  flex-direction: column;
+  gap: 5px;
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  text-align: center;
+}
+.stopInRow::after {
+  display: none;
+}
+.stopInRow .stopText {
+  align-items: center;
+}
+.stopInRow.stopActive .stopNum {
+  box-shadow: 0 0 0 3px rgba(235, 113, 0, 0.28), 0 0 16px rgba(235, 113, 0, 0.5);
+}
+.rowArrow {
+  line-height: 20px;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 0 2px;
+}
+.rowItem:last-child .rowArrow {
+  color: #eb7100;
+}
+
+.demoTag {
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-family: var(--font-label, ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(0, 18, 29, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+@container (max-width: 439px) {
+  .stage {
+    --frac: 0.7;
+    /* A phone under the text needs no viewport budget of its own: it is
+       sized by the column, capped so it never outgrows a short screen. */
+    --ph: min(calc(100cqi * var(--frac) / 0.507), max(380px, calc(100svh - 280px)), 600px);
+  }
+  .stopsRing {
+    display: none;
+  }
+  .stopsRow {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+  }
+}
+
+/* ==========================================================================
+ * The app's Coupons tab (CouponsScreen.tsx). Every size is iPhone points via
+ * appui's --u. Row anatomy copied from the retain-intro section's
+ * intro.module.css (PapeXV2 CouponRow.tsx + CouponStoreThumb.tsx): 91.2pt
+ * tall, 24pt radius, 76pt stub, 52pt seal, 7pt notches at the seam, 2.5pt
+ * perforation every 6pt, text inset 14pt past the seam, 28pt trailing slots.
+ * ========================================================================== */
+.rowWrap {
+  position: relative;
+  margin: 0 calc(16 * var(--u));
+}
+.rowPending {
+  opacity: 0;
+  transform: translateY(calc(-64 * var(--u))) scale(1.12);
+}
+.rowIn {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.35s ease 0.12s,
+    transform 0.8s cubic-bezier(0.2, 1.25, 0.35, 1) 0.12s;
+}
+.rowGlow {
+  position: absolute;
+  inset: 0;
+  border-radius: calc(24 * var(--u));
+  box-shadow:
+    0 0 0 2px #eb7100,
+    0 0 calc(24 * var(--u)) rgba(235, 113, 0, 0.55);
+  opacity: 0;
+  pointer-events: none;
+}
+.rowGlowPlay {
+  animation: rowGlow 1.7s ease 0.45s both;
+}
+@keyframes rowGlow {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.cRow {
+  position: relative;
+  height: calc(91.2 * var(--u));
+  border-radius: calc(24 * var(--u));
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  background:
+    linear-gradient(128deg, rgba(255, 255, 255, 0.062) 0%, rgba(255, 255, 255, 0.026) 50%, rgba(255, 255, 255, 0.062) 100%),
+    linear-gradient(rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.055)),
+    #00121d;
+  /* the notches: half-discs bitten out of both long edges at the seam */
+  -webkit-mask-image:
+    radial-gradient(circle at calc(76 * var(--u)) 0, transparent calc(7 * var(--u)), #000 calc(7 * var(--u) + 0.5px)),
+    radial-gradient(circle at calc(76 * var(--u)) 100%, transparent calc(7 * var(--u)), #000 calc(7 * var(--u) + 0.5px));
+  -webkit-mask-composite: source-in;
+  mask-image:
+    radial-gradient(circle at calc(76 * var(--u)) 0, transparent calc(7 * var(--u)), #000 calc(7 * var(--u) + 0.5px)),
+    radial-gradient(circle at calc(76 * var(--u)) 100%, transparent calc(7 * var(--u)), #000 calc(7 * var(--u) + 0.5px));
+  mask-composite: intersect;
+}
+/* The corner-lit rim, lit top-left like a reviewed receipt row. */
+.cRow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.7) 0%,
+    rgba(255, 255, 255, 0.7) 12%,
+    rgba(255, 255, 255, 0.18) 28%,
+    rgba(255, 255, 255, 0) 45%
+  );
+  -webkit-mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+  -webkit-mask-clip: content-box, border-box;
+  -webkit-mask-composite: xor;
+  mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+  mask-clip: content-box, border-box;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.stub {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: calc(76 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.seal {
+  width: calc(52 * var(--u));
+  height: calc(52 * var(--u));
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(22 * var(--u));
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.94);
+}
+.perf {
+  position: absolute;
+  top: calc(11 * var(--u));
+  bottom: calc(11 * var(--u));
+  left: calc(74.75 * var(--u));
+  width: calc(2.5 * var(--u));
+  background: radial-gradient(circle closest-side, rgba(0, 18, 29, 0.85) 92%, rgba(0, 18, 29, 0)) 0 0 /
+    calc(2.5 * var(--u)) calc(6 * var(--u)) repeat-y;
+}
+.cBody {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-left: calc(90 * var(--u));
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.cIdentity {
+  display: flex;
+  align-items: center;
+  gap: calc(6 * var(--u));
+  min-width: 0;
+}
+.cStore {
+  font-size: calc(17 * var(--u));
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kind {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: calc(3 * var(--u));
+  height: calc(20 * var(--u));
+  padding: 0 calc(7 * var(--u));
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  font-size: calc(11 * var(--u));
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.kindGlyph {
+  width: calc(11 * var(--u));
+  height: calc(11 * var(--u));
+}
+.cTitle {
+  margin-top: calc(1 * var(--u));
+  font-size: calc(15 * var(--u));
+  font-weight: 400;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Expiry and "Used today" share one cell and crossfade. */
+.cDetailCell {
+  display: grid;
+  margin-top: calc(1 * var(--u));
+}
+.cDetailCell > * {
+  grid-area: 1 / 1;
+  transition: opacity 0.4s ease;
+}
+.cDetail {
+  font-size: calc(12 * var(--u));
+  font-weight: 500;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.cUsed {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(3 * var(--u));
+  font-size: calc(12 * var(--u));
+  font-weight: 600;
+  color: #eb7100;
+  white-space: nowrap;
+}
+.cUsedGlyph {
+  width: calc(13 * var(--u));
+  height: calc(13 * var(--u));
+}
+.fadeOut {
+  opacity: 0;
+}
+.trail {
+  position: relative;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: calc(6 * var(--u));
+  margin: 0 calc(16 * var(--u)) 0 calc(8 * var(--u));
+}
+.trailSlot {
+  width: calc(28 * var(--u));
+  height: calc(28 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-2);
+}
+.trailSlot > span {
+  border-top-color: var(--ink-2);
+  border-right-color: var(--ink-2);
+  margin-left: calc(3 * var(--u));
+}
+.trailHeart {
+  width: calc(18 * var(--u));
+  height: calc(18 * var(--u));
+}
+.headerPair {
+  gap: calc(8 * var(--u));
+}
+.controls {
+  display: flex;
+  align-items: center;
+  gap: calc(8 * var(--u));
+}
+.controlsSearch {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* The return visit's toast, above the tab bar (tab bar top = 21 + 59pt from
+   the bottom, then the app's 12pt content gap). */
+.toast {
+  position: absolute;
+  left: calc(16 * var(--u));
+  right: calc(16 * var(--u));
+  bottom: calc(92 * var(--u));
+  z-index: 8;
+  height: calc(46 * var(--u));
+  padding: 0 calc(14 * var(--u)) 0 calc(10 * var(--u));
+  display: flex;
+  align-items: center;
+  gap: calc(10 * var(--u));
+  border-radius: 999px;
+  background: rgba(0, 18, 29, 0.78);
+  backdrop-filter: blur(16px) saturate(170%);
+  -webkit-backdrop-filter: blur(16px) saturate(170%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.16),
+    0 calc(10 * var(--u)) calc(28 * var(--u)) rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transform: translateY(calc(16 * var(--u)));
+  transition:
+    opacity 0.4s ease,
+    transform 0.55s cubic-bezier(0.2, 1, 0.3, 1);
+}
+.toastOn {
+  opacity: 1;
+  transform: none;
+  transition-delay: 0.3s;
+}
+.toastCheck {
+  flex: 0 0 auto;
+  width: calc(26 * var(--u));
+  height: calc(26 * var(--u));
+  border-radius: 999px;
+  background: #eb7100;
+  color: #00121d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.toastGlyph {
+  width: calc(16 * var(--u));
+  height: calc(16 * var(--u));
+}
+.toastText {
+  font-size: calc(15 * var(--u));
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage,
+  .stage * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
