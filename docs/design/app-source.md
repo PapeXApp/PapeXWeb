@@ -90,7 +90,7 @@ defaults.
 | `ClipReceipt` | **Papex_AppClip** Sources/AppClip/ReceiptView.swift (+ docs/design/screens/ReceiptView.dc.html) |
 
 Sample data (`sampleData.ts`) is invented and labelled demo: Nook Cafe,
-Copperpeg Hardware, Mossbrook Pharmacy and Larkfield Market, with invented
+Copperpeg Hardware, Mossbrook Pharmacy and Quillbrook Market, with invented
 monogram logos. Field names follow the app's own `Store` / `Coupon` /
 `DisplayReceipt` types, so the vendored helpers read it unchanged. Every coupon
 is one the shopper earned on tap at a partner or scanned. None is seeded onto a

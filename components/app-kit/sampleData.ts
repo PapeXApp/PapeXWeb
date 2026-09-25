@@ -123,9 +123,9 @@ export const demoStores: KitStore[] = [
     category: 'Pharmacy',
   },
   {
-    id: 'demo-larkfield-market',
-    name: 'Larkfield Market',
-    logoUrl: monogram('L', '#2F6B3F'),
+    id: 'demo-quillbrook-market',
+    name: 'Quillbrook Market',
+    logoUrl: monogram('Q', '#2F6B3F'),
     brandColor: '#2F6B3F',
     category: 'Grocery',
   },
@@ -205,7 +205,7 @@ export const demoReceipts: KitReceipt[] = [
   },
   {
     id: 'r4',
-    merchantName: 'Larkfield Market',
+    merchantName: 'Quillbrook Market',
     logoUrl: demoStores[3].logoUrl!,
     amount: 54.82,
     dateLabel: 'Sep 22',
@@ -259,7 +259,7 @@ export const demoCoupons: KitCoupon[] = [
   },
   {
     id: 'c3',
-    storeId: 'demo-larkfield-market',
+    storeId: 'demo-quillbrook-market',
     kind: 'percent',
     title: '15% off fresh produce',
     expiresAt: '2026-10-12T23:59:00',
