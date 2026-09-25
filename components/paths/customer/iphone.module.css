@@ -20,16 +20,19 @@
  *      left, the side button and the flush Camera Control on the right.
  *   5. The Dynamic Island at Apple's real size (126 x 37pt, 11pt down).
  *   6. The home indicator (134 x 5pt, 8pt up).
- *   7. An iOS lock screen (appui/Clip.tsx): the iOS 26 heavy clock over the
- *      date, flashlight and camera, an abstract PapeX-palette wallpaper (W3).
+ *   7. An iOS lock screen (appui/Clip.tsx): the date over an SF Pro semibold
+ *      clock, flashlight and camera in the bottom corners, an abstract
+ *      PapeX-palette wallpaper (W3; proportions re-measured P3-C1).
  *
  * CSS has circular corners only, so the radii approximate Apple's continuous
  * curve: the three rings are concentric, and the screen radius is 55pt on a
  * 393pt screen (0.14W), which is the real display corner.
  *
  * UNITS. --wp-w / --wp-h are the SCREEN box. --u is one iPhone point (the
- * appui kit's unit). --wp-u is kept because the share sheet in
- * customer.module.css (.wpSheet) still reads it.
+ * appui kit's unit), floored at 0.55px for legibility; --pt is one true
+ * point with no floor, used by the iOS system furniture (see .frame).
+ * --wp-u is kept because the share sheet in customer.module.css (.wpSheet)
+ * still reads it.
  * ========================================================================== */
 
 .frame {
@@ -39,6 +42,15 @@
   --wp-w: calc(var(--wp-h) * 393 / 852);
   --wp-u: calc(var(--wp-w) / 355);
   --u: max(0.55px, calc(var(--wp-w) / 393));
+  /* --pt is one TRUE iPhone point, with no floor (P3-C1, 2026-09-25). --u
+     keeps its 0.55px floor so app content (receipt lines, row text) stays
+     legible on a small phone, but iOS's own furniture — island, status bar,
+     home indicator, lock-screen date + clock, flashlight + camera — is drawn
+     in --pt, so it keeps the proportions of a real 393pt screen at every
+     size. Before this, a hero phone 157-166px wide (1280x720, 1440x780) had
+     --u clamped to 0.55 = 138pt-per-393 oversize: the island covered 44% of
+     the screen's width and "10:24" ran edge to edge. */
+  --pt: calc(var(--wp-w) / 393);
 
   --band: calc(var(--wp-w) * 0.012);
   --bezel: calc(var(--wp-w) * 0.038);
@@ -130,11 +142,11 @@
 /* --- Dynamic Island -------------------------------------------------------- */
 .island {
   position: absolute;
-  top: calc(11 * var(--u));
+  top: calc(11 * var(--pt));
   left: 50%;
   transform: translateX(-50%);
-  width: calc(126 * var(--u));
-  height: calc(37 * var(--u));
+  width: calc(126 * var(--pt));
+  height: calc(37 * var(--pt));
   border-radius: 999px;
   background: #000;
   z-index: 20;
@@ -144,9 +156,9 @@
   content: "";
   position: absolute;
   top: 50%;
-  right: calc(12 * var(--u));
-  width: calc(11 * var(--u));
-  height: calc(11 * var(--u));
+  right: calc(12 * var(--pt));
+  width: calc(11 * var(--pt));
+  height: calc(11 * var(--pt));
   border-radius: 999px;
   transform: translateY(-50%);
   background: radial-gradient(circle at 34% 30%, #2f3945 0%, #141a21 55%, #07090c 100%);
@@ -156,9 +168,9 @@
 .islandLock {
   position: absolute;
   top: 50%;
-  left: calc(15 * var(--u));
-  width: calc(13 * var(--u));
-  height: calc(13 * var(--u));
+  left: calc(15 * var(--pt));
+  width: calc(13 * var(--pt));
+  height: calc(13 * var(--pt));
   transform: translateY(-50%);
   color: rgba(255, 255, 255, 0.92);
 }
@@ -166,11 +178,11 @@
 /* --- home indicator ------------------------------------------------------- */
 .homeBar {
   position: absolute;
-  bottom: calc(8 * var(--u));
+  bottom: calc(8 * var(--pt));
   left: 50%;
   transform: translateX(-50%);
-  width: calc(134 * var(--u));
-  height: calc(5 * var(--u));
+  width: calc(134 * var(--pt));
+  height: calc(5 * var(--pt));
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.72);
   z-index: 19;
@@ -192,22 +204,22 @@
   font-family: -apple-system, "SF Pro Text", system-ui, sans-serif;
   font-weight: 600;
   letter-spacing: -0.01em;
-  min-width: calc(54 * var(--u));
+  min-width: calc(54 * var(--pt));
   text-align: center;
 }
 .sbSignal {
-  width: calc(18 * var(--u));
-  height: calc(12 * var(--u));
+  width: calc(18 * var(--pt));
+  height: calc(12 * var(--pt));
   display: block;
 }
 .sbWifi {
-  width: calc(16 * var(--u));
-  height: calc(12 * var(--u));
+  width: calc(16 * var(--pt));
+  height: calc(12 * var(--pt));
   display: block;
 }
 .sbBattery {
-  width: calc(27 * var(--u));
-  height: calc(13 * var(--u));
+  width: calc(27 * var(--pt));
+  height: calc(13 * var(--pt));
   display: block;
 }
 
@@ -243,12 +255,18 @@
     linear-gradient(170deg, #031a2b 0%, #00121d 46%, #140a06 100%);
 }
 
-/* Date over the iOS 26 clock: the date in SF semibold, the time big and
-   HEAVY, a slightly translucent white that picks up the wallpaper like the
-   system's glass clock. */
+/* Date over the lock clock (P3-C1, 2026-09-25; Nico: "the text of the time
+   is too big, disproportionate compared to a typical iPhone"). Checked
+   against app-media/reference/clip-lockscreen-card.png (a real iPhone,
+   reference only): the date is ~20pt semibold, centred ~78pt down; the clock
+   is plain SF Pro (not Rounded), semibold, proportional digits, its caps
+   ~95-160pt down, and "7:12" is ~1.23x the island's width wide. At 90pt /
+   600 / -2pt tracking "7:12" measures 1.25x the island (158pt) and "10:24"
+   ~220pt — was 104pt Rounded 800 tabular, where "10:24" was 291pt of the
+   393pt screen (74%), i.e. nearly edge to edge. */
 .clock {
   position: absolute;
-  top: calc(66 * var(--u));
+  top: calc(66 * var(--pt));
   left: 0;
   right: 0;
   text-align: center;
@@ -256,24 +274,23 @@
 }
 .date {
   font-family: -apple-system, "SF Pro Text", system-ui, sans-serif;
-  font-size: calc(21 * var(--u));
+  font-size: calc(20 * var(--pt));
   font-weight: 600;
   letter-spacing: 0.01em;
   color: rgba(255, 255, 255, 0.88);
-  text-shadow: 0 calc(1 * var(--u)) calc(8 * var(--u)) rgba(0, 10, 18, 0.35);
+  text-shadow: 0 calc(1 * var(--pt)) calc(8 * var(--pt)) rgba(0, 10, 18, 0.35);
 }
 .time {
-  font-family: "SF Pro Rounded", ui-rounded, -apple-system, "SF Pro Display", system-ui, sans-serif;
-  font-size: calc(104 * var(--u));
-  font-weight: 800;
+  font-family: -apple-system, "SF Pro Display", system-ui, "Helvetica Neue", sans-serif;
+  font-size: calc(90 * var(--pt));
+  font-weight: 600;
   line-height: 1;
-  margin-top: calc(-2 * var(--u));
-  letter-spacing: calc(-2.5 * var(--u));
-  font-variant-numeric: tabular-nums;
+  margin-top: calc(-4 * var(--pt));
+  letter-spacing: calc(-2 * var(--pt));
   color: rgba(255, 255, 255, 0.84);
   text-shadow:
-    0 calc(1 * var(--u)) 0 rgba(255, 255, 255, 0.25),
-    0 calc(4 * var(--u)) calc(22 * var(--u)) rgba(0, 10, 18, 0.35);
+    0 calc(1 * var(--pt)) 0 rgba(255, 255, 255, 0.25),
+    0 calc(4 * var(--pt)) calc(22 * var(--pt)) rgba(0, 10, 18, 0.35);
 }
 
 /* Things that leave when the App Clip card arrives. */
@@ -325,12 +342,16 @@
   color: rgba(255, 255, 255, 0.72);
 }
 
-/* Flashlight + camera: iOS 26 glass circles. */
+/* Flashlight + camera: iOS 26 glass circles, 50pt. P3-C1 (2026-09-25,
+   Nico: "more towards the corners, not as centered in"): centres moved from
+   71pt in / 67pt up to 58pt in / 58pt up from the screen's edges, so each
+   button sits in its corner's curve (the display radius is 55pt) instead of
+   floating toward the middle. */
 .quick {
   position: absolute;
-  bottom: calc(42 * var(--u));
-  width: calc(50 * var(--u));
-  height: calc(50 * var(--u));
+  bottom: calc(33 * var(--pt));
+  width: calc(50 * var(--pt));
+  height: calc(50 * var(--pt));
   border-radius: 999px;
   display: flex;
   align-items: center;
@@ -339,15 +360,15 @@
   backdrop-filter: blur(14px) saturate(160%);
   -webkit-backdrop-filter: blur(14px) saturate(160%);
   box-shadow:
-    inset calc(0.8 * var(--u)) calc(0.8 * var(--u)) 0 rgba(255, 255, 255, 0.28),
-    inset calc(-0.6 * var(--u)) calc(-0.6 * var(--u)) 0 rgba(255, 255, 255, 0.08);
+    inset calc(0.8 * var(--pt)) calc(0.8 * var(--pt)) 0 rgba(255, 255, 255, 0.28),
+    inset calc(-0.6 * var(--pt)) calc(-0.6 * var(--pt)) 0 rgba(255, 255, 255, 0.08);
   color: #fff;
 }
-.quickL { left: calc(46 * var(--u)); }
-.quickR { right: calc(46 * var(--u)); }
+.quickL { left: calc(33 * var(--pt)); }
+.quickR { right: calc(33 * var(--pt)); }
 .quick svg {
-  width: calc(21 * var(--u));
-  height: calc(21 * var(--u));
+  width: calc(21 * var(--pt));
+  height: calc(21 * var(--pt));
 }
 
 /* --- the PapeX app icon (a real PNG via next/image) ----------------------- */

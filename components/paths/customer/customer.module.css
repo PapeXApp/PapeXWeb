@@ -894,33 +894,45 @@
 .walkStage {
   padding: var(--section-pad) clamp(20px, 5vw, 56px);
 }
-/* min-height 600 -> 850 (2026-09-24, verifier-flagged): the phone-column fit
-   below only accounts for the RIGHT column. The LEFT column (heading + 3
-   steps) is sized off WIDTH, not height, so it doesn't shrink on a short
-   screen — measured a fixed ~671px tall at every desktop width in the
-   pinnable range once the max-width:1150 grid caps it (same figure at 1440
-   and 1366; a hair shorter, ~603px, right at 1280 where the grid's own gap
-   stops being capped too — the two aren't the same lever, and a few px of
-   width can flip a text-wrap and move this by tens of px, so don't try to
-   thread a width-specific number through here). padding-top(72+--section-pad,
-   ~132) + that + padding-bottom(24) needs ~827-900px depending on width; 850
-   is a flat, content-reflow-proof floor above the worst case with a small
-   margin, below which the walkthrough falls back to the unpinned, tap-only,
-   full-height layout instead of overflowing the stage. HowItWorks.tsx's
-   PIN_QUERY reads this SAME number — keep them together. */
-@media (prefers-reduced-motion: no-preference) and (min-width: 821px) and (min-height: 850px) {
+/* The pin now reaches down to 640px tall (P3-C1, 2026-09-25; was 850).
+   Nico: "scrolling down the page should play the demo step by step" — on a
+   ~780px laptop window the 850 floor had switched the pin off, so scrolling
+   no longer stepped 1 -> 2 -> 3 and only a tap did. The 850 floor existed
+   because the LEFT column (heading + 3 steps) is sized off WIDTH and was a
+   fixed ~694px tall. The fix makes the pinned layout FIT instead of
+   unpinning: inside this query everything with height — the stage padding,
+   the heading, the step titles/bodies and their gaps, the reader, the
+   phone column's gaps — interpolates by viewport height between a compact
+   value at 640px and today's value at 900px, via --walk-t:
+
+     --walk-t = (100vh - 640px) / 260   ->  0px at 640 tall, 1px at 900
+
+   so `calc(A + B * var(--walk-t))` is A at 640 and A + B at 900, and each is
+   clamped to today's number above 900 — a 900px-tall window is unchanged.
+   Measured budget at 640 (see the P3-C1 report): text column ~500px and
+   phone column ~540px against 640 - 84 - 12 = 544px of stage. Below 640 the
+   walkthrough falls back to tap mode (which autoplays once in view).
+   HowItWorks.tsx's PIN_QUERY reads this SAME query — keep them together. */
+@media (prefers-reduced-motion: no-preference) and (min-width: 821px) and (min-height: 640px) {
   .walkRunway {
     height: calc(100vh + (var(--walk-steps, 3) - 1) * var(--walk-per-step));
     /* The ribbon starts the instant this box ends, and the pinned stage's own
-       bottom padding is only 24px (below) — far tighter than every other
-       section's --section-pad. Without this the ribbon read as jammed against
-       the walkthrough the moment the pin released (Nico, 2026-09-24: "it
-       should drop down and use more of the blank space"). Reduced-motion /
-       narrow / short screens keep the unpinned .walkStage's full --section-pad
-       on both edges, so they need nothing extra here. */
+       bottom padding is tight — far tighter than every other section's
+       --section-pad. Without this the ribbon read as jammed against the
+       walkthrough the moment the pin released (Nico, 2026-09-24: "it
+       should drop down and use more of the blank space"). Tap mode keeps the
+       unpinned .walkStage's full --section-pad on both edges, so it needs
+       nothing extra here. */
     margin-bottom: var(--section-pad);
   }
   .walkStage {
+    --walk-t: calc((100vh - 640px) / 260);
+    /* 72px clears the fixed nav's bubbles; the pad above that is the section
+       rhythm at 900px tall, 12px at 640. */
+    --walk-pad-top: calc(72px + clamp(12px, calc(12px + 48 * var(--walk-t)), var(--section-pad)));
+    --walk-pad-bottom: clamp(12px, calc(12px + 12 * var(--walk-t)), 24px);
+    --walk-col-gap: clamp(8px, calc(8px + 10 * var(--walk-t)), 18px);
+    --walk-dots-mt: clamp(6px, calc(6px + 8 * var(--walk-t)), 14px);
     position: sticky;
     top: 0;
     height: 100vh;
@@ -932,26 +944,51 @@
        content now starts at nav clearance + the shared section pad and the
        leftover height falls below it, where the phone already sits. */
     justify-content: flex-start;
-    padding-block: calc(72px + var(--section-pad)) 24px;
+    padding-block: var(--walk-pad-top) var(--walk-pad-bottom);
   }
-  /* The phone column's fixed overhead (2026-09-24 fix): the old flat "100vh -
-     360px" undercounted it, so the column ran ~40-60px taller than the 100vh
-     stage at common desktop sizes and painted over the ribbon underneath.
-     What's actually fixed, top to bottom:
-       72px + --section-pad         .walkStage padding-top
+  /* Left column. Each value is today's at >= 900px tall. */
+  .walkStage .walkHeading {
+    font-size: min(var(--fs-h2), calc(40px + 18 * var(--walk-t)));
+  }
+  .walkStage .walkSteps {
+    margin-top: min(var(--gap-body), calc(16px + 32 * var(--walk-t)));
+    gap: clamp(3px, calc(3px + 5 * var(--walk-t)), 8px);
+  }
+  .walkStage .walkStepTitle {
+    font-size: min(clamp(21px, 2.4vw, 28px), calc(20px + 8 * var(--walk-t)));
+  }
+  .walkStage .walkStepBody {
+    margin-top: clamp(3px, calc(3px + 4 * var(--walk-t)), 7px);
+    font-size: clamp(14px, calc(14px + 1 * var(--walk-t)), 15px);
+    line-height: 1.45;
+  }
+  .walkStage .walkStep:not(:last-child) .walkStepText {
+    padding-bottom: clamp(10px, calc(10px + 12 * var(--walk-t)), 22px);
+  }
+  /* Right column: the reader shrinks with the height (and still with the
+     width, as before), and so do the column's gaps. */
+  .walkStage .walkRdhSeat {
+    --walk-rdh-w: max(150px, min(clamp(190px, 17vw, 228px), calc(150px + 78 * var(--walk-t))));
+  }
+  .walkStage .walkPhoneCol {
+    gap: var(--walk-col-gap);
+  }
+  .walkStage .wpDots {
+    margin-top: var(--walk-dots-mt);
+  }
+  /* The phone column's fixed overhead, top to bottom:
+       --walk-pad-top                   .walkStage padding-top
        --walk-rdh-w * --walk-rdh-seat   the RDH seat's own padding-top
                                         (both vars set on .walkRdhSeat, an
                                         ancestor of .walkPhone, so they inherit
                                         here)
-       18px + 14px = 32px           the Reveal column's flex `gap` (18) PLUS
-                                     .wpDots' own margin-top (14) — flex gap
-                                     and a child's margin both apply, they
-                                     don't collapse into each other
-       7px                          .wpDot height
-       18px                         gap to .walkCue
-       20px                         .walkCue min-height
-       24px                         .walkStage padding-bottom
-     = 173px + --section-pad + the RDH seat padding-top.
+       --walk-col-gap + --walk-dots-mt  the column's flex gap PLUS .wpDots' own
+                                        margin-top — flex gap and a child's
+                                        margin both apply, they don't collapse
+       7px                              .wpDot height
+       --walk-col-gap                   gap to .walkCue
+       20px                             .walkCue min-height
+       --walk-pad-bottom                .walkStage padding-bottom
      On top of that, .frame (iphone.module.css) adds its own band (1.2% of
      the screen's width) + bezel (3.8%) on EVERY edge, i.e. 10% of the width
      added to the screen height twice over — with the screen's 393:852 aspect
@@ -963,25 +1000,59 @@
     --wp-size: min(
       520px,
       calc(
-        (100vh - 173px - var(--section-pad) - (var(--walk-rdh-w) * var(--walk-rdh-seat, 0.72)))
-          / 1.047
+        (
+            100vh - var(--walk-pad-top) - var(--walk-pad-bottom) - 2 * var(--walk-col-gap) -
+              var(--walk-dots-mt) - 27px - (var(--walk-rdh-w) * var(--walk-rdh-seat, 0.72))
+          ) / 1.047
       )
     );
   }
   /* The two-column grid centres its row (Tailwind `items-center` in
-     HowItWorks.tsx). That's fine while the phone column is the taller of the
-     two, which is every normal height — but on a SHORT viewport the phone
-     above has already shrunk toward its floor while the text column (sized
-     off width, not height) hasn't, so the text column can end up taller and
-     centring then pushes the phone column down by half the difference — the
-     exact slack that let it clear the 100vh stage even with the right
-     --wp-size. Top-aligning the row removes that slack; when the phone
-     column is still the taller one this is a no-op (centred-in-its-own-height
-     and started-at-the-top land in the same place), so nothing moves at any
-     normal height. */
+     HowItWorks.tsx). On a SHORT viewport the text column can be the taller
+     one, and centring then pushes the phone column down by half the
+     difference — the exact slack that let it clear the stage even with the
+     right --wp-size. Top-aligning the row removes that; when the phone column
+     is the taller one this is a no-op. */
   .walkStage > div {
     align-items: flex-start;
   }
+}
+
+/* The step list's type, as classes (they were inline styles until P3-C1, and
+   the pinned query above has to be able to compact them). */
+.walkSteps {
+  display: grid;
+  margin-top: var(--gap-body);
+  gap: 8px;
+}
+.walkStepNum {
+  font-family: var(--font-label);
+  font-weight: 500;
+  font-size: 12px;
+  color: var(--orange);
+  letter-spacing: 0.08em;
+}
+.walkStepTitle {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(21px, 2.4vw, 28px);
+  margin-top: 3px;
+}
+.walkStepBody {
+  margin-top: 7px;
+  font-size: 15px;
+  color: var(--flow-fg-2);
+  line-height: 1.5;
+  max-width: 34ch;
+}
+.walkStep:not(:last-child) .walkStepText {
+  padding-bottom: 22px;
+}
+.walkPhoneCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
 }
 
 .walkStep {

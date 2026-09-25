@@ -103,27 +103,35 @@
     radial-gradient(90% 34% at 20% 104%, rgba(235, 113, 0, 0.08), transparent 70%);
 }
 
-/* --- iOS status bar ------------------------------------------------------ */
+/* --- iOS status bar ------------------------------------------------------
+ * Real iOS on a Dynamic Island iPhone (P3-C1, 2026-09-25): the clock is 17pt
+ * SF Pro semibold (was 15), and the time and the signal/Wi-Fi/battery
+ * cluster each sit centred in the "ear" either side of the island, on the
+ * island's own centre line (11 + 37/2 = 29.5pt down). Left ear 0-133.5pt ->
+ * the 54pt time box starts 40pt in (centre ~67pt); the 71pt right cluster
+ * ends 31pt in (centre ~326pt). Drawn in --pt, the true point (see .frame in
+ * iphone.module.css), so it keeps those proportions on a small phone too;
+ * the fallback covers a StatusBar rendered outside the device frame. */
 .status {
   position: absolute;
-  top: calc(16 * var(--u));
+  top: calc(15 * var(--pt, var(--u)));
   left: 0;
   right: 0;
-  height: calc(28 * var(--u));
-  padding: 0 calc(26 * var(--u));
+  height: calc(29 * var(--pt, var(--u)));
+  padding: 0 calc(31 * var(--pt, var(--u))) 0 calc(40 * var(--pt, var(--u)));
   display: flex;
   align-items: center;
   justify-content: space-between;
   z-index: 10;
   color: #fff;
   font-weight: 600;
-  font-size: calc(15 * var(--u));
-  letter-spacing: 0.01em;
+  font-size: calc(17 * var(--pt, var(--u)));
+  letter-spacing: -0.01em;
 }
 .statusRight {
   display: flex;
   align-items: center;
-  gap: calc(5 * var(--u));
+  gap: calc(5 * var(--pt, var(--u)));
 }
 .bars {
   display: flex;
