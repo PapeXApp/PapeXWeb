@@ -25,7 +25,7 @@ export const heroContent = {
   // right under it.
   // Web 2.1 (Nico, 2026-09-24): "not just a receipt" — at select stores a
   // tap earns a coupon too. Still no app needed to GET it (spec §3.2).
-  lead: "Tap your phone at checkout and your receipt appears — at select stores, a coupon for next time comes with it. No app needed to get it — the free PapeX app keeps every receipt and coupon in one place.",
+  lead: "Tap your phone at checkout and your receipt appears. At select stores, a coupon for next time can come with it. No app needed to get it: the free PapeX app keeps every receipt and coupon in one place.",
   ctaLabel: "Download the app",
   // True of both listings (lib/storeLinks.ts). Also shown under the quiz
   // result's CTA (Personas.tsx).
