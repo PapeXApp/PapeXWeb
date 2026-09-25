@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
-import { useSafeReducedMotion } from "@/components/motion/useSafeReducedMotion"
 import { clamp01, ease, seg } from "../story/fold"
 import { SetupIllustration } from "./Illustrations"
 import s from "./setup.module.css"
@@ -90,11 +89,18 @@ export function SetupTimeline({
   nextLabel: string
   nextHref: string
 }) {
-  const reduced = useSafeReducedMotion()
-  // Client-only: the server renders the static overview. `short` flips to
-  // true when the screen can't hold the pinned scene (see measure()).
-  const [pinned, setPinned] = useState(false)
+  // "ssr": the server render and first client frame carry BOTH versions and
+  // CSS shows one (setup.module.css: the runway unless prefers-reduced-motion,
+  // then the static overview). The runway's height is inline, so the section
+  // is its final height from the first paint and never grows at hydration —
+  // #demo / #faq deep links land true. After mount JS keeps only one:
+  // "scene", or "static" for reduced motion and screens too short to pin.
+  // (Same contract as intro/IntroScene.tsx.)
+  const [reduced, setReduced] = useState<boolean | null>(null)
+  // `short` flips to true when the screen can't hold the pinned scene (see measure()).
   const [short, setShort] = useState(false)
+  const mode: "ssr" | "scene" | "static" = reduced === null ? "ssr" : reduced || short ? "static" : "scene"
+  const pinned = mode === "scene"
 
   const runwayRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
@@ -111,8 +117,12 @@ export function SetupTimeline({
   const endDownRef = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
-    setPinned(!reduced && !short)
-  }, [reduced, short])
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)")
+    const apply = () => setReduced(mq.matches)
+    apply()
+    mq.addEventListener("change", apply)
+    return () => mq.removeEventListener("change", apply)
+  }, [])
 
   // A short screen that grows (rotate, resize) gets the scene back.
   useEffect(() => {
@@ -377,45 +387,63 @@ export function SetupTimeline({
   }, [pinned, steps.length])
 
   const last = steps.length - 1
-  const list = (
-    <ol className={s.list} ref={listRef}>
+  // Only the scene's copy carries refs: in "ssr" both copies are mounted, and
+  // a shared object ref would be nulled when the static copy unmounts.
+  const renderList = (live: boolean) => (
+    <ol className={s.list} ref={live ? listRef : undefined}>
       {steps.map((step, i) => (
         <li key={step.number} className={s.step}>
           <div
             className={s.ill}
-            ref={(el) => {
-              illRefs.current[i] = el
-            }}
+            ref={
+              live
+                ? (el) => {
+                    illRefs.current[i] = el
+                  }
+                : undefined
+            }
           >
             <SetupIllustration index={i} />
           </div>
           <div
             className={s.node}
             aria-hidden="true"
-            ref={(el) => {
-              nodeRefs.current[i] = el
-            }}
+            ref={
+              live
+                ? (el) => {
+                    nodeRefs.current[i] = el
+                  }
+                : undefined
+            }
           >
             <span
               className={s.dot}
-              ref={(el) => {
-                dotRefs.current[i] = el
-              }}
+              ref={
+                live
+                  ? (el) => {
+                      dotRefs.current[i] = el
+                    }
+                  : undefined
+              }
             >
               <span
                 className={s.dotFill}
-                ref={(el) => {
-                  dotFillRefs.current[i] = el
-                }}
+                ref={
+                  live
+                    ? (el) => {
+                        dotFillRefs.current[i] = el
+                      }
+                    : undefined
+                }
               />
             </span>
             {i === 0 ? <span className={s.lbl}>{axisStart}</span> : null}
             {i === last ? (
               <>
-                <span className={cn(s.lbl, s.lblUp)} ref={endUpRef}>
+                <span className={cn(s.lbl, s.lblUp)} ref={live ? endUpRef : undefined}>
                   {axisEnd}
                 </span>
-                <span className={cn(s.lbl, s.lblDown)} ref={endDownRef}>
+                <span className={cn(s.lbl, s.lblDown)} ref={live ? endDownRef : undefined}>
                   {axisEnd}
                 </span>
               </>
@@ -423,9 +451,13 @@ export function SetupTimeline({
           </div>
           <div
             className={s.txt}
-            ref={(el) => {
-              txtRefs.current[i] = el
-            }}
+            ref={
+              live
+                ? (el) => {
+                    txtRefs.current[i] = el
+                  }
+                : undefined
+            }
           >
             <span className={s.num} aria-hidden="true">
               {step.number}
@@ -433,9 +465,13 @@ export function SetupTimeline({
             <h3 className={s.title}>{step.title}</h3>
             <p
               className={s.body}
-              ref={(el) => {
-                bodyRefs.current[i] = el
-              }}
+              ref={
+                live
+                  ? (el) => {
+                      bodyRefs.current[i] = el
+                    }
+                  : undefined
+              }
             >
               {step.body}
             </p>
@@ -452,33 +488,38 @@ export function SetupTimeline({
     </a>
   )
 
-  if (!pinned) {
-    return (
-      <div className={cn(s.static, s.wrap)}>
-        <div className={s.head}>{header}</div>
-        <div className={s.stage} ref={stageRef}>
-          {list}
-        </div>
-        {next}
-      </div>
-    )
-  }
+  const staticVersion = (
+    <div className={cn(s.static, s.wrap, mode === "ssr" && s.staticSlot)}>
+      <div className={s.head}>{header}</div>
+      <div className={s.stage}>{renderList(false)}</div>
+      {next}
+    </div>
+  )
+  if (mode === "static") return staticVersion
 
   return (
-    <div ref={runwayRef} className={cn(s.runway, s.pinned)} style={{ height: `${RUNWAY_VH}vh` }}>
-      <div className={s.pin}>
-        <div className={cn(s.wrap, s.head)}>{header}</div>
-        <div className={cn(s.wrap, s.stageWrap)}>
-          <div className={s.stage} ref={stageRef}>
-            <div className={s.lineWrap} aria-hidden="true">
-              <span className={s.track} ref={trackRef} />
-              <span className={s.fill} ref={fillRef} />
+    <>
+      <div
+        ref={runwayRef}
+        className={cn(s.runway, s.pinned)}
+        data-live={pinned ? "" : undefined}
+        style={{ height: `${RUNWAY_VH}vh` }}
+      >
+        <div className={s.pin}>
+          <div className={cn(s.wrap, s.head)}>{header}</div>
+          <div className={cn(s.wrap, s.stageWrap)}>
+            <div className={s.stage} ref={stageRef}>
+              <div className={s.lineWrap} aria-hidden="true">
+                <span className={s.track} ref={trackRef} />
+                <span className={s.fill} ref={fillRef} />
+              </div>
+              {renderList(true)}
             </div>
-            {list}
           </div>
+          <div className={s.wrap}>{next}</div>
         </div>
-        <div className={s.wrap}>{next}</div>
       </div>
-    </div>
+      {mode === "ssr" ? staticVersion : null}
+    </>
   )
 }

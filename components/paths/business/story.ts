@@ -47,7 +47,6 @@ export const story = {
   deviceLabel: "The PapeX device, a small black box at the counter.",
   phoneLabel: "An iPhone showing the digital receipt.",
   laptopLabel: "The PapeX merchant dashboard, updating with the new receipt.",
-  paperNote: "Go paper-free: switch off the printer whenever you're ready.",
 
   /** Lock-screen Live Activity on the phone before the tap. */
   lockPrompt: { title: "Tap to get your receipt", body: "Hold your iPhone near the PapeX device" },
@@ -76,34 +75,4 @@ export const storyDashboard = {
     lead: "And your customers?",
     body: "They can keep every receipt in the free PapeX app.",
   },
-} as const
-
-/** Labels inside the dashboard on the laptop (a working demo of app/merchant). */
-export const storyScreen = {
-  brand: "papex",
-  brandTag: "MERCHANT",
-  demoTag: "Demo data",
-  title: "Insights",
-  receiptsTab: "Receipts",
-  subtitle: "How business is trending, at a glance.",
-  ranges: ["Today", "7 days"],
-  tiles: {
-    count: "Transactions",
-    gross: "Gross",
-    avg: "Avg ticket",
-    tap: "Tap rate",
-    tapNote: "receipts viewed on PapeX",
-  },
-  byHour: "By hour of day",
-  topItems: "Top items",
-  newReceipt: "New receipt",
-  tapped: "Tapped",
-  printed: "Paper only",
-  searchPlaceholder: "Search item or receipt #",
-  last4Placeholder: "Card last 4",
-  minPlaceholder: "Min $",
-  dateLabel: "Date",
-  allDates: "All dates",
-  noMatch: "No receipts match these filters.",
-  asSeen: "as your customer saw it",
 } as const

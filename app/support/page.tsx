@@ -101,6 +101,17 @@ const SIGNAL_STYLES: Record<Signal, { label: string; className: string }> = {
   attention: { label: 'Attention', className: 'text-red-600' },
 }
 
+// The light plus its rhythm, drawn static (no looping animation anywhere on
+// the site): a dot in the light's colour, then a short strip showing the
+// on/off pattern over time: one unbroken line = solid, two long dashes =
+// slow blink, five short dashes = fast blink. Decorative; the row's own words
+// ("Slow green blink" ...) carry the meaning for screen readers.
+const RHYTHM: Record<'solid' | 'slow' | 'fast', string | undefined> = {
+  solid: undefined,
+  slow: '9 5',
+  fast: '2.8 3',
+}
+
 function LightDot({
   color,
   blink,
@@ -110,11 +121,23 @@ function LightDot({
 }) {
   const base = 'inline-block h-3 w-3 rounded-full flex-shrink-0'
   if (color === 'off') {
-    return <span className={`${base} bg-gray-300`} aria-hidden />
+    return (
+      <span className="inline-flex w-[46px] flex-shrink-0 items-center" aria-hidden>
+        <span className={`${base} border border-gray-400 bg-transparent`} />
+      </span>
+    )
   }
   const fill = color === 'green' ? 'bg-green-500' : 'bg-red-500'
-  const anim = blink ? 'animate-pulse' : ''
-  return <span className={`${base} ${fill} ${anim}`} aria-hidden />
+  const stroke = color === 'green' ? '#22c55e' : '#ef4444'
+  const dash = RHYTHM[blink ?? 'solid']
+  return (
+    <span className="inline-flex w-[46px] flex-shrink-0 items-center gap-[5px]" aria-hidden>
+      <span className={`${base} ${fill}`} />
+      <svg width="28" height="6" viewBox="0 0 28 6" className="flex-shrink-0">
+        <line x1="0" y1="3" x2="28" y2="3" stroke={stroke} strokeWidth="3" strokeDasharray={dash} />
+      </svg>
+    </span>
+  )
 }
 
 const TROUBLESHOOTING: { title: string; steps: string[] }[] = [

@@ -113,20 +113,8 @@ body {
 }
 
 @layer utilities {
-  /* Animation utilities */
-  .animate-float {
-    animation: float 6s ease-in-out infinite;
-  }
-  
-  .animate-pulse-slow {
-    animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
-  
-  .animate-gradient {
-    background-size: 200% 200%;
-    animation: gradient 3s ease infinite;
-  }
-  
+  /* Animation utilities. (The infinite .animate-float / .animate-pulse-slow /
+     .animate-gradient loops were unused and are gone: no infinite animations.) */
   .animate-slide-in-up {
     animation: slideInUp 0.6s ease-out;
   }

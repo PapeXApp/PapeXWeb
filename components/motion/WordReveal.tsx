@@ -47,8 +47,8 @@ const WORD_SPACE = " "
  * announces the heading as one normal string rather than word-by-word
  * fragments.
  *
- * Renders the full text immediately (no animation) under `prefers-reduced-motion:
- * reduce`.
+ * Renders every word shown and still (no animation, same markup, so the same
+ * height) under `prefers-reduced-motion: reduce`.
  */
 export function WordReveal({ text, children, as = "h2", delay = 0, className, style, wordClassName }: WordRevealProps) {
   const prefersReduced = useSafeReducedMotion()
@@ -67,13 +67,11 @@ export function WordReveal({ text, children, as = "h2", delay = 0, className, st
     return () => window.clearTimeout(timer)
   }, [inView, prefersReduced, delay, words.length])
 
-  if (prefersReduced) {
-    return (
-      <Tag ref={ref} className={className} style={style}>
-        {content}
-      </Tag>
-    )
-  }
+  // Reduced motion keeps the SAME per-word markup, just shown and still: the
+  // word spans wrap a little differently from plain text, so swapping to
+  // plain text after hydration changed the heading's height (measured: the
+  // /business h1 lost a line, 39px, at 390px wide).
+  const shown = inView || prefersReduced
 
   return (
     <Tag ref={ref} className={className} style={style} aria-label={content}>
@@ -88,10 +86,10 @@ export function WordReveal({ text, children, as = "h2", delay = 0, className, st
         }
         const innerStyle: CSSProperties = {
           display: "inline-block",
-          transform: inView ? "translateY(0)" : "translateY(115%)",
-          opacity: inView ? 1 : 0,
-          transition: `transform ${DURATION}s ${EASE} ${wordDelay}s, opacity .6s ${wordDelay}s`,
-          willChange: settled ? undefined : "transform, opacity",
+          transform: shown ? "translateY(0)" : "translateY(115%)",
+          opacity: shown ? 1 : 0,
+          transition: prefersReduced ? "none" : `transform ${DURATION}s ${EASE} ${wordDelay}s, opacity .6s ${wordDelay}s`,
+          willChange: settled || prefersReduced ? undefined : "transform, opacity",
         }
         return (
           <span key={i} aria-hidden="true" style={wrapStyle}>
