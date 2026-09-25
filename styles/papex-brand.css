@@ -594,7 +594,11 @@ html[data-fork-skip] .rd-fork {
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--foot-ink-3);
+  /* Fixed, not --foot-ink-3: on navy (the footer's only ground, flat or
+     in-flow) --foot-ink-3 measured 4.34:1 (#717a80), below the 4.5:1 text
+     floor. This is the smallest bump that clears it: rgba(245,245,245,.48)
+     on #00121d = #767f85, 4.66:1. */
+  color: rgba(245, 245, 245, 0.48);
   margin: 0 0 16px;
 }
 .rd-foot-link {
