@@ -110,9 +110,24 @@ const NO_JS_REVEAL_CSS = [
   `${moduleClass('faq', 'answer')}{opacity:1!important;transform:none!important}`,
 ].join('')
 
+// Site-wide defaults, used by any route without its own metadata. Same voice
+// as the per-page titles on /, /business and /customers (keyword first, brand
+// as the suffix; title <=60 chars, description <=155). The share image is
+// drawn from brand assets by scripts/og/render.mjs (source: scripts/og/og.html).
+const DEFAULT_TITLE = 'Your Receipt, One Tap Away | PapeX'
+const DEFAULT_DESCRIPTION =
+  'Tap your phone at checkout and your receipt opens, no app needed. Select stores add a coupon too. The free PapeX app keeps every receipt and coupon.'
+const DEFAULT_OG_IMAGE = {
+  url: 'https://papex.app/og-image-v3.png',
+  width: 1200,
+  height: 630,
+  alt: 'The PapeX logo and the words Your receipt, one tap away, beside an iPhone showing a PapeX receipt',
+  type: 'image/png',
+}
+
 export const metadata: Metadata = {
-  title: 'PapeX | Digital Receipts Revolutionized - Paperless Receipt Solutions',
-  description: 'PapeX revolutionizes digital receipts by eliminating paper waste and streamlining financial management. Our platform integrates with POS systems to deliver instant digital receipts, saving businesses money while helping the environment. Join the paperless revolution with PapeX.',
+  title: DEFAULT_TITLE,
+  description: DEFAULT_DESCRIPTION,
   generator: 'Next.js',
   keywords: [
     'PapeX', 'papex', 'digital receipts', 'paperless receipts', 'electronic receipts', 
@@ -140,24 +155,18 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: 'https://papex.app',
-    title: 'PapeX | Digital Receipts Revolutionized - Paperless Receipt Solutions',
-    description: 'PapeX revolutionizes digital receipts by eliminating paper waste and streamlining financial management. Our platform integrates with POS systems to deliver instant digital receipts, saving businesses money while helping the environment.',
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
     siteName: 'PapeX',
     images: [
-      {
-        url: 'https://papex.app/og-image-v2.png',
-        width: 1200,
-        height: 630,
-        alt: 'PapeX - The Smarter Way to Do Receipts',
-        type: 'image/png'
-      },
+      DEFAULT_OG_IMAGE,
     ]
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'PapeX | Digital Receipts Revolutionized - Paperless Receipt Solutions',
-    description: 'PapeX revolutionizes digital receipts by eliminating paper waste and streamlining financial management. Our platform integrates with POS systems to deliver instant digital receipts.',
-    images: ['https://papex.app/og-image-v2.png'],
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    images: [DEFAULT_OG_IMAGE.url],
     creator: '@papex_receipts',
     site: '@papex_receipts'
   },

@@ -1,0 +1,305 @@
+<!doctype html>
+<!--
+  scripts/og/og.html — source of the social share images (1200x630).
+  Rendered by `node scripts/og/render.mjs` into public/og-image-v3.png (?v=default)
+  and public/og-image-v3-alt.png (?v=alt). Open it directly in Chrome to preview
+  (run the script once first so logo.generated.js exists).
+
+  Built only from brand assets: the PapeX lockup + plane mark (path data from
+  components/brand/full-logo.tsx and plane-mark.tsx, via logo.generated.js),
+  the local brand fonts in fonts/, and the brand palette. The phone is the site's
+  iPhone frame (components/paths/customer/iphone.module.css .frame proportions)
+  showing the App Clip receipt screen (components/app-kit/ClipReceipt.tsx layout
+  and clip tokens), drawn with placeholder bars instead of text so no merchant,
+  item or price is invented.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>PapeX share image</title>
+<style>
+  @font-face { font-family: 'Kameron'; font-weight: 600; src: url('../../fonts/Kameron-SemiBold.ttf') format('truetype'); }
+  @font-face { font-family: 'Barlow'; font-weight: 500; src: url('../../fonts/Barlow-Medium.ttf') format('truetype'); }
+
+  :root {
+    --navy: #00121d;
+    --orange: #eb7100;
+    --blue: #0088ea;
+    --ground: #f5f5f5;
+    /* phone: screen box, as in iphone.module.css (.frame) */
+    --wp-h: 504px;
+    --wp-w: calc(var(--wp-h) * 393 / 852);
+    --u: calc(var(--wp-w) / 393);            /* one iPhone point */
+    --band: calc(var(--wp-w) * 0.012);
+    --bezel: calc(var(--wp-w) * 0.038);
+    --screen-r: calc(var(--wp-w) * 0.14);
+    --bezel-r: calc(var(--screen-r) + var(--bezel));
+    --frame-r: calc(var(--bezel-r) + var(--band));
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+  body {
+    position: relative;
+    background:
+      radial-gradient(520px 420px at 80% 100%, rgba(235, 113, 0, 0.13), transparent 70%),
+      radial-gradient(560px 460px at 96% 0%, rgba(0, 136, 234, 0.10), transparent 70%),
+      var(--ground);
+    color: var(--navy);
+    font-family: 'Barlow', 'Helvetica Neue', Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---- left column ------------------------------------------------------ */
+  .logo { position: absolute; left: 76px; top: 62px; width: 196px; }
+  .logo svg { display: block; width: 100%; height: auto; }
+  .headline {
+    position: absolute; left: 76px; top: 0; bottom: 0;
+    display: flex; flex-direction: column; justify-content: center;
+    width: 640px;
+    font-family: 'Kameron', Georgia, serif; font-weight: 600;
+    font-size: 76px; line-height: 1.06; letter-spacing: -0.012em;
+  }
+  .headline em { font-style: normal; color: var(--orange); }
+  .alt .headline { font-size: 60px; width: 730px; }
+  .url {
+    position: absolute; left: 78px; bottom: 60px;
+    font-size: 27px; letter-spacing: 0.01em; color: rgba(0, 18, 29, 0.72);
+  }
+
+  /* ---- phone (iphone.module.css .frame / .bezel / .screen) --------------- */
+  .phone {
+    position: absolute; right: 118px; top: 50%; transform: translateY(-50%);
+    padding: var(--band); border-radius: var(--frame-r);
+    background: linear-gradient(150deg, #7b8088 0%, #43474d 18%, #2b2e33 50%, #43474d 82%, #767b83 100%);
+    box-shadow: inset 0 0 0 0.5px rgba(255,255,255,.22), inset 0 1px 0 rgba(255,255,255,.18),
+      0 1px 2px rgba(0,18,29,.35), 0 30px 60px -16px rgba(0,18,29,.45);
+  }
+  .bezel { padding: var(--bezel); border-radius: var(--bezel-r); background: #030405; }
+  .screen {
+    position: relative; width: var(--wp-w); height: var(--wp-h);
+    border-radius: var(--screen-r); overflow: hidden;
+    /* --akc-background: navy + two orange glows */
+    background:
+      radial-gradient(circle calc(380 * var(--u)) at 12% 7%, rgba(235,113,0,.16), transparent),
+      radial-gradient(circle calc(420 * var(--u)) at 90% 96%, rgba(235,113,0,.13), transparent),
+      var(--navy);
+    color: #fff;
+    font-family: -apple-system, 'SF Pro Text', system-ui, sans-serif;
+  }
+  .island { position: absolute; left: 50%; top: calc(11 * var(--u)); width: calc(126 * var(--u)); height: calc(37 * var(--u));
+    transform: translateX(-50%); border-radius: 999px; background: #000; }
+  .sb-time { position: absolute; left: calc(52 * var(--u)); top: calc(18 * var(--u)); font-size: calc(17 * var(--u)); font-weight: 600; }
+  .sb-right { position: absolute; right: calc(34 * var(--u)); top: calc(22 * var(--u)); display: flex; gap: calc(6 * var(--u)); align-items: flex-end; }
+  .sig { display: flex; gap: calc(2 * var(--u)); align-items: flex-end; }
+  .sig i { display: block; width: calc(3 * var(--u)); background: #fff; border-radius: 1px; }
+  .batt { width: calc(25 * var(--u)); height: calc(12 * var(--u)); border: calc(1.2 * var(--u)) solid rgba(255,255,255,.4);
+    border-radius: calc(4 * var(--u)); padding: calc(1.5 * var(--u)); }
+  .batt i { display: block; height: 100%; width: 80%; background: #fff; border-radius: calc(2 * var(--u)); }
+
+  /* top bar: back circle · lockup capsule · ••• circle */
+  .glass { background: rgba(255,255,255,.08); box-shadow: inset 0 0 0 calc(1 * var(--u)) rgba(255,255,255,.16); }
+  .topbar { position: absolute; left: calc(8 * var(--u)); right: calc(8 * var(--u)); top: calc(63 * var(--u));
+    display: flex; justify-content: space-between; align-items: center; }
+  .circ { width: calc(44 * var(--u)); height: calc(44 * var(--u)); border-radius: 50%; display: grid; place-items: center; }
+  .chev { width: calc(10 * var(--u)); height: calc(10 * var(--u)); border-left: calc(2.2 * var(--u)) solid #fff;
+    border-bottom: calc(2.2 * var(--u)) solid #fff; transform: translateX(calc(2 * var(--u))) rotate(45deg); }
+  .dots { display: flex; gap: calc(3.5 * var(--u)); }
+  .dots i { width: calc(4.5 * var(--u)); height: calc(4.5 * var(--u)); border-radius: 50%; background: #fff; display: block; }
+  .capsule { height: calc(44 * var(--u)); padding: 0 calc(18 * var(--u)); border-radius: 999px; display: flex; align-items: center; }
+  .capsule svg { height: calc(22 * var(--u)); width: auto; display: block; }
+
+  /* content column (Chrome.top 74 + safe area 59) */
+  .content { position: absolute; left: calc(16 * var(--u)); right: calc(16 * var(--u)); top: calc(133 * var(--u));
+    display: flex; flex-direction: column; gap: calc(16 * var(--u)); }
+  .card { position: relative; border-radius: calc(26 * var(--u)); background: rgba(255,255,255,.06); }
+  .card::after { /* GlassCardModifier rim, orange by default */
+    content: ''; position: absolute; inset: 0; border-radius: inherit; padding: calc(1.2 * var(--u));
+    background: linear-gradient(135deg, rgba(var(--rim),.85) 0%, rgba(var(--rim),0) 35%, rgba(var(--rim),0) 65%, rgba(var(--rim),.55) 100%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude; }
+  .rim-white { --rim: 255, 255, 255; }
+  .rim-orange { --rim: 235, 113, 0; }
+  .bar { display: block; height: calc(11 * var(--u)); border-radius: 999px; background: rgba(255,255,255,.82); }
+  .bar.dim { background: rgba(255,255,255,.30); height: calc(9 * var(--u)); }
+  .bar.or { background: var(--orange); }
+  .bar.or-soft { background: rgba(235,113,0,.75); height: calc(9 * var(--u)); }
+
+  .merchant { padding: calc(22 * var(--u)); display: flex; flex-direction: column; gap: calc(15 * var(--u)); }
+  .mrow { display: flex; align-items: center; gap: calc(14 * var(--u)); }
+  .mono { width: calc(56 * var(--u)); height: calc(56 * var(--u)); border-radius: 50%; flex: none;
+    box-shadow: inset 0 0 0 calc(2 * var(--u)) var(--orange); background: rgba(235,113,0,.12);
+    display: grid; place-items: center; }
+  .mono svg { width: calc(34 * var(--u)); height: auto; display: block; }
+  .mstack { display: flex; flex-direction: column; gap: calc(9 * var(--u)); flex: 1; }
+  .hair { height: 1px; background: rgba(255,255,255,.10); }
+
+  .section { width: calc(84 * var(--u)); height: calc(12 * var(--u)); margin: calc(2 * var(--u)) 0 calc(-4 * var(--u)) calc(4 * var(--u)); }
+  .items > div { display: flex; justify-content: space-between; align-items: center; padding: calc(15 * var(--u)) calc(18 * var(--u)); }
+  .items > div + div { border-top: 1px solid rgba(255,255,255,.10); }
+  .totals { padding: calc(6 * var(--u)) calc(18 * var(--u)); }
+  .totals > div { display: flex; justify-content: space-between; align-items: center; padding: calc(10 * var(--u)) 0; }
+  .rule { height: calc(2 * var(--u)); background: rgba(235,113,0,.48); margin: calc(4 * var(--u)) 0; padding: 0 !important; }
+  .totals .big { height: calc(16 * var(--u)); }
+
+  /* FooterCTA bubble: orange "Save to PapeX" capsule + share circle */
+  .footer { position: absolute; left: calc(16 * var(--u)); right: calc(16 * var(--u)); bottom: calc(34 * var(--u));
+    border-radius: calc(34 * var(--u)); padding: calc(14 * var(--u)); display: flex; gap: calc(12 * var(--u)); }
+  .save { flex: 1; height: calc(52 * var(--u)); border-radius: 999px; background: linear-gradient(180deg, #f5851c, var(--orange));
+    display: grid; place-items: center; box-shadow: 0 calc(6 * var(--u)) calc(18 * var(--u)) rgba(235,113,0,.35); }
+  .save svg { height: calc(22 * var(--u)); width: auto; display: block; }
+  .share { width: calc(52 * var(--u)); height: calc(52 * var(--u)); border-radius: 50%; display: grid; place-items: center; }
+  .share i { width: calc(14 * var(--u)); height: calc(14 * var(--u)); border-top: calc(2.2 * var(--u)) solid #fff;
+    border-left: calc(2.2 * var(--u)) solid #fff; transform: translateY(calc(2 * var(--u))) rotate(45deg); display: block; }
+  .homebar { position: absolute; left: 50%; bottom: calc(8 * var(--u)); width: calc(134 * var(--u)); height: calc(5 * var(--u));
+    transform: translateX(-50%); border-radius: 999px; background: rgba(255,255,255,.85); }
+
+  /* the tap: three arcs off the phone's top-left corner */
+  /* centre of the arcs sits just inside the phone's top-left corner */
+  .tap { position: absolute; left: -84px; top: -84px; width: 120px; height: 120px; }
+  .tap svg { width: 100%; height: 100%; overflow: visible; }
+
+  /* ---- alt: a coupon riding over the phone's edge ------------------------ */
+  .coupon { display: none; }
+  .alt .coupon {
+    display: flex; position: absolute; right: 44px; top: 392px; width: 262px; height: 104px;
+    transform: rotate(-5deg); filter: drop-shadow(0 18px 26px rgba(0,18,29,.30)) drop-shadow(0 2px 3px rgba(0,18,29,.22));
+  }
+  .ticket { position: relative; display: flex; width: 100%; height: 100%; border-radius: 18px; overflow: hidden;
+    /* notches where the perforation meets each edge */
+    -webkit-mask: radial-gradient(circle 11px at 84px 0, transparent 98%, #000) , radial-gradient(circle 11px at 84px 100%, transparent 98%, #000);
+    -webkit-mask-composite: source-in; mask-composite: intersect; }
+  .stub { width: 84px; background: linear-gradient(180deg, #f5851c, var(--orange)); display: grid; place-items: center;
+    color: #fff; font-family: 'Barlow', sans-serif; font-size: 44px; line-height: 1; }
+  .face { flex: 1; background: #fff; border-left: 2px dashed rgba(0,18,29,.18); padding: 22px 20px;
+    display: flex; flex-direction: column; justify-content: center; gap: 12px; }
+  .face .bar { height: 13px; background: rgba(0,18,29,.85); }
+  .face .bar.dim { height: 10px; background: rgba(0,18,29,.22); }
+  .face .bar.or { height: 10px; background: var(--orange); }
+</style>
+</head>
+<body>
+  <div class="logo" id="logo"></div>
+
+  <h1 class="headline"><span id="headline"></span></h1>
+  <div class="url">papex.app</div>
+
+  <div class="phone">
+    <div class="tap" aria-hidden="true">
+      <svg viewBox="0 0 120 120">
+        <g fill="none" stroke="#eb7100" stroke-linecap="round">
+          <path d="M78 110 A 32 32 0 0 1 110 78" stroke-width="5" opacity="1" />
+          <path d="M58 110 A 52 52 0 0 1 110 58" stroke-width="5" opacity=".62" />
+          <path d="M38 110 A 72 72 0 0 1 110 38" stroke-width="5" opacity=".32" />
+        </g>
+      </svg>
+    </div>
+    <div class="bezel">
+      <div class="screen">
+        <div class="island"></div>
+        <div class="sb-time">9:41</div>
+        <div class="sb-right">
+          <div class="sig"><i style="height:calc(4*var(--u))"></i><i style="height:calc(6*var(--u))"></i><i style="height:calc(8.5*var(--u))"></i><i style="height:calc(11*var(--u))"></i></div>
+          <div class="batt"><i></i></div>
+        </div>
+
+        <div class="topbar">
+          <div class="circ glass"><span class="chev"></span></div>
+          <div class="capsule glass" id="capsule"></div>
+          <div class="circ glass"><span class="dots"><i></i><i></i><i></i></span></div>
+        </div>
+
+        <div class="content">
+          <div class="card rim-white merchant">
+            <div class="mrow">
+              <div class="mono" id="mono"></div>
+              <div class="mstack">
+                <span class="bar" style="width:78%;height:calc(15*var(--u))"></span>
+                <span class="bar dim" style="width:52%"></span>
+              </div>
+            </div>
+            <div class="hair"></div>
+            <span class="bar dim" style="width:64%"></span>
+            <span class="bar or-soft" style="width:44%"></span>
+          </div>
+
+          <span class="bar or section"></span>
+
+          <div class="card rim-white items">
+            <div><span class="bar" style="width:46%"></span><span class="bar" style="width:15%"></span></div>
+            <div><span class="bar" style="width:58%"></span><span class="bar" style="width:13%"></span></div>
+            <div><span class="bar" style="width:38%"></span><span class="bar" style="width:15%"></span></div>
+          </div>
+
+          <div class="card rim-orange totals">
+            <div><span class="bar dim" style="width:30%"></span><span class="bar dim" style="width:16%"></span></div>
+            <div><span class="bar dim" style="width:22%"></span><span class="bar dim" style="width:12%"></span></div>
+            <div class="rule"></div>
+            <div><span class="bar or big" style="width:26%"></span><span class="bar or big" style="width:24%"></span></div>
+          </div>
+        </div>
+
+        <div class="footer glass">
+          <div class="save" id="save"></div>
+          <div class="share glass"><i></i></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="coupon" aria-hidden="true">
+    <div class="ticket">
+      <div class="stub">%</div>
+      <div class="face">
+        <span class="bar" style="width:74%"></span>
+        <span class="bar dim" style="width:92%"></span>
+        <span class="bar or" style="width:40%"></span>
+      </div>
+    </div>
+  </div>
+
+  <script src="logo.generated.js"></script>
+  <script>
+    // Copy per variant. Max ~8 words on the image (copy gate).
+    const COPY = {
+      default: 'Your receipt,<br><em>one tap</em> away.',
+      alt: 'Receipts and coupons,<br><em>one tap</em> away.',
+    };
+    const v = new URLSearchParams(location.search).get('v') === 'alt' ? 'alt' : 'default';
+    document.body.classList.add(v);
+    document.getElementById('headline').innerHTML = COPY[v];
+
+    const NS = 'http://www.w3.org/2000/svg';
+    function draw(spec, colors) {
+      const svg = document.createElementNS(NS, 'svg');
+      svg.setAttribute('viewBox', spec.viewBox);
+      for (const p of spec.paths) {
+        const el = document.createElementNS(NS, 'path');
+        const c = colors[p.role];
+        el.setAttribute('fill', c);
+        if (p.strokeWidth) {
+          el.setAttribute('stroke', c);
+          el.setAttribute('stroke-width', p.strokeWidth);
+          el.setAttribute('stroke-miterlimit', 10);
+        }
+        el.setAttribute('d', p.d);
+        svg.appendChild(el);
+      }
+      return svg;
+    }
+    const L = window.PAPEX_LOGO;
+    if (L) {
+      // FullLogoOnLight: navy letters, orange body, navy highlights.
+      document.getElementById('logo').appendChild(draw(L.full, { letters: '#00121d', body: '#eb7100', lines: '#00121d' }));
+      // In the App Clip top bar (dark): FullLogoOnDark.
+      document.getElementById('capsule').appendChild(draw(L.full, { letters: '#ffffff', body: '#eb7100', lines: '#ffffff' }));
+      document.getElementById('mono').appendChild(draw(L.plane, { body: '#eb7100', lines: '#ffffff' }));
+      document.getElementById('save').appendChild(draw(L.plane, { body: '#ffffff', lines: '#eb7100' }));
+    }
+    Promise.all([
+      document.fonts.load("600 76px 'Kameron'"),
+      document.fonts.load("500 27px 'Barlow'"),
+    ]).then(() => document.fonts.ready).then(() => { window.__ogReady = !!L; });
+  </script>
+</body>
+</html>
