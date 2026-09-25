@@ -1,56 +1,77 @@
-import { cn } from "@/lib/utils";
-import { ReceiptDetailScreen, ReceiptsScreen, StatusBar, TabBar } from "./appui";
-import { ADD_ROWS, SEARCH_QUERY, SEARCH_ROWS, STORE_TILES, type StoreTileData } from "./appui/data";
-import s from "./appui/appui.module.css";
+import {
+  AppKitRoot,
+  CouponsScreen,
+  DEVICE,
+  GlassIcon,
+  Glyph,
+  HeaderCircle,
+  ReceiptDetail,
+  ReceiptsScreen,
+  Screen,
+  SearchField,
+  SelectCapsule,
+  StatusBar,
+  StoreTile,
+  TabBar,
+  TabTitleRow,
+  TitleBubble,
+  V,
+  appTheme,
+  headerContentTop,
+} from "@/components/app-kit";
+import { describeCouponExpiry } from "@/components/app-kit/couponLogic";
+import { pt, rn } from "@/components/app-kit/rnStyle";
+import { DEMO_NOW } from "@/components/app-kit/sampleData";
+import { rn as R } from "@/lib/app-kit/rnStyles";
+import { tabBarMetrics } from "@/lib/app-kit/tokens";
+import { featuresContent, type FeatureKey, type PersonaId } from "./content";
+import {
+  ADD_RECEIPTS,
+  DEAL_COUPONS,
+  DEAL_FAVORITE_STORES,
+  DEAL_FAVORITES,
+  DEAL_STORES,
+  FIND_BY_PERSONA,
+  SHARE_RECEIPT,
+  dealsTab,
+} from "./featureData";
 import { PhoneChrome } from "./WalkPhone";
-import { featuresContent, type FeatureKey } from "./content";
+import x from "./appui/appScreens.module.css";
 import styles from "./customer.module.css";
 
 /**
- * The four Features app shots (Web 2.1): Find, Add, Share, Deals.
+ * The four Features phones (05): Find, Add, Share, Deals.
  *
- * Every screen is DRAWN from PapeXV2's own layout and tokens — never a
- * screenshot — per docs/design/app-reference.md, with the source file cited
- * wherever a number or a state comes from the app. All merchants, people,
- * groups and offers are invented, and every shot carries a small "Demo data"
- * caption (copy gate rule 11).
+ * WHOLE PHONES (Web 2.1 W3, Nico 2026-09-24: "I want to see a full phone. If
+ * it gets cut off it makes the screen we're displaying weird."). Each shot is
+ * the page's one iPhone (PhoneChrome, iphone.module.css) shown in full, never
+ * cropped, sized from the viewport in CSS (customer.module.css .featPhone),
+ * so there is no layout read and no hydration jump.
+ *
+ * THE SCREENS ARE THE APP KIT (components/app-kit — web ports of PapeXV2's
+ * own receipts.tsx / coupons.tsx / receiptDetail.tsx / stores.tsx, sized
+ * from the generated StyleSheets). The kit lays each screen out at its real
+ * 393 x 852pt, which is exactly the phone's screen, so a whole phone shows
+ * the whole screen: FAB 89pt above the bottom edge, tab bar flush to it.
+ *
+ * DEMO DATA: featureData.ts, invented names only, and each shot carries the
+ * "Demo data" caption. The quiz result (persona) picks the Find query and the
+ * Deals tab; before the quiz, and on the server, it is `casual`.
  */
 
-/**
- * Wraps a screen in the device and crops it against ONE edge of the cell.
- *
- * THE CROP IS HONEST (2026-09-23, Nico: "no inconsistencies, like a FAB in the
- * middle of the screen"). The screen inside is laid out exactly as the app
- * lays it out — FAB 89pt above the device's bottom edge, tab bar flush to
- * it — and the cell simply cuts the device off. Nothing is lifted to "ride"
- * the crop line.
- *
- * `crop="bottom"` (default) shows the top of the device, cut at the cell's
- * bottom edge. `crop="top"` shows the BOTTOM of the device, cut at the cell's
- * top edge — used only by the Add shot, because what it shows (the open FAB
- * and its three chips) lives at the bottom of the screen.
- */
-function Shot({
-  children,
-  slot,
-  crop = "bottom",
-}: {
-  children: React.ReactNode;
-  /** app-media slot whose real capture, if imported, replaces the drawn screen. */
-  slot?: string;
-  crop?: "bottom" | "top";
-}) {
+const SCREEN_W = "var(--wp-w)";
+
+function Shot({ children }: { children: React.ReactNode }) {
   return (
-    // "dark" is the pointer-glow variant for a card on navy: the Features
-    // section is on the NAVY ground, and .featShot takes its navy bed there
-    // (customer.module.css).
-    <div
-      className={cn(styles.featShot, crop === "top" && styles.featShotCropTop)}
-      data-lit="dark"
-      style={{ aspectRatio: "4 / 3" }}
-    >
-      <div className={styles.featShotPhone}>
-        <PhoneChrome mediaSlot={slot}>{children}</PhoneChrome>
+    // "dark" = the pointer-glow variant for a card on the navy ground.
+    <div className={styles.featStage} data-lit="dark">
+      {/* Decorative: the row's own text says what the phone shows. */}
+      <div className={styles.featPhone} aria-hidden="true">
+        <PhoneChrome>
+          <AppKitRoot mode="dark" width={SCREEN_W} className={x.root}>
+            {children}
+          </AppKitRoot>
+        </PhoneChrome>
       </div>
       <span className={styles.featDemo}>{featuresContent.demoLabel}</span>
     </div>
@@ -58,209 +79,175 @@ function Shot({
 }
 
 /**
- * FIND — the Receipts tab after a search for "blue": the query sits in the
- * field with its clear button, the keyboard is down, and the list holds only
- * receipts that match (search FILTERS, app-reference.md §1.7). Each row's
- * meta line carries its auto-assigned category ("Sep 22 • Dining").
+ * FIND — the Receipts tab after a search: the query sits in the field with
+ * its clear button, the keyboard is down, and the list holds only receipts
+ * that match (search FILTERS, app-reference.md §1.7), still grouped by date.
+ * Each row's meta line carries its auto-assigned category.
  */
-function FindShot() {
+function FindShot({ persona }: { persona: PersonaId }) {
+  const { query, rows } = FIND_BY_PERSONA[persona];
   return (
-    <Shot slot="receipts-search">
-      <ReceiptsScreen query={SEARCH_QUERY} rows={SEARCH_ROWS} />
+    <Shot>
+      <ReceiptsScreen receipts={rows} query={query} />
     </Shot>
   );
 }
 
 /**
- * ADD — the Receipts tab with the FAB OPEN (FloatingFAB.tsx): the + has turned
- * into an × (the same glyph rotated -135°) and the three 44pt orange chips sit
- * to its LEFT — Capture (camera), Library (images), Manual (edit) — 6pt from
- * the FAB, 8pt apart, centred on its middle. The list's newest rows came in by
- * scan ("Scanned by you") and by forwarded email ("Email by you").
- *
- * The open FAB is drawn OVER the tab's own closed FAB, at the identical spot
- * and size, so the list screen stays the one shared ReceiptsScreen.
+ * ADD — the Receipts tab with the FAB OPEN (PapeXV2 components/ui/
+ * FloatingFAB.tsx). The kit's ReceiptsScreen draws the closed FAB at the
+ * app's own spot (bottom = safe area 34 + tab bar 49 + FAB_TO_NAV_GAP 6,
+ * right 16); the open FAB is drawn OVER it at the identical box, from the same
+ * constants, so it can never drift from the list again: the + glyph rotated
+ * -135deg (the app's x), and the three ACTION_SIZE chips to its LEFT
+ * (right = 16 + FAB_SIZE + FAB_TO_CLUSTER_GAP, centred on the FAB's middle,
+ * ACTION_GAP apart): Capture (camera, filled), Library (images, filled),
+ * Manual (edit). No backdrop — the app draws none.
  */
+function OpenFab() {
+  const { colors, shadows } = appTheme("dark");
+  const FF = R.floatingFab;
+  const C = FF.consts;
+  const S = FF.styles.styles;
+  const bottom = DEVICE.insetBottom + tabBarMetrics.TAB_BAR_HEIGHT + C.FAB_TO_NAV_GAP;
+  const chips: { glyph: "camera" | "images" | "edit"; filled: boolean }[] = [
+    { glyph: "camera", filled: true },
+    { glyph: "images", filled: true },
+    { glyph: "edit", filled: false },
+  ];
+  return (
+    <>
+      <V
+        style={{
+          ...rn(S.actionsRow),
+          bottom: pt(bottom + (C.FAB_SIZE - C.ACTION_SIZE) / 2),
+          right: pt(16 + C.FAB_SIZE + C.FAB_TO_CLUSTER_GAP),
+          flexDirection: "row",
+          gap: pt(C.ACTION_GAP),
+          // Above the kit's own FAB layer (fabFloat zIndex 30).
+          zIndex: 31,
+        }}
+      >
+        {chips.map((c) => (
+          <V key={c.glyph} style={rn(S.actionCircle, { backgroundColor: colors.accent }, shadows.md)}>
+            <Glyph name={c.glyph} size={22} color={colors.background} filled={c.filled} />
+          </V>
+        ))}
+      </V>
+      <V style={{ ...rn(S.fabFloat), bottom: pt(bottom), right: pt(16), zIndex: 32 }}>
+        <V style={rn(S.fab, { backgroundColor: colors.accent, borderColor: "rgba(255, 255, 255, 0.12)" }, shadows.lg)}>
+          <Glyph name="add" size={28} color={colors.background} filled style={{ transform: "rotate(-135deg)" }} />
+        </V>
+      </V>
+    </>
+  );
+}
+
 function AddShot() {
   return (
-    <Shot crop="top">
-      <ReceiptsScreen rows={ADD_ROWS} />
-      <span className={styles.fabOpen} aria-hidden="true" />
-      <span className={styles.fabChips} aria-hidden="true">
-        <span className={styles.fabChip}>
-          <svg viewBox="0 0 24 24" className={styles.fabChipGlyph}>
-            <path
-              fill="currentColor"
-              d="M9.2 4.4h5.6l1.4 2.2h2.4A2.4 2.4 0 0 1 21 9v8.6a2.4 2.4 0 0 1-2.4 2.4H5.4A2.4 2.4 0 0 1 3 17.6V9a2.4 2.4 0 0 1 2.4-2.4h2.4z"
-            />
-            <circle cx="12" cy="13" r="3.6" fill="#EB7100" />
-          </svg>
-        </span>
-        <span className={styles.fabChip}>
-          <svg viewBox="0 0 24 24" className={styles.fabChipGlyph}>
-            <rect x="6.4" y="3.6" width="14.2" height="12.6" rx="2.2" fill="currentColor" opacity="0.55" />
-            <rect x="3.4" y="7.6" width="14.2" height="12.6" rx="2.2" fill="currentColor" />
-            <path d="m5.4 18 3.6-4.2 2.6 2.6 1.8-1.8 2.4 3.4z" fill="#EB7100" />
-          </svg>
-        </span>
-        <span className={styles.fabChip}>
-          <svg
-            viewBox="0 0 24 24"
-            className={styles.fabChipGlyph}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M4 20h4.2L19.4 8.8a2.2 2.2 0 0 0-3.1-3.1L5 16.8z" />
-            <path d="m14.6 7.4 3.1 3.1" />
-          </svg>
-        </span>
-      </span>
+    <Shot>
+      <ReceiptsScreen receipts={ADD_RECEIPTS} />
+      <OpenFab />
     </Shot>
   );
 }
 
 /**
- * SHARE — a receipt's DETAIL screen (receiptDetail.tsx, a root-stack push, so
- * no tab bar and no FAB) with BOTH ways to share filled in: the Shared Group
- * card reads "Shared with <group>" (blue rim, filled orange people glyph) and
- * the Receipt Sharing card reads "Shared with <name>" — person to person.
- * The store card's blue "Shared" tag is there because that list is not empty
- * (app-reference.md §1.8). Data: appui/data.ts DETAIL_RECEIPT.
+ * SHARE — a receipt's DETAIL screen (receiptDetail.tsx, a root-stack push:
+ * no tab bar, no FAB) shared BOTH ways: the Shared Group card reads the group
+ * and the Receipt Sharing card reads "Shared with <name>". The store card's
+ * "Shared" tag is there because that list is not empty.
  */
 function ShareShot() {
   return (
     <Shot>
-      {/* Scrolled 112pt so the Receipt Sharing card clears the crop; the
-          store card rides up under the pinned header, as it does in the app. */}
-      <ReceiptDetailScreen scrollY={112} />
+      <ReceiptDetail receipt={SHARE_RECEIPT} />
     </Shot>
   );
 }
 
-function SearchGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" className={s.searchIcon} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
-      <circle cx="10.6" cy="10.6" r="6.4" />
-      <path d="m15.4 15.4 4.2 4.2" />
-    </svg>
-  );
-}
-
-function HeartGlyph({ filled = false, className }: { filled?: boolean; className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-      <path
-        d="M12 20.2S3.6 15.1 3.6 9.3A4.5 4.5 0 0 1 12 7a4.5 4.5 0 0 1 8.4 2.3c0 5.8-8.4 10.9-8.4 10.9z"
-        fill={filled ? "#EB7100" : "none"}
-        stroke={filled ? "#EB7100" : "currentColor"}
-        strokeWidth={1.8}
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-/** One store tile, laid out as components/coupons/StoreTile.tsx lays it out
- *  (see STORE_TILES in appui/data.ts for the anatomy). */
-function StoreTileCard({ tile }: { tile: StoreTileData }) {
-  return (
-    <div className={styles.stTile}>
-      <div className={styles.stCover} style={{ background: tile.cover }}>
-        <span className={styles.stEyebrow}>{tile.category}</span>
-      </div>
-      <div className={styles.stBody}>
-        <span className={styles.stName}>{tile.name}</span>
-        <span className={styles.stMeta}>
-          {tile.offer ? <span className={styles.stOffer}>{tile.offer}</span> : null}
-          {tile.expiry ? <span className={styles.stSub}>{tile.expiry}</span> : null}
-          {!tile.offer && tile.openDetail ? (
-            <span className={styles.stSub}>
-              <span className={styles.stOpen}>Open</span> · {tile.openDetail}
-            </span>
-          ) : null}
-        </span>
-        <span className={cn(styles.stFooter, tile.coupons === 0 && styles.stFooterNone)}>
-          <svg viewBox="0 0 24 24" className={styles.stTag} aria-hidden="true">
-            <path d="M11.4 3.4H20v8.6l-8.8 8.8-8.6-8.6z" fill="currentColor" />
-            <circle cx="16.2" cy="7.6" r="1.4" fill="#00121D" />
-          </svg>
-          {tile.coupons === 0 ? "No coupons yet" : `${tile.coupons} ${tile.coupons === 1 ? "coupon" : "coupons"}`}
-        </span>
-      </div>
-      <span className={styles.stMark}>
-        <span className={styles.stMarkInner} style={{ background: tile.mark }}>
-          {tile.initial}
-        </span>
-      </span>
-      <span className={styles.stHeart}>
-        <HeartGlyph filled={tile.favorite} className={styles.stHeartGlyph} />
-      </span>
-    </div>
-  );
-}
-
 /**
- * DEALS — the Stores tab (app/(tabs)/stores.tsx): pinned title row [Select]
- * [Stores] [heart], the pinned "Search" field, then the 2-column store grid
- * (16pt edges, 12pt gutter). Each tile is a store's page in the app, shows the
- * shopper's own coupons for it, and carries a favorite heart. The Stores tab
- * has NO FAB (app-reference.md §1.2). The tab bar is drawn and cropped.
+ * DEALS, Stores tab (app/(tabs)/stores.tsx, app-reference.md "Stores"): the
+ * pinned title row [Select] [Stores] [glass heart], the pinned "Search" field
+ * 12pt under the bubble (HEADER_CONTENT_GAP), then the 2-column StoreTile
+ * grid 16pt under the field (16pt edges, STORE_TILE_GAP gutter). Each tile
+ * counts the shopper's own coupons for that store. No FAB on this tab.
  */
-function DealsShot() {
+function StoresScreen() {
+  const searchTop = headerContentTop();
+  const gridTop = searchTop + 44 + 16;
+  const ST = R.storeTile.consts;
+  return (
+    <Screen mode="dark">
+      <V
+        style={{
+          position: "absolute",
+          left: pt(ST.STORE_TILE_EDGE_INSET),
+          right: pt(ST.STORE_TILE_EDGE_INSET),
+          top: pt(gridTop),
+          flexDirection: "row",
+          flexWrap: "wrap",
+          gap: pt(ST.STORE_TILE_GAP),
+        }}
+      >
+        {DEAL_STORES.map((store) => {
+          const held = DEAL_COUPONS.filter((c) => c.storeId === store.id);
+          const lead = held[0];
+          const expiry = lead ? describeCouponExpiry(lead.expiresAt, DEMO_NOW) : null;
+          return (
+            <StoreTile
+              key={store.id}
+              store={store}
+              mode="dark"
+              couponCount={held.length}
+              lead={lead ? { title: lead.title, expiry: expiry?.text } : undefined}
+              isFavorite={DEAL_FAVORITE_STORES.includes(store.id)}
+            />
+          );
+        })}
+      </V>
+      <TabTitleRow
+        mode="dark"
+        left={<SelectCapsule mode="dark" />}
+        title={<TitleBubble mode="dark" title="Stores" />}
+        right={
+          <HeaderCircle mode="dark">
+            <GlassIcon name="heart" size={R.couponsScreen.consts.HEADER_GLASS_ICON} mode="dark" />
+          </HeaderCircle>
+        }
+      />
+      <V style={{ position: "absolute", left: pt(16), right: pt(16), top: pt(searchTop), zIndex: 10, flexDirection: "row" }}>
+        <SearchField mode="dark" placeholder="Search" style={{ flex: "1 1 0%" }} />
+      </V>
+      <TabBar active="stores" mode="dark" />
+      <StatusBar />
+    </Screen>
+  );
+}
+
+/** DEALS, Coupons tab: the coupon list, the partner-tap Tidewick coupon on top. */
+function DealsShot({ persona }: { persona: PersonaId }) {
   return (
     <Shot>
-      <div className={cn(s.screen, s.titleOneLine)}>
-        <div className={s.ground} aria-hidden="true" />
-        <StatusBar />
-
-        <div className={styles.stGrid}>
-          {STORE_TILES.map((tile) => (
-            <StoreTileCard key={tile.id} tile={tile} />
-          ))}
-        </div>
-
-        <div className={s.headerRow}>
-          <span className={s.headerSide}>
-            <span className={s.selectPill} aria-hidden="true">
-              Select
-            </span>
-          </span>
-          <div className={s.headerPill}>
-            <span className={s.headerTitle}>Stores</span>
-          </div>
-          <span className={cn(s.headerSide, s.headerSideEnd)}>
-            <span className={s.circleBtn} aria-hidden="true">
-              <HeartGlyph className={s.circleGlyph} />
-            </span>
-          </span>
-        </div>
-
-        <div className={s.searchRow}>
-          <div className={s.search}>
-            <SearchGlyph />
-            <span className={s.searchText}>Search</span>
-          </div>
-        </div>
-
-        <TabBar active="stores" />
-      </div>
+      {dealsTab[persona] === "stores" ? (
+        <StoresScreen />
+      ) : (
+        <CouponsScreen coupons={DEAL_COUPONS} favorites={DEAL_FAVORITES} />
+      )}
     </Shot>
   );
 }
 
 /** The app shot for each Features row. */
-export function FeatureShot({ feature }: { feature: FeatureKey }) {
+export function FeatureShot({ feature, persona }: { feature: FeatureKey; persona: PersonaId }) {
   switch (feature) {
     case "find":
-      return <FindShot />;
+      return <FindShot persona={persona} />;
     case "add":
       return <AddShot />;
     case "share":
       return <ShareShot />;
     case "deals":
-      return <DealsShot />;
+      return <DealsShot persona={persona} />;
   }
 }
