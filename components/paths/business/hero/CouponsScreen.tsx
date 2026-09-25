@@ -25,8 +25,8 @@ import s from "./hero.module.css"
  * Hero-only additions, both driven by `state` (the loop owns the timing):
  *   - "pending" -> "landed": the row drops into its slot (transform/opacity)
  *     with a one-shot orange highlight.
- *   - "used": the expiry line is replaced by "Used today" and a small
- *     "Welcome back" toast sits above the tab bar.
+ *   - "used": the expiry line is replaced by "Used" (the app's own word:
+ *     "Mark as used" / "Used coupons").
  *
  * Presentational and sized by appui's `--u` (one iPhone point), which the
  * phone frame sets.
@@ -135,7 +135,7 @@ function CouponRow({ state }: { state: CouponState }) {
           </span>
           <span className={s.cTitle}>{c.title}</span>
           {/* Two lines in one cell, crossfaded: the expiry until the return
-              visit, then "Used today". */}
+              visit, then "Used". */}
           <span className={s.cDetailCell}>
             <span className={cn(s.cDetail, used && s.fadeOut)}>{c.expiry}</span>
             <span className={cn(s.cUsed, !used && s.fadeOut)}>
@@ -195,14 +195,6 @@ export function CouponsScreen({ state, time }: { state: CouponState; time?: stri
         <span className={a.circleBtn}>
           <FilterGlyph />
         </span>
-      </div>
-
-      {/* The return visit's toast (the app shows toasts above the tab bar). */}
-      <div className={cn(s.toast, state === "used" && s.toastOn)}>
-        <span className={s.toastCheck}>
-          <CheckGlyph className={s.toastGlyph} />
-        </span>
-        <span className={s.toastText}>{loop.welcome}</span>
       </div>
 
       <TabBar active="coupons" />

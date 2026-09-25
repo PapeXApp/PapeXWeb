@@ -22,7 +22,7 @@ import s from "./hero.module.css"
  *   beat 2  Coupon      the app's Coupons tab; "$2 off your next visit" drops
  *                       into the list
  *   beat 3  Comes back  a second tap at the counter; the coupon reads
- *                       "Used today" and a "Welcome back" toast appears
+ *                       "Used" (no store greeting: the app has none)
  *   close               the last arc of the ring (Comes back -> Tap) lights,
  *                       closing the loop
  *

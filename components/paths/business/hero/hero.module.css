@@ -546,7 +546,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* Expiry and "Used today" share one cell and crossfade. */
+/* Expiry and "Used" share one cell and crossfade. */
 .cDetailCell {
   display: grid;
   margin-top: calc(1 * var(--u));
@@ -613,61 +613,6 @@
 .controlsSearch {
   flex: 1 1 auto;
   min-width: 0;
-}
-
-/* The return visit's toast, above the tab bar (tab bar top = 21 + 59pt from
-   the bottom, then the app's 12pt content gap). */
-.toast {
-  position: absolute;
-  left: calc(16 * var(--u));
-  right: calc(16 * var(--u));
-  bottom: calc(92 * var(--u));
-  z-index: 8;
-  height: calc(46 * var(--u));
-  padding: 0 calc(14 * var(--u)) 0 calc(10 * var(--u));
-  display: flex;
-  align-items: center;
-  gap: calc(10 * var(--u));
-  border-radius: 999px;
-  background: rgba(0, 18, 29, 0.78);
-  backdrop-filter: blur(16px) saturate(170%);
-  -webkit-backdrop-filter: blur(16px) saturate(170%);
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.16),
-    0 calc(10 * var(--u)) calc(28 * var(--u)) rgba(0, 0, 0, 0.4);
-  opacity: 0;
-  transform: translateY(calc(16 * var(--u)));
-  transition:
-    opacity 0.4s ease,
-    transform 0.55s cubic-bezier(0.2, 1, 0.3, 1);
-}
-.toastOn {
-  opacity: 1;
-  transform: none;
-  transition-delay: 0.3s;
-}
-.toastCheck {
-  flex: 0 0 auto;
-  width: calc(26 * var(--u));
-  height: calc(26 * var(--u));
-  border-radius: 999px;
-  background: #eb7100;
-  color: #00121d;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.toastGlyph {
-  width: calc(16 * var(--u));
-  height: calc(16 * var(--u));
-}
-.toastText {
-  font-size: calc(15 * var(--u));
-  font-weight: 500;
-  color: var(--ink);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 @media (prefers-reduced-motion: reduce) {

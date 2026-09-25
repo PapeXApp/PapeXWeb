@@ -30,10 +30,8 @@ export const loop = {
     kind: "$2 OFF",
     title: "$2 off your next visit",
     expiry: "Expires in 30 days",
-    used: "Used today",
+    used: "Used",
   },
-  /** The small toast on the return visit. */
-  welcome: "Welcome back to Nook Cafe",
   demoTag: "Demo data",
   /** Screen-reader description of the whole visual (the phone itself is
    *  aria-hidden: its strings are app furniture, not content). */
