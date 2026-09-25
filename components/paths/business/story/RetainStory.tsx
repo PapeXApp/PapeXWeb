@@ -6,7 +6,7 @@ import { PlaneMark } from "@/components/brand/plane-mark"
 import { ClipLockScreen, ClipReading } from "../../customer/appui"
 import { receiptMoment } from "../../customer/appui/Clip"
 import { PhoneChrome } from "../../customer/WalkPhone"
-import { CustomerLine, DashboardColumns, DashboardCopy } from "../DashboardPreview"
+import { DashboardColumns, DashboardCopy } from "../DashboardPreview"
 import { story } from "../story"
 import { Bin, DeviceArt, Printer } from "./Furniture"
 import { FitFrame } from "./merchant/FitFrame"
@@ -59,12 +59,24 @@ import s from "../story.module.css"
  *                       covering the stage while the pair fades under it.
  *   0.72-0.80  DELIVER  the sale lands on the dashboard: its row slides into
  *                       the top of Transactions and the count ticks up
- *   0.80-0.86  HOLD     nothing moves: laptop (phone dashboard on phones) and
- *                       the customer's phone are USABLE here, full size
- *   0.86-1.00  VALUE    the row shrinks to the top of the pin and the
- *                       dashboard's heading rises in under it; the story
- *                       latches open and both screens are usable again. On
- *                       phones only the dashboard phone docks, scaled to fit.
+ *   0.80-0.90  HOLD     nothing moves: laptop (phone dashboard on phones) and
+ *                       the customer's phone are USABLE here, full size; the
+ *                       caption fades from 0.86 and the story latches open.
+ *                       (P3-B2: the old VALUE act — the row docking to the top
+ *                       of the pin with the dashboard heading rising under it —
+ *                       is gone. The pin's last frame is the screens alone;
+ *                       the heading, lead and columns follow in flow.)
+ *
+ * THE CAMERA (P3-B2, Nico: "the printer is too small initially... a ton of
+ * blank space"). Every act above is laid out in the stage exactly as before;
+ * a `.cam` layer between the stage and its pieces adds one scale + translate
+ * keyed to `p`, framing what is on screen at each beat into the pin's free
+ * area (under the nav, above the caption): printer + slip large for the
+ * print, eased out as the bin, then the device + phone, then the laptop
+ * arrive, ending on the laptop + phone + device, whole and centred, as large
+ * as the viewport allows. The frames are measured boxes (measure()), so the
+ * camera never reads layout per frame either. Off on phones (<=820px), where
+ * the 1:2 stage already fills the pin.
  *
  * The dashboard is the real one (merchant/MerchantDemo.tsx: app/merchant's
  * own primitives, demo data by props), the customer's phone is the code-
@@ -92,8 +104,14 @@ import s from "../story.module.css"
  * shift is a measured constant, so the flight is right on the first frame.
  */
 
-/** Scroll budget in viewport heights for the story itself. */
-const SCROLL_VH = 320
+/**
+ * The story's p runs 0..P_END over the scroll. P_END < 1 drops the tail of
+ * the old VALUE act (the dock), keeping the same scroll speed for every beat
+ * (320vh per unit of p, as before): the acts land where they always did.
+ */
+const P_END = 0.9
+/** Scroll budget in viewport heights for the story itself (0..P_END). */
+const SCROLL_VH = Math.round(320 * P_END)
 /**
  * After the story ends, the open laptop + dashboard stay pinned for this much
  * more scroll before the page releases them and scrolls on (round 2: "the
@@ -150,11 +168,8 @@ const T = {
   // delivery onto the dashboard, then the usable hold (fillB..dockA)
   fillA: 0.72,
   fillB: 0.8,
-  // value
+  // the settle: the caption fades, the story latches open
   dockA: 0.86,
-  dockB: 0.93,
-  copyA: 0.89,
-  copyB: 0.96,
 } as const
 
 /** Act 1's own clock (fractions of 0..T.act1), the old scene's beats, compressed. */
@@ -191,6 +206,35 @@ const HINT: Record<Phase, string> = {
 }
 
 type Fill = { el: HTMLElement; key: number; kind: string }
+/**
+ * One camera frame: the stage point (x, y) to centre, at zoom s, placed at
+ * the free area's centre (rx, ry) — all in stage px.
+ */
+type Cam = { x: number; y: number; s: number; rx: number; ry: number }
+/** A box in stage px (layout, no transforms). */
+type Box = { x: number; y: number; w: number; h: number }
+/** The camera's free area in stage px, and the pin's size (px). */
+type Region = Box & { pinH: number; pinW: number }
+
+const union = (...bs: Box[]): Box => {
+  const x0 = Math.min(...bs.map((b) => b.x))
+  const y0 = Math.min(...bs.map((b) => b.y))
+  return { x: x0, y: y0, w: Math.max(...bs.map((b) => b.x + b.w)) - x0, h: Math.max(...bs.map((b) => b.y + b.h)) - y0 }
+}
+const shiftBox = (b: Box, dx: number, dy = 0): Box => ({ ...b, x: b.x + dx, y: b.y + dy })
+/**
+ * The frame that shows `b` centred in the free area at `fill` of it; `maxH`
+ * caps the box's on-screen height as a share of the pin's.
+ */
+const fit = (R: Region, b: Box, fill: number, maxH = 1): Cam => ({
+  x: b.x + b.w / 2,
+  y: b.y + b.h / 2,
+  s: Math.min((R.w * fill) / b.w, (R.h * fill) / b.h, (R.pinH * maxH) / b.h),
+  rx: R.x + R.w / 2,
+  ry: R.y + R.h / 2,
+})
+/** The tap frame's share of the free area. */
+const TAP_FILL = 0.96
 
 /** Offset of `el` inside `root`, from layout boxes (transforms don't count). */
 function offsetIn(el: HTMLElement, root: HTMLElement) {
@@ -260,10 +304,7 @@ export function RetainStory() {
   const burstRef = useRef<HTMLSpanElement>(null)
   const launchRef = useRef<HTMLSpanElement>(null)
   const hintRef = useRef<HTMLParagraphElement>(null)
-  const infoRef = useRef<HTMLDivElement>(null)
-  const infoInnerRef = useRef<HTMLDivElement>(null)
-  const slotRef = useRef<HTMLDivElement>(null)
-  const copyRef = useRef<HTMLDivElement>(null)
+  const camRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)")
@@ -316,7 +357,6 @@ export function RetainStory() {
       postX: 0,
       postY: 0,
       postS: 1,
-      dockGroup: true,
       /** <=820px: the phone dashboard card replaces the laptop */
       phoneDash: false,
       /** the tap's tilt, degrees (smaller on phones: the phone is taller) */
@@ -330,11 +370,58 @@ export function RetainStory() {
       bowY: 0,
       lapIn: 0,
       path: [] as number[], // x,y pairs of the spark path, stage px
-      dockTx: 0,
-      dockTy: 0,
-      dockS: 1,
+      /** the camera's four frames (see Cam), stage px; empty = camera off */
+      cams: [] as Cam[],
+      /** the free area, and the tap pose's phone + device boxes (stage px) */
+      region: null as Region | null,
+      phoneBox: { x: 0, y: 0, w: 0, h: 0 } as Box,
+      devBox: { x: 0, y: 0, w: 0, h: 0 } as Box,
+      /** the final frame's pieces: laptop box, the pair's post-slide boxes */
+      lapBox: { x: 0, y: 0, w: 0, h: 0 } as Box,
+      finalPair: [] as Box[],
+      finalFill: 0.94,
+      /** the print frame's pieces: printer, full slip, and its two caps */
+      printerBox: { x: 0, y: 0, w: 0, h: 0 } as Box,
+      slipBox: { x: 0, y: 0, w: 0, h: 0 } as Box,
+      printW: 0.42,
+      printH: 0.7,
+      /** the lid's height and the laptop's perspective (px), for its bulge */
+      lidH: 0,
+      persp: 1400,
       runTop: 0,
       runTotal: 0,
+    }
+
+    /**
+     * The last frame, for a lid `open` 0..1. While the lid swings up its near
+     * edge comes toward the viewer and the laptop's perspective widens it
+     * (most when flat), so the frame makes room for that bulge — and for the
+     * deck, 108% of the laptop — then settles in as the lid stands up.
+     */
+    const finalFrame = (open: number): Cam => {
+      const R = M.region as Region
+      const L = M.lapBox
+      const z = M.lidH * Math.cos((Math.PI / 2) * open)
+      const m = M.persp > z ? M.persp / (M.persp - z) : 1
+      const grow = Math.max(0.04 * L.w, (L.w / 2) * (m - 1))
+      return fit(R, union({ ...L, x: L.x - grow, w: L.w + 2 * grow }, ...M.finalPair), M.finalFill)
+    }
+
+    /**
+     * The print frame for a printed fraction 0..1: the printer and as much
+     * slip as has come out. At 0 that is the printer alone, --cam-printer-w
+     * of the pin's width (capped to the free area's height), centred; as the
+     * slip feeds the box grows down and the camera eases back so its foot
+     * stays in frame, ending on printer + slip at --cam-print-h of the pin.
+     */
+    const printFrame = (printed: number): Cam => {
+      const R = M.region as Region
+      const P = M.printerBox
+      const S = M.slipBox
+      const b = printed > 0 ? union(P, { ...S, h: S.h * printed }) : P
+      const cam = fit(R, b, 0.96, M.printH)
+      // the printer-width cap; the box's fit (height, free area) still wins
+      return { ...cam, s: Math.min(cam.s, (M.printW * R.pinW) / P.w) }
     }
 
     const num = (cs: CSSStyleDeclaration, name: string, fallback: number) => {
@@ -355,7 +442,6 @@ export function RetainStory() {
       M.postX = num(cs, "--g-post-x", 0) * cq
       M.postY = num(cs, "--g-post-y", 0) * cq
       M.postS = num(cs, "--g-post-s", 1)
-      M.dockGroup = num(cs, "--dock-group", 1) > 0
       M.phoneDash = num(cs, "--phone-dash", 0) > 0
       M.bowRot = num(cs, "--bow-rot", 7)
       setPhoneDash(M.phoneDash)
@@ -416,6 +502,7 @@ export function RetainStory() {
       // + 60: the circle ends past the card's shadow, so dropping it for "none" never pops
       M.bloomR = Math.hypot(Math.max(M.bloomX, cb.w - M.bloomX), Math.max(M.bloomY, cb.h - M.bloomY)) + 60
       const lb = offsetIn(lid, stage)
+      const la = offsetIn(laptop, stage)
       const [x0, y0] = post(phb.x + phb.w / 2, phb.y + phb.h * 0.46)
       const x2 = M.phoneDash ? cb.x + M.bloomX : lb.x + lb.w / 2
       const y2 = M.phoneDash ? cb.y + M.bloomY : lb.y + lb.h
@@ -451,30 +538,57 @@ export function RetainStory() {
       if (launch) launch.style.left = `${x0}px`
       if (launch) launch.style.top = `${y0}px`
 
-      // the dock: the whole three-part row (laptop + phone/device) onto the
-      // info layout's empty slot. The stage scales about its top-left.
-      const slot = slotRef.current
-      const info = infoRef.current
-      const inner = infoInnerRef.current
-      if (!slot || !info || !inner) return
-      // desktop docks the whole three-part row; a phone docks the dashboard
-      // phone alone (the customer's phone + device fade: they have delivered)
-      const la = M.phoneDash ? offsetIn(card.firstElementChild as HTMLElement, stage) : offsetIn(laptop, stage)
-      const [gx0, gy0] = post(gb.x, gb.y)
-      const [gx1, gy1] = post(gb.x + gb.w, gb.y + gb.h)
-      const bx = M.dockGroup ? Math.min(la.x, gx0) : la.x
-      const by = M.dockGroup ? Math.min(la.y, gy0) : la.y
-      const bw = (M.dockGroup ? Math.max(la.x + la.w, gx1) : la.x + la.w) - bx
-      const bh = (M.dockGroup ? Math.max(la.y + la.h, gy1) : la.y + la.h) - by
-      const pr = pin.getBoundingClientRect()
-      const sr = slot.getBoundingClientRect()
-      const sx = sr.left - pr.left
-      const sy = sr.top - pr.top
-      // never scaled UP: the docked row is at most its full-size self
-      const sc = Math.min(1, sr.width / bw, sr.height / bh) || 1
-      M.dockS = sc
-      M.dockTx = sx + sr.width / 2 - sc * (bx + bw / 2) - stage.offsetLeft
-      M.dockTy = sy + sr.height / 2 - sc * (by + bh / 2) - stage.offsetTop
+      // ---- the camera's frames ------------------------------------------
+      // Each is a box in stage px (layout, no transforms) that should fill
+      // the pin's free area at that beat; fit() turns it into a centre and
+      // a zoom. The free area: under the nav (--cam-top), above the caption,
+      // --cam-side from the viewport's edges, in the stage's own coordinates.
+      M.cams = []
+      M.region = null
+      const pcs = getComputedStyle(pin)
+      if (num(cs, "--cam", 1) > 0) {
+        const hint = hintRef.current
+        const top = num(pcs, "--cam-top", 92)
+        const sideX = num(pcs, "--cam-side", 32)
+        const bottom = hint ? hint.offsetTop - num(pcs, "--cam-gap", 12) : pin.clientHeight - 64
+        const R: Region = {
+          x: sideX - stage.offsetLeft,
+          y: top - stage.offsetTop,
+          w: pin.clientWidth - 2 * sideX,
+          h: bottom - top,
+          pinH: pin.clientHeight,
+          pinW: pin.clientWidth,
+        }
+        M.region = R
+        const postBox = (b: Box): Box => {
+          const [x0, y0] = post(b.x, b.y)
+          const [x1, y1] = post(b.x + b.w, b.y + b.h)
+          return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }
+        }
+        // the slip at full length (the feed is a clip-path; its box is whole)
+        const slip = offsetIn(paper, stage)
+        M.phoneBox = phb
+        M.devBox = db
+        // print: follows the slip out (printFrame); [0] is the printed slip
+        M.printerBox = prb
+        M.slipBox = slip
+        M.printW = num(pcs, "--cam-printer-w", 0.42)
+        M.printH = num(pcs, "--cam-print-h", 0.7)
+        const kPrint = printFrame(1)
+        // trash: the rig shifted left, and the bin
+        const kTrash = fit(R, union(shiftBox(prb, M.rigShift), shiftBox(slip, M.rigShift), bb), 0.96)
+        // tap: the phone on the device, as big as the free area allows
+        const kTap = fit(R, union(phb, db), TAP_FILL)
+        // final: the laptop (lid + deck) and the pair in its post-slide spot
+        M.lapBox = la
+        M.finalPair = [postBox(phb), postBox(db)]
+        M.finalFill = num(pcs, "--cam-final-fill", 0.94)
+        M.lidH = lb.h
+        M.persp = parseFloat(getComputedStyle(laptop).perspective) || 1400
+        const kFinal = finalFrame(1)
+        // [3] the lid up (the hold), [4] the lid still flat (its widest)
+        M.cams = [kPrint, kTrash, kTap, kFinal, finalFrame(0)]
+      }
     }
 
     // Every write goes through set(): unchanged values are dropped, and the
@@ -776,37 +890,53 @@ export function RetainStory() {
         op(e.el, 1 - ease(seg(fl, e.key * step, e.key * step + dur * 0.6)), `${pre}e${n}`)
       }
 
-      // ---- value: dock the row, raise the info ------------------------------
-      const ai = seg(p, T.dockA, 1)
-      const dk = ease(seg(p, T.dockA, T.dockB))
-      set(
-        stage,
-        "transform",
-        dk > 0
-          ? `translate(${(M.dockTx * dk).toFixed(1)}px, ${(M.dockTy * dk).toFixed(1)}px) scale(${(1 + (M.dockS - 1) * dk).toFixed(4)})`
-          : "none",
-        "stageT",
-      )
-      op(groundRef.current, 1 - dk, "ground")
+      // ---- the camera ------------------------------------------------------
+      // print -> trash as the rig shifts; trash -> tap across the merge; tap
+      // -> final with the slide. Centre moves linearly, zoom geometrically,
+      // both on the eased clock.
+      const cams = M.cams
+      if (cams.length === 5) {
+        // leads the rig's shift a touch, so the bin sliding in is framed
+        const k1 = ease(seg(q, Q.shiftA - 0.06, Q.shiftB - 0.02))
+        // done soon after the phone starts rising; from there the tap frame
+        // itself tracks the rise (tapNow), so the phone is always framed
+        const k2 = ease(seg(p, T.convA, T.phoneA + 0.02))
+        // leads the group's slide a touch, so the laptop fading in on the
+        // left is inside the frame from its first visible frame
+        const k3 = ease(seg(p, T.slideA - 0.015, T.slideB - 0.02))
+        // while the phone rises, the tap frame holds it where it is (still
+        // low), so its foot is never under the caption or off the screen
+        const riseDy = (1 - rise) * 0.35 * M.phoneH
+        const tapNow =
+          riseDy > 0.5 && M.region ? fit(M.region, union(shiftBox(M.phoneBox, 0, riseDy), M.devBox), TAP_FILL) : cams[2]
+        const finalNow = open > 0 && open < 1 ? finalFrame(open) : open >= 1 ? cams[3] : cams[4]
+        const [a0, b0, t0] =
+          k3 > 0 ? [cams[2], finalNow, k3] : k2 > 0 ? [cams[1], tapNow, k2] : [print < 1 ? printFrame(print) : cams[0], cams[1], k1]
+        const cs = a0.s * Math.pow(b0.s / a0.s, t0)
+        const cx = a0.x + (b0.x - a0.x) * t0
+        const cy = a0.y + (b0.y - a0.y) * t0
+        const rx = a0.rx + (b0.rx - a0.rx) * t0
+        const ry = a0.ry + (b0.ry - a0.ry) * t0
+        set(
+          camRef.current,
+          "transform",
+          `translate(${(rx - cs * cx).toFixed(1)}px, ${(ry - cs * cy).toFixed(1)}px) scale(${cs.toFixed(4)})`,
+          "camT",
+        )
+      } else set(camRef.current, "transform", "none", "camT")
+
       op(
         groupRef.current,
-        M.dockGroup
-          ? 1
-          : M.phoneDash
-            ? // phones: the pair fades under the card as it blooms
-              1 - ease(seg(p, T.openA + 0.02, T.openB))
-            : 1 - ease(seg(p, T.dockA, T.dockA + 0.05)),
+        M.phoneDash
+          ? // phones: the pair fades under the card as it blooms
+            1 - ease(seg(p, T.openA + 0.02, T.openB))
+          : 1,
         "grpO",
       )
       op(hintRef.current, 1 - ease(seg(p, T.dockA, T.dockA + 0.04)), "hint")
-      const rise3 = (el: HTMLElement | null, t: number, key: string) => {
-        op(el, t, `${key}O`)
-        set(el, "transform", `translateY(${(26 * (1 - t)).toFixed(1)}px)`, `${key}T`)
-      }
-      rise3(copyRef.current, ease(seg(p, T.copyA, T.copyB)), "copy")
 
       setPhaseOnce(
-        ai > 0
+        p >= T.dockA
           ? "info"
           : p >= T.fillA
             ? "dash"
@@ -832,7 +962,9 @@ export function RetainStory() {
     // is held at the fully-open end state, and (b) for the few hundred ms of
     // an eased catch-up right after the latch engages or lets go, so the
     // switch never snaps. Everything else stays a pure function of scroll.
-    const P_LATCH = T.copyB
+    // in units of the scroll's own progress (0..1 -> p 0..P_END): latch at
+    // the end; letting go lands in the hold (p >= fillB), never the delivery
+    const P_LATCH = 0.99
     const P_RELEASE = P_LATCH - REVERSE_VH / SCROLL_VH
     let latched = false
     let catching = false
@@ -869,13 +1001,13 @@ export function RetainStory() {
       }
       if (!catching) shown = target
       lastT = now
-      draw(shown)
+      draw(shown * P_END)
       if (runway) runway.dataset.settled = catching ? "0" : "1"
-      // usable only at rest: the hold between delivery and dock, or latched
-      const hold = shown >= T.fillB && shown <= T.dockA
+      // usable only at rest: from the end of the delivery on, or latched
+      const hold = shown * P_END >= T.fillB
       setLiveOnce(!catching && (latched || hold))
       // running back into the delivery: put both screens back to its frame
-      if (shown >= T.fillB) armed = true
+      if (shown * P_END >= T.fillB) armed = true
       else if (armed) {
         armed = false
         setReset((n) => n + 1)
@@ -902,8 +1034,7 @@ export function RetainStory() {
     ro.observe(pin)
     // anything above the runway changing height moves where it starts
     ro.observe(document.documentElement)
-    if (infoInnerRef.current) ro.observe(infoInnerRef.current)
-    // fonts landing change the info block's height (the dock's slot)
+    // fonts landing can change the caption's box (the camera's floor)
     document.fonts?.ready.then(onResize).catch(() => {})
     return () => {
       window.removeEventListener("scroll", onScroll)
@@ -914,16 +1045,17 @@ export function RetainStory() {
   }, [pinned])
 
   // The dashboard's explanation, after the scene in both versions (in flow,
-  // so the pinned screen never has to hold it).
+  // so the pinned screen never has to hold it): the heading block (its lead
+  // carries the customer line), air, then the three columns.
   const after = (
     <div className={s.after}>
+      <DashboardCopy className={s.afterCopy} />
       <DashboardColumns />
-      <CustomerLine />
     </div>
   )
   const staticVersion =
     mode === "scene" ? null : (
-      <div className={s.staticSlot} data-nojs="static">
+      <div className={`${s.staticSlot} ${s.col}`} data-nojs="static">
         <StaticStory />
       </div>
     )
@@ -953,6 +1085,8 @@ export function RetainStory() {
             customer's phone — which become real, focusable UIs while the
             scene is at rest (the hold, or latched open). */}
         <div className={s.stage} ref={stageRef}>
+          {/* the camera: one transform over the whole scene (see THE CAMERA) */}
+          <div className={s.cam} ref={camRef}>
           <span className={s.ground} ref={groundRef} aria-hidden="true" />
 
           {/* ---- act 1: printer + slip travel together as the rig ---- */}
@@ -1129,19 +1263,13 @@ export function RetainStory() {
             <span className={s.head} ref={headRef} />
             <span className={s.burst} ref={burstRef} />
           </div>
+          </div>
         </div>
 
         <p className={s.hint} ref={hintRef} aria-hidden="true">
           {HINT[phase]}
         </p>
 
-        {/* the value: an empty slot the row docks into, then the info */}
-        <div className={s.info} ref={infoRef}>
-          <div className={s.infoInner} ref={infoInnerRef}>
-            <div className={s.slot} ref={slotRef} aria-hidden="true" />
-            <DashboardCopy className={s.infoCopy} ref={copyRef} />
-          </div>
-        </div>
       </div>
     </div>
     {after}

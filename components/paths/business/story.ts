@@ -52,7 +52,7 @@ export const story = {
   lockPrompt: { title: "Tap to get your receipt", body: "Hold your iPhone near the PapeX device" },
 } as const
 
-/** The dashboard info that rises in under the laptop at the end. */
+/** The dashboard info, in flow after the scene (heading block, then columns). */
 export const storyDashboard = {
   eyebrow: "Your dashboard, included",
   heading: "Every receipt, working for you.",
@@ -71,6 +71,7 @@ export const storyDashboard = {
       body: "Your tap rate: how many receipts customers opened. And when each PapeX device last checked in.",
     },
   ],
+  /** Read as the lead's second beat (DashboardCopy), not a line of its own. */
   customerLine: {
     lead: "And your customers?",
     body: "They can keep every receipt in the free PapeX app.",
