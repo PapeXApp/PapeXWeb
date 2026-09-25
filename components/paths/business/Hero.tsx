@@ -24,8 +24,13 @@ import styles from "./business.module.css"
 // Web 2.1 wave 3 (Nico, 2026-09-24): the visual column no longer shows the
 // PapeX device box ("we don't want to make it seem like we're a hardware
 // company… especially if investors are looking"), and the infinite float
-// that came with it is gone. It shows the RETURN-VISIT LOOP instead — tap ->
-// coupon -> comes back — on one phone: hero/LoopVisual.tsx.
+// that came with it is gone. It shows the RETURN-VISIT LOOP instead.
+//
+// P3-B1 (Nico, 2026-09-25: "not clear, not intuitive… moves too fast"): the
+// loop is now a slow, LOOPED story at a checkout counter — tap the PapeX
+// device, the receipt (zoomed in, scrolled), the coupon for next time, then
+// back at the counter to use it — one captioned beat at a time, ~19.6s a
+// cycle, paused off screen: hero/LoopVisual.tsx.
 export function Hero() {
   // The demo receipt is decoded HERE, on the server, through this repo's own
   // lib/escpos.ts + lib/receiptSummary.ts (same bytes and path as /customers),
@@ -37,8 +42,8 @@ export function Hero() {
       ground="navy"
       className={`${styles.screen} overflow-hidden px-[clamp(20px,5vw,56px)] pb-[var(--section-pad-y)] pt-[clamp(96px,12vh,120px)]`}
     >
-      {/* No JS: LoopVisual's stage waits hidden for hydration (see its
-          FIRST PAINT note); without JS it must show its final frame. */}
+      {/* No JS: LoopVisual's stage and caption wait hidden for hydration
+          (see its STILL FRAME note); without JS they show the still frame. */}
       <noscript>
         <style>{`[data-hero-loop]{opacity:1!important}`}</style>
       </noscript>
@@ -139,7 +144,7 @@ export function Hero() {
           </a>
         </ChildStagger>
 
-        {/* The return-visit loop: tap -> coupon -> comes back. */}
+        {/* The loop: tap -> receipt -> coupon -> they come back. */}
         <div className="flex min-w-0 items-center justify-center">
           <LoopVisual summary={summary} clock={clock} />
         </div>

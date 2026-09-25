@@ -1,214 +1,340 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import Image from "next/image"
 import { cn } from "@/lib/utils"
 import type { ReceiptSummary } from "@/lib/receiptSummary"
 import { PhoneChrome } from "../../customer/WalkPhone"
 import { ClipReceiptScreen } from "../../customer/ReceiptCard"
+import { ClipLockScreen } from "../../customer/appui"
+import { receiptMoment } from "../../customer/appui/Clip"
 import { CouponsScreen, type CouponState } from "./CouponsScreen"
+import { Cashier, CheckGlyph, HandBack, HandFront } from "./SceneArt"
 import { loop } from "./loop"
 import s from "./hero.module.css"
 
 /**
- * The /business hero visual — the RETURN-VISIT LOOP on one phone (Web 2.1
- * wave 3). Replaces the floating PapeX device box: Nico, 2026-09-24, "we
- * don't want to make it seem like we're a hardware company". What a merchant
- * should get from it at a glance: it isn't only receipts, it's receipts AND
- * coupons, and the point is bringing the customer back.
+ * The /business hero visual — "CLOSE THE LOOP", a slow looped story at a
+ * checkout counter (P3-B1, 2026-09-25). Replaces the one-pass ring (~5.9s,
+ * then held), which Nico found too fast and unclear.
  *
- *   beat 1  Tap         the App Clip's rendered Tidewick Cafe receipt (the SAME
- *                       screen /customers draws: ClipReceiptScreen), a tap
- *                       ripple at the top of the phone, then "Saved"
- *   beat 2  Coupon      the app's Coupons tab; "$2 off your next visit" drops
- *                       into the list
- *   beat 3  Comes back  a second tap at the counter; the coupon reads
- *                       "Used" (no store greeting: the app has none)
- *   close               the last arc of the ring (Comes back -> Tap) lights,
- *                       closing the loop
+ *   1 Tap             a hand brings the phone down onto the PapeX device on
+ *                     the counter; a ripple; the App Clip card rises
+ *   2 Receipt         the receipt opens, the view zooms into the phone and
+ *                     the screen slowly scrolls down the receipt to "Saved"
+ *   3 Coupon          the app's Coupons tab slides in; the coupon for the
+ *                     next visit drops into the list
+ *   4 They come back  the phone shrinks back into the hand, now held up to
+ *                     the person behind the counter ("Next visit"): the
+ *                     coupon is used; the hand leaves, and round again
  *
- * The three stops sit ON a ring drawn behind the phone (wide column) or in a
- * numbered row under it (narrow column) — a container query picks, so the
- * phone is always whole and never covered.
+ * One caption above the scene says the current beat in a sentence; the four
+ * numbered steps under it show where we are (and ARE the text for screen
+ * readers and the still frame).
  *
- * MOTION: one pass, ~5.9s, then it holds on the final frame. It starts on
- * load where the stage is on screen (desktop), or the first time it scrolls
- * into view (phones, where it sits under the text); an IntersectionObserver
- * decides, so nothing reads layout per frame. Only
- * opacity, transform and clip-path animate; no layout is read. There is no
- * loop and no infinite animation anywhere in the hero.
+ * MOTION. A timer walks TIMELINE (one cycle = CYCLE_MS, 19.6s); every beat is
+ * a class/attribute change, and CSS transitions do the moving — transform and
+ * opacity only, nothing reads layout per frame, no rAF loop. The one layout
+ * read is the receipt's scroll distance, once per cycle. It runs only while
+ * the stage is on screen (IntersectionObserver) and the tab is visible: on
+ * pause the timer stops and every running transition/animation in the stage
+ * is paused (Element.getAnimations), and both resume where they left off.
  *
- * FIRST PAINT: the server renders the FINAL frame (that is also the no-JS and
- * reduced-motion picture). With motion allowed the stage starts invisible
- * (CSS, keyed on `data-mode`), rewinds to beat 1 with transitions off, and
- * fades in — so nobody sees the final frame flash and then rewind.
+ * STILL FRAME. The server render, no-JS and prefers-reduced-motion all show
+ * beat 4 complete (the coupon shown at the counter, used) with all four steps
+ * listed — one picture that tells the whole loop. With motion allowed the
+ * stage starts hidden (CSS, keyed on `data-mode`), rewinds to the empty
+ * counter with transitions off, and fades in, so the still frame never
+ * flashes. The stage's box is the same size in every mode (0px jump).
  */
 
-type Phase = "receipt" | "tap" | "saved" | "coupon" | "back" | "closed"
+type Beat =
+  | "still"
+  | "off"
+  | "enter"
+  | "tap"
+  | "card"
+  | "receipt"
+  | "zoom"
+  | "scroll"
+  | "saved"
+  | "coupon"
+  | "landed"
+  | "back"
+  | "used"
+  | "leave"
 
-const ORDER: Phase[] = ["receipt", "tap", "saved", "coupon", "back", "closed"]
-
-/** When each phase starts, in ms after the stage becomes visible. */
-const SCHEDULE: [Phase, number][] = [
-  ["tap", 450],
-  ["saved", 1500],
-  ["coupon", 2150],
-  ["back", 3950],
-  ["closed", 5200],
+/** Beat -> when it starts, in ms into the cycle. */
+const TIMELINE: [Beat, number][] = [
+  ["off", 0], // hand off stage, screens reset (transitions off)
+  ["enter", 300], // the hand comes in, phone locked (1.1s)
+  ["tap", 1900], // down onto the device (0.9s)
+  ["card", 2800], // ripple + the App Clip card rises
+  ["receipt", 4100], // the receipt opens in the hand
+  ["zoom", 4900], // into the phone (1.5s)
+  ["scroll", 6600], // slow scroll down the receipt (3.8s)
+  ["saved", 10500], // "Saved"
+  ["coupon", 11200], // the Coupons tab slides in (0.8s)
+  ["landed", 12000], // the coupon drops into the list
+  ["back", 14800], // out again, held up at the counter (1.5s)
+  ["used", 16500], // the coupon is used at the counter
+  ["leave", 18600], // the hand leaves (0.9s)
 ]
+const CYCLE_MS = 19600
 
-const at = (phase: Phase, from: Phase) => ORDER.indexOf(phase) >= ORDER.indexOf(from)
+const ORDER: Beat[] = TIMELINE.map(([b]) => b)
+const idx = (b: Beat) => (b === "still" ? ORDER.indexOf("used") : ORDER.indexOf(b))
+const from = (b: Beat, first: Beat) => idx(b) >= idx(first)
+const within = (b: Beat, first: Beat, last: Beat) => idx(b) >= idx(first) && idx(b) <= idx(last)
+
+/** Which of the four steps a beat belongs to (0-based). */
+function stepOf(b: Beat): number {
+  if (b === "off") return 0
+  if (from(b, "back")) return 3
+  if (from(b, "coupon")) return 2
+  if (from(b, "receipt")) return 1
+  return 0
+}
+
+/** Where the phone (and the hand holding it) is. */
+function poseOf(b: Beat): string {
+  switch (b) {
+    case "off":
+    case "leave":
+      return "off"
+    case "enter":
+      return "approach"
+    case "tap":
+    case "card":
+    case "receipt":
+      return "tap"
+    case "zoom":
+    case "scroll":
+    case "saved":
+    case "coupon":
+    case "landed":
+      return "zoom"
+    case "used":
+    case "still":
+      return "give"
+    default:
+      return "show"
+  }
+}
 
 export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock: string }) {
-  // Server + reduced motion + no-JS: the final frame.
-  const [phase, setPhase] = useState<Phase>("closed")
-  // "static" = never animates; "rewind" = beat 1 painted with transitions off
-  // and the stage hidden; "idle" = beat 1 visible, waiting to be on screen;
-  // "play" = running (then holding on the final frame).
-  const [mode, setMode] = useState<"static" | "rewind" | "idle" | "play">("static")
+  // Server + reduced motion + no-JS: the still frame.
+  const [beat, setBeat] = useState<Beat>("still")
+  // "static" = never animates; "rewind" = the empty counter painted with
+  // transitions off and the stage hidden; "run" = visible, looping or paused.
+  const [mode, setMode] = useState<"static" | "rewind" | "run">("static")
+  // Counts cycles, so the one-shot tap ripple remounts (replays) each time.
+  const [cycle, setCycle] = useState(0)
+  // How far the receipt scrolls, measured once per cycle.
+  const [scrollPx, setScrollPx] = useState(0)
 
+  const figRef = useRef<HTMLElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
+  const receiptRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
     const stage = stageRef.current
-    if (!stage) return
-    const timers: number[] = []
+    const fig = figRef.current
+    if (!stage || !fig) return
+
+    let timer = 0
     let raf1 = 0
     let raf2 = 0
-    setPhase("receipt")
-    setMode("rewind")
-    // The pass starts the first time the stage is mostly on screen: at once
-    // on a desktop (it is above the fold), and when it is scrolled to on a
-    // phone, where it sits under the text — otherwise it would finish unseen.
+    let next = 1 // index into TIMELINE of the beat that fires next
+    let dueAt = 0 // performance.now() at which it fires
+    let remaining = TIMELINE[1][1] // ms left on the pending beat while paused
+    let started = false
+    let running = false
+    let onScreen = false
+
+    const fire = () => {
+      const [b] = TIMELINE[next]
+      if (b === "off") setCycle((c) => c + 1)
+      if (b === "receipt") {
+        // The receipt is at the top (not scrolled) here; read its overflow once.
+        const el = receiptRef.current?.querySelector<HTMLElement>(`.${s.recScroll}`)
+        if (el) setScrollPx(Math.max(0, el.scrollHeight - el.clientHeight))
+      }
+      setBeat(b)
+      const at = TIMELINE[next][1]
+      next = (next + 1) % TIMELINE.length
+      const nextAt = next === 0 ? CYCLE_MS : TIMELINE[next][1]
+      arm(nextAt - at)
+    }
+    const arm = (ms: number) => {
+      window.clearTimeout(timer)
+      dueAt = performance.now() + ms
+      timer = window.setTimeout(fire, ms)
+    }
+    const animations = () =>
+      typeof fig.getAnimations === "function" ? fig.getAnimations({ subtree: true }) : []
+
+    const pause = () => {
+      if (!running) return
+      running = false
+      window.clearTimeout(timer)
+      remaining = Math.max(0, dueAt - performance.now())
+      animations().forEach((a) => a.pause())
+    }
+    const resume = () => {
+      if (running || !started || !onScreen || document.hidden) return
+      running = true
+      animations().forEach((a) => {
+        if (a.playState === "paused") a.play()
+      })
+      arm(remaining)
+    }
+
+    // Start (and restart after a pause) only while the stage is on screen.
+    // The first pass waits until it is mostly in view, so on a phone, where
+    // it sits under the text, it starts at beat 1 when it is scrolled to.
     const io = new IntersectionObserver(
       (entries) => {
-        if (!entries.some((e) => e.isIntersecting)) return
-        io.disconnect()
-        setMode("play")
-        for (const [p, ms] of SCHEDULE) timers.push(window.setTimeout(() => setPhase(p), ms))
+        const e = entries[entries.length - 1]
+        onScreen = e.isIntersecting
+        if (!started && e.intersectionRatio >= 0.5) started = true
+        if (onScreen) resume()
+        else pause()
       },
-      { threshold: 0.6 },
+      { threshold: [0, 0.5] },
     )
-    // Two frames so the rewound, transition-less beat 1 is painted before the
-    // stage fades in and the transitions come back on; only then may the
-    // observer start the pass.
+    const onVisibility = () => (document.hidden ? pause() : resume())
+
+    setBeat("off")
+    setMode("rewind")
+    // Two frames so the rewound, transition-less empty counter is painted
+    // before the stage fades in and transitions come back on.
     raf1 = requestAnimationFrame(() => {
       raf2 = requestAnimationFrame(() => {
-        setMode((m) => (m === "rewind" ? "idle" : m))
+        setMode("run")
         io.observe(stage)
+        document.addEventListener("visibilitychange", onVisibility)
       })
     })
     return () => {
       io.disconnect()
+      document.removeEventListener("visibilitychange", onVisibility)
       cancelAnimationFrame(raf1)
       cancelAnimationFrame(raf2)
-      timers.forEach((t) => window.clearTimeout(t))
+      window.clearTimeout(timer)
     }
   }, [])
 
-  // Which stop is current, and which are behind us.
-  const current = at(phase, "back") ? 2 : at(phase, "coupon") ? 1 : 0
-  const couponState: CouponState = at(phase, "back") ? "used" : at(phase, "coupon") ? "landed" : "pending"
-  // Arcs: Tap->Coupon lights with beat 2, Coupon->Comes back with beat 3, and
-  // Comes back->Tap last, when the loop closes.
-  const arcs = [at(phase, "coupon"), at(phase, "back"), at(phase, "closed")]
+  const step = stepOf(beat)
+  const pose = poseOf(beat)
+  const moment = receiptMoment(summary.dateline)
+  const couponState: CouponState = from(beat, "used") ? "used" : from(beat, "landed") ? "landed" : "pending"
+  const isStatic = mode === "static"
 
   return (
-    <figure className={s.visual} aria-label={loop.description}>
-      <div ref={stageRef} className={s.stage} data-hero-loop="" data-mode={mode}>
-        {/* --- the ring, behind the phone ------------------------------- */}
-        <div className={s.ring} aria-hidden="true">
-          <span className={s.track} />
-          <span className={cn(s.arc, s.arc1, arcs[0] && s.arcOn)} />
-          <span className={cn(s.arc, s.arc2, arcs[1] && s.arcOn)} />
-          <span className={cn(s.arc, s.arc3, arcs[2] && s.arcOn)} />
-          <Arrow className={cn(s.arrow, s.arrowRight, arcs[1] && s.arcOn)} />
-          <Arrow className={cn(s.arrow, s.arrowLeft, arcs[2] && s.arcOn)} />
+    <figure ref={figRef} className={s.visual} aria-label={loop.description}>
+      {/* The current beat, as a sentence. aria-hidden: the steps list below
+          says the same thing without changing every few seconds. */}
+      <div className={s.caption} data-hero-loop="" data-mode={mode} aria-hidden="true">
+        {loop.steps.map((st, i) => (
+          <p key={st.label} className={cn(s.capLine, i === step && s.capOn)}>
+            <span className={s.capNum}>{i + 1}</span>
+            <span className={s.capText}>
+              <strong className={s.capLabel}>{st.label}</strong> {st.sub}
+            </span>
+          </p>
+        ))}
+      </div>
+
+      <div
+        ref={stageRef}
+        className={s.stage}
+        data-hero-loop=""
+        data-mode={mode}
+        data-beat={beat}
+        aria-hidden="true"
+      >
+        {/* --- the counter scene (the "world"): fades back when we zoom in -- */}
+        <div className={cn(s.world, pose === "zoom" && s.worldAway)}>
+          <Cashier className={s.cashier} />
+          <div className={s.counterTop} />
+          <div className={s.counterFront} />
+          <div className={s.device}>
+            <Image src="/product/rdh-device.svg" alt="" width={170} height={138} className={s.deviceImg} priority />
+          </div>
         </div>
 
-        {/* --- the phone ------------------------------------------------ */}
-        {/* The picture is decorative (the stops carry the words) and inert:
-            the reused clip screen holds a disabled button and a <summary>
-            that must never take focus (see intro/IntroScene.tsx). */}
-        <div className={s.phone} aria-hidden="true" inert>
-          <PhoneChrome>
-            <div className={cn(s.scene, s.sceneClip, !at(phase, "coupon") && s.sceneOn)}>
-              <ClipReceiptScreen summary={summary} saved={at(phase, "saved")} />
+        {/* The tap: rings from the device, where the phone meets it. Mounted
+            per cycle so each tap plays exactly once. */}
+        {beat === "card" || beat === "receipt" ? <TapRipple key={cycle} /> : null}
+
+        {/* --- the phone, in the hand --------------------------------------- */}
+        {/* inert: the reused clip screen holds a disabled button and the
+            receipt a <summary>; none of it may take focus. */}
+        <div
+          ref={receiptRef}
+          className={cn(s.held, beat === "off" && s.snap)}
+          data-pose={pose}
+          inert
+        >
+          <HandBack className={cn(s.hand, s.handBack, pose === "zoom" && s.handAway)} />
+          <PhoneChrome islandLock={!from(beat, "receipt")}>
+            {/* 1: the lock screen; the App Clip card rises on the tap */}
+            <div className={s.layer}>
+              <ClipLockScreen card={within(beat, "card", "zoom")} moment={moment} />
             </div>
-            <div className={cn(s.scene, at(phase, "coupon") && s.sceneOn)}>
-              <CouponsScreen state={couponState} time={clock} />
+            {/* 2: the clip's receipt, scrolled by transform (not scrollTop) */}
+            <div
+              className={cn(s.layer, s.layerFade, from(beat, "receipt") && s.layerOn)}
+              style={{ ["--rs" as string]: `${beat === "scroll" || beat === "saved" || beat === "coupon" || beat === "landed" ? scrollPx : 0}px` }}
+            >
+              <ClipReceiptScreen summary={summary} saved={from(beat, "saved") && beat !== "still"} className={s.recScroll} />
+            </div>
+            {/* 3: the app's Coupons tab, sliding in over it */}
+            <div className={cn(s.layer, s.layerSlide, (from(beat, "coupon") || isStatic) && s.layerIn)}>
+              <CouponsScreen state={isStatic ? "used" : couponState} time={clock} />
             </div>
           </PhoneChrome>
-          {/* The tap: rings from the phone's top edge, where its NFC antenna
-              meets the reader. Mounted per tap so each plays exactly once. */}
-          {phase === "tap" || phase === "saved" ? <TapRipple key="t1" /> : null}
-          {mode !== "static" && at(phase, "back") ? <TapRipple key="t2" /> : null}
+          <HandFront className={cn(s.hand, s.handFront, pose === "zoom" && s.handAway)} />
         </div>
 
-        {/* --- the three stops, on the ring (wide column only) ---------- */}
-        <ol className={s.stopsRing}>
-          {loop.stops.map((stop, i) => (
-            <li
-              key={stop.label}
-              className={cn(s.stop, s[`stop${i + 1}`], stopState(i, current, phase))}
-            >
-              <StopBody index={i} label={stop.label} sub={stop.sub} />
-            </li>
-          ))}
-        </ol>
+        {/* --- beat 4: the time jump, and the counter's confirmation -------- */}
+        <span className={cn(s.nextVisit, (within(beat, "back", "used") || isStatic) && s.popOn)}>
+          {loop.nextVisit}
+        </span>
+        <span className={cn(s.applied, (beat === "used" || isStatic) && s.popOn)}>
+          <CheckGlyph className={s.appliedGlyph} />
+          {loop.applied}
+        </span>
       </div>
 
       <figcaption className={s.foot}>
-        {/* --- the same stops as a row (narrow column only) ------------- */}
-        <ol className={s.stopsRow}>
-          {loop.stops.map((stop, i) => (
-            <li key={stop.label} className={s.rowItem}>
-              <span className={cn(s.stop, s.stopInRow, stopState(i, current, phase))}>
-                <StopBody index={i} label={stop.label} sub={stop.sub} />
-              </span>
-              {i < loop.stops.length - 1 ? (
-                <span className={s.rowArrow} aria-hidden="true">
-                  →
-                </span>
-              ) : (
-                <span className={s.rowArrow} aria-hidden="true">
-                  ↺
-                </span>
+        <ol className={s.steps}>
+          {loop.steps.map((st, i) => (
+            <li
+              key={st.label}
+              className={cn(
+                s.step,
+                isStatic ? s.stepDone : i === step ? s.stepActive : i < step ? s.stepDone : s.stepAhead,
               )}
+            >
+              <span className={s.stepNum} aria-hidden="true">
+                {i + 1}
+              </span>
+              <span className={s.stepLabel}>
+                {st.label}
+                <span className="sr-only"> {st.sub}</span>
+              </span>
             </li>
           ))}
+          <li className={s.stepLoop} aria-hidden="true">
+            ↺
+          </li>
         </ol>
         <span className={s.demoTag}>{loop.demoTag}</span>
       </figcaption>
     </figure>
-  )
-}
-
-function stopState(i: number, current: number, phase: Phase) {
-  if (i === current) return s.stopActive
-  if (i < current || phase === "closed") return s.stopDone
-  return s.stopAhead
-}
-
-function StopBody({ index, label, sub }: { index: number; label: string; sub: string }) {
-  return (
-    <>
-      <span className={s.stopNum} aria-hidden="true">
-        {index + 1}
-      </span>
-      <span className={s.stopText}>
-        <span className={s.stopLabel}>{label}</span>
-        <span className={s.stopSub}>{sub}</span>
-      </span>
-    </>
-  )
-}
-
-function Arrow({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 12 12" className={className} aria-hidden="true">
-      <path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
   )
 }
 
@@ -217,6 +343,7 @@ function TapRipple() {
     <span className={s.ripple} aria-hidden="true">
       <span className={s.rippleRing} />
       <span className={cn(s.rippleRing, s.rippleRing2)} />
+      <span className={cn(s.rippleRing, s.rippleRing3)} />
     </span>
   )
 }
