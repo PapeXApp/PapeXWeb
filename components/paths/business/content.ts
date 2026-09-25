@@ -62,34 +62,50 @@ export const hero = {
   deviceAlt: "The PapeX device: a small matte-black box with a green status light and a PapeX label on top.",
 } as const
 
-// 02 "What is Tap to Retain?" (TapToRetain.tsx). Both halves, honestly:
-// receipts are live; coupons are saved and scanned in the app today, and
-// only the dashboard-sent personalized coupons are "Coming soon". No
-// retention figures anywhere — we have none to show.
+// 02 "What is Tap to Retain?" (TapToRetain.tsx + intro/). Both halves are
+// live: receipts, and coupons the merchant sets up in their dashboard. There
+// is no "Coming soon" anywhere in this section any more (Web 2.1 W3). No
+// retention figures anywhere — we have none to show. Everything drawn in the
+// scene is DEMO data for the invented "Nook Cafe" (the /customers demo
+// receipt), and the scene says so with `demoTag`.
 export const tapToRetain = {
   eyebrow: "What is Tap to Retain?",
   heading: "Your store, in their pocket.",
-  lead: "Tap to Retain turns the paper receipt into a reason to come back. Pick a half to watch it move.",
-  stations: {
-    counter: "Your counter",
-    phone: "Their PapeX app",
-    dashboard: "Your dashboard",
-  },
-  comingSoon: "Coming soon",
+  lead: "Tap to Retain turns the paper receipt into a reason to come back. Scroll to watch both halves.",
   halves: [
     {
       key: "receipts",
       title: "Receipts",
-      live: "A customer taps their phone at checkout and gets a digital receipt, no app needed. They keep it in the free PapeX app, so your store stays in their pocket.",
+      body: "A customer taps their phone at checkout and gets a digital receipt, no app needed. They keep it in the free PapeX app, so your store stays in their pocket.",
     },
     {
       key: "coupons",
       title: "Coupons",
-      live: "Shoppers already save and scan coupons in the PapeX app today.",
-      soon: "Personalized coupons you send from your dashboard.",
+      body: "Shoppers already save and scan coupons in the PapeX app today. Set up coupons in your dashboard, and a tap sends your customer one for their next visit.",
     },
   ],
-  tokens: { receipt: "Receipt", coupon: "Coupon" },
+  /** Shown on the scene: the receipt and coupon are sample data. */
+  demoTag: "Demo data",
+  /** The printed demo coupon (paper) and the same coupon in the app. */
+  paperCoupon: {
+    kicker: "Coupon",
+    value: "$2 OFF",
+    line: "Your next visit",
+    valid: "Valid for 30 days",
+    stamp: "Demo",
+  },
+  appCoupon: {
+    kind: "$2 OFF",
+    title: "$2 off your next visit",
+    expiry: "Expires in 30 days",
+  },
+  /** Reduced motion: the static composition's image labels. */
+  staticLabels: {
+    paperReceipt: "A paper receipt from a demo store",
+    phoneReceipt: "The same receipt on a phone, as the PapeX App Clip shows it",
+    paperCoupon: "A paper coupon from a demo store: $2 off your next visit",
+    phoneCoupon: "The same coupon in the Coupons tab of the PapeX app",
+  },
 } as const
 
 export const marquee = {
