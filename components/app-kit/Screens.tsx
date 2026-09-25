@@ -175,7 +175,7 @@ function Code128({ value, ink }: { value: string; ink: string }) {
   );
 }
 
-export function CouponDetail({ coupon, store, mode = 'dark', statusBar, isFavorite = false, style }: ScreenProps & { coupon: KitCoupon; store: KitStore; isFavorite?: boolean }) {
+export function CouponDetail({ coupon, store, mode = 'dark', statusBar, isFavorite = false, showRemove = true, style }: ScreenProps & { coupon: KitCoupon; store: KitStore; isFavorite?: boolean; /** false hides the red "Remove coupon" button (marketing scenes). */ showRemove?: boolean }) {
   const { colors, typography, radii } = appTheme(mode);
   const CD = R.couponDetail;
   const S = CD.styles.styles;
@@ -279,7 +279,7 @@ export function CouponDetail({ coupon, store, mode = 'dark', statusBar, isFavori
         <V style={rn(S.useNowButton, { borderRadius: radii.pill, backgroundColor: pill.bg })}>
           <T style={rn(typography.button, { color: pill.ink })}>Use now</T>
         </V>
-        <Button title="Remove coupon" variant="danger" fullWidth mode={mode} />
+        {showRemove && <Button title="Remove coupon" variant="danger" fullWidth mode={mode} />}
       </Scroll>
       <ScreenHeader
         mode={mode}

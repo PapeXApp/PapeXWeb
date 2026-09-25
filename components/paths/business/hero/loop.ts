@@ -6,7 +6,7 @@
 //   1. Tap            a hand taps the phone on the PapeX device on the counter
 //   2. Receipt        the view zooms into the phone: the receipt, scrolled
 //   3. Coupon         a coupon for the next visit lands in their PapeX app
-//   4. They come back back at the counter, the coupon is shown and used
+//   4. They come back back at the counter, the coupon is scanned and used
 // ...and round again. Timing lives in LoopVisual.tsx (TIMELINE).
 //
 // CLAIM RULES (same as content.ts): coupons are live (merchants set them up in
@@ -18,26 +18,23 @@
 // Wording is provisional: Phase 4 finalises the words.
 
 export const loop = {
-  /** The four beats, in order. `label` is the step's name (the row under the
-   *  scene, and the big caption above it); `sub` finishes the sentence in the
-   *  caption. Short on purpose: each must read at a glance. */
+  /** The four beats, in order. `label` is the step's name (the numbered row
+   *  under the scene); `sub` finishes the sentence shown under that row for
+   *  the step that is playing. Short on purpose: each must read at a glance. */
   steps: [
     { label: "Tap", sub: "their phone on the PapeX device" },
     { label: "Receipt", sub: "lands on their phone" },
     { label: "Coupon", sub: "for their next visit" },
     { label: "They come back", sub: "and use it at the counter" },
   ],
-  /** The demo coupon, in the app's Coupons tab (PapeXV2 CouponRow anatomy). */
+  /** The demo coupon on the phone is the app kit's partner-tap coupon
+   *  (components/app-kit sampleData `c1`: Tidewick Cafe, "$2 off your next
+   *  visit", expires in 30 days), plus this demo barcode so the counter has
+   *  something to scan. */
   coupon: {
-    store: "Tidewick Cafe",
-    monogram: "T",
-    kind: "$2 OFF",
-    title: "$2 off your next visit",
-    expiry: "Expires in 30 days",
-    used: "Used",
+    barcode: "2026092402",
   },
-  /** Beat 4: a chip that marks the time jump, and the counter's confirmation. */
-  nextVisit: "Next visit",
+  /** Beat 4: the stamp on the phone once the counter has scanned it. */
   applied: "Coupon used",
   demoTag: "Demo data",
   /** Screen-reader description of the whole visual (the drawing itself is
