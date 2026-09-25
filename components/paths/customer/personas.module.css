@@ -104,7 +104,11 @@
   background: var(--q-track);
   overflow: hidden;
 }
-/* The fill is its own layer scaled on X, so filling a step is a transform. */
+/* The fill is its own layer scaled on X, so filling a step is a transform.
+   Resting state (also the CURRENT, unanswered question) is scaleX(0) — empty
+   — the bar starts with all three segments empty and each answer fills its
+   segment fully via the transition below (2026-09-24: a step used to
+   pre-fill to 40% while its question was still on screen). */
 .stepSeg::after {
   content: "";
   position: absolute;
@@ -114,10 +118,6 @@
   transform: scaleX(0);
   transform-origin: left center;
   transition: transform 0.45s var(--ease-out-expo), opacity 0.3s ease;
-}
-.stepCurrent::after {
-  transform: scaleX(0.4);
-  opacity: 0.8;
 }
 .stepDone::after {
   transform: scaleX(1);

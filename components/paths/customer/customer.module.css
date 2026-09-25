@@ -893,6 +893,14 @@
 @media (prefers-reduced-motion: no-preference) and (min-width: 821px) and (min-height: 600px) {
   .walkRunway {
     height: calc(100vh + (var(--walk-steps, 3) - 1) * var(--walk-per-step));
+    /* The ribbon starts the instant this box ends, and the pinned stage's own
+       bottom padding is only 24px (below) — far tighter than every other
+       section's --section-pad. Without this the ribbon read as jammed against
+       the walkthrough the moment the pin released (Nico, 2026-09-24: "it
+       should drop down and use more of the blank space"). Reduced-motion /
+       narrow / short screens keep the unpinned .walkStage's full --section-pad
+       on both edges, so they need nothing extra here. */
+    margin-bottom: var(--section-pad);
   }
   .walkStage {
     position: sticky;
@@ -908,8 +916,53 @@
     justify-content: flex-start;
     padding-block: calc(72px + var(--section-pad)) 24px;
   }
+  /* The phone column's fixed overhead (2026-09-24 fix): the old flat "100vh -
+     360px" undercounted it, so the column ran ~40-60px taller than the 100vh
+     stage at common desktop sizes and painted over the ribbon underneath.
+     What's actually fixed, top to bottom:
+       72px + --section-pad         .walkStage padding-top
+       --walk-rdh-w * --walk-rdh-seat   the RDH seat's own padding-top
+                                        (both vars set on .walkRdhSeat, an
+                                        ancestor of .walkPhone, so they inherit
+                                        here)
+       18px + 14px = 32px           the Reveal column's flex `gap` (18) PLUS
+                                     .wpDots' own margin-top (14) — flex gap
+                                     and a child's margin both apply, they
+                                     don't collapse into each other
+       7px                          .wpDot height
+       18px                         gap to .walkCue
+       20px                         .walkCue min-height
+       24px                         .walkStage padding-bottom
+     = 173px + --section-pad + the RDH seat padding-top.
+     On top of that, .frame (iphone.module.css) adds its own band (1.2% of
+     the screen's width) + bezel (3.8%) on EVERY edge, i.e. 10% of the width
+     added to the screen height twice over — with the screen's 393:852 aspect
+     that's ~4.6% of --wp-size, so the frame's real footprint is
+     --wp-size * 1.047, not --wp-size. Solving "fixed + footprint <= 100vh"
+     for --wp-size gives the calc below. Recompute all of this together if any
+     of those constants (or the RDH seat's own numbers) move. */
   .walkStage .walkPhone {
-    --wp-size: min(520px, calc(100vh - 360px));
+    --wp-size: min(
+      520px,
+      calc(
+        (100vh - 173px - var(--section-pad) - (var(--walk-rdh-w) * var(--walk-rdh-seat, 0.72)))
+          / 1.047
+      )
+    );
+  }
+  /* The two-column grid centres its row (Tailwind `items-center` in
+     HowItWorks.tsx). That's fine while the phone column is the taller of the
+     two, which is every normal height — but on a SHORT viewport the phone
+     above has already shrunk toward its floor while the text column (sized
+     off width, not height) hasn't, so the text column can end up taller and
+     centring then pushes the phone column down by half the difference — the
+     exact slack that let it clear the 100vh stage even with the right
+     --wp-size. Top-aligning the row removes that slack; when the phone
+     column is still the taller one this is a no-op (centred-in-its-own-height
+     and started-at-the-top land in the same place), so nothing moves at any
+     normal height. */
+  .walkStage > div {
+    align-items: flex-start;
   }
 }
 
