@@ -35,7 +35,15 @@ export function NextSection({ targetId, name }: { targetId: string; name: string
     const label = Array.from(target.querySelectorAll<HTMLElement>("[data-section-label]")).find(
       (el) => el.getClientRects().length > 0,
     )
-    const labelOffset = label ? label.getBoundingClientRect().top - sectionTop : Infinity
+    // Measure the label where it will REST: a scroll reveal may still be
+    // holding it (or a wrapper) lower with a translateY, which would make the
+    // label look further down than it lands (verifier, quiz -> features).
+    let pending = 0
+    for (let el: HTMLElement | null = label ?? null; el && el !== target; el = el.parentElement) {
+      const tf = getComputedStyle(el).transform
+      if (tf && tf !== "none") pending += new DOMMatrixReadOnly(tf).m42
+    }
+    const labelOffset = label ? label.getBoundingClientRect().top - pending - sectionTop : Infinity
     const clearance = Math.max(0, navBottom + 12 - labelOffset)
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
     window.scrollTo({
