@@ -25,6 +25,11 @@ import s from "./story.module.css"
 // §02 (TapToRetain.tsx + intro/IntroScene.tsx). The hidden copy is
 // display: none, so assistive tech only ever meets one H2.
 //
+// P3-B11 (Nico: "it should shrink so that the animation can still have its
+// size and depth"): in the pin, the heading starts full size and shrinks,
+// top-left, as the story starts, and the lead (marked data-head-lead) fades
+// out; the camera frames each beat against that smaller footprint.
+//
 // B1's index.tsx wraps this section in <div id="how"> and keeps the
 // calculator SLOT after it, so neither lives here.
 export function WhyMerchants() {
@@ -39,6 +44,7 @@ export function WhyMerchants() {
         className="max-w-[18ch] text-[length:var(--fs-h2)] font-bold leading-[1.04] tracking-[-.02em] [font-family:var(--font-display)]"
       />
       <p
+        data-head-lead=""
         className="mt-[var(--gap-title)] max-w-[52ch] text-[16px] leading-[1.5] min-[821px]:text-[length:var(--fs-lead)]"
         style={{ color: "var(--flow-fg-2)" }}
       >

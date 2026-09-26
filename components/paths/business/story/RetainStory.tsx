@@ -83,8 +83,8 @@ import s from "../story.module.css"
  *
  * The dashboard is the real one (merchant/MerchantDemo.tsx: app/merchant's
  * own primitives, demo data by props), the customer's phone is the code-
- * sourced app kit (PhoneKit.tsx; usable at rest: PhoneApp.tsx, "Try it"
- * pills over both screens). The dashboard's explanation (three
+ * sourced app kit (PhoneKit.tsx; usable at rest: PhoneApp.tsx; a label over
+ * each screen names it and says it is interactive, P3-B11). The dashboard's explanation (three
  * columns) sits AFTER the runway, in flow, so nothing overflows the pin.
  *
  * Server render (Web 2.1 W3, same pattern as intro/IntroScene): the HTML
@@ -189,6 +189,21 @@ const Q = {
   rCorners: 0.34,
   rEdges: 0.68,
 } as const
+
+/**
+ * P3-B11 (Nico: "the Follow one receipt text... should shrink so that the
+ * animation can still have its size and depth"). The pinned heading starts
+ * at full size at p = 0 and scales down, anchored top-left, to HEAD_MIN by
+ * HEAD_END — the end of the rig's shift, i.e. once the story is past the
+ * print beat. The lead ("Scroll to watch it go.") fades out over LEAD_FADE,
+ * and only once it is invisible does the camera take its room back (over
+ * LEAD_FREE), so a frame never runs into lead text that can still be seen.
+ * Transform + opacity only, and a pure function of p (reversible).
+ */
+const HEAD_MIN = 0.7
+const HEAD_END = Q.shiftB * T.act1
+const LEAD_FADE: readonly [number, number] = [0.01, 0.065]
+const LEAD_FREE: readonly [number, number] = [0.065, HEAD_END]
 
 /** Spark dots and how many of them the trail spans. */
 const SPARK_N = 40
@@ -335,14 +350,19 @@ function place(
 }
 
 /**
- * "Try it", over a screen that is usable (the hold, or latched open): a small
- * pill that fades in with `live`. Decorative; the screens name themselves.
+ * The label over a screen that is usable (the hold, or latched open): what
+ * the screen is ("What you see" / "What your customer sees") and, under it,
+ * "Interactive". Fades in with `live`. Decorative; the screens name
+ * themselves (P3-B11, replacing the "Try it" pills).
  */
-function TryIt({ on, className }: { on: boolean; className: string }) {
+function ScreenLabel({ on, title, className }: { on: boolean; title: string; className: string }) {
   return (
-    <span className={cn(s.tryIt, className, on && s.tryOn)} aria-hidden="true">
-      <MousePointerClick className={s.tryIcon} strokeWidth={2} />
-      {story.tryIt}
+    <span className={cn(s.scrLabel, className, on && s.scrOn)} aria-hidden="true">
+      <span className={s.scrTitle}>{title}</span>
+      <span className={s.scrSub}>
+        <MousePointerClick className={s.scrIcon} strokeWidth={2} />
+        {story.screenLabels.interactive}
+      </span>
     </span>
   )
 }
@@ -453,6 +473,9 @@ export function RetainStory({ header }: { header: ReactNode }) {
     const { fills: fillsCard, empties: emptiesCard } = collect(cardDashRef.current)
     const fillKeys = Math.max(1, ...[...fillsLap, ...fillsCard].map((f) => f.key + 1))
 
+    /** The scale draw() last wrote on the pinned heading (measure() divides by it). */
+    let headKNow = 1
+
     /** Everything the frame needs, in px. Rebuilt by measure() only. */
     const M = {
       cq: 1,
@@ -462,6 +485,8 @@ export function RetainStory({ header }: { header: ReactNode }) {
       flyDx: 0,
       flyDy: 0,
       binW: 0,
+      /** the bin's layout box (stage px), for the trash frame */
+      binBox: { x: 0, y: 0, w: 0, h: 0 } as Box,
       prDx: 0,
       prDy: 0,
       bnDx: 0,
@@ -484,14 +509,32 @@ export function RetainStory({ header }: { header: ReactNode }) {
       path: [] as number[], // x,y pairs of the spark path, stage px
       /** the camera's four frames (see Cam), stage px; empty = camera off */
       cams: [] as Cam[],
-      /** the pinned heading's corner (stage px), null when it is in flow */
+      /**
+       * the pinned heading's corner (stage px) once it has shrunk (HEAD_MIN,
+       * lead gone): every frame from the trash on. null when it is in flow
+       */
       head: null as Head | null,
+      /**
+       * P3-B11: the pinned heading's own geometry at scale 1 (stage px): its
+       * box's top-left, its text's right edge and foot with the lead and
+       * without it, plus the clearances. headAt(p) turns it into the corner
+       * at any p. null when the heading is in flow.
+       */
+      headGeo: null as null | { x: number; y: number; rAll: number; rNoLead: number; bAll: number; bNoLead: number; side: number; gap: number },
+      /** the lead paragraph inside the pinned heading (it fades out) */
+      leadEl: null as HTMLElement | null,
+      /** the trash frame's side of the heading (fixed, so it never jumps while the heading shrinks) */
+      trashMask: 0,
       /** which side of the heading the tap / final frames' pieces sit on */
       tapMask: 0,
       finalMask: 0,
-      /** the try-it pills' rise above the laptop's / phone's top (stage px) */
-      tryLap: 0,
-      tryPhone: 0,
+      /**
+       * the screen labels' rise above the laptop's / phone's top, and how far
+       * the phone's label overhangs the phone on each side (stage px)
+       */
+      labLap: 0,
+      labPhone: 0,
+      labPhoneX: 0,
       /** the free area, and the tap pose's phone + device boxes (stage px) */
       region: null as Region | null,
       /**
@@ -530,10 +573,11 @@ export function RetainStory({ header }: { header: ReactNode }) {
       const m = M.persp > z ? M.persp / (M.persp - z) : 1
       const grow = Math.max(0.04 * L.w, (L.w / 2) * (m - 1))
       const [ph, dv] = M.finalPair
-      // with the heading pinned, the try-it pills over both screens count
-      // too: they fade in on this frame and must clear the title as well
-      const lap = { ...L, x: L.x - grow, w: L.w + 2 * grow, y: L.y - M.tryLap, h: L.h + M.tryLap }
-      const pieces = M.head ? [lap, { ...ph, y: ph.y - M.tryPhone, h: ph.h + M.tryPhone }, dv] : [lap, ph, dv]
+      // with the heading pinned, the labels over both screens count too:
+      // they fade in on this frame and must clear the title as well
+      const lap = { ...L, x: L.x - grow, w: L.w + 2 * grow, y: L.y - M.labLap, h: L.h + M.labLap }
+      const phl = { x: ph.x - M.labPhoneX, y: ph.y - M.labPhone, w: ph.w + 2 * M.labPhoneX, h: ph.h + M.labPhone }
+      const pieces = M.head ? [lap, phl, dv] : [lap, ph, dv]
       // BOTTOM-anchored (P3-B5): the frame's foot sits exactly on the free
       // area's floor, --cam-final-foot above the pin's bottom, so the copy
       // after the runway can be pulled up by that same CSS length and land a
@@ -555,16 +599,16 @@ export function RetainStory({ header }: { header: ReactNode }) {
      * slip feeds the box grows down and the camera eases back so its foot
      * stays in frame, ending on printer + slip at --cam-print-h of the pin.
      */
-    const printFrame = (printed: number): Cam => {
+    const printFrame = (printed: number, head: Head | null = M.head): Cam => {
       const R = M.region as Region
       const P = M.printerBox
       const S = M.slipBox
       const b = printed > 0 ? union(P, { ...S, h: S.h * printed }) : P
-      if (M.head) {
+      if (head) {
         // P3-B8: under the pinned heading, its top a fixed gap below the
         // lead, so the slip feeds down into the room below (no band between
         // the title and the printer); the same two caps
-        return place(R, M.head, [b], {
+        return place(R, head, [b], {
           fill: 0.96,
           cap: Math.min((R.pinH * M.printH) / b.h, (M.printW * R.pinW) / P.w),
           align: "top",
@@ -574,6 +618,32 @@ export function RetainStory({ header }: { header: ReactNode }) {
       const cam = fit(R, b, 0.96, M.printH)
       // the printer-width cap; the box's fit (height, free area) still wins
       return { ...cam, s: Math.min(cam.s, (M.printW * R.pinW) / P.w) }
+    }
+
+    /**
+     * P3-B11: the pinned heading's scale at p (1 -> HEAD_MIN by HEAD_END),
+     * and its corner at p: the text's right edge and foot scale with it
+     * about the box's top-left (transform-origin 0 0), and the lead's share
+     * of both is released only once the lead has faded out (LEAD_FREE).
+     */
+    const headScale = (p: number) => (M.headGeo ? 1 - (1 - HEAD_MIN) * ease(seg(p, 0, HEAD_END)) : 1)
+    const headAt = (p: number): Head | null => {
+      const G = M.headGeo
+      if (!G) return null
+      const k = headScale(p)
+      const lead = 1 - ease(seg(p, LEAD_FREE[0], LEAD_FREE[1]))
+      return {
+        r: G.x + k * (G.rNoLead + (G.rAll - G.rNoLead) * lead) + G.side,
+        b: G.y + k * (G.bNoLead + (G.bAll - G.bNoLead) * lead) + G.gap,
+      }
+    }
+    /** The trash frame (rig shifted + bin) against a given heading corner. */
+    const trashFrame = (head: Head | null, mask?: number): Placed => {
+      const R = M.region as Region
+      const rigNow = union(shiftBox(M.printerBox, M.rigShift), shiftBox(M.slipBox, M.rigShift))
+      return head
+        ? place(R, head, [rigNow, M.binBox], { fill: 0.96, mask })
+        : { ...fit(R, union(rigNow, M.binBox), 0.96), mask: 0 }
     }
 
     const num = (cs: CSSStyleDeclaration, name: string, fallback: number) => {
@@ -698,6 +768,9 @@ export function RetainStory({ header }: { header: ReactNode }) {
       M.cams = []
       M.region = null
       M.finalRegion = null
+      M.head = null
+      M.headGeo = null
+      stage.style.setProperty("--label-k", "1")
       const pcs = getComputedStyle(pin)
       if (num(cs, "--cam", 1) > 0) {
         const hint = hintRef.current
@@ -717,25 +790,50 @@ export function RetainStory({ header }: { header: ReactNode }) {
         // edge and its foot, plus a gap each, in stage px. Layout boxes only
         // (offset*, and a Range for the lines' width relative to the head's
         // own box, so the Reveal's rise never skews it).
+        //
+        // P3-B11: the heading scales about its top-left (headScale), so
+        // what is measured here is its geometry at scale 1 — the client
+        // rects are divided by the scale currently written on it — with and
+        // without the lead, which fades out; headAt(p) scales it per beat.
         M.head = null
+        M.headGeo = null
         const ph = headRefPin.current
+        M.leadEl = ph?.querySelector<HTMLElement>("[data-head-lead]") ?? null
         if (ph && ph.getClientRects().length > 0) {
           const hb = ph.getBoundingClientRect()
+          const k = headKNow || 1
           // the text's own right edge (its longest line), not the blocks'
-          let right = 0
+          let rAll = 0
+          let rNoLead = 0
+          const lead = M.leadEl
           const walk = document.createTreeWalker(ph, NodeFilter.SHOW_TEXT)
           const rg = document.createRange()
           for (let n = walk.nextNode(); n; n = walk.nextNode()) {
             if (!n.textContent?.trim()) continue
+            const inLead = !!lead && lead.contains(n)
             rg.selectNodeContents(n)
-            for (const rr of Array.from(rg.getClientRects())) right = Math.max(right, rr.right - hb.left)
+            for (const rr of Array.from(rg.getClientRects())) {
+              const r = (rr.right - hb.left) / k
+              rAll = Math.max(rAll, r)
+              if (!inLead) rNoLead = Math.max(rNoLead, r)
+            }
           }
-          const hx = ph.offsetLeft - stage.offsetLeft
-          const hy = ph.offsetTop - stage.offsetTop
-          M.head = {
-            r: hx + right + num(pcs, "--cam-head-side", 40),
-            b: hy + ph.offsetHeight + num(pcs, "--cam-head-gap", 32),
+          // the foot without the lead: the bottom of the block above it
+          const h2 = ph.querySelector<HTMLElement>("h2")
+          const bAll = ph.offsetHeight
+          const bNoLead = lead && h2 ? offsetIn(h2, ph).y + h2.offsetHeight : bAll
+          M.headGeo = {
+            x: ph.offsetLeft - stage.offsetLeft,
+            y: ph.offsetTop - stage.offsetTop,
+            rAll,
+            rNoLead: lead ? rNoLead : rAll,
+            bAll,
+            bNoLead,
+            side: num(pcs, "--cam-head-side", 40),
+            gap: num(pcs, "--cam-head-gap", 32),
           }
+          // the corner every frame from the trash on is framed against
+          M.head = headAt(1)
         }
         const foot = num(pcs, "--cam-final-foot", 110)
         M.finalRegion = { ...R, h: pin.clientHeight - foot - top }
@@ -753,12 +851,14 @@ export function RetainStory({ header }: { header: ReactNode }) {
         M.slipBox = slip
         M.printW = num(pcs, "--cam-printer-w", 0.42)
         M.printH = num(pcs, "--cam-print-h", 0.7)
+        // (both against the heading once it has shrunk; while it shrinks,
+        // draw() re-frames them against headAt(p))
         const kPrint = printFrame(1)
-        // trash: the rig shifted left, and the bin
-        const rigNow = union(shiftBox(prb, M.rigShift), shiftBox(slip, M.rigShift))
-        const kTrash = M.head
-          ? place(R, M.head, [rigNow, bb], { fill: 0.96 })
-          : fit(R, union(rigNow, bb), 0.96)
+        // trash: the rig shifted left, and the bin; its side of the heading
+        // is picked here, once, and kept while the heading shrinks
+        M.binBox = bb
+        const kTrash = trashFrame(M.head)
+        M.trashMask = kTrash.mask
         // tap: the phone on the device, as big as the free area allows
         // (P3-B8: beside the heading when that is bigger, the pair is tall)
         const kTap = place(R, M.head, [phb, db], { fill: TAP_FILL })
@@ -769,14 +869,28 @@ export function RetainStory({ header }: { header: ReactNode }) {
         M.finalFill = num(pcs, "--cam-final-fill", 0.94)
         M.lidH = lb.h
         M.persp = parseFloat(getComputedStyle(laptop).perspective) || 1400
-        // the try-it pills (bottom-anchored over each screen; their
-        // transform is horizontal only, so offsetTop is where they draw)
-        const tl = laptop.querySelector<HTMLElement>(`.${s.tryLaptop}`)
-        const tp = phone.querySelector<HTMLElement>(`.${s.tryPhone}`)
-        M.tryLap = tl ? Math.max(0, -tl.offsetTop) : 0
-        // (the phone's pill rides the group's post scale, like the phone)
-        M.tryPhone = tp ? Math.max(0, -tp.offsetTop) * M.postS : 0
-        const kFinal = finalFrame(1)
+        // The screen labels (bottom-anchored over each screen; their
+        // transform only nudges them on fade-in, so offsetTop is where they
+        // rest). They live in the camera layer, so the last frame's zoom
+        // would scale their type: --label-k = 1 / that zoom keeps them at
+        // their CSS size on screen. The zoom depends on the labels' height
+        // in turn, so settle the pair in a few passes (it converges at once:
+        // the labels are a small share of the frame's height).
+        const tl = laptop.querySelector<HTMLElement>(`.${s.scrLaptop}`)
+        const tp = phone.querySelector<HTMLElement>(`.${s.scrPhone}`)
+        let kFinal = finalFrame(1)
+        let labelK = 1
+        for (let i = 0; i < 3; i++) {
+          stage.style.setProperty("--label-k", labelK.toFixed(4))
+          M.labLap = tl ? Math.max(0, -tl.offsetTop) : 0
+          // (the phone's label rides the group's post scale, like the phone)
+          M.labPhone = tp ? Math.max(0, -tp.offsetTop) * M.postS : 0
+          M.labPhoneX = tp ? (Math.max(0, tp.offsetWidth - phb.w) / 2) * M.postS : 0
+          kFinal = finalFrame(1)
+          const next = 1 / kFinal.s
+          if (Math.abs(next - labelK) < 0.002) break
+          labelK = next
+        }
         M.finalMask = kFinal.mask
         // [3] the lid up (the hold), [4] the lid still flat (its widest)
         M.cams = [kPrint, kTrash, kTap, kFinal, finalFrame(0, M.finalMask)]
@@ -1104,8 +1218,14 @@ export function RetainStory({ header }: { header: ReactNode }) {
             ? place(M.region, M.head, [shiftBox(M.phoneBox, 0, riseDy), M.devBox], { fill: TAP_FILL, mask: M.tapMask })
             : cams[2]
         const finalNow = open > 0 && open < 1 ? finalFrame(open, M.finalMask) : open >= 1 ? cams[3] : cams[4]
+        // P3-B11: while the heading shrinks, the print and trash frames are
+        // framed against its corner at this p (the trash on its measured
+        // side, so it never jumps); from HEAD_END on it is the cached ones
+        const hNow = M.headGeo && p < HEAD_END ? headAt(p) : null
+        const printNow = hNow ? printFrame(print, hNow) : print < 1 ? printFrame(print) : cams[0]
+        const trashNow = hNow ? trashFrame(hNow, M.trashMask) : cams[1]
         const [a0, b0, t0] =
-          k3 > 0 ? [cams[2], finalNow, k3] : k2 > 0 ? [cams[1], tapNow, k2] : [print < 1 ? printFrame(print) : cams[0], cams[1], k1]
+          k3 > 0 ? [cams[2], finalNow, k3] : k2 > 0 ? [trashNow, tapNow, k2] : [printNow, trashNow, k1]
         const cs = a0.s * Math.pow(b0.s / a0.s, t0)
         const cx = a0.x + (b0.x - a0.x) * t0
         const cy = a0.y + (b0.y - a0.y) * t0
@@ -1128,6 +1248,11 @@ export function RetainStory({ header }: { header: ReactNode }) {
         "grpO",
       )
       op(hintRef.current, 1 - ease(seg(p, T.dockA, T.dockA + 0.04)), "hint")
+
+      // ---- the pinned heading (P3-B11): shrinks top-left, the lead fades --
+      headKNow = headScale(p)
+      set(headRefPin.current, "transform", headKNow < 0.99995 ? `scale(${headKNow.toFixed(4)})` : "none", "headK")
+      op(M.leadEl, M.headGeo ? 1 - ease(seg(p, LEAD_FADE[0], LEAD_FADE[1])) : 1, "leadO")
 
       setPhaseOnce(
         p >= T.dockA
@@ -1396,7 +1521,7 @@ export function RetainStory({ header }: { header: ReactNode }) {
               <span className={s.keys} />
               <span className={s.pad} />
             </div>
-            <TryIt on={live} className={s.tryLaptop} />
+            <ScreenLabel on={live} title={story.screenLabels.laptop} className={s.scrLaptop} />
           </div>
 
           {/* ---- phone + device, on the right (final layout); the group's
@@ -1441,7 +1566,7 @@ export function RetainStory({ header }: { header: ReactNode }) {
                 </div>
                 <PhoneApp summary={summary} live={live && !phoneDash} reset={reset} />
               </PhoneChrome>
-              <TryIt on={live && !phoneDash} className={s.tryPhone} />
+              <ScreenLabel on={live && !phoneDash} title={story.screenLabels.phone} className={s.scrPhone} />
             </div>
           </div>
 
@@ -1464,7 +1589,7 @@ export function RetainStory({ header }: { header: ReactNode }) {
                 </FitFrame>
               </PhoneChrome>
             </div>
-            <TryIt on={live && phoneDash} className={s.tryPd} />
+            <ScreenLabel on={live && phoneDash} title={story.screenLabels.laptop} className={s.scrPd} />
           </div>
 
           {/* ---- the spark ---- */}

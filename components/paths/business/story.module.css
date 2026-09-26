@@ -136,6 +136,8 @@
   --cam-print-h: 0.7;
   /* the last frame (laptop + phone + device): this share of the free area */
   --cam-final-fill: 0.94;
+  /* the screen labels' type size on screen (RetainStory ScreenLabel) */
+  --scr-label-px: clamp(15px, 1.15vw, 19px);
 }
 
 /* --- the section heading (P3-B8) --------------------------------------------
@@ -243,6 +245,9 @@
     width: min(1150px, 100% - 2 * var(--story-px));
     margin-inline: auto;
     pointer-events: none;
+    /* P3-B11: RetainStory scales it down as the story starts (transform
+       only), anchored at its top-left, and fades its lead */
+    transform-origin: 0 0;
     /* A touch tighter than in flow on shorter screens (same words, same
        H2): the title -> lead step and the lead's size follow the height, so
        a 760px screen gives the story more room under the title. */
@@ -846,59 +851,80 @@
   outline: 2px solid #eb7100;
   outline-offset: 2px;
 }
-/* "Try it" (RetainStory TryIt): over each usable screen while the story
-   rests. It sits in the camera layer with its screen, so its px are divided
-   by what scales that screen (the group's --g-post-s for the phone). */
-.tryIt {
+/* The screen labels (RetainStory ScreenLabel, P3-B11: Nico, "instead of
+   saying 'Try it', write what you see and then what your customer sees...
+   and under that, a subtitle 'Interactive'"): over each usable screen while
+   the story rests. They sit in the camera layer with their screen, so their
+   type is multiplied by --label-k (1 / the last frame's zoom, written by
+   measure()) to land at --scr-label-px on screen, and the phone's is also
+   divided by the group's --g-post-s. Everything inside is in em. */
+.scrLabel {
   position: absolute;
   left: 50%;
   z-index: 7;
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.45em;
-  padding: 0.42em 0.9em 0.42em 0.75em;
-  border-radius: 999px;
-  background: rgba(0, 18, 29, 0.86);
-  color: #f5f5f5;
-  font-family: var(--font-label);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  gap: 0.34em;
+  font-size: calc(var(--scr-label-px, 16px) * var(--label-k, 1));
   white-space: nowrap;
-  box-shadow: 0 6px 18px -6px rgba(0, 18, 29, 0.45);
+  text-align: center;
   pointer-events: none;
   opacity: 0;
-  transform: translate(-50%, 6px);
+  transform: translate(-50%, 0.4em);
   transition:
     opacity 0.45s ease,
     transform 0.45s ease;
 }
-.tryOn {
+.scrOn {
   opacity: 1;
   transform: translate(-50%, 0);
   transition-delay: 0.25s;
 }
-.tryIcon {
-  width: 1.2em;
-  height: 1.2em;
+.scrTitle {
+  font-family: var(--font-display);
+  font-size: 1em;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--flow-fg);
+}
+.scrSub {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  font-family: var(--font-label);
+  font-size: 0.66em;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--flow-fg-2);
+}
+.scrIcon {
+  width: 1.3em;
+  height: 1.3em;
   color: #eb7100;
 }
 /* over the lid's top edge, centred on the laptop */
-.tryLaptop {
-  bottom: calc(100% + 1.4cqw);
+.scrLaptop {
+  bottom: calc(100% + 0.85em);
 }
-/* over the phone's top, centred on it, at the laptop pill's size */
-.tryPhone {
-  bottom: calc(100% + 1.6cqw);
-  font-size: calc(12px / var(--g-post-s, 1));
+/* over the phone's top, centred on it, at the laptop label's size */
+.scrPhone {
+  bottom: calc(100% + 0.85em);
+  font-size: calc(var(--scr-label-px, 16px) * var(--label-k, 1) / var(--g-post-s, 1));
 }
-/* phones: over the dashboard phone, in the stage's top margin */
-.tryPd {
+/* phones: over the dashboard phone, in the stage's top margin, on one row
+   (the margin is two lines short) */
+.scrPd {
   top: 1.5cqw;
+  flex-direction: row;
+  gap: 0.7em;
+  font-size: 14px;
 }
 @media (prefers-reduced-motion: reduce) {
-  .tryIt {
+  .scrLabel {
     transition: none;
   }
 }
