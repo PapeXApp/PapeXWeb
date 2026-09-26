@@ -73,7 +73,7 @@ export function CouponScreen({ state, time }: { state: CouponState; time?: strin
  * card of CouponDetail: store mark, kind + expiry, the offer, the barcode),
  * with two hero-only options: the offer set large (42pt, balanced over two
  * lines) and a ticket seam over the barcode. Together they fill ~40% of the
- * screen from the top, so the coupon is what the receipt opens on; the slow
+ * screen from the top, so the coupon is what the receipt opens on; the
  * scroll then goes on down through the items. A one-shot orange glow rings
  * the card as it appears (mounted with the clip, once per cycle). Passed to
  * ClipApp as its `lead`, inside ClipApp's AppKitRoot.

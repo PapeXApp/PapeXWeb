@@ -1,10 +1,10 @@
 // Copy for the /business hero visual: the "CLOSE THE LOOP" animation (P3-B1,
-// 2026-09-25; story redone in P3-B7 to Nico's storyboard). One slow loop at a
+// 2026-09-25; story redone in P3-B7 to Nico's storyboard). One 12-second loop at a
 // checkout counter, one beat at a time:
 //   1. Tap      the phone touches the PapeX device; the App Clip card pops up;
 //               the view zooms into the phone and a finger presses "View"
 //   2. Receipt  the App Clip receipt opens: the next-visit coupon on top, the
-//               items below, scrolled slowly down to "Save to PapeX"
+//               items below, scrolled down to "Save to PapeX"
 //   3. Save     Save is pressed: the receipt lands in the PapeX app
 //   4. Coupon   the coupon is opened in the app
 //   5. Scan     back out at the counter, the phone is turned to the person

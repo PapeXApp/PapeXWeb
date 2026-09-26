@@ -135,6 +135,7 @@ export function ClipApp({
   lead,
   contentStyle,
   savePressed = false,
+  bannerDelayMs,
 }: {
   summary: ReceiptSummary;
   /** Real buttons (hero). The walkthrough draws the same screen inert. */
@@ -155,6 +156,9 @@ export function ClipApp({
   contentStyle?: CSSProperties;
   /** Draw the (non-interactive) Save capsule pressed in. /business hero only. */
   savePressed?: boolean;
+  /** When the launch banner starts sliding away, in ms after mount.
+   *  /business hero only (its 12s loop). Default: the stylesheet's 2.4s. */
+  bannerDelayMs?: number;
 }) {
   const [menu, setMenu] = useState(false);
   const [sheet, setSheet] = useState(false);
@@ -267,7 +271,12 @@ export function ClipApp({
           </div>
         ) : null}
 
-        {banner ? <ClipTopBar className={x.bannerAway} /> : null}
+        {banner ? (
+          <ClipTopBar
+            className={x.bannerAway}
+            style={bannerDelayMs === undefined ? undefined : { animationDelay: `${bannerDelayMs}ms` }}
+          />
+        ) : null}
         <StatusBar time={receiptMoment(summary.dateline).time} />
       </div>
     </AppKitRoot>
