@@ -29,8 +29,10 @@ import styles from "./business.module.css"
 // P3-B1 (Nico, 2026-09-25: "not clear, not intuitive… moves too fast"): the
 // loop is now a slow, LOOPED story at a checkout counter — tap the PapeX
 // device, the receipt (zoomed in, scrolled), the coupon for next time, then
-// back at the counter to use it — one captioned beat at a time, ~19.6s a
-// cycle, paused off screen: hero/LoopVisual.tsx.
+// back at the counter to use it — one captioned beat at a time, paused off
+// screen: hero/LoopVisual.tsx. P3-B7 (Nico's storyboard): tap -> App Clip
+// card -> View -> the receipt with the coupon on top -> Save to PapeX -> open
+// the coupon -> turned to the counter and scanned, ~25s a cycle.
 export function Hero() {
   // The demo receipt is decoded HERE, on the server, through this repo's own
   // lib/escpos.ts + lib/receiptSummary.ts (same bytes and path as /customers),
@@ -144,7 +146,7 @@ export function Hero() {
           </a>
         </ChildStagger>
 
-        {/* The loop: tap -> receipt -> coupon -> they come back. */}
+        {/* The loop: tap -> receipt -> save -> coupon -> scan. */}
         <div className="flex min-w-0 items-center justify-center">
           <LoopVisual summary={summary} clock={clock} />
         </div>

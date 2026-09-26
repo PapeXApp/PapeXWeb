@@ -191,6 +191,7 @@ export function ClipLockScreen({
   onView,
   prompt,
   moment = FALLBACK_MOMENT,
+  viewPressed = false,
 }: {
   card?: boolean;
   pulse?: boolean;
@@ -199,11 +200,16 @@ export function ClipLockScreen({
   prompt?: LockPrompt;
   /** Date + clock, from receiptMoment() of the receipt this tap opens. */
   moment?: ReceiptMoment;
+  /** Draw the View pill pressed in (/business hero's scripted tap). Default
+   *  false: /customers is unchanged. */
+  viewPressed?: boolean;
 }) {
+  const pressed = viewPressed ? { transform: "scale(0.93)", filter: "brightness(0.82)", transition: "transform 0.15s ease, filter 0.15s ease" } : undefined;
   const view = onView ? (
     <button
       type="button"
       className={cn(ip.viewBtn, pulse && ip.viewPulse)}
+      style={pressed}
       onClick={(event) => {
         /* The phone behind this is itself a tap target; without this the
            click would also fire the phone's own handler. */
@@ -214,7 +220,9 @@ export function ClipLockScreen({
       View
     </button>
   ) : (
-    <span className={ip.viewBtn}>View</span>
+    <span className={ip.viewBtn} style={pressed}>
+      View
+    </span>
   );
 
   return (
