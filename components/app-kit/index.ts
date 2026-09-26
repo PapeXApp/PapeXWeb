@@ -8,7 +8,7 @@ export { Button, DEVICE, Fab, HeaderCircle, headerContentTop, headerTop, ScreenH
 export { MerchantLogo, ReceiptRow } from './ReceiptRow';
 export { CouponRow, CouponStoreThumb, CouponTicketSeam } from './CouponRow';
 export { StoreAppIcon, StoreBanner, StoreHero, StorePlate, StoreTile } from './StoreVisuals';
-export { CouponDetail, CouponsScreen, ReceiptDetail, ReceiptsScreen, StoreProfile } from './Screens';
+export { CouponCard, CouponDetail, CouponsScreen, ReceiptDetail, ReceiptsScreen, StoreProfile } from './Screens';
 export { ClipReceipt, demoClipReceipt, type ClipReceiptData } from './ClipReceipt';
 export { appTheme, type AppMode } from './theme';
 export * from './sampleData';
