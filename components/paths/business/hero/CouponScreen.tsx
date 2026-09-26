@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react"
 import { cn } from "@/lib/utils"
-import { AppKitRoot, CouponDetail, CouponRow, StatusBar, demoCoupons, demoStore, type KitCoupon } from "@/components/app-kit"
+import { AppKitRoot, CouponCard, CouponDetail, StatusBar, demoCoupons, demoStore, type KitCoupon } from "@/components/app-kit"
 import { clip } from "@/lib/app-kit/tokens"
 import { CheckGlyph } from "./SceneArt"
 import { loop } from "./loop"
@@ -65,18 +65,37 @@ export function CouponScreen({ state, time }: { state: CouponState; time?: strin
 
 /**
  * The same coupon, as it sits ON TOP of the App Clip receipt (P3-B7, Nico:
- * "it's the receipt with a coupon on top and the items at the bottom"): a
- * heading in the clip's own section-header style (ClipReceipt's "Items
- * Purchased": 20pt medium, clip orange) over the app kit's CouponRow. Passed
- * to ClipApp as its `lead`, inside ClipApp's AppKitRoot.
+ * "it's the receipt with a coupon on top and the items at the bottom"; made
+ * the hero of the screen in P3-B9, Nico: "I want the coupon to be a bigger
+ * coupon ... otherwise the user will just see the receipt"). A heading in the
+ * clip's own section-header style (ClipReceipt's "Items Purchased": 20pt
+ * medium, clip orange) over the app kit's full coupon card (CouponCard, the
+ * card of CouponDetail: store mark, kind + expiry, the offer, the barcode),
+ * with two hero-only options: the offer set large (42pt, balanced over two
+ * lines) and a ticket seam over the barcode. Together they fill ~40% of the
+ * screen from the top, so the coupon is what the receipt opens on; the slow
+ * scroll then goes on down through the items. A one-shot orange glow rings
+ * the card as it appears (mounted with the clip, once per cycle). Passed to
+ * ClipApp as its `lead`, inside ClipApp's AppKitRoot.
  */
+const OFFER: CSSProperties = {
+  fontSize: "calc(42 * var(--pt))",
+  lineHeight: 1.02,
+  letterSpacing: "-0.02em",
+  marginTop: "calc(12 * var(--pt))",
+  textWrap: "balance",
+}
+
 export function ClipCouponLead() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "calc(12 * var(--pt))" }}>
       <div style={{ fontFamily: "var(--akc-font)", fontSize: "calc(20 * var(--pt))", fontWeight: 500, lineHeight: 1.2, color: clip.color.orange }}>
         {loop.clipCouponHeading}
       </div>
-      <CouponRow coupon={COUPON} store={STORE} mode="dark" showHeart={false} />
+      <div className={s.clipCoupon}>
+        <CouponCard coupon={COUPON} store={STORE} mode="dark" seam={clip.color.navy} titleStyle={OFFER} />
+        <span className={s.clipCouponGlow} aria-hidden="true" />
+      </div>
     </div>
   )
 }

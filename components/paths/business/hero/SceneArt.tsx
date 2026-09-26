@@ -26,7 +26,7 @@ import s from "./hero.module.css"
  *   CashierHands  the forearms lying on the counter top and the hands resting
  *                 on it (painted after the counter)
  */
-export function CashierBody({ className }: { className?: string }) {
+export function CashierBody({ className, raised = false }: { className?: string; raised?: boolean }) {
   return (
     <svg viewBox="0 0 400 600" className={className} aria-hidden="true" focusable="false">
       {/* neck (runs down under the collar) */}
@@ -44,14 +44,22 @@ export function CashierBody({ className }: { className?: string }) {
         className={s.artHair}
         d="M151 190C145 154 168 130 200 130C234 130 256 152 251 188C249 178 244 170 236 164C222 170 196 170 178 160C168 166 156 176 151 190Z"
       />
-      {/* shirt: shoulders and both arms in one silhouette, down behind the counter */}
+      {/* their left arm (our right), hanging down behind the counter: its own
+          shape, so it can fade out when they reach the scanner forward
+          (ScannerArm) — never two arms on one side */}
+      <g className={cn(s.restHand, raised && s.restHandUp)}>
+        <path className={s.artFill} d="M292 300C312 306 321 326 323 350L328 520H290L288 352C288 332 289 314 292 300Z" />
+        <path className={s.artInkSoft} d="M290 410C300 412 314 410 325 404" />
+      </g>
+      {/* shirt: shoulders, the torso and their right arm (our left) in one
+          silhouette, down behind the counter */}
       <path
         className={s.artFill}
-        d="M178 268C150 272 118 278 100 292C84 304 78 324 77 350L72 520H328L323 350C322 324 316 304 300 292C282 278 250 272 222 268C212 290 188 290 178 268Z"
+        d="M178 268C150 272 118 278 100 292C84 304 78 324 77 350L72 520H292C292 460 290 400 288 352C292 330 300 312 300 292C282 278 250 272 222 268C212 290 188 290 178 268Z"
       />
-      {/* where the arms meet the body, and the short sleeves' hems */}
-      <path className={s.artInk} d="M112 352C110 400 108 460 108 520M288 352C290 400 292 460 292 520" />
-      <path className={s.artInkSoft} d="M75 404C86 410 100 412 110 410M290 410C300 412 314 410 325 404" />
+      {/* where the arm meets the body, and its short sleeve's hem */}
+      <path className={s.artInk} d="M112 352C110 400 108 460 108 520" />
+      <path className={s.artInkSoft} d="M75 404C86 410 100 412 110 410" />
       {/* apron: bib, neck straps, a pocket */}
       <path className={s.artApron} d="M158 322H242L250 520H150Z" />
       <path className={s.artInk} d="M160 323C163 302 172 290 184 284M240 323C237 302 228 290 216 284" />
@@ -85,44 +93,69 @@ export function CashierHands({ className, raised = false }: { className?: string
 }
 
 /**
- * The cashier's left arm (our right), raised off the counter holding a small
- * handheld barcode scanner, nose towards the customer's phone (P3-B7). Its
- * own box, in the cashier's units (1 unit = 0.001 of the scene's height):
- * viewBox 240..560 x 250..570, placed by .scanArm so the elbow (300, 505)
- * sits where the resting forearm lies; .scanArm rotates it about that elbow.
- * The scanner's window is red; its beam is drawn by the scene (.beam), so it
- * can reach the phone wherever the column puts it.
+ * The cashier's left arm (our right) reaching FORWARD over the counter with a
+ * handheld barcode scanner, nose towards the customer's phone (P3-B7; redrawn
+ * in P3-B9, Nico: "when he lifts his hand and scans the phone, let's make that
+ * look a little less 2D, more 3D"). Drawn to read in depth, in the scene's
+ * line style:
+ *   - the upper arm points at us, so it is short (a short sleeve from the
+ *     shoulder, the elbow in front of the body); the forearm rises from the
+ *     elbow to the fist ABOVE the PapeX device (never across it)
+ *   - the scanner is a small volume, not a flat outline: a lit top face, the
+ *     side facing us, and its nose face (the red window) turned towards the
+ *     phone; its head flares towards the nose, which is the end nearest us
+ * Its own box, in the cashier's units (1 unit = 0.001 of the scene's height):
+ * viewBox 240..560 x 180..440 (the scanner's nose runs a little past it:
+ * overflow shows), placed by .scanArm; .scanArm turns and scales it about the
+ * shoulder (298, 300) as it comes up and forward. The window's centre, (533,
+ * 254) before the hand's 1.35x = (561.4, 237.9) in this box, is where the
+ * beam (.beam) starts.
  */
 export function ScannerArm({ className, done = false }: { className?: string; done?: boolean }) {
   return (
-    <svg viewBox="240 250 320 320" className={className} aria-hidden="true" focusable="false">
-      {/* forearm, elbow on the counter, rising to the wrist */}
+    <svg viewBox="240 180 320 260" className={className} aria-hidden="true" focusable="false">
+      {/* the arm: from the sleeve's hem, a short upper arm to the elbow,
+          then the forearm rising to the wrist */}
       <path
         className={s.artFill}
-        d="M286 520C278 506 282 488 296 478C318 458 340 432 356 408C362 398 376 396 384 404C392 412 390 424 382 432C364 456 342 486 322 512C312 526 294 530 286 520Z"
+        d="M338 312C352 314 362 318 371 323C391 312 413 300 434 292L447 317C427 330 409 344 395 356C387 364 375 370 365 365C357 361 352 353 350 346Z"
       />
-      <path className={s.artInkSoft} d="M300 478C296 490 296 502 302 512" />
-      {/* the scanner: a rounded head with the red window at its nose, the
-          grip angled back into the fist, a trigger */}
-      <path
-        className={s.artDevice}
-        d="M372 350C372 338 380 330 392 330H452C462 330 470 336 472 344L474 352C476 362 470 368 460 368H428L420 398C418 406 410 410 402 408C394 406 390 398 392 390L398 368H392C380 368 372 362 372 350Z"
-      />
-      <path className={s.artInkSoft} d="M384 342H440" />
-      <rect className={s.scanWindow} x="466" y="336" width="9" height="26" rx="4" />
-      {/* green once the coupon has scanned (a second window over the red one,
-          so only its opacity changes) */}
-      <rect className={cn(s.scanWindowOk, done && s.scanWindowOkOn)} x="466" y="336" width="9" height="26" rx="4" />
-      {/* the fist round the grip: curled fingers, a thumb over the top */}
+      {/* the inside of the elbow */}
+      <path className={s.artInkSoft} d="M371 323C374 330 378 336 384 340" />
+      {/* the short sleeve, from the shoulder, its hem near the elbow */}
       <path
         className={s.artFill}
-        d="M384 380C394 372 410 372 418 380C426 388 426 402 420 412C414 422 400 426 390 422C380 418 374 408 374 398C374 390 378 384 384 380Z"
+        d="M294 292C314 286 332 296 342 311C348 322 352 334 352 347C336 353 314 352 298 346C300 328 299 308 294 292Z"
       />
-      <path className={s.artInkSoft} d="M382 394C392 391 404 392 416 396M380 406C390 404 402 405 414 409" />
-      <path
-        className={s.artFill}
-        d="M392 380C396 368 406 362 416 364C424 366 426 374 420 380C414 386 404 388 396 386Z"
-      />
+      <path className={s.artInkSoft} d="M339 314C345 324 349 335 350 346" />
+      {/* The hand and the scanner are NEARER to us than the cashier (the arm
+          reaches forward), so they are drawn 1.35x the cashier's scale,
+          about the fist's centre (452, 300). */}
+      <g transform="translate(452 300) scale(1.35) translate(-452 -300)">
+        {/* the scanner's grip, down into the fist (behind it), and the trigger */}
+        <path className={s.artDevice} d="M450 268L476 272L468 312C467 318 460 321 453 319L446 316C441 314 439 309 441 303Z" />
+        <path className={s.artInkSoft} d="M478 279C482 284 482 291 478 296" />
+        {/* the scanner's head, a small volume: the top face (lit, seen from
+            above), the side facing us, and the nose face with the window */}
+        <path className={s.artDeviceTop} d="M437 243L449 226L525 222C532 222 537 226 535 232L527 239Z" />
+        <path
+          className={s.artDevice}
+          d="M436 246C436 241 440 238 445 238L516 236C523 236 528 240 528 246V270C528 276 523 280 516 280L446 272C440 271 436 268 436 263Z"
+        />
+        <path className={s.artDeviceNose} d="M528 242L535 232V268L528 279Z" />
+        <path className={s.artInkSoft} d="M446 249L512 247" />
+        <path className={s.scanWindow} d="M529.5 246L533.5 240.5V266.5L529.5 273.5Z" />
+        {/* green once the coupon has scanned (a second window over the red
+            one, so only its opacity changes) */}
+        <path className={cn(s.scanWindowOk, done && s.scanWindowOkOn)} d="M529.5 246L533.5 240.5V266.5L529.5 273.5Z" />
+        {/* the fist round the grip: curled fingers, a thumb over the top */}
+        <path
+          className={s.artFill}
+          d="M436 290C441 281 459 279 469 287C477 295 476 310 468 318C460 326 444 326 436 318C430 312 430 298 436 290Z"
+        />
+        <path className={s.artInkSoft} d="M440 299C448 297 458 298 468 301M440 310C448 308 458 309 466 312" />
+        <path className={s.artFill} d="M444 287C448 277 458 273 467 277C472 281 470 287 463 291Z" />
+      </g>
     </svg>
   )
 }

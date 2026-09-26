@@ -175,7 +175,14 @@ function Code128({ value, ink }: { value: string; ink: string }) {
   );
 }
 
-export function CouponDetail({ coupon, store, mode = 'dark', statusBar, isFavorite = false, showRemove = true, style }: ScreenProps & { coupon: KitCoupon; store: KitStore; isFavorite?: boolean; /** false hides the red "Remove coupon" button (marketing scenes). */ showRemove?: boolean }) {
+/** The coupon card of CouponDetail (BrandGlassSurface: store row, kind tag +
+ *  expiry, title, qualifiers, barcode stub), on its own so a marketing scene
+ *  can show the same card outside the full screen. CouponDetail renders it
+ *  with no options, exactly as before. Opt-in, /business hero only:
+ *  `titleStyle` (merged over the title's style: a larger offer) and `seam`
+ *  (the ground colour: the hairline over the barcode becomes a ticket seam,
+ *  two notches bitten from the card's edges and a perforation). */
+export function CouponCard({ coupon, store, mode = 'dark', titleStyle, seam, style }: { coupon: KitCoupon; store: KitStore; mode?: AppMode; titleStyle?: CSSProperties; seam?: string; style?: CSSProperties }) {
   const { colors, typography, radii } = appTheme(mode);
   const CD = R.couponDetail;
   const S = CD.styles.styles;
@@ -184,92 +191,120 @@ export function CouponDetail({ coupon, store, mode = 'dark', statusBar, isFavori
   const expiryColor = expiry?.state === 'expired' ? colors.destructiveText : expiry?.state === 'urgent' ? colors.warningText : colors.textSecondary;
   const accent = liftToContrast(store.brandColor ?? colors.accent, colors.background, C.ACCENT_MIN_CONTRAST);
   const treatment = resolveBrandTreatment(store.brandColor, colors);
-  const pillInk = store.brandColor ? pickFieldInk([store.brandColor, store.brandColor], colors) : null;
-  const pill = store.brandColor && pillInk?.passes ? { bg: store.brandColor, ink: pillInk.ink } : { bg: colors.accent, ink: colors.buttonText };
   const BG = R.brandGlassSurface.consts;
   const hex = accent.replace('#', '');
   const rgb = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(', ');
   const qualifiers = [coupon.minSpend ? { icon: 'cash' as const, text: `On $${coupon.minSpend}+` } : null, coupon.inStoreOnly ? { icon: 'store' as const, text: 'In-store only' } : null].filter(Boolean) as { icon: 'cash' | 'store'; text: string }[];
   const code = coupon.barcode ?? coupon.code;
+  // BrandGlassSurface: frost at FACE_STRENGTH, 1pt border in the accent at
+  // GLASS_ACCENT_ALPHA.border, the two corner-lit radial arcs.
+  return (
+    <V style={{ ...rn(S.cardWrap), width: '100%', maxWidth: pt(C.CARD_MAX_WIDTH), ...style }}>
+      <V
+        style={{
+          borderRadius: pt(C.CARD_RADIUS),
+          border: `max(1px, calc(${BG.BORDER_WIDTH} * var(--pt))) solid rgba(${rgb}, ${BG.GLASS_ACCENT_ALPHA.border})`,
+          backgroundImage: `radial-gradient(${BG.ELLIPSE_RX} ${BG.ELLIPSE_RY} at 0% 0%, rgba(${rgb}, ${BG.GLASS_ACCENT_ALPHA.base}), transparent), radial-gradient(${BG.ELLIPSE_RX} ${BG.ELLIPSE_RY} at 100% 100%, rgba(${rgb}, ${BG.GLASS_ACCENT_ALPHA.base}), transparent), ${glassFrostAt(mode, BG.FACE_STRENGTH)}`,
+          backgroundColor: colors.receiptCardBed,
+          overflow: 'hidden',
+        }}
+      >
+        <V style={rn(S.cardContent)}>
+          <V style={rn(S.storeRow, { flexDirection: 'row' })}>
+            {store.logoUrl ? (
+              <MerchantLogo mode={mode} uri={store.logoUrl} style={rn(S.storeLogo, { borderRadius: radii.md, backgroundColor: colors.inputBackground })} />
+            ) : (
+              <V style={rn(S.storeLogo, S.storeInitials, { borderRadius: radii.md, backgroundColor: treatment.fill ?? colors.inputBackground })}>
+                <T style={rn(S.storeInitialsText, { fontFamily: 'Barlow-SemiBold', color: treatment.ink })}>{store.name.slice(0, 1)}</T>
+              </V>
+            )}
+            <V style={rn(S.storeText)}>
+              <T lines={1} style={rn(S.storeName, { fontFamily: 'Barlow-Medium', color: colors.text })}>
+                {store.name}
+              </T>
+              <V style={rn(S.viewStore, { flexDirection: 'row' })}>
+                <T style={rn(typography.caption, { color: accent })}>View store</T>
+                <Glyph name="chevron-forward" size={14} color={accent} />
+              </V>
+            </V>
+          </V>
+          <V style={rn(S.metaRow, { flexDirection: 'row' })}>
+            <Tag mode={mode} label={COUPON_KIND_META[coupon.kind].label} icon={COUPON_KIND_META[coupon.kind].icon} />
+            {expiry ? (
+              <V style={rn(S.expiry, { flexDirection: 'row' })}>
+                <Glyph name="time" size={14} color={expiryColor} />
+                <T lines={1} style={rn(typography.caption, S.expiryText, { color: expiryColor })}>
+                  {expiry.text}
+                </T>
+              </V>
+            ) : null}
+          </V>
+          <T style={titleStyle ? { ...rn(S.title, { fontFamily: typography.h1.fontFamily, color: colors.text }), ...titleStyle } : rn(S.title, { fontFamily: typography.h1.fontFamily, color: colors.text })}>{coupon.title}</T>
+          {coupon.subtitle ? <T style={rn(typography.body, S.subtitle, { color: colors.text })}>{coupon.subtitle}</T> : null}
+          {coupon.body ? <T style={rn(typography.body, S.bodyText, { color: colors.textSecondary })}>{coupon.body}</T> : null}
+          {qualifiers.length ? (
+            <V style={rn(S.qualifierRow, { flexDirection: 'row' })}>
+              {qualifiers.map((q) => (
+                <V key={q.text} style={rn(S.qualifier, { flexDirection: 'row' })}>
+                  <Glyph name={q.icon} size={14} color={colors.textSecondary} />
+                  <T style={rn(typography.caption, { color: colors.text })}>{q.text}</T>
+                </V>
+              ))}
+            </V>
+          ) : null}
+          {code ? (
+            <>
+              {seam ? (
+            <TicketSeam ground={seam} marginTop={S.divider.marginTop} inset={S.cardContent.paddingHorizontal} ink={colors.border} />
+          ) : (
+            <V style={{ ...rn(S.divider, { backgroundColor: colors.border }), height: 'max(1px, calc(0.3333 * var(--pt)))' }} />
+          )}
+              <V style={rn(S.stub, { borderRadius: radii.md })}>
+                {coupon.barcode ? (
+                  <>
+                    <Code128 value={coupon.barcode} ink={colors.navy} />
+                    <T style={rn(typography.label, S.barcodeCaption, { color: colors.navy })}>{coupon.barcode}</T>
+                  </>
+                ) : (
+                  <>
+                    <T style={rn(typography.eyebrow, { color: mixHex(colors.background, C.STUB_PAPER, 0.38), textTransform: 'uppercase' })}>Show this code at checkout</T>
+                    <T style={rn(typography.stat, S.codeText, { color: colors.navy })}>{coupon.code}</T>
+                  </>
+                )}
+              </V>
+            </>
+          ) : null}
+        </V>
+      </V>
+    </V>
+  );
+}
+
+/** CouponCard `seam`: two notches in the ground colour bitten from the card's
+ *  edges (the card clips them) and a dotted perforation between them, in the
+ *  divider's place (same top margin). */
+function TicketSeam({ ground, marginTop, inset, ink }: { ground: string; marginTop: number; inset: number; ink: string }) {
+  const r = 11;
+  const notch: CSSProperties = { position: 'absolute', top: pt(-r), width: pt(r * 2), height: pt(r * 2), borderRadius: '50%', background: ground };
+  return (
+    <V style={{ position: 'relative', height: pt(2), marginTop: pt(marginTop), marginLeft: pt(-inset), marginRight: pt(-inset) }} aria-hidden>
+      <div style={{ ...notch, left: pt(-r) }} />
+      <div style={{ ...notch, right: pt(-r) }} />
+      <div style={{ position: 'absolute', left: pt(r + 6), right: pt(r + 6), top: pt(-0.25), height: pt(2.5), backgroundImage: `radial-gradient(circle, ${ink} ${pt(1.25)}, transparent calc(1.25 * var(--pt) + 0.5px))`, backgroundSize: `${pt(7)} ${pt(2.5)}`, backgroundRepeat: 'repeat-x' }} />
+    </V>
+  );
+}
+
+export function CouponDetail({ coupon, store, mode = 'dark', statusBar, isFavorite = false, showRemove = true, style }: ScreenProps & { coupon: KitCoupon; store: KitStore; isFavorite?: boolean; /** false hides the red "Remove coupon" button (marketing scenes). */ showRemove?: boolean }) {
+  const { colors, typography, radii } = appTheme(mode);
+  const CD = R.couponDetail;
+  const S = CD.styles.styles;
+  const pillInk = store.brandColor ? pickFieldInk([store.brandColor, store.brandColor], colors) : null;
+  const pill = store.brandColor && pillInk?.passes ? { bg: store.brandColor, ink: pillInk.ink } : { bg: colors.accent, ink: colors.buttonText };
   return (
     <Frame mode={mode} statusBar={statusBar} style={style}>
       <Scroll top={headerContentTop()} style={rn(S.scrollContent)}>
-        {/* BrandGlassSurface: frost at FACE_STRENGTH, 1pt border in the accent at
-            GLASS_ACCENT_ALPHA.border, the two corner-lit radial arcs. */}
-        <V style={{ ...rn(S.cardWrap), width: '100%', maxWidth: pt(C.CARD_MAX_WIDTH) }}>
-          <V
-            style={{
-              borderRadius: pt(C.CARD_RADIUS),
-              border: `max(1px, calc(${BG.BORDER_WIDTH} * var(--pt))) solid rgba(${rgb}, ${BG.GLASS_ACCENT_ALPHA.border})`,
-              backgroundImage: `radial-gradient(${BG.ELLIPSE_RX} ${BG.ELLIPSE_RY} at 0% 0%, rgba(${rgb}, ${BG.GLASS_ACCENT_ALPHA.base}), transparent), radial-gradient(${BG.ELLIPSE_RX} ${BG.ELLIPSE_RY} at 100% 100%, rgba(${rgb}, ${BG.GLASS_ACCENT_ALPHA.base}), transparent), ${glassFrostAt(mode, BG.FACE_STRENGTH)}`,
-              backgroundColor: colors.receiptCardBed,
-              overflow: 'hidden',
-            }}
-          >
-            <V style={rn(S.cardContent)}>
-              <V style={rn(S.storeRow, { flexDirection: 'row' })}>
-                {store.logoUrl ? (
-                  <MerchantLogo mode={mode} uri={store.logoUrl} style={rn(S.storeLogo, { borderRadius: radii.md, backgroundColor: colors.inputBackground })} />
-                ) : (
-                  <V style={rn(S.storeLogo, S.storeInitials, { borderRadius: radii.md, backgroundColor: treatment.fill ?? colors.inputBackground })}>
-                    <T style={rn(S.storeInitialsText, { fontFamily: 'Barlow-SemiBold', color: treatment.ink })}>{store.name.slice(0, 1)}</T>
-                  </V>
-                )}
-                <V style={rn(S.storeText)}>
-                  <T lines={1} style={rn(S.storeName, { fontFamily: 'Barlow-Medium', color: colors.text })}>
-                    {store.name}
-                  </T>
-                  <V style={rn(S.viewStore, { flexDirection: 'row' })}>
-                    <T style={rn(typography.caption, { color: accent })}>View store</T>
-                    <Glyph name="chevron-forward" size={14} color={accent} />
-                  </V>
-                </V>
-              </V>
-              <V style={rn(S.metaRow, { flexDirection: 'row' })}>
-                <Tag mode={mode} label={COUPON_KIND_META[coupon.kind].label} icon={COUPON_KIND_META[coupon.kind].icon} />
-                {expiry ? (
-                  <V style={rn(S.expiry, { flexDirection: 'row' })}>
-                    <Glyph name="time" size={14} color={expiryColor} />
-                    <T lines={1} style={rn(typography.caption, S.expiryText, { color: expiryColor })}>
-                      {expiry.text}
-                    </T>
-                  </V>
-                ) : null}
-              </V>
-              <T style={rn(S.title, { fontFamily: typography.h1.fontFamily, color: colors.text })}>{coupon.title}</T>
-              {coupon.subtitle ? <T style={rn(typography.body, S.subtitle, { color: colors.text })}>{coupon.subtitle}</T> : null}
-              {coupon.body ? <T style={rn(typography.body, S.bodyText, { color: colors.textSecondary })}>{coupon.body}</T> : null}
-              {qualifiers.length ? (
-                <V style={rn(S.qualifierRow, { flexDirection: 'row' })}>
-                  {qualifiers.map((q) => (
-                    <V key={q.text} style={rn(S.qualifier, { flexDirection: 'row' })}>
-                      <Glyph name={q.icon} size={14} color={colors.textSecondary} />
-                      <T style={rn(typography.caption, { color: colors.text })}>{q.text}</T>
-                    </V>
-                  ))}
-                </V>
-              ) : null}
-              {code ? (
-                <>
-                  <V style={{ ...rn(S.divider, { backgroundColor: colors.border }), height: 'max(1px, calc(0.3333 * var(--pt)))' }} />
-                  <V style={rn(S.stub, { borderRadius: radii.md })}>
-                    {coupon.barcode ? (
-                      <>
-                        <Code128 value={coupon.barcode} ink={colors.navy} />
-                        <T style={rn(typography.label, S.barcodeCaption, { color: colors.navy })}>{coupon.barcode}</T>
-                      </>
-                    ) : (
-                      <>
-                        <T style={rn(typography.eyebrow, { color: mixHex(colors.background, C.STUB_PAPER, 0.38), textTransform: 'uppercase' })}>Show this code at checkout</T>
-                        <T style={rn(typography.stat, S.codeText, { color: colors.navy })}>{coupon.code}</T>
-                      </>
-                    )}
-                  </V>
-                </>
-              ) : null}
-            </V>
-          </V>
-        </V>
+        <CouponCard coupon={coupon} store={store} mode={mode} />
         {coupon.terms ? (
           <V style={rn(S.termsRow, { flexDirection: 'row' })}>
             <T style={rn(typography.eyebrow, { color: colors.textSecondary, textTransform: 'uppercase' })}>Terms</T>

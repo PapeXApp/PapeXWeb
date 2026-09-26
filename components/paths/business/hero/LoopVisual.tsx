@@ -22,23 +22,28 @@ import s from "./hero.module.css"
  *              taps it; iOS's App Clip card pops up on the lock screen (the
  *              same mockup as /customers: appui ClipLockScreen); the view
  *              zooms into the phone and a finger presses "View"
- *   2 Receipt  the App Clip receipt opens (appui ClipApp) with the coupon for
- *              the next visit ON TOP and the items below, and scrolls slowly
- *              down through the items to "Save to PapeX"
+ *   2 Receipt  the App Clip receipt opens (appui ClipApp) on the coupon for
+ *              the next visit: a big coupon card ON TOP (P3-B9: ~40% of the
+ *              screen, held ~1.6s), then a slow scroll down through the
+ *              items to "Save to PapeX" — both get their moment
  *   3 Save     a finger presses Save ("Saved"), and the receipt is in the
  *              PapeX app (appui WalkAppScreen: Receipts, then Coupons)
  *   4 Coupon   a finger opens the coupon (the app kit's CouponDetail)
  *   5 Scan     the view zooms back out to the counter; the hand turns the
- *              phone to the person behind it, who lifts a small handheld
- *              scanner (red window, red beam) and scans the barcode:
- *              "Coupon used", a check; the hand leaves, and round again
+ *              phone, in depth, to the person behind it (P3-B9: the phone is
+ *              a slab — its metal side shows, its glass darkens as it turns
+ *              away), who reaches a handheld scanner forward OVER the counter
+ *              and the PapeX device (it grows as it comes towards us, its
+ *              shadow on the device); a red cone fans from its window onto
+ *              the barcode: "Coupon used", a check; the hand leaves, round
+ *              again
  *
  * ONE text guide (P3-B6, Nico: "too many labels"): the numbered steps under
  * the scene, with the playing step's sentence right under them. The steps
  * list IS the text for screen readers and the still frame; "Demo data" sits
  * at the end of the sentence line.
  *
- * MOTION. A timer walks TIMELINE (one cycle = CYCLE_MS, 25.4s); every beat is
+ * MOTION. A timer walks TIMELINE (one cycle = CYCLE_MS, 26.8s); every beat is
  * a class/attribute change, and CSS transitions/animations do the moving —
  * transform and opacity only, nothing reads layout per frame, no rAF loop.
  * The one layout read is the receipt's scroll distance, once per cycle. It
@@ -48,8 +53,8 @@ import s from "./hero.module.css"
  * where they left off.
  *
  * STILL FRAME. The server render, no-JS and prefers-reduced-motion all show
- * beat 5 complete (the phone turned to the counter, the scanner raised with
- * its beam on the barcode, the coupon stamped "Coupon used", a check) with
+ * beat 5 complete (the phone turned to the counter, the scanner reached
+ * forward over the device with its beam on the barcode, the coupon stamped "Coupon used", a check) with
  * every step listed — one picture that tells the loop's end. With motion
  * allowed the stage starts hidden (CSS, keyed on `data-mode`), rewinds to
  * the empty counter with transitions off, and fades in, so the still frame
@@ -88,23 +93,27 @@ const TIMELINE: [Beat, number][] = [
   ["card", 2600], // ripple + the App Clip card pops up
   ["zoomIn", 4100], // into the phone (1.5s)
   ["press", 5900], // a finger presses "View"
-  ["clip", 6700], // the App Clip receipt opens: coupon on top
-  ["scroll", 8500], // slow scroll down through the items (3.6s)
-  ["savePress", 12300], // a finger presses "Save to PapeX"
-  ["saved", 12800], // "Saved"
-  ["app", 13600], // in the PapeX app: Receipts
-  ["coupons", 15000], // the Coupons tab
-  ["couponTap", 15900], // a finger opens the coupon
-  ["couponOpen", 16400], // the coupon detail rises
-  ["out", 18300], // back out to the counter (1.5s)
-  ["turn", 19900], // the phone turns to the person behind the counter (1.1s)
-  ["raise", 21000], // they lift the scanner (0.8s)
-  ["scan", 21900], // red beam, the barcode is scanned (1.1s)
-  ["used", 23000], // "Coupon used" + check
-  ["leave", 24600], // hand and scanner leave (0.9s)
+  ["clip", 6700], // the App Clip receipt opens on the big coupon: held ~1.6s
+  ["scroll", 8800], // then a slow scroll down through the items (4s)
+  ["savePress", 13000], // a finger presses "Save to PapeX"
+  ["saved", 13500], // "Saved"
+  ["app", 14300], // in the PapeX app: Receipts
+  ["coupons", 15700], // the Coupons tab
+  ["couponTap", 16600], // a finger opens the coupon
+  ["couponOpen", 17100], // the coupon detail rises
+  ["out", 19000], // back out to the counter (1.5s)
+  ["turn", 20600], // the phone turns, in depth, to the person behind the counter (1.4s)
+  ["raise", 22100], // they reach the scanner forward over the counter (1s)
+  ["scan", 23200], // the beam fans onto the barcode, which is scanned (1.1s)
+  ["used", 24300], // "Coupon used" + check
+  ["leave", 25900], // hand and scanner leave (0.9s)
 ]
-const CYCLE_MS = 25400
-
+const CYCLE_MS = 26800
+/** The receipt's slow scroll (beat "scroll"); fits before "savePress". */
+const SCROLL_MS = 4000
+/** The phone's thickness is drawn as this many copies of its silhouette
+ *  stacked behind the screen (see .slabLayer). */
+const SLAB_LAYERS = Array.from({ length: 12 }, (_, i) => i + 1)
 const ORDER: Beat[] = TIMELINE.map(([b]) => b)
 const idx = (b: Beat) => (b === "still" ? ORDER.indexOf("used") : ORDER.indexOf(b))
 const from = (b: Beat, first: Beat) => idx(b) >= idx(first)
@@ -261,6 +270,7 @@ export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock:
   const zoomed = pose === "zoom"
   // The cashier's scanner is up from "raise" to "used" (and in the still).
   const scannerUp = within(beat, "raise", "used")
+  const beamOn = beat === "scan" || beat === "still"
   const touch = TOUCH[beat]
   const clipMounted = within(beat, "clip", "app")
 
@@ -276,22 +286,33 @@ export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock:
       >
         {/* --- the counter scene (the "world"): fades back when we zoom in -- */}
         <div className={cn(s.world, zoomed && s.worldAway)}>
-          <CashierBody className={s.cashier} />
+          <CashierBody className={s.cashier} raised={scannerUp} />
           <div className={s.counterTop} />
           <div className={s.counterLip} />
           <div className={s.counterFront} />
           <CashierHands className={s.cashier} raised={scannerUp} />
           <div className={s.deviceShadow} />
+          {/* The phone's soft shadow on the counter top: it follows the
+              phone, and narrows as the phone turns edge-on to us. */}
+          <span className={s.phoneShadow} data-pose={pose} />
           <div className={s.device}>
             <Image src="/product/rdh-device.svg" alt="" width={170} height={138} className={s.deviceImg} priority />
           </div>
-          {/* Beat 5: the cashier's arm lifts the handheld scanner; its red
-              beam reaches for the phone's barcode, and its window turns
-              green once it has read it (the still keeps the red beam: it is
-              the frame that says "scanned"). */}
+          {/* Beat 5: the cashier reaches the handheld scanner forward over
+              the counter (it comes up and towards us, its shadow on the
+              device under it); its window turns green once it has read the
+              coupon. */}
+          <span className={cn(s.scanShadow, scannerUp && s.scanShadowOn)} />
           <ScannerArm className={cn(s.scanArm, scannerUp && s.scanArmUp)} done={beat === "used"} />
-          <span className={cn(s.beam, (beat === "scan" || beat === "still") && s.beamOn)} />
         </div>
+
+        {/* The red beam: a cone of light from the scanner's window that fans
+            out onto the phone's barcode (over the phone, which is turned
+            towards it), with a brighter sheet down its middle that lands on
+            the red line across the barcode (CouponScreen .scanLine). The still
+            keeps it: it is the frame that says "scanned". */}
+        <span className={cn(s.beam, s.beamCone, beamOn && s.beamOn)} />
+        <span className={cn(s.beam, s.beamSheet, beamOn && s.beamOn)} />
 
         {/* The tap: rings from the device, where the phone meets it. Mounted
             per cycle so each tap plays exactly once. */}
@@ -302,6 +323,15 @@ export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock:
             take focus. */}
         <div className={cn(s.held, beat === "off" && s.snap)} data-pose={pose} inert>
           <HandBack className={cn(s.hand, s.handBack, zoomed && s.handAway)} />
+          {/* The phone's body: its silhouette stacked back into depth, so a
+              turn shows its metal side (see .held: preserve-3d). */}
+          {SLAB_LAYERS.map((i) => (
+            <span
+              key={i}
+              className={s.slabLayer}
+              style={{ "--i": i, "--n": SLAB_LAYERS.length } as CSSProperties}
+            />
+          ))}
           <PhoneChrome islandLock={!from(beat, "clip")}>
             {/* 1: the lock screen; iOS's App Clip card pops up on the tap */}
             <div className={cn(s.layer, s.layerFade, !from(beat, "clip") && s.layerOn)}>
@@ -323,7 +353,7 @@ export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock:
                   contentStyle={
                     {
                       transform: `translateY(${from(beat, "scroll") ? -scrollPx : 0}px)`,
-                      transition: "transform 3.6s cubic-bezier(0.45, 0.05, 0.3, 1)",
+                      transition: `transform ${SCROLL_MS}ms cubic-bezier(0.45, 0.05, 0.3, 1)`,
                     } as CSSProperties
                   }
                 />
@@ -348,6 +378,12 @@ export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock:
               />
             ) : null}
           </PhoneChrome>
+          {/* Light on the glass: darker towards the edge that turns away,
+              and a glint that crosses the screen as it turns. */}
+          <span className={s.turnShade} />
+          <span className={s.turnGlint}>
+            <span className={s.turnGlintBand} />
+          </span>
           <HandFront className={cn(s.hand, s.handFront, zoomed && s.handAway)} />
         </div>
 
