@@ -15,35 +15,40 @@ import s from "./story.module.css"
 // story.ts. The export keeps its old name because business/index.tsx
 // (B1's file) mounts it.
 //
-// The heading stays this path's ScrollLit statement, in flow above the
-// runway (a view-timeline freezes inside a sticky pin). B1's index.tsx wraps
-// this section in <div id="how"> and keeps the calculator SLOT after it, so
-// neither lives here.
+// P3-B8 (Nico, 2026-09-25: "space here needs to shrink... let's keep the
+// title in the animation the whole time so there is some text"): the heading
+// is handed to RetainStory, which places it twice and lets CSS show one —
+// on desktop screens tall enough for it (>= 821 x 680, motion allowed) it
+// rides INSIDE the pin, top-left, for the whole runway, and the camera frames
+// every beat in the room left under and beside it; phones, short screens,
+// reduced motion and no-JS keep it in flow above, as before. Same pattern as
+// §02 (TapToRetain.tsx + intro/IntroScene.tsx). The hidden copy is
+// display: none, so assistive tech only ever meets one H2.
 //
-// The heading sits in the 1150px column; the story does not (P3-B2): its
-// pinned scene runs edge to edge so the camera can use the whole viewport,
-// and it puts its own static version and closing copy back in the column.
+// B1's index.tsx wraps this section in <div id="how"> and keeps the
+// calculator SLOT after it, so neither lives here.
 export function WhyMerchants() {
+  // One header element tree, placed twice by RetainStory (in flow / in the
+  // pin); CSS shows exactly one of them.
+  const header = (
+    <Reveal>
+      <SectionLabel index="03">{story.eyebrow}</SectionLabel>
+      <ScrollLit
+        as="h2"
+        text={story.heading}
+        className="max-w-[18ch] text-[length:var(--fs-h2)] font-bold leading-[1.04] tracking-[-.02em] [font-family:var(--font-display)]"
+      />
+      <p
+        className="mt-[var(--gap-title)] max-w-[52ch] text-[16px] leading-[1.5] min-[821px]:text-[length:var(--fs-lead)]"
+        style={{ color: "var(--flow-fg-2)" }}
+      >
+        {story.lead}
+      </p>
+    </Reveal>
+  )
   return (
     <FlowSection ground="light" index="03" className={s.section}>
-      <div className={s.col}>
-        <Reveal>
-          <SectionLabel index="03">{story.eyebrow}</SectionLabel>
-          <ScrollLit
-            as="h2"
-            text={story.heading}
-            className="max-w-[18ch] text-[length:var(--fs-h2)] font-bold leading-[1.04] tracking-[-.02em] [font-family:var(--font-display)]"
-          />
-          <p
-            className="mt-[var(--gap-title)] max-w-[52ch] text-[16px] leading-[1.5] min-[821px]:text-[length:var(--fs-lead)]"
-            style={{ color: "var(--flow-fg-2)" }}
-          >
-            {story.lead}
-          </p>
-        </Reveal>
-      </div>
-
-      <RetainStory />
+      <RetainStory header={header} />
     </FlowSection>
   )
 }

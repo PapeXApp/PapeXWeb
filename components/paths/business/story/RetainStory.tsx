@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 import { MousePointerClick } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PlaneMark } from "@/components/brand/plane-mark"
@@ -241,6 +241,100 @@ const fit = (R: Region, b: Box, fill: number, maxH = 1): Cam => ({
 const TAP_FILL = 0.96
 
 /**
+ * The pinned section heading, in stage px (P3-B8): it owns the free area's
+ * top-left corner, everything left of `r` AND above `b` (its own gaps
+ * included). null when the heading is not in the pin (phones, short screens):
+ * then every frame is the plain fit() above, exactly as before.
+ */
+type Head = { r: number; b: number }
+/** Where a frame sits against the heading, and at what zoom. */
+type Placed = Cam & { mask: number }
+
+/**
+ * The frame that shows `pieces` as large as the free area allows at `fill`
+ * of it (never past `cap`), with NO piece in the heading's corner (P3-B8,
+ * Nico: "keep the title in the animation the whole time... and make sure to
+ * use the space well"). Each piece either sits wholly below the heading or
+ * wholly to its right — bit i of `mask` set = piece i beside it — so a tall
+ * pair can stand beside the title, using the full height, while a wide row
+ * slides under it, or a laptop sits under it with the phone rising beside.
+ * Every mask is tried (<= 3 pieces: <= 8) unless one is given, and the
+ * biggest zoom wins (all-below on a near tie). The frame is then centred in
+ * the room that mask leaves (under the heading, beside it, or the whole
+ * area when mixed), `align`ed vertically, and nudged the least it takes to
+ * clear the heading. Runs in measure() and while the lid opens / the phone
+ * rises: pure arithmetic on measured boxes, no layout reads.
+ */
+function place(
+  R: Region,
+  head: Head | null,
+  pieces: Box[],
+  o: { fill: number; cap?: number; align?: "centre" | "top" | "bottom"; mask?: number },
+): Placed {
+  const U = union(...pieces)
+  const cap = o.cap ?? Infinity
+  const align = o.align ?? "centre"
+  const vy = (y0: number, y1: number, s: number) =>
+    align === "top" ? y0 + (s * U.h) / 2 : align === "bottom" ? y1 - (s * U.h) / 2 : (y0 + y1) / 2
+  if (!head) {
+    const s = Math.min((R.w * o.fill) / U.w, (R.h * o.fill) / U.h, cap)
+    return { x: U.x + U.w / 2, y: U.y + U.h / 2, s, rx: R.x + R.w / 2, ry: vy(R.y, R.y + R.h, s), mask: 0 }
+  }
+  const all = (1 << pieces.length) - 1
+  // The translations t (screen = s * stage + t) that keep the union inside
+  // the free area and each piece clear of the heading, at zoom s.
+  const room = (s: number, mask: number) => {
+    let x0 = R.x - s * U.x
+    const x1 = R.x + R.w - s * (U.x + U.w)
+    let y0 = R.y - s * U.y
+    const y1 = R.y + R.h - s * (U.y + U.h)
+    pieces.forEach((b, i) => {
+      if ((mask >> i) & 1) x0 = Math.max(x0, head.r - s * b.x)
+      else y0 = Math.max(y0, head.b - s * b.y)
+    })
+    return x0 <= x1 && y0 <= y1 ? { x0, x1, y0, y1 } : null
+  }
+  const sTop = Math.min(R.w / U.w, R.h / U.h)
+  const biggest = (mask: number) => {
+    if (room(sTop, mask)) return sTop
+    let lo = 0
+    let hi = sTop
+    for (let i = 0; i < 32; i++) {
+      const mid = (lo + hi) / 2
+      if (room(mid, mask)) lo = mid
+      else hi = mid
+    }
+    return lo
+  }
+  let mask = o.mask ?? 0
+  let best = biggest(mask)
+  if (o.mask === undefined)
+    for (let m = 1; m <= all; m++) {
+      const sm = biggest(m)
+      if (sm > best * 1.01) {
+        best = sm
+        mask = m
+      }
+    }
+  const s = Math.min(best * o.fill, cap)
+  // the room this mask leaves, to centre in
+  const ax0 = mask === all ? head.r : R.x
+  const ay0 = mask === 0 ? head.b : R.y
+  const ax1 = R.x + R.w
+  const ay1 = R.y + R.h
+  const r = room(s, mask) ?? room(best, mask)
+  let tx = (ax0 + ax1) / 2 - s * (U.x + U.w / 2)
+  let ty = vy(ay0, ay1, s) - s * (U.y + U.h / 2)
+  if (r) {
+    tx = Math.min(r.x1, Math.max(r.x0, tx))
+    ty = Math.min(r.y1, Math.max(r.y0, ty))
+  }
+  const x = U.x + U.w / 2
+  const y = U.y + U.h / 2
+  return { x, y, s, rx: tx + s * x, ry: ty + s * y, mask }
+}
+
+/**
  * "Try it", over a screen that is usable (the hold, or latched open): a small
  * pill that fades in with `live`. Decorative; the screens name themselves.
  */
@@ -266,7 +360,7 @@ function offsetIn(el: HTMLElement, root: HTMLElement) {
   return { x, y, w: el.offsetWidth, h: el.offsetHeight }
 }
 
-export function RetainStory() {
+export function RetainStory({ header }: { header: ReactNode }) {
   // "ssr": server render + first client frame carry BOTH versions and CSS
   // shows one (story.module.css .runway / .staticSlot). After mount JS keeps
   // only the one CSS is showing.
@@ -322,6 +416,7 @@ export function RetainStory() {
   const launchRef = useRef<HTMLSpanElement>(null)
   const hintRef = useRef<HTMLParagraphElement>(null)
   const camRef = useRef<HTMLDivElement>(null)
+  const headRefPin = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)")
@@ -389,6 +484,14 @@ export function RetainStory() {
       path: [] as number[], // x,y pairs of the spark path, stage px
       /** the camera's four frames (see Cam), stage px; empty = camera off */
       cams: [] as Cam[],
+      /** the pinned heading's corner (stage px), null when it is in flow */
+      head: null as Head | null,
+      /** which side of the heading the tap / final frames' pieces sit on */
+      tapMask: 0,
+      finalMask: 0,
+      /** the try-it pills' rise above the laptop's / phone's top (stage px) */
+      tryLap: 0,
+      tryPhone: 0,
       /** the free area, and the tap pose's phone + device boxes (stage px) */
       region: null as Region | null,
       /**
@@ -420,19 +523,29 @@ export function RetainStory() {
      * (most when flat), so the frame makes room for that bulge — and for the
      * deck, 108% of the laptop — then settles in as the lid stands up.
      */
-    const finalFrame = (open: number): Cam => {
+    const finalFrame = (open: number, mask?: number): Placed => {
       const R = M.finalRegion as Region
       const L = M.lapBox
       const z = M.lidH * Math.cos((Math.PI / 2) * open)
       const m = M.persp > z ? M.persp / (M.persp - z) : 1
       const grow = Math.max(0.04 * L.w, (L.w / 2) * (m - 1))
-      const b = union({ ...L, x: L.x - grow, w: L.w + 2 * grow }, ...M.finalPair)
-      const cam = fit(R, b, M.finalFill)
+      const [ph, dv] = M.finalPair
+      // with the heading pinned, the try-it pills over both screens count
+      // too: they fade in on this frame and must clear the title as well
+      const lap = { ...L, x: L.x - grow, w: L.w + 2 * grow, y: L.y - M.tryLap, h: L.h + M.tryLap }
+      const pieces = M.head ? [lap, { ...ph, y: ph.y - M.tryPhone, h: ph.h + M.tryPhone }, dv] : [lap, ph, dv]
       // BOTTOM-anchored (P3-B5): the frame's foot sits exactly on the free
       // area's floor, --cam-final-foot above the pin's bottom, so the copy
       // after the runway can be pulled up by that same CSS length and land a
-      // fixed gap under the screens (story.module.css .runway margin-bottom)
-      return { ...cam, ry: R.y + R.h - (cam.s * b.h) / 2 }
+      // fixed gap under the screens (story.module.css .runway margin-bottom).
+      // Without the heading the box is the laptop (bulge, no pill) + pair,
+      // as before.
+      if (!M.head) {
+        const b = union({ ...L, x: L.x - grow, w: L.w + 2 * grow }, ph, dv)
+        const cam = fit(R, b, M.finalFill)
+        return { ...cam, ry: R.y + R.h - (cam.s * b.h) / 2, mask: 0 }
+      }
+      return place(R, M.head, pieces, { fill: M.finalFill, align: "bottom", mask })
     }
 
     /**
@@ -447,6 +560,17 @@ export function RetainStory() {
       const P = M.printerBox
       const S = M.slipBox
       const b = printed > 0 ? union(P, { ...S, h: S.h * printed }) : P
+      if (M.head) {
+        // P3-B8: under the pinned heading, its top a fixed gap below the
+        // lead, so the slip feeds down into the room below (no band between
+        // the title and the printer); the same two caps
+        return place(R, M.head, [b], {
+          fill: 0.96,
+          cap: Math.min((R.pinH * M.printH) / b.h, (M.printW * R.pinW) / P.w),
+          align: "top",
+          mask: 0,
+        })
+      }
       const cam = fit(R, b, 0.96, M.printH)
       // the printer-width cap; the box's fit (height, free area) still wins
       return { ...cam, s: Math.min(cam.s, (M.printW * R.pinW) / P.w) }
@@ -589,6 +713,30 @@ export function RetainStory() {
           pinW: pin.clientWidth,
         }
         M.region = R
+        // P3-B8: the pinned heading (when CSS shows it) — its text's right
+        // edge and its foot, plus a gap each, in stage px. Layout boxes only
+        // (offset*, and a Range for the lines' width relative to the head's
+        // own box, so the Reveal's rise never skews it).
+        M.head = null
+        const ph = headRefPin.current
+        if (ph && ph.getClientRects().length > 0) {
+          const hb = ph.getBoundingClientRect()
+          // the text's own right edge (its longest line), not the blocks'
+          let right = 0
+          const walk = document.createTreeWalker(ph, NodeFilter.SHOW_TEXT)
+          const rg = document.createRange()
+          for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+            if (!n.textContent?.trim()) continue
+            rg.selectNodeContents(n)
+            for (const rr of Array.from(rg.getClientRects())) right = Math.max(right, rr.right - hb.left)
+          }
+          const hx = ph.offsetLeft - stage.offsetLeft
+          const hy = ph.offsetTop - stage.offsetTop
+          M.head = {
+            r: hx + right + num(pcs, "--cam-head-side", 40),
+            b: hy + ph.offsetHeight + num(pcs, "--cam-head-gap", 32),
+          }
+        }
         const foot = num(pcs, "--cam-final-foot", 110)
         M.finalRegion = { ...R, h: pin.clientHeight - foot - top }
         const postBox = (b: Box): Box => {
@@ -607,18 +755,31 @@ export function RetainStory() {
         M.printH = num(pcs, "--cam-print-h", 0.7)
         const kPrint = printFrame(1)
         // trash: the rig shifted left, and the bin
-        const kTrash = fit(R, union(shiftBox(prb, M.rigShift), shiftBox(slip, M.rigShift), bb), 0.96)
+        const rigNow = union(shiftBox(prb, M.rigShift), shiftBox(slip, M.rigShift))
+        const kTrash = M.head
+          ? place(R, M.head, [rigNow, bb], { fill: 0.96 })
+          : fit(R, union(rigNow, bb), 0.96)
         // tap: the phone on the device, as big as the free area allows
-        const kTap = fit(R, union(phb, db), TAP_FILL)
+        // (P3-B8: beside the heading when that is bigger, the pair is tall)
+        const kTap = place(R, M.head, [phb, db], { fill: TAP_FILL })
+        M.tapMask = kTap.mask
         // final: the laptop (lid + deck) and the pair in its post-slide spot
         M.lapBox = la
         M.finalPair = [postBox(phb), postBox(db)]
         M.finalFill = num(pcs, "--cam-final-fill", 0.94)
         M.lidH = lb.h
         M.persp = parseFloat(getComputedStyle(laptop).perspective) || 1400
+        // the try-it pills (bottom-anchored over each screen; their
+        // transform is horizontal only, so offsetTop is where they draw)
+        const tl = laptop.querySelector<HTMLElement>(`.${s.tryLaptop}`)
+        const tp = phone.querySelector<HTMLElement>(`.${s.tryPhone}`)
+        M.tryLap = tl ? Math.max(0, -tl.offsetTop) : 0
+        // (the phone's pill rides the group's post scale, like the phone)
+        M.tryPhone = tp ? Math.max(0, -tp.offsetTop) * M.postS : 0
         const kFinal = finalFrame(1)
+        M.finalMask = kFinal.mask
         // [3] the lid up (the hold), [4] the lid still flat (its widest)
-        M.cams = [kPrint, kTrash, kTap, kFinal, finalFrame(0)]
+        M.cams = [kPrint, kTrash, kTap, kFinal, finalFrame(0, M.finalMask)]
       }
     }
 
@@ -939,8 +1100,10 @@ export function RetainStory() {
         // low), so its foot is never under the caption or off the screen
         const riseDy = (1 - rise) * 0.35 * M.phoneH
         const tapNow =
-          riseDy > 0.5 && M.region ? fit(M.region, union(shiftBox(M.phoneBox, 0, riseDy), M.devBox), TAP_FILL) : cams[2]
-        const finalNow = open > 0 && open < 1 ? finalFrame(open) : open >= 1 ? cams[3] : cams[4]
+          riseDy > 0.5 && M.region
+            ? place(M.region, M.head, [shiftBox(M.phoneBox, 0, riseDy), M.devBox], { fill: TAP_FILL, mask: M.tapMask })
+            : cams[2]
+        const finalNow = open > 0 && open < 1 ? finalFrame(open, M.finalMask) : open >= 1 ? cams[3] : cams[4]
         const [a0, b0, t0] =
           k3 > 0 ? [cams[2], finalNow, k3] : k2 > 0 ? [cams[1], tapNow, k2] : [print < 1 ? printFrame(print) : cams[0], cams[1], k1]
         const cs = a0.s * Math.pow(b0.s / a0.s, t0)
@@ -1089,6 +1252,16 @@ export function RetainStory() {
       <MarqueeBand />
     </div>
   )
+  // The section heading, in flow above the runway / static story: phones,
+  // short screens, reduced motion and no-JS (data-nojs="static" forces it
+  // on). Hidden by CSS on desktop while the pinned copy below shows
+  // (story.module.css .flowHead / .pinHead) — display: none, so assistive
+  // tech meets one H2, never two.
+  const flowHead = (
+    <div className={`${s.flowHead} ${s.col}`} data-nojs="static">
+      {header}
+    </div>
+  )
   const staticVersion =
     mode === "scene" ? null : (
       <div className={`${s.staticSlot} ${s.col}`} data-nojs="static">
@@ -1098,6 +1271,7 @@ export function RetainStory() {
   if (mode === "static")
     return (
       <>
+        {flowHead}
         {staticVersion}
         {after}
       </>
@@ -1105,6 +1279,7 @@ export function RetainStory() {
 
   return (
     <>
+    {flowHead}
     {staticVersion}
     <div ref={runwayRef} className={s.runway} data-nojs="runway" style={{ height: `${RUNWAY_VH}vh` }}>
       {/* The story for assistive tech: the scene itself is decorative. */}
@@ -1115,6 +1290,11 @@ export function RetainStory() {
       </ol>
 
       <div className={s.pin} ref={pinRef}>
+        {/* P3-B8: the heading rides the pin, top-left, for the whole story;
+            the camera frames every beat clear of it (place()). */}
+        <div className={s.pinHead} ref={headRefPin}>
+          {header}
+        </div>
         {/* Every piece of art is decorative (the <ol> above tells the story)
             and inert while it moves. The exceptions are the two screens —
             the laptop's dashboard (the phone dashboard on phones) and the

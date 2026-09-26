@@ -56,7 +56,9 @@
   /* the section's side gutter; the runway cancels it to run edge to edge */
   --story-px: clamp(20px, 5vw, 56px);
   position: relative;
-  padding: var(--section-pad-y) var(--story-px);
+  /* the top padding rides the in-flow heading (.flowHead): when the heading
+     is in the pin instead, the pin's own 84px is the space above it */
+  padding: 0 var(--story-px) var(--section-pad-y);
 }
 /* The 1150px reading column (heading, static story, the copy after). */
 .col {
@@ -136,6 +138,21 @@
   --cam-final-fill: 0.94;
 }
 
+/* --- the section heading (P3-B8) --------------------------------------------
+   RetainStory places it twice and exactly one shows (same pattern as §02,
+   intro/intro.module.css). Default (phones, short screens, reduced motion,
+   no-JS via data-nojs="static"): in flow above the runway, as before.
+   Desktop tall enough (>= 821 x 680, motion allowed, below): at the top-left
+   of the pin for the whole runway (Nico, 2026-09-25: "let's keep the title
+   in the animation the whole time so there is some text"), and the camera
+   frames every beat in the room under and beside it (RetainStory place()). */
+.flowHead {
+  padding-top: var(--section-pad-y);
+}
+.pinHead {
+  display: none;
+}
+
 .stage {
   container-type: inline-size;
   position: relative;
@@ -191,6 +208,69 @@
   letter-spacing: 0.04em;
   text-align: center;
   color: var(--flow-fg-2);
+}
+
+/* Desktop with room for the heading in the pin. The in-flow copy (and with
+   it the section's top padding) and the runway's top margin go: the pin's
+   own 84px clears the nav and is the only space above the title, as in §02.
+   The heading sits in the
+   1150px column (the runway is edge to edge, so the gutter comes back here)
+   and takes no pointer events: its box spans the column, and a phone can
+   stand beside the text in the free area to its right. */
+@media (min-width: 821px) and (min-height: 680px) and (prefers-reduced-motion: no-preference) {
+  .section {
+    /* The last frame's floor: just clear of the caption (the .hint's own
+       bottom + its two reserved lines + 12px), not 14svh, now that the
+       title takes the top of the pin. The copy after the runway is pulled
+       up by the same length (.runway margin-bottom), so the screens ->
+       dashboard heading gap is --after-gap exactly as before; only the
+       empty band under the screens goes. */
+    --cam-final-foot: calc(clamp(12px, 2.4svh, 24px) + 52px);
+  }
+  .flowHead {
+    display: none;
+  }
+  .runway {
+    margin-top: 0;
+  }
+  .pinHead {
+    display: block;
+    position: absolute;
+    top: 84px;
+    left: 0;
+    right: 0;
+    z-index: 1;
+    width: min(1150px, 100% - 2 * var(--story-px));
+    margin-inline: auto;
+    pointer-events: none;
+    /* A touch tighter than in flow on shorter screens (same words, same
+       H2): the title -> lead step and the lead's size follow the height, so
+       a 760px screen gives the story more room under the title. */
+    --gap-title: min(clamp(20px, 2.4vw, 36px), 2.6svh);
+  }
+  .pinHead p {
+    font-size: min(var(--fs-lead), 2.4svh);
+  }
+  /* The statement's words light as it scrolls up (ScrollLit), finishing
+     before the pin takes it. Its default range is a share of the heading's
+     view timeline, and inside a sticky pin Chrome stretches that timeline
+     over the whole runway, so "one receipt." would still be dim at p = 0
+     and light up only a screen or so into the story. The same slices, in
+     scroll distance from the moment the heading enters, instead: lit by the
+     time its top is half-way up the screen, as it was in flow. */
+  @supports (animation-timeline: view()) {
+    .pinHead :global(.papex-lit-word) {
+      animation-range:
+        cover calc(12svh + 36svh * var(--i) / var(--n))
+        cover calc(18svh + 36svh * var(--i) / var(--n));
+    }
+  }
+  .pin {
+    /* the frames' clearance from the heading: under its lead, and right of
+       its longest line (read by measure()) */
+    --cam-head-gap: clamp(20px, 3.4svh, 36px);
+    --cam-head-side: clamp(24px, 3vw, 48px);
+  }
 }
 
 /* --- act 1: printer + slip ------------------------------------------------ */
