@@ -2,10 +2,12 @@
 
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
-import { Reveal, WordReveal } from "@/components/motion"
+import { ScrollReveal, ScrollWords } from "@/components/motion"
 import { useSafeReducedMotion } from "@/components/motion/useSafeReducedMotion"
 import { FlowSection } from "../shared/FlowSection"
+import { NextSection } from "../shared/NextSection"
 import { SectionLabel } from "../shared/SectionLabel"
+import { visionContent } from "./content"
 import styles from "./privacy.module.css"
 
 /**
@@ -48,29 +50,31 @@ const KEPT_GROUP = "4242"
 
 export function Privacy({ eyebrowIndex }: { eyebrowIndex: string }) {
   return (
-    <FlowSection ground="light" index={eyebrowIndex} className={styles.section}>
+    <FlowSection id="privacy" ground="light" index={eyebrowIndex} className={styles.section}>
       <div className={styles.inner}>
         <div className={styles.copy}>
-          <Reveal variant="up">
+          {/* P3-R1: scroll-linked — label, title word by word, each line of
+              copy, the "never collects" card; the receipt rises beside them. */}
+          <ScrollReveal>
             <SectionLabel index={eyebrowIndex}>Privacy</SectionLabel>
-            <WordReveal as="h2" className={styles.heading}>
-              Your receipt, not your identity.
-            </WordReveal>
-            <p className={styles.lead}>
-              A tap sends your receipt, and only your receipt. No sign-up, no personal info.
-            </p>
-            <p className={styles.body}>
-              Save it to the PapeX app and it&apos;s yours: delete a receipt, or your whole account, any time.
-            </p>
-            <p className={styles.body}>
-              Never touches card data.{" "}
-              <Link href="/pci" className={styles.inlineLink}>
-                How we handle payments
-              </Link>
-            </p>
-          </Reveal>
+          </ScrollReveal>
+          <ScrollWords as="h2" className={styles.heading}>
+            Your receipt, not your identity.
+          </ScrollWords>
+          <ScrollReveal as="p" className={styles.lead}>
+            A tap sends your receipt, and only your receipt. No sign-up, no personal info.
+          </ScrollReveal>
+          <ScrollReveal as="p" className={styles.body}>
+            Save it to the PapeX app and it&apos;s yours: delete a receipt, or your whole account, any time.
+          </ScrollReveal>
+          <ScrollReveal as="p" className={styles.body}>
+            Never touches card data.{" "}
+            <Link href="/pci" className={styles.inlineLink}>
+              How we handle payments
+            </Link>
+          </ScrollReveal>
 
-          <Reveal variant="up" delay={0.08} className={styles.never}>
+          <ScrollReveal className={styles.never}>
             <h3 className={styles.neverTitle}>What a tap never collects</h3>
             <ul className={styles.neverList}>
               {NEVER_COLLECTED.map((item) => (
@@ -89,13 +93,14 @@ export function Privacy({ eyebrowIndex }: { eyebrowIndex: string }) {
                 →
               </span>
             </Link>
-          </Reveal>
+          </ScrollReveal>
         </div>
 
-        <Reveal variant="scale" delay={0.12} className={styles.stage}>
+        <ScrollReveal order={1} className={styles.stage}>
           <RedactingReceipt />
-        </Reveal>
+        </ScrollReveal>
       </div>
+      <NextSection targetId="get-it" name={visionContent.eyebrow} />
     </FlowSection>
   )
 }

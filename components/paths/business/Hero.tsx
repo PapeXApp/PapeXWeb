@@ -1,12 +1,13 @@
 import { Phone } from "lucide-react"
 import { WordReveal, ChildStagger, Ripple, Spotlight } from "@/components/motion"
 import { FlowSection } from "../shared/FlowSection"
+import { NextSection } from "../shared/NextSection"
 import { SectionLabel } from "../shared/SectionLabel"
 import { parseEscPos } from "@/lib/escpos"
 import { summarizeReceipt } from "@/lib/receiptSummary"
 import { demoReceiptBytes } from "../customer/demoReceipt"
 import { receiptMoment } from "../customer/appui/Clip"
-import { hero } from "./content"
+import { hero, tapToRetain } from "./content"
 import { LoopVisual } from "./hero/LoopVisual"
 import styles from "./business.module.css"
 
@@ -33,6 +34,9 @@ import styles from "./business.module.css"
 // screen: hero/LoopVisual.tsx. P3-B7 (Nico's storyboard): tap -> App Clip
 // card -> View -> the receipt with the coupon on top -> Save to PapeX -> open
 // the coupon -> turned to the counter and scanned, ~25s a cycle.
+const tapToRetainId = tapToRetain.id
+const tapToRetainName = tapToRetain.eyebrow
+
 export function Hero() {
   // The demo receipt is decoded HERE, on the server, through this repo's own
   // lib/escpos.ts + lib/receiptSummary.ts (same bytes and path as /customers),
@@ -151,6 +155,11 @@ export function Hero() {
           <LoopVisual summary={summary} clock={clock} />
         </div>
       </div>
+      {/* P3-R1: the hero is a full, static screen (its loop runs on time,
+          not on scroll), so it gets the next-section arrow. Its copy keeps
+          the ChildStagger load-in: it is on screen at scroll 0, where a
+          scroll-linked reveal would leave the lower lines half-shown. */}
+      <NextSection targetId={tapToRetainId} name={tapToRetainName} />
     </FlowSection>
   )
 }

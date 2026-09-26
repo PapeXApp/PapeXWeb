@@ -1,9 +1,10 @@
 import Image from "next/image"
 import Link from "next/link"
-import { Reveal } from "@/components/motion"
+import { ScrollReveal, ScrollWords } from "@/components/motion"
 import { FlowSection } from "../shared/FlowSection"
+import { NextSection } from "../shared/NextSection"
 import { SectionLabel } from "../shared/SectionLabel"
-import { rdhDevice } from "./content"
+import { howItWorks, rdhDevice } from "./content"
 import styles from "./business.module.css"
 
 // 3.5 The RDH device — NAVY ground since 2026-09-22 (was light). It opens the
@@ -37,18 +38,21 @@ export function RdhDevice() {
         {/* The heading spans the screen above the device/bullets row (Web
             2.1): as the right column's first line it capped the whole row at
             the device's height and left the screen ~35% empty. */}
-        <Reveal as="div">
+        {/* P3-R1: scroll-linked, in reading order — label, title (word by
+            word), then the device beside the bullets, then the spec strip. */}
+        <ScrollReveal>
           <SectionLabel index="04">{rdhDevice.eyebrow}</SectionLabel>
-          <h2
-            className="max-w-[24ch] text-[length:var(--fs-h2)] font-bold leading-[1.04] tracking-[-.02em]"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            {rdhDevice.heading}
-          </h2>
-        </Reveal>
+        </ScrollReveal>
+        <ScrollWords
+          as="h2"
+          className="max-w-[24ch] text-[length:var(--fs-h2)] font-bold leading-[1.04] tracking-[-.02em]"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
+          {rdhDevice.heading}
+        </ScrollWords>
 
         <div className="mt-[var(--gap-body)] grid grid-cols-1 items-center gap-[clamp(30px,5vw,70px)] min-[821px]:grid-cols-[56fr_44fr]">
-          <Reveal variant="mask" className="flex items-center justify-center">
+          <ScrollReveal className="flex items-center justify-center">
             <Image
               src="/product/rdh-device.svg"
               alt={rdhDevice.deviceAlt}
@@ -60,12 +64,12 @@ export function RdhDevice() {
               className="h-auto w-full max-w-[700px] object-contain min-[821px]:max-h-[calc(100svh-300px)]"
               style={{ filter: "drop-shadow(0 26px 44px rgba(0,0,0,.45))" }}
             />
-          </Reveal>
+          </ScrollReveal>
 
-          <Reveal as="div">
+          <div>
             <ul className="grid gap-[var(--gap-list)]">
               {rdhDevice.points.map((point) => (
-                <li key={point.text} className="flex items-start gap-3.5">
+                <ScrollReveal as="li" key={point.text} order={1} className="flex items-start gap-3.5">
                   <span aria-hidden="true" className="text-[22px] font-bold leading-[1.35]" style={{ color: "var(--orange)" }}>
                     →
                   </span>
@@ -80,13 +84,14 @@ export function RdhDevice() {
                       </>
                     ) : null}
                   </span>
-                </li>
+                </ScrollReveal>
               ))}
             </ul>
 
             {/* Spec strip — the three facts the bullets already state, set as a
                 scannable row. Copy lives in content.ts (rdhDevice.specs). */}
-            <div
+            <ScrollReveal
+              order={2}
               className="mt-[var(--gap-body)] flex flex-wrap items-center gap-x-4 gap-y-2 border-t pt-[var(--gap-list)] text-[13px] font-semibold uppercase tracking-[.16em]"
               style={{ borderColor: "var(--flow-hair)", color: "var(--flow-fg-3)", fontFamily: "var(--font-label)" }}
             >
@@ -100,10 +105,11 @@ export function RdhDevice() {
                   <span>{spec}</span>
                 </span>
               ))}
-            </div>
-          </Reveal>
+            </ScrollReveal>
+          </div>
         </div>
       </div>
+      <NextSection targetId={howItWorks.id} name={howItWorks.eyebrow} />
     </FlowSection>
   )
 }

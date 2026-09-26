@@ -21,7 +21,9 @@ export function SectionLabel({
   style?: CSSProperties
 }) {
   return (
-    <div className={cn(styles.label, className)} style={style}>
+    // data-section-label: NextSection reads it to keep a scrolled-to label
+    // clear of the fixed nav.
+    <div className={cn(styles.label, className)} style={style} data-section-label="">
       {index ? <span className={styles.labelIdx}>[{index}]</span> : null}
       <span>{children}</span>
     </div>

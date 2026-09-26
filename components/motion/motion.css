@@ -53,3 +53,75 @@
     opacity: 1;
   }
 }
+
+/* ScrollReveal + ScrollWords (Web 2.1 P3-R1) — SCROLL-LINKED rise from below
+   for the static sections of /business and /customers. The progress is the
+   element's position (its view timeline), never a timer, so a fast scroller
+   never waits and scrolling back up plays it in reverse (fill-mode both).
+
+   Ranges are measured in vh of travel since the element's top met the
+   viewport's bottom edge (`cover 0`): body pieces run 1vh -> 13vh (later
+   `order` steps shift by 1.5vh, capped at 15vh); heading words resolve by
+   ~13.5vh. Short on purpose: when a full screen is aligned, its lowest line
+   is only ~16vh above the bottom edge (1440x760), and a screen you land on
+   must be fully revealed (ScrollReveal.tsx revealRange). The arrow (.papex-rv-arrow) runs over its own entry,
+   so it has risen in by the time it is fully on screen.
+
+   ALL hidden states live inside this @supports + no-preference block:
+   browsers without view timelines (Safari < 26, Firefox without the flag)
+   and reduced motion render the final frame; nothing can get stuck hidden.
+   Transform + opacity only (compositor). */
+.papex-rw {
+  view-timeline-name: --papex-rw;
+  view-timeline-axis: block;
+}
+/* WordReveal's per-word boxes, as CSS: same wrap metrics, same line breaks. */
+.papex-rw-wrap {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding-bottom: 0.12em;
+  margin-bottom: -0.12em;
+}
+.papex-rw-word {
+  display: inline-block;
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .papex-rv {
+      animation: papex-rv cubic-bezier(0.33, 1, 0.68, 1) both;
+      animation-timeline: view();
+      animation-range: cover var(--rv-from, 1vh) cover var(--rv-to, 13vh);
+    }
+    .papex-rv-arrow {
+      animation-range: entry 0% entry 100%;
+    }
+    .papex-rw-word {
+      animation: papex-rw cubic-bezier(0.33, 1, 0.68, 1) both;
+      animation-timeline: --papex-rw;
+      animation-range:
+        cover calc(0.5vh + 5vh * var(--i) / var(--n))
+        cover calc(8.5vh + 5vh * var(--i) / var(--n));
+    }
+  }
+}
+@keyframes papex-rv {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 28px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes papex-rw {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 115%, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
