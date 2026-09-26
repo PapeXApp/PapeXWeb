@@ -74,6 +74,8 @@ export const hero = {
 // scene is DEMO data for the invented "Tidewick Cafe" (the /customers demo
 // receipt), and the scene says so with `demoTag`.
 export const tapToRetain = {
+  /** Section id: the hero's next-section arrow target (P3-R1). */
+  id: "tap-to-retain",
   eyebrow: "What is Tap to Retain?",
   heading: "Your store, in their pocket.",
   lead: "Tap to Retain turns the paper receipt into a reason to come back. Scroll to watch both halves.",

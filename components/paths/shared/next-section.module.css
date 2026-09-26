@@ -1,0 +1,75 @@
+/* NextSection — the "go to the next screen" arrow (Web 2.1 P3-R1).
+   Desktop only (>= 821px, where sections are full screens via `.screen`);
+   below that sections stack and scroll, and the arrow is not rendered at all
+   (display: none, so it is also out of the tab order).
+
+   It sits in the section's BOTTOM PADDING: every arrowed section pads its
+   bottom with --section-pad-y (60px at 1440, ~58px at 1280), and the 44px hit
+   target is centred in that band, so it can never cover content. The ring is
+   40px inside the 44px target. */
+.next {
+  display: none;
+}
+@media (min-width: 821px) {
+  .next {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: max(0px, calc((var(--section-pad-y, 60px) - 44px) / 2));
+    z-index: 2;
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+  }
+}
+
+.link {
+  pointer-events: auto;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  color: var(--orange);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.link:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 2px;
+}
+
+.ring {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid rgba(235, 113, 0, 0.42);
+  background: rgba(235, 113, 0, 0.06);
+  transition:
+    background-color 220ms ease,
+    border-color 220ms ease;
+}
+.link:hover .ring {
+  background: rgba(235, 113, 0, 0.14);
+  border-color: rgba(235, 113, 0, 0.7);
+}
+
+.icon {
+  width: 18px;
+  height: 18px;
+  transition: transform 220ms cubic-bezier(0.2, 0.7, 0.25, 1);
+}
+.link:hover .icon {
+  transform: translateY(2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ring,
+  .icon {
+    transition: none;
+  }
+  .link:hover .icon {
+    transform: none;
+  }
+}

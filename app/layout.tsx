@@ -105,6 +105,9 @@ const SITE_JSON_LD = JSON.stringify({
 //      (data-nojs="faq-*").
 const NO_JS_REVEAL_CSS = [
   '[data-reveal],[data-reveal-group]>*{opacity:1!important;transform:none!important;filter:none!important}',
+  // ScrollReveal/ScrollWords (P3-R1) are CSS scroll-driven, so they would still
+  // run with JS off; the brief is "no JS = the still, complete page".
+  '.papex-rv,.papex-rw-word{animation:none!important}',
   '[data-reveal="mask"]{clip-path:none!important}',
   // 2. business scenes
   '[data-nojs="runway"]{display:none!important}',

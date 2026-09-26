@@ -11,7 +11,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react"
-import { Reveal, WordReveal } from "@/components/motion"
+import { ScrollReveal, ScrollWords } from "@/components/motion"
 import { FlowSection, type Ground } from "./FlowSection"
 import { SectionLabel } from "./SectionLabel"
 import styles from "./faq.module.css"
@@ -183,22 +183,28 @@ export function Faq({ id, eyebrowIndex, eyebrow = "FAQ", heading, items, ground 
   return (
     <FlowSection ground={ground} id={id} index={eyebrowIndex} className={styles.section}>
       <div className={styles.inner}>
-        <Reveal variant="up" className={styles.head}>
-          <SectionLabel index={eyebrowIndex}>{eyebrow}</SectionLabel>
-          <WordReveal as="h2" className={styles.heading}>
+        {/* P3-R1: scroll-linked — label, title word by word, hint, then each
+            question rises on its own position. */}
+        <div className={styles.head}>
+          <ScrollReveal>
+            <SectionLabel index={eyebrowIndex}>{eyebrow}</SectionLabel>
+          </ScrollReveal>
+          <ScrollWords as="h2" className={styles.heading}>
             {heading}
-          </WordReveal>
-          <p className={styles.hint}>Pick a question to see the answer.</p>
-        </Reveal>
+          </ScrollWords>
+          <ScrollReveal as="p" className={styles.hint}>
+            Pick a question to see the answer.
+          </ScrollReveal>
+        </div>
 
-        <Reveal variant="up" delay={0.1}>
+        <div>
           <ul className={styles.list}>
             {visible.map((item, index) => {
               const isOpen = open.has(index)
               const buttonId = `${baseId}-q${index}`
               const panelId = `${baseId}-a${index}`
               return (
-                <li key={item.q} className={styles.item} data-open={isOpen}>
+                <ScrollReveal as="li" key={item.q} className={styles.item} data-open={isOpen}>
                   <span aria-hidden="true" className={styles.rule} />
                   <h3 className={styles.qHeading}>
                     <button
@@ -236,11 +242,11 @@ export function Faq({ id, eyebrowIndex, eyebrow = "FAQ", heading, items, ground 
                       </div>
                     </div>
                   </div>
-                </li>
+                </ScrollReveal>
               )
             })}
           </ul>
-        </Reveal>
+        </div>
       </div>
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />

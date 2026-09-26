@@ -15,6 +15,7 @@ import {
 } from "react";
 import { useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
+import { ScrollReveal } from "@/components/motion/ScrollReveal";
 import { problemContent, type ProblemCardId } from "./content";
 import { PROBLEM_SOURCE_URLS } from "./problemSources";
 import styles from "./flipcards.module.css";
@@ -1326,8 +1327,13 @@ export function FlipCard({ card, index }: { card: Card; index: number }) {
 export function FlipCardGrid() {
   return (
     <div className={styles.grid}>
+      {/* P3-R1: each card rises on the scroll, one stagger step after the
+          one to its left. The wrapper, not the card, carries the reveal, so
+          the card's own tilt/flip transforms are untouched. */}
       {problemContent.cards.map((card, i) => (
-        <FlipCard key={card.id} card={card} index={i} />
+        <ScrollReveal key={card.id} order={i + 1}>
+          <FlipCard card={card} index={i} />
+        </ScrollReveal>
       ))}
     </div>
   );

@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { Reveal, WordReveal } from "@/components/motion";
+import { ScrollReveal, ScrollWords } from "@/components/motion";
 import { FlowSection } from "../shared/FlowSection";
+import { NextSection } from "../shared/NextSection";
 import { PointerLitGroup } from "../shared/PointerLit";
 import { SectionLabel } from "../shared/SectionLabel";
-import { heroContent, personasContent, type PersonaId } from "./content";
+import { featuresContent, heroContent, personasContent, type PersonaId } from "./content";
 import { onRetakeRequest, setPersona } from "./personaStore";
 import { useStoreUrl } from "./Hero";
 import styles from "./personas.module.css";
@@ -183,18 +184,24 @@ export function Personas() {
     // answers" link (a plain anchor without JS). An id only — nothing visual.
     <FlowSection ground="navy" index="04" id="quiz" className={styles.section}>
       <div className={styles.inner}>
-        <Reveal variant="up" style={{ textAlign: "center" }}>
-          <SectionLabel index="04">{personasContent.eyebrow}</SectionLabel>
-          <WordReveal
+        {/* P3-R1: scroll-linked — label, title word by word, intro, then the
+            quiz card. The quiz itself is untouched. */}
+        <div style={{ textAlign: "center" }}>
+          <ScrollReveal>
+            <SectionLabel index="04">{personasContent.eyebrow}</SectionLabel>
+          </ScrollReveal>
+          <ScrollWords
             as="h2"
             className="mx-auto max-w-[24ch] [font-family:var(--font-display)] font-bold text-[length:var(--fs-h2)] leading-[1.03] tracking-[-.02em]"
           >
             {personasContent.headline}
-          </WordReveal>
-          <p className={styles.intro}>{personasContent.intro}</p>
-        </Reveal>
+          </ScrollWords>
+          <ScrollReveal as="p" className={styles.intro}>
+            {personasContent.intro}
+          </ScrollReveal>
+        </div>
 
-        <Reveal variant="up">
+        <ScrollReveal>
           <div className={styles.quiz} role="group" aria-label="Receipt personality quiz, three questions">
             {/* Progress: Back on the left, "Question N of 3" on the right,
                 three steps underneath. The steps are decoration for sighted
@@ -289,8 +296,9 @@ export function Personas() {
               ) : null}
             </div>
           </div>
-        </Reveal>
+        </ScrollReveal>
       </div>
+      <NextSection targetId="features" name={featuresContent.eyebrow} />
     </FlowSection>
   );
 }

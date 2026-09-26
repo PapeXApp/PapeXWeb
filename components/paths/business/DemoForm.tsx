@@ -6,10 +6,12 @@ import { db } from "@/firebase/firebaseConfig"
 import { requestDemo } from "@/lib/signup/client"
 import { shouldFallBackToClientWrite } from "@/lib/signup/fallback"
 import { HONEYPOT_FIELD } from "@/lib/signup/schema"
-import { Reveal, Ripple } from "@/components/motion"
+import { Ripple, ScrollReveal, ScrollWords } from "@/components/motion"
+import { revealVars } from "@/components/motion/ScrollReveal"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { FlowSection } from "../shared/FlowSection"
+import { NextSection } from "../shared/NextSection"
 import { SectionLabel } from "../shared/SectionLabel"
 import { SALES_PHONE_HREF } from "@/components/brand/links"
 import { demo } from "./content"
@@ -206,8 +208,9 @@ export function DemoForm() {
          as the page's navy tail. */
       className={`${styles.screen} scroll-mt-[100px] px-[clamp(20px,5vw,56px)] py-[var(--section-pad-y)]`}
     >
-      <Reveal
-        as="div"
+      {/* P3-R1: each piece rises on its own scroll position (label, title,
+          proof, body, phone; then the form fields top to bottom). */}
+      <div
         className="mx-auto grid w-full max-w-[1100px] grid-cols-1 items-start gap-[clamp(30px,5vw,70px)] min-[821px]:grid-cols-2"
       >
         {/* Nico 9/25: the title sits level with the first input box, not its
@@ -217,30 +220,37 @@ export function DemoForm() {
         <div className="relative min-[821px]:pt-[25px]">
           {/* No index: the form is the second half of 05 "How do I get it?"
               (setup -> demo), not a section of its own. */}
-          <SectionLabel className="mb-[10px] min-[821px]:absolute min-[821px]:bottom-[calc(100%-25px)] min-[821px]:left-0">
+          {/* The label carries the reveal itself (not wrapped) so its
+              absolute desktop placement and margins stay exactly as they were. */}
+          <SectionLabel
+            className="papex-rv mb-[10px] min-[821px]:absolute min-[821px]:bottom-[calc(100%-25px)] min-[821px]:left-0"
+            style={revealVars(0)}
+          >
             {demo.eyebrow}
           </SectionLabel>
-          <h2
+          <ScrollWords
+            as="h2"
             className="text-[length:var(--fs-h1-merchant)] font-bold leading-[1.03] tracking-[-.02em]"
             style={{ fontFamily: "var(--font-display)" }}
           >
             {demo.heading}
-          </h2>
+          </ScrollWords>
           {/* "Live in the Bay Area." (Web 2.1, W-B5): moved here, directly
               under the title, from its old spot above the form on the right. */}
-          <p
+          <ScrollReveal
+            as="p"
             className="mt-[var(--gap-title)] inline-flex items-center gap-2.5 rounded-full border px-4 py-2 text-[14px] font-semibold"
             style={{ borderColor: "var(--flow-hair)", color: "var(--flow-fg)" }}
           >
             <span aria-hidden="true" className="h-2 w-2 rounded-full" style={{ background: "var(--orange)" }} />
             {demo.proof}
-          </p>
-          <p className="mt-[var(--gap-body)] max-w-[34ch] text-[length:var(--fs-lead)] leading-[1.55]" style={{ color: "var(--flow-fg-2)" }}>
+          </ScrollReveal>
+          <ScrollReveal as="p" className="mt-[var(--gap-body)] max-w-[34ch] text-[length:var(--fs-lead)] leading-[1.55]" style={{ color: "var(--flow-fg-2)" }}>
             {demo.body}
-          </p>
-          <p className="mt-[var(--gap-body)] text-[16px] font-semibold" style={{ color: "var(--flow-fg)" }}>
+          </ScrollReveal>
+          <ScrollReveal as="p" className="mt-[var(--gap-body)] text-[16px] font-semibold" style={{ color: "var(--flow-fg)" }}>
             {demo.phonePrefix} <a href={SALES_PHONE_HREF} style={{ color: "var(--orange)" }}>{demo.phone}</a>
-          </p>
+          </ScrollReveal>
         </div>
 
         {/* Right column: the form or its success state. Copy only; the
@@ -276,7 +286,7 @@ export function DemoForm() {
                 {status === "error" ? statusMessage : ""}
               </p>
 
-              <div className="grid gap-2">
+              <ScrollReveal order={1} className="grid gap-2">
                 <Label htmlFor="demo-fullName" className={labelClass} style={labelStyle}>
                   Your name
                 </Label>
@@ -301,9 +311,9 @@ export function DemoForm() {
                     {errors.fullName}
                   </p>
                 )}
-              </div>
+              </ScrollReveal>
 
-              <div className="grid gap-2">
+              <ScrollReveal order={1} className="grid gap-2">
                 <Label htmlFor="demo-businessName" className={labelClass} style={labelStyle}>
                   Business name
                 </Label>
@@ -328,9 +338,9 @@ export function DemoForm() {
                     {errors.businessName}
                   </p>
                 )}
-              </div>
+              </ScrollReveal>
 
-              <div className="grid gap-2">
+              <ScrollReveal order={1} className="grid gap-2">
                 <Label htmlFor="demo-email" className={labelClass} style={labelStyle}>
                   Email
                 </Label>
@@ -356,10 +366,10 @@ export function DemoForm() {
                     {errors.email}
                   </p>
                 )}
-              </div>
+              </ScrollReveal>
 
               <div className="grid grid-cols-1 gap-[var(--gap-list)] min-[481px]:grid-cols-2 min-[821px]:grid-cols-1">
-                <div className="grid gap-2">
+                <ScrollReveal order={1} className="grid gap-2">
                   <Label htmlFor="demo-phone" className={labelClass} style={labelStyle}>
                     Phone
                   </Label>
@@ -384,8 +394,8 @@ export function DemoForm() {
                       {errors.phone}
                     </p>
                   )}
-                </div>
-                <div className="grid gap-2">
+                </ScrollReveal>
+                <ScrollReveal order={2} className="grid gap-2">
                   <Label htmlFor="demo-posSystem" className={labelClass} style={labelStyle}>
                     POS system
                   </Label>
@@ -401,28 +411,31 @@ export function DemoForm() {
                     className="h-auto"
                     style={inputStyle}
                   />
-                </div>
+                </ScrollReveal>
               </div>
 
               {/* Ripple only accepts {children, variant, as, className, style} —
                   the real `<button>` (type, disabled, focus) lives inside it so
                   submit/pending semantics stay intact while still getting the
                   click-ripple treatment from the motion toolkit. */}
-              <Ripple as="div" variant="navy" className="mt-[calc(var(--gap-list)/2)] overflow-hidden rounded-[12px]">
-                <button
-                  type="submit"
-                  disabled={status === "submitting"}
-                  aria-busy={status === "submitting"}
-                  className="h-[60px] w-full rounded-[12px] text-[17px] font-semibold transition-transform duration-200 hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
-                  style={{ background: "var(--orange)", color: "var(--ink)" }}
-                >
-                  {status === "submitting" ? demo.submitLabelPending : demo.submitLabel}
-                </button>
-              </Ripple>
+              <ScrollReveal order={1} className="mt-[calc(var(--gap-list)/2)]">
+                <Ripple as="div" variant="navy" className="overflow-hidden rounded-[12px]">
+                  <button
+                    type="submit"
+                    disabled={status === "submitting"}
+                    aria-busy={status === "submitting"}
+                    className="h-[60px] w-full rounded-[12px] text-[17px] font-semibold transition-transform duration-200 hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
+                    style={{ background: "var(--orange)", color: "var(--ink)" }}
+                  >
+                    {status === "submitting" ? demo.submitLabelPending : demo.submitLabel}
+                  </button>
+                </Ripple>
+              </ScrollReveal>
             </form>
           )}
         </div>
-      </Reveal>
+      </div>
+      <NextSection targetId="faq" name="FAQ" />
     </FlowSection>
   )
 }

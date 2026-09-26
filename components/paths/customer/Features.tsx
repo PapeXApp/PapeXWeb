@@ -2,8 +2,9 @@
 
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
-import { Reveal, WordReveal } from "@/components/motion";
+import { ScrollReveal, ScrollWords } from "@/components/motion";
 import { FlowSection } from "../shared/FlowSection";
+import { NextSection } from "../shared/NextSection";
 import { PointerLitGroup } from "../shared/PointerLit";
 import { SectionLabel } from "../shared/SectionLabel";
 import { FeatureShot } from "./FeatureScreens";
@@ -142,20 +143,24 @@ export function Features() {
           share one left edge. `w-full` because a `margin: 0 auto` item in the
           screen's column flexbox would otherwise shrink to its content. */}
       <div className="w-full" style={{ maxWidth: 1150, margin: "0 auto" }}>
-        <Reveal variant="up">
+        {/* P3-R1: scroll-linked — label, title word by word, the "Showing"
+            header, then each row: its words, then its phone. The reveal sits
+            INSIDE each row, so the re-sort FLIP (a transform on .row) and the
+            reveal never write the same element. */}
+        <ScrollReveal>
           <SectionLabel index="05">{featuresContent.eyebrow}</SectionLabel>
-          <WordReveal
-            as="h2"
-            className="max-w-[20ch] [font-family:var(--font-display)] font-bold text-[length:var(--fs-h2)] leading-[1.03] tracking-[-.02em]"
-          >
-            {featuresContent.headline}
-          </WordReveal>
-        </Reveal>
+        </ScrollReveal>
+        <ScrollWords
+          as="h2"
+          className="max-w-[20ch] [font-family:var(--font-display)] font-bold text-[length:var(--fs-h2)] leading-[1.03] tracking-[-.02em]"
+        >
+          {featuresContent.headline}
+        </ScrollWords>
 
         <div className={styles.list}>
           {/* The header over the rows: who the list is picked for, and why it is
               in this order. Announced politely when a result arrives. */}
-          <div className={styles.picked}>
+          <ScrollReveal className={styles.picked}>
             <div aria-live="polite" aria-atomic="true" className={styles.pickedText}>
               <span key={`label-${active}-${persona ? 1 : 0}`} className={cn(styles.pickedLabel, persona && styles.pickedLabelOn)}>
                 {header.label}
@@ -170,7 +175,7 @@ export function Features() {
               </span>
               {persona ? CHANGE_ANSWERS_LABEL : answerQuizLabel}
             </a>
-          </div>
+          </ScrollReveal>
 
           <PointerLitGroup className={styles.rows}>
             {order.map((key, index) => {
@@ -190,8 +195,8 @@ export function Features() {
                       query in quizFeatures.module.css). Stacked, the text ALWAYS
                       comes first, so every phone sits under its own row's words;
                       side by side, rows alternate text/phone by position. */}
-                  <Reveal variant="up" className={cn(styles.grid, mirrored && styles.gridMirrored)}>
-                    <div className={styles.text}>
+                  <div className={cn(styles.grid, mirrored && styles.gridMirrored)}>
+                    <ScrollReveal className={styles.text}>
                       <SectionLabel index={`05.${index + 1}`} style={{ marginBottom: 12 }}>
                         {row.eyebrow}
                       </SectionLabel>
@@ -208,17 +213,18 @@ export function Features() {
                           </li>
                         ))}
                       </ul>
-                    </div>
-                    <div className={styles.shotCell}>
+                    </ScrollReveal>
+                    <ScrollReveal order={1} className={styles.shotCell}>
                       <FeatureShot feature={key} persona={active} />
-                    </div>
-                  </Reveal>
+                    </ScrollReveal>
+                  </div>
                 </div>
               );
             })}
           </PointerLitGroup>
         </div>
       </div>
+      <NextSection targetId="privacy" name="Privacy" />
     </FlowSection>
   );
 }

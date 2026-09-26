@@ -1,8 +1,9 @@
-import { Reveal, WordReveal } from "@/components/motion";
+import { ScrollReveal, ScrollWords } from "@/components/motion";
 import { FlowSection } from "../shared/FlowSection";
+import { NextSection } from "../shared/NextSection";
 import { SectionLabel } from "../shared/SectionLabel";
 import { FlipCardGrid } from "./FlipCards";
-import { problemContent } from "./content";
+import { personasContent, problemContent } from "./content";
 import styles from "./customer.module.css";
 
 /**
@@ -14,6 +15,7 @@ import styles from "./customer.module.css";
 export function Problem() {
   return (
     <FlowSection
+      id="problem"
       ground="light"
       index="03"
       className={styles.screen}
@@ -22,19 +24,20 @@ export function Problem() {
       }}
     >
       <div className="w-full" style={{ maxWidth: 1150, margin: "0 auto" }}>
-        <Reveal variant="up">
+        {/* P3-R1: scroll-linked — label, title word by word, then the three
+            cards left to right (FlipCardGrid staggers them). */}
+        <ScrollReveal>
           <SectionLabel index="03">{problemContent.eyebrow}</SectionLabel>
-          <WordReveal
-            as="h2"
-            className="max-w-[20ch] [font-family:var(--font-display)] font-bold text-[length:var(--fs-h2)] leading-[1.02] tracking-[-.02em]"
-          >
-            {problemContent.headline}
-          </WordReveal>
-        </Reveal>
-        <Reveal variant="up">
-          <FlipCardGrid />
-        </Reveal>
+        </ScrollReveal>
+        <ScrollWords
+          as="h2"
+          className="max-w-[20ch] [font-family:var(--font-display)] font-bold text-[length:var(--fs-h2)] leading-[1.02] tracking-[-.02em]"
+        >
+          {problemContent.headline}
+        </ScrollWords>
+        <FlipCardGrid />
       </div>
+      <NextSection targetId="quiz" name={personasContent.eyebrow} />
     </FlowSection>
   );
 }

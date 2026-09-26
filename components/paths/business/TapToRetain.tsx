@@ -29,6 +29,7 @@ export function TapToRetain() {
   const header = <Header />
   return (
     <FlowSection
+      id={tapToRetain.id}
       ground="light"
       index="02"
       className={`${bstyles.rhythm} flow-root px-[clamp(20px,5vw,56px)]`}

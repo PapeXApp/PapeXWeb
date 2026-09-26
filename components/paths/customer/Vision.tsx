@@ -1,7 +1,8 @@
 "use client";
 
-import { Magnetic, Reveal, Ripple, ScrollLit } from "@/components/motion";
+import { Magnetic, Ripple, ScrollLit, ScrollReveal } from "@/components/motion";
 import { FlowSection } from "../shared/FlowSection";
+import { NextSection } from "../shared/NextSection";
 import { SectionLabel } from "../shared/SectionLabel";
 import { proofContent, visionContent } from "./content";
 import { useStoreUrl } from "./Hero";
@@ -32,33 +33,40 @@ export function Vision() {
   const storeUrl = useStoreUrl();
   return (
     <FlowSection
+      id="get-it"
       ground="navy"
       index="07"
       className={`${styles.screen} ${styles.rhythm}`}
       style={{ padding: "var(--section-pad) clamp(20px,5vw,56px)" }}
     >
       <div className="w-full" style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
-        <Reveal variant="up">
+        {/* P3-R1: scroll-linked — label, the statement (it rises AND lights
+            word by word: ScrollLit), the body, the three facts left to right,
+            then the CTA. */}
+        <ScrollReveal>
           <SectionLabel index="07">{visionContent.eyebrow}</SectionLabel>
+        </ScrollReveal>
+        <ScrollReveal>
           <ScrollLit
             as="h2"
             text={visionContent.headline}
             className="[font-family:var(--font-display)] font-bold text-[length:var(--fs-h2-emphasis)] leading-[1.06] tracking-[-.02em]"
           />
-          <p
-            style={{
-              marginTop: "var(--gap-title)",
-              fontSize: "var(--fs-lead)",
-              lineHeight: 1.55,
-              color: "var(--flow-fg-2)",
-              maxWidth: "52ch",
-              marginLeft: "auto",
-              marginRight: "auto",
-            }}
-          >
-            {visionContent.body}
-          </p>
-        </Reveal>
+        </ScrollReveal>
+        <ScrollReveal
+          as="p"
+          style={{
+            marginTop: "var(--gap-title)",
+            fontSize: "var(--fs-lead)",
+            lineHeight: 1.55,
+            color: "var(--flow-fg-2)",
+            maxWidth: "52ch",
+            marginLeft: "auto",
+            marginRight: "auto",
+          }}
+        >
+          {visionContent.body}
+        </ScrollReveal>
 
         {/* The three product facts from the retired "At a glance" section,
             folded in compactly. From 821px: one hairline-split row of three,
@@ -69,14 +77,16 @@ export function Vision() {
             section scale. Static figures, not count-ups: they are facts, not
             metrics that grew. Hairlines use --flow-hair so they follow the
             ground while it crossfades. */}
-        <Reveal variant="up">
+        <div>
           <ul
             className="mx-auto mt-[var(--gap-body)] grid max-w-[360px] grid-cols-1 divide-y divide-[color:var(--flow-hair)] min-[821px]:max-w-[880px] min-[821px]:grid-cols-3 min-[821px]:divide-x min-[821px]:divide-y-0"
             aria-label="PapeX at a glance"
           >
-            {proofContent.counters.map((fact) => (
-              <li
+            {proofContent.counters.map((fact, i) => (
+              <ScrollReveal
+                as="li"
                 key={fact.label}
+                order={i + 1}
                 className="flex items-center gap-4 py-3 text-left min-[821px]:flex-col min-[821px]:gap-1.5 min-[821px]:px-[clamp(12px,2vw,24px)] min-[821px]:py-0 min-[821px]:text-center"
               >
                 <span className="min-w-[1ch] [font-family:var(--font-display)] text-[clamp(34px,3.4vw,46px)] font-bold leading-none tracking-[-.02em] text-[var(--orange)] [font-variant-numeric:tabular-nums]">
@@ -88,12 +98,12 @@ export function Vision() {
                 >
                   {fact.label}
                 </span>
-              </li>
+              </ScrollReveal>
             ))}
           </ul>
-        </Reveal>
+        </div>
 
-        <Reveal variant="up" className="flex justify-center" style={{ marginTop: "var(--gap-body)" }}>
+        <ScrollReveal className="flex justify-center" style={{ marginTop: "var(--gap-body)" }}>
           <Magnetic className={styles.ctaMagnetic}>
             {/* The glow and the press scale live on the Ripple (styles.ctaPill),
                 the element that IS the pill — see .ctaPill in
@@ -121,8 +131,9 @@ export function Vision() {
               </a>
             </Ripple>
           </Magnetic>
-        </Reveal>
+        </ScrollReveal>
       </div>
+      <NextSection targetId="faq" name="FAQ" />
     </FlowSection>
   );
 }
