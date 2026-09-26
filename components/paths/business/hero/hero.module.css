@@ -1,7 +1,7 @@
 /* ==========================================================================
  * /business hero visual — "CLOSE THE LOOP" (LoopVisual.tsx, P3-B1,
- * 2026-09-25; art, coupon beat and guide redone in P3-B6): a slow looped
- * story at a checkout counter.
+ * 2026-09-25; art, coupon beat and guide redone in P3-B6; retimed to 12s in
+ * P3-B10): a 12-second looped story at a checkout counter.
  *
  * GEOMETRY. One free variable, --hero-sh: the SCENE's height. It is a
  * registered <length>, so it resolves to px HERE (against the .visual
@@ -14,8 +14,10 @@
  * The phone is drawn at its ZOOMED size (frame = 0.95 of the scene's height)
  * and scaled DOWN into the hand (~0.4), so the close-up is crisp.
  *
- * MOTION: transform and opacity only. Every beat is a class / data attribute
- * change and a CSS transition does the move; the timer in LoopVisual.tsx
+ * MOTION (a 12s loop since P3-B10; every duration below fits inside the gap
+ * to the next beat in LoopVisual.tsx TIMELINE): transform and opacity only.
+ * Every beat is a class / data attribute change and a CSS transition does
+ * the move; the timer in LoopVisual.tsx
  * pauses them all (Element.getAnimations) off screen. Reduced motion never
  * leaves the still frame, and the @media block at the bottom switches every
  * transition off anyway.
@@ -110,15 +112,15 @@
   inset: 0;
   transform-origin: calc(50% + 0.185 * var(--hero-sx)) calc(50% + 0.075 * var(--hero-sh));
   transition:
-    opacity 0.9s ease 0.35s,
-    transform 1.5s cubic-bezier(0.65, 0, 0.35, 1);
+    opacity 0.45s ease 0.15s,
+    transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .worldAway {
   opacity: 0;
   transform: scale(1.18);
   transition:
-    opacity 0.8s ease,
-    transform 1.5s cubic-bezier(0.65, 0, 0.35, 1);
+    opacity 0.45s ease,
+    transform 0.8s cubic-bezier(0.5, 0, 0.2, 1);
 }
 /* The person behind the counter (SceneArt.tsx CashierBody / CashierHands:
    one 400x600 box, 1 unit = 0.001 of the scene's height, whose y=500 is the
@@ -256,13 +258,13 @@
   border: 2.5px solid rgba(255, 140, 40, 0.95);
   box-shadow: 0 0 16px rgba(235, 113, 0, 0.55);
   opacity: 0;
-  animation: heroTap 1.3s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  animation: heroTap 0.6s cubic-bezier(0.2, 0.7, 0.3, 1) both;
 }
 .rippleRing2 {
-  animation-delay: 0.28s;
+  animation-delay: 0.12s;
 }
 .rippleRing3 {
-  animation-delay: 0.56s;
+  animation-delay: 0.24s;
 }
 @keyframes heroTap {
   0% {
@@ -377,7 +379,7 @@
   opacity: 0;
 }
 .held[data-pose="offer"] .turnGlintBand {
-  animation: heroGlint 1.3s cubic-bezier(0.4, 0, 0.3, 1) 0.1s both;
+  animation: heroGlint 0.6s cubic-bezier(0.4, 0, 0.3, 1) 0.05s both;
 }
 @keyframes heroGlint {
   0% {
@@ -398,7 +400,7 @@
   --py: 0.76;
   --pr: 16deg;
   --pk: 0.4;
-  --pt: 0.9s;
+  --pt: 0.4s;
   --pe: cubic-bezier(0.5, 0, 0.85, 0.55);
 }
 /* Coming up to the counter, above and right of the device. */
@@ -407,7 +409,7 @@
   --py: 0;
   --pr: 6deg;
   --pk: 0.4;
-  --pt: 1.1s;
+  --pt: 0.6s;
   --pe: cubic-bezier(0.2, 0.7, 0.3, 1);
 }
 /* Top edge down on the device's top face. */
@@ -416,7 +418,7 @@
   --py: 0.075;
   --pr: -30deg;
   --pk: 0.4;
-  --pt: 0.9s;
+  --pt: 0.45s;
   --pe: cubic-bezier(0.45, 0, 0.35, 1);
 }
 /* The close-up: the phone fills the scene (0.92 of it, clear of the
@@ -426,8 +428,8 @@
   --py: -0.015;
   --pr: 0deg;
   --pk: 0.97;
-  --pt: 1.5s;
-  --pe: cubic-bezier(0.65, 0, 0.35, 1);
+  --pt: 0.8s;
+  --pe: cubic-bezier(0.5, 0, 0.2, 1);
 }
 /* Back out: in the hand again, screen to us, over the counter, a little
    turned our way (so the turn to the counter sweeps further). */
@@ -438,8 +440,8 @@
   --prx: 4deg;
   --pr: -6deg;
   --pk: 0.56;
-  --pt: 1.5s;
-  --pe: cubic-bezier(0.65, 0, 0.35, 1);
+  --pt: 0.6s;
+  --pe: cubic-bezier(0.4, 0, 0.2, 1);
 }
 /* Turned to the person behind the counter: the screen swings towards them
    in depth (about the phone's upright axis, tipped back a little), so its
@@ -452,7 +454,7 @@
   --prx: 9deg;
   --pr: -5deg;
   --pk: var(--opk);
-  --pt: 1.4s;
+  --pt: 0.6s;
   --pe: cubic-bezier(0.4, 0, 0.2, 1.08);
 }
 
@@ -471,8 +473,8 @@
   opacity: 0;
   transform: translateX(calc(var(--shx) * var(--hero-sx))) scaleX(var(--shk));
   transition:
-    transform 1.4s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.6s ease;
+    transform 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.35s ease;
 }
 .phoneShadow[data-pose="show"] {
   --shx: 0.1;
@@ -498,11 +500,11 @@
   height: 100%;
   overflow: visible;
   pointer-events: none;
-  transition: opacity 0.8s ease 0.6s;
+  transition: opacity 0.4s ease 0.2s;
 }
 .handAway {
   opacity: 0;
-  transition: opacity 0.5s ease;
+  transition: opacity 0.3s ease;
 }
 
 /* The screens inside the phone, stacked. */
@@ -519,7 +521,7 @@
 }
 .layerFade {
   opacity: 0;
-  transition: opacity 0.5s ease;
+  transition: opacity 0.3s ease;
 }
 .layerOn {
   opacity: 1;
@@ -529,8 +531,8 @@
   opacity: 0;
   transform: translateY(14%) scale(0.9);
   transition:
-    opacity 0.7s ease,
-    transform 1.2s cubic-bezier(0.2, 0.9, 0.25, 1.04);
+    opacity 0.35s ease,
+    transform 0.6s cubic-bezier(0.2, 0.9, 0.25, 1.04);
 }
 .layerIn {
   opacity: 1;
@@ -557,7 +559,7 @@
     0 0 calc(30 * var(--pt)) rgba(235, 113, 0, 0.65);
   opacity: 0;
   pointer-events: none;
-  animation: heroCardGlow 2.4s ease 0.6s both;
+  animation: heroCardGlow 1.1s ease 0.2s both;
 }
 /* One-shot glow round the card as it lands (its own layer: opacity only). */
 .cardGlow {
@@ -570,7 +572,7 @@
   pointer-events: none;
 }
 .cardGlowPlay {
-  animation: heroCardGlow 2.2s ease 0.5s both;
+  animation: heroCardGlow 1s ease 0.2s both;
 }
 @keyframes heroCardGlow {
   0% {
@@ -602,7 +604,7 @@
   box-shadow:
     0 0 calc(10 * var(--pt)) calc(2 * var(--pt)) rgba(255, 59, 48, 0.75),
     0 0 0 calc(60 * var(--pt)) rgba(255, 59, 48, 0.12);
-  animation: heroScan 0.28s ease-in-out 0.3s 3 alternate both;
+  animation: heroScan 0.14s ease-in-out 0.15s 3 alternate both;
 }
 @keyframes heroScan {
   from {
@@ -630,8 +632,8 @@
   opacity: 0;
   transform: scale(1.15);
   transition:
-    opacity 0.4s ease,
-    transform 0.55s cubic-bezier(0.2, 1.3, 0.4, 1);
+    opacity 0.25s ease,
+    transform 0.35s cubic-bezier(0.2, 1.3, 0.4, 1);
 }
 .stampOn {
   opacity: 1;
@@ -666,15 +668,15 @@
   transform: rotate(64deg) scale(calc(0.78 * var(--sak)));
   opacity: 0;
   transition:
-    transform 1s cubic-bezier(0.3, 0, 0.2, 1.08),
-    opacity 0.4s ease;
+    transform 0.5s cubic-bezier(0.3, 0, 0.2, 1.08),
+    opacity 0.25s ease;
 }
 .scanArmUp {
   transform: rotate(0deg) scale(var(--sak));
   opacity: 1;
 }
 .restHand {
-  transition: opacity 0.4s ease;
+  transition: opacity 0.25s ease;
 }
 .restHandUp {
   opacity: 0;
@@ -727,8 +729,8 @@
   opacity: 0;
   transform: rotate(-14deg) scale(0.5);
   transition:
-    opacity 0.6s ease 0.2s,
-    transform 1s cubic-bezier(0.3, 0, 0.2, 1);
+    opacity 0.3s ease 0.1s,
+    transform 0.5s cubic-bezier(0.3, 0, 0.2, 1);
 }
 .scanShadowOn {
   opacity: 1;
@@ -770,8 +772,8 @@
   transform: scale(0.05);
   opacity: 0;
   transition:
-    transform 0.28s ease-out,
-    opacity 0.2s ease;
+    transform 0.18s ease-out,
+    opacity 0.12s ease;
 }
 .beamCone {
   clip-path: polygon(
@@ -803,7 +805,7 @@
 .beamOn {
   transform: none;
   opacity: 1;
-  animation: heroBeam 0.28s ease-in-out 0.3s 3 alternate;
+  animation: heroBeam 0.14s ease-in-out 0.15s 3 alternate;
 }
 @keyframes heroBeam {
   to {
@@ -827,8 +829,8 @@
   opacity: 0;
   transform: scale(0.4);
   transition:
-    opacity 0.3s ease,
-    transform 0.5s cubic-bezier(0.2, 1.4, 0.4, 1);
+    opacity 0.2s ease,
+    transform 0.35s cubic-bezier(0.2, 1.4, 0.4, 1);
 }
 .okPopOn {
   opacity: 1;
@@ -855,7 +857,7 @@
     inset 0 0 0 calc(2 * var(--pt)) rgba(255, 255, 255, 0.75),
     0 calc(4 * var(--pt)) calc(16 * var(--pt)) rgba(0, 0, 0, 0.35);
   pointer-events: none;
-  animation: heroTouch 0.8s cubic-bezier(0.3, 0.7, 0.3, 1) both;
+  animation: heroTouch 0.35s cubic-bezier(0.3, 0.7, 0.3, 1) both;
 }
 @keyframes heroTouch {
   0% {
@@ -903,7 +905,7 @@
   font-weight: 600;
   color: var(--flow-fg);
   white-space: nowrap;
-  transition: opacity 0.5s ease;
+  transition: opacity 0.3s ease;
 }
 .step::after {
   content: "\2192";
@@ -937,7 +939,7 @@
   background: #eb7100;
   box-shadow: 0 0 14px rgba(235, 113, 0, 0.5);
   opacity: 0;
-  transition: opacity 0.5s ease;
+  transition: opacity 0.3s ease;
 }
 .stepActive .stepNum::before {
   opacity: 1;
@@ -983,8 +985,8 @@
   opacity: 0;
   transform: translateY(6px);
   transition:
-    opacity 0.55s ease,
-    transform 0.55s ease;
+    opacity 0.3s ease,
+    transform 0.3s ease;
 }
 .sayOn {
   opacity: 1;

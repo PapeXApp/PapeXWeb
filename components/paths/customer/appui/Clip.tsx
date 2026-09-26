@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useId, type CSSProperties } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { StatusBar } from "./Chrome";
@@ -365,9 +365,9 @@ export function ClipReading({
  * "App Store >". System UI, not the clip's own top bar (that one is in
  * ClipApp.tsx). In flow by default; pass a className to pin it.
  */
-export function ClipTopBar({ className }: { className?: string }) {
+export function ClipTopBar({ className, style }: { className?: string; style?: CSSProperties }) {
   return (
-    <div className={cn(ip.banner, className)} aria-hidden="true">
+    <div className={cn(ip.banner, className)} style={style} aria-hidden="true">
       <PapeXAppIcon className={ip.bannerIcon} />
       <span className={ip.bannerText}>
         <span className={ip.bannerPowered}>Powered by</span>

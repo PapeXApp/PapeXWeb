@@ -14,9 +14,9 @@ import { loop } from "./loop"
 import s from "./hero.module.css"
 
 /**
- * The /business hero visual — "CLOSE THE LOOP", a slow looped story at a
- * checkout counter (P3-B1, 2026-09-25; art and guide redone in P3-B6; story
- * redone in P3-B7 to Nico's storyboard).
+ * The /business hero visual — "CLOSE THE LOOP", a 12-second looped story at
+ * a checkout counter (P3-B1, 2026-09-25; art and guide redone in P3-B6; story
+ * redone in P3-B7 to Nico's storyboard; retimed from 26.8s to 12s in P3-B10).
  *
  *   1 Tap      a hand holds the phone near the PapeX device on the counter,
  *              taps it; iOS's App Clip card pops up on the lock screen (the
@@ -24,7 +24,7 @@ import s from "./hero.module.css"
  *              zooms into the phone and a finger presses "View"
  *   2 Receipt  the App Clip receipt opens (appui ClipApp) on the coupon for
  *              the next visit: a big coupon card ON TOP (P3-B9: ~40% of the
- *              screen, held ~1.6s), then a slow scroll down through the
+ *              screen, held ~1s), then a scroll down through the
  *              items to "Save to PapeX" — both get their moment
  *   3 Save     a finger presses Save ("Saved"), and the receipt is in the
  *              PapeX app (appui WalkAppScreen: Receipts, then Coupons)
@@ -43,7 +43,8 @@ import s from "./hero.module.css"
  * list IS the text for screen readers and the still frame; "Demo data" sits
  * at the end of the sentence line.
  *
- * MOTION. A timer walks TIMELINE (one cycle = CYCLE_MS, 26.8s); every beat is
+ * MOTION. A timer walks TIMELINE (one cycle = CYCLE_MS, 12s; P3-B10, Nico:
+ * "more like 12 seconds", was 26.8s); every beat is
  * a class/attribute change, and CSS transitions/animations do the moving —
  * transform and opacity only, nothing reads layout per frame, no rAF loop.
  * The one layout read is the receipt's scroll distance, once per cycle. It
@@ -88,29 +89,32 @@ type Beat =
  *  timing (transition lengths) is sized to fit inside these gaps. */
 const TIMELINE: [Beat, number][] = [
   ["off", 0], // hand off stage, screens reset (transitions off)
-  ["enter", 300], // the hand comes in, phone locked (1.1s)
-  ["tap", 1700], // down onto the device (0.9s)
-  ["card", 2600], // ripple + the App Clip card pops up
-  ["zoomIn", 4100], // into the phone (1.5s)
-  ["press", 5900], // a finger presses "View"
-  ["clip", 6700], // the App Clip receipt opens on the big coupon: held ~1.6s
-  ["scroll", 8800], // then a slow scroll down through the items (4s)
-  ["savePress", 13000], // a finger presses "Save to PapeX"
-  ["saved", 13500], // "Saved"
-  ["app", 14300], // in the PapeX app: Receipts
-  ["coupons", 15700], // the Coupons tab
-  ["couponTap", 16600], // a finger opens the coupon
-  ["couponOpen", 17100], // the coupon detail rises
-  ["out", 19000], // back out to the counter (1.5s)
-  ["turn", 20600], // the phone turns, in depth, to the person behind the counter (1.4s)
-  ["raise", 22100], // they reach the scanner forward over the counter (1s)
-  ["scan", 23200], // the beam fans onto the barcode, which is scanned (1.1s)
-  ["used", 24300], // "Coupon used" + check
-  ["leave", 25900], // hand and scanner leave (0.9s)
+  ["enter", 150], // the hand comes in, phone locked (0.6s)
+  ["tap", 800], // down onto the device (0.45s)
+  ["card", 1300], // ripple + the App Clip card pops up
+  ["zoomIn", 2000], // into the phone (0.8s)
+  ["press", 2900], // a finger presses "View"
+  ["clip", 3300], // the App Clip receipt opens on the big coupon: held ~1s
+  ["scroll", 4300], // then a scroll down through the items (1.8s)
+  ["savePress", 6150], // a finger presses "Save to PapeX"
+  ["saved", 6500], // "Saved"
+  ["app", 6900], // in the PapeX app: Receipts
+  ["coupons", 7350], // the Coupons tab
+  ["couponTap", 7700], // a finger opens the coupon
+  ["couponOpen", 8050], // the coupon detail rises
+  ["out", 8700], // back out to the counter (0.6s)
+  ["turn", 9300], // the phone turns, in depth, to the person behind the counter (0.6s)
+  ["raise", 9850], // they reach the scanner forward over the counter (0.5s)
+  ["scan", 10350], // the beam fans onto the barcode, which is scanned (0.6s)
+  ["used", 10950], // "Coupon used" + check
+  ["leave", 11600], // hand and scanner leave (0.4s)
 ]
-const CYCLE_MS = 26800
-/** The receipt's slow scroll (beat "scroll"); fits before "savePress". */
-const SCROLL_MS = 4000
+const CYCLE_MS = 12000
+/** The receipt's scroll (beat "scroll"); fits before "savePress". */
+const SCROLL_MS = 1800
+/** When iOS's launch banner slides off the clip (ms after "clip"): as the
+ *  scroll gets going, as in the kit's own pacing, scaled to this loop. */
+const BANNER_DELAY_MS = 1100
 /** The phone's thickness is drawn as this many copies of its silhouette
  *  stacked behind the screen (see .slabLayer). */
 const SLAB_LAYERS = Array.from({ length: 12 }, (_, i) => i + 1)
@@ -217,7 +221,12 @@ export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock:
       running = false
       window.clearTimeout(timer)
       remaining = Math.max(0, dueAt - performance.now())
-      animations().forEach((a) => a.pause())
+      // Only what is still playing: pausing a FINISHED animation and then
+      // play()-ing it rewinds and replays it (the launch banner, the glows),
+      // so finished ones are left alone.
+      animations().forEach((a) => {
+        if (a.playState === "running") a.pause()
+      })
     }
     const resume = () => {
       if (running || !started || !onScreen || document.hidden) return
@@ -344,6 +353,7 @@ export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock:
                   key={cycle}
                   summary={summary}
                   banner
+                  bannerDelayMs={BANNER_DELAY_MS}
                   saved={from(beat, "saved")}
                   savePressed={beat === "savePress"}
                   saveLabel={demoContent.saveLabel}
