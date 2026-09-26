@@ -132,6 +132,10 @@
   }
   .gridMirrored .shotCell {
     order: 1;
+    /* ScrollWipe (components/motion): a shot on the LEFT opens left → right.
+       Stacked rows never match this, so on phones every shot opens from the
+       right (the default, --wipe-dir: 1). Two classes outrank .papex-wipe. */
+    --wipe-dir: -1;
   }
 }
 .text {

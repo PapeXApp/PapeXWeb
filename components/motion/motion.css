@@ -125,3 +125,49 @@
     transform: none;
   }
 }
+
+/* ScrollWipe (Web 2.1 P3-C5) — a scroll-linked sideways OPEN: clip-path
+   inset wipe + a short slide, from the side --wipe-dir names (1 = right,
+   -1 = left). Same range vars and same @supports + no-preference guard as
+   .papex-rv above, so unsupported browsers and reduced motion get it open and
+   still; the root layout's <noscript> rule opens it via data-reveal="mask".
+   The clip ends --wipe-bleed OUTSIDE the box on every side, so shadows show
+   once open, and interpolates between two inset() values (never to `none`).
+   Start: the edge on the far side sits at 100% of the width, the near edge at
+   -bleed; end: all four at -bleed.
+   The slide is capped at 4vw: a transform DOES add scrollable overflow, and
+   the path sections' side gutter is clamp(20px, 5vw, 56px), so an element
+   flush with the column's right edge can never be pushed past the viewport
+   (measured 2026-09-25: a flat 56px gave 36px of sideways scroll at 390). */
+.papex-wipe {
+  --wipe-dir: 1;
+  --wipe-bleed: 80px;
+  --wipe-shift: min(40px, 4vw);
+}
+.papex-wipe[data-wipe-from="left"] {
+  --wipe-dir: -1;
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .papex-wipe {
+      animation: papex-wipe cubic-bezier(0.45, 0, 0.2, 1) both;
+      animation-timeline: view();
+      animation-range: cover var(--rv-from, 1vh) cover var(--rv-to, 13vh);
+    }
+  }
+}
+@keyframes papex-wipe {
+  from {
+    clip-path: inset(
+      calc(-1 * var(--wipe-bleed))
+        calc((1 - var(--wipe-dir)) * 50% - (1 + var(--wipe-dir)) * var(--wipe-bleed) / 2)
+        calc(-1 * var(--wipe-bleed))
+        calc((1 + var(--wipe-dir)) * 50% - (1 - var(--wipe-dir)) * var(--wipe-bleed) / 2)
+    );
+    transform: translate3d(calc(var(--wipe-dir) * var(--wipe-shift)), 0, 0);
+  }
+  to {
+    clip-path: inset(calc(-1 * var(--wipe-bleed)));
+    transform: none;
+  }
+}

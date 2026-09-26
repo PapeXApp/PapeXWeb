@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
-import { ScrollReveal, ScrollWords } from "@/components/motion";
+import { ScrollReveal, ScrollWipe, ScrollWords } from "@/components/motion";
 import { FlowSection } from "../shared/FlowSection";
 import { NextSection } from "../shared/NextSection";
 import { PointerLitGroup } from "../shared/PointerLit";
@@ -144,7 +144,8 @@ export function Features() {
           screen's column flexbox would otherwise shrink to its content. */}
       <div className="w-full" style={{ maxWidth: 1150, margin: "0 auto" }}>
         {/* P3-R1: scroll-linked — label, title word by word, the "Showing"
-            header, then each row: its words, then its phone. The reveal sits
+            header, then each row: its words rise, then its phone wipes open
+            (P3-C5, ScrollWipe). The reveal sits
             INSIDE each row, so the re-sort FLIP (a transform on .row) and the
             reveal never write the same element. */}
         <ScrollReveal>
@@ -214,9 +215,16 @@ export function Features() {
                         ))}
                       </ul>
                     </ScrollReveal>
-                    <ScrollReveal order={1} className={styles.shotCell}>
+                    {/* The app visual OPENS sideways from its own side (P3-C5,
+                        restoring the pre-R1 mask wipe as a scroll-linked one):
+                        right → left when it sits on the right, left → right on a
+                        mirrored row. The side is `--wipe-dir`, set by the same
+                        container query that mirrors the row
+                        (quizFeatures.module.css), so a stacked row on a phone
+                        always opens from the right. */}
+                    <ScrollWipe order={1} className={styles.shotCell}>
                       <FeatureShot feature={key} persona={active} />
-                    </ScrollReveal>
+                    </ScrollWipe>
                   </div>
                 </div>
               );

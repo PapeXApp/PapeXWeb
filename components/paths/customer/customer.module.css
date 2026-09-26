@@ -441,52 +441,92 @@
   }
 }
 
-/* --- The tap loop (P3-C4, 2026-09-25) --------------------------------------
+/* --- The tap loop (P3-C4, 2026-09-25; travel P3-C5) -----------------------
+   Nico, P3-C5: the P3-C4 dip (6% of the phone) "reads as a still picture —
+   it should be doing like a tap back and forth". So the phone now travels
+   ~25% of its own height between two poses:
+      AWAY    lifted up and to the left of the device, tilted back (-4deg)
+      CONTACT its foot on the device's top face, leaning in (+7deg)
+   The room for that travel comes from DROPPING THE DEVICE (--tap-drop, a
+   transform on .demoRdh, so no layout moves) instead of lifting the phone,
+   which would put it under the nav band or over the H1 column.
+
    One cycle, --tap-cycle long, shared by every moving piece so they stay in
-   step:
-      0-8%    rest
-      8-27%   the phone dips onto the device's top face
-      27-37%  contact: a small press, and the device answers — NFC rings off
+   step. Frame 0 is the phone resting ON the device, so the server render,
+   no-JS, reduced motion and a paused loop all show that picture ("this goes
+   on that") and the first run never jumps:
+      0-6%    resting on the device
+      6-26%   lifts back out
+      26-62%  away (~1.5s)
+      62-82%  moves in
+      82-89%  contact: a small press, and the device answers — NFC rings off
               its top face, the halo and the status light swell
-      37-56%  the phone lifts back
-      56-100% rest (~2s), then again
-   Frame 0 IS the resting pose for every piece, so the server render, no-JS,
-   reduced motion and a paused loop all show the same still picture and the
-   first run never jumps. The keyframes are always attached but held paused;
-   NfcPhone sets `data-run` only while the stage is on screen, the tab is
-   visible and motion is allowed. Transform + opacity only. */
+      89-100% resting on the device, then again
+   The keyframes are always attached but held paused; NfcPhone sets
+   `data-run` only while the stage is on screen, the tab is visible and
+   motion is allowed. Transform + opacity only. */
 .demoStage {
-  --tap-cycle: 4.6s;
-  /* Where the phone's bottom-centre travels to at contact: right and down,
-     onto the visible part of the device's top face. In phone units, so the
-     tap lands in the same place at every phone size. */
+  --tap-cycle: 4.2s;
+  /* Every distance is in phone units, so the tap lands in the same place at
+     every phone size. CONTACT: where the phone's bottom-centre sits on the
+     device's top face (the P3-C4 contact point, plus the drop). */
+  --tap-drop: calc(var(--phone-h) * 0.12);
   --tap-x: calc(var(--phone-w) * 0.06);
-  --tap-y: calc(var(--phone-h) * 0.06);
+  --tap-y: calc(var(--tap-drop) + var(--phone-h) * 0.06);
   --tap-r: 7deg;
+  /* AWAY: up and to the left, tilted back. */
+  --away-x: calc(var(--phone-h) * -0.07);
+  --away-y: calc(var(--phone-h) * -0.035);
+  --away-r: -4deg;
+  /* The pose the still frame shows: contact, at rest. */
+  --tap-rest: translate(var(--tap-x), var(--tap-y)) rotate(var(--tap-r));
+}
+/* Phones (stacked hero): the phone spans the column and the copy sits just
+   above it, so there is no room up or left. AWAY stays at the phone's own
+   place, barely lifted; the travel is the drop plus a lean to the right.
+   The drop is smaller so the device stays inside the hero's bottom padding. */
+@media (max-width: 820px) {
+  .demoStage {
+    --tap-drop: calc(var(--phone-h) * 0.09);
+    --away-x: 0px;
+    --away-y: calc(var(--phone-h) * -0.03);
+    --away-r: 0deg;
+  }
 }
 
 /* The phone sits above the device (z 2), so at contact it lies over the
-   box's top face instead of sliding behind it. */
+   box's top face instead of sliding behind it. The base transform is the
+   still frame (reduced motion, where the animation is dropped). */
 .tapPhone {
   position: relative;
   z-index: 2;
   transform-origin: 50% 100%;
-  animation: heroTapPhone var(--tap-cycle) cubic-bezier(0.45, 0, 0.2, 1) infinite both;
+  transform: var(--tap-rest);
+  animation: heroTapPhone var(--tap-cycle) linear infinite both;
 }
 @keyframes heroTapPhone {
   0%,
-  8%,
-  56%,
-  100% {
-    transform: none;
+  6% {
+    transform: var(--tap-rest);
+    animation-timing-function: cubic-bezier(0.3, 0, 0.2, 1);
   }
-  27%,
-  37% {
-    transform: translate(var(--tap-x), var(--tap-y)) rotate(var(--tap-r));
+  26%,
+  62% {
+    transform: translate(var(--away-x), var(--away-y)) rotate(var(--away-r));
+    animation-timing-function: cubic-bezier(0.5, 0, 0.3, 1);
+  }
+  82% {
+    transform: var(--tap-rest);
+    animation-timing-function: ease-out;
   }
   /* the tap itself: a few pixels further in, then back up to contact */
-  31% {
-    transform: translate(var(--tap-x), calc(var(--tap-y) + 4px)) rotate(var(--tap-r));
+  85% {
+    transform: translate(var(--tap-x), calc(var(--tap-y) + 5px)) rotate(var(--tap-r));
+    animation-timing-function: ease-in-out;
+  }
+  89%,
+  100% {
+    transform: var(--tap-rest);
   }
 }
 
@@ -497,13 +537,12 @@
 }
 @keyframes heroTapGlow {
   0%,
-  24%,
-  60%,
+  79%,
   100% {
     opacity: 0.55;
     transform: translate(-50%, -50%) scale(0.98);
   }
-  33% {
+  87% {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1.06);
   }
@@ -528,15 +567,14 @@
 }
 @keyframes heroTapRing {
   0%,
-  28% {
+  82% {
     opacity: 0;
     transform: translate(-50%, -50%) scale(0.45);
   }
-  29% {
+  83% {
     opacity: 0.95;
     transform: translate(-50%, -50%) scale(0.45);
   }
-  54%,
   100% {
     opacity: 0;
     transform: translate(-50%, -50%) scale(1.6);
@@ -550,12 +588,11 @@
 }
 @keyframes heroTapLed {
   0%,
-  27%,
-  52%,
+  81%,
   100% {
     transform: none;
   }
-  33% {
+  87% {
     transform: scale(1.5);
   }
 }
@@ -573,7 +610,7 @@
   animation-play-state: running;
 }
 
-/* Reduced motion: the still frame — phone resting above the device, halo at
+/* Reduced motion: the still frame — phone resting on the device, halo at
    full strength and one ring held on the top face, so the picture still
    says "this goes on that". */
 @media (prefers-reduced-motion: reduce) {
@@ -603,7 +640,9 @@
   z-index: 1;
   display: block;
   margin-top: clamp(-120px, -8.6vw, -52px);
-  transform: translateX(clamp(26px, 8.4vw, 108px));
+  /* translateY: the tap loop's drop (--tap-drop on .demoStage) — a transform,
+     so the hero's height never changes. */
+  transform: translate(clamp(26px, 8.4vw, 108px), var(--tap-drop, 0px));
   width: clamp(238px, 24vw, 318px);
   line-height: 0;
   /* Navy-tinted for the light hero — a black shadow on #F5F5F5 reads grey. */
