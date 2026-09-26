@@ -49,11 +49,18 @@ export const story = {
   laptopLabel: "The PapeX merchant dashboard, updating with the new receipt.",
 
   /**
-   * Over each screen once the story rests: both are real, usable UIs (the
-   * dashboard and the customer's phone). Decorative (aria-hidden): the
-   * screens' own regions and buttons carry the names.
+   * P3-B11 (Nico: "instead of saying 'Try it', write what you see and then
+   * what your customer sees... and under that, a subtitle 'Interactive'"):
+   * a label over each screen once the story rests, where both are real,
+   * usable UIs. On phones the dashboard phone takes the laptop's label.
+   * Decorative (aria-hidden): the screens' own regions and buttons carry the
+   * names. Wording may be refined in Phase 4.
    */
-  tryIt: "Try it",
+  screenLabels: {
+    laptop: "What you see",
+    phone: "What your customer sees",
+    interactive: "Interactive",
+  },
 
   /** Lock-screen Live Activity on the phone before the tap. */
   lockPrompt: { title: "Tap to get your receipt", body: "Hold your iPhone near the PapeX device" },
