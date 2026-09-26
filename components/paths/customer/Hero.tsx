@@ -51,8 +51,9 @@ function scrollToHash(event: MouseEvent<HTMLAnchorElement>) {
  * (`initial="light"`); this section only declares it. Text uses the ground's
  * --flow-* ink so it stays correct while the ground crossfades below.
  *
- * The demo phone keeps its dark bezel — a phone is a dark object — and the
- * receipt inside it keeps the App Clip palette on purpose.
+ * The visual (NfcPhone) is a locked iPhone tapping the PapeX device on a
+ * loop (P3-C4) — the phone keeps its dark bezel, a phone is a dark object.
+ * What the tap DOES is §02's job; the orange line under the H1 points there.
  */
 export function Hero() {
   const storeUrl = useStoreUrl();
@@ -104,9 +105,24 @@ export function Hero() {
             >
               {heroContent.headline}
             </WordReveal>
+            {/* P3-C4 (Nico): the orange "Scroll to see what happens" line,
+                right under the H1. The hero's phone only taps; §02, the next
+                section, plays out what the tap does — so this is also a link
+                there (same smooth scroll as the cues below). */}
+            <a href={`#${HOW_IT_WORKS_ANCHOR}`} onClick={scrollToHash} className={styles.scrollCue}>
+              <span>{heroContent.scrollCue}</span>
+              <span aria-hidden="true" className={styles.scrollCueChevron}>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m3.5 6 4.5 4.5L12.5 6" />
+                </svg>
+              </span>
+            </a>
+            {/* The lead's gap is 0.7 of --gap-title since the orange line
+                joined the H1 (P3-C4): the two read as one heading block, and
+                the hero keeps its height at 1440x760 (a full screen there). */}
             <p
               style={{
-                marginTop: "var(--gap-title)",
+                marginTop: "calc(var(--gap-title) * 0.7)",
                 fontSize: "var(--fs-lead)",
                 lineHeight: 1.5,
                 color: "var(--flow-fg-2)",

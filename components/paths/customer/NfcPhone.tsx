@@ -1,14 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { MouseEvent as ReactMouseEvent } from "react";
-import { useReducedMotion } from "motion/react";
 import { parseEscPos } from "@/lib/escpos";
 import { summarizeReceipt } from "@/lib/receiptSummary";
 import { cn } from "@/lib/utils";
-import { ClipApp, ClipLockScreen, ClipReading } from "./appui";
+import { ClipLockScreen } from "./appui";
 import { receiptMoment } from "./appui/Clip";
-import { demoContent } from "./content";
+import { heroContent } from "./content";
 import { demoReceiptBytes } from "./demoReceipt";
 import { RdhDevice } from "./RdhDevice";
 import { PhoneChrome } from "./WalkPhone";
@@ -16,238 +14,87 @@ import styles from "./customer.module.css";
 import ip from "./iphone.module.css";
 
 /**
- * The five beats of the tap. The card beat is new on 2026-09-22: before it,
- * the App Clip card sat on the lock screen at rest, which is not what a real
- * iPhone does and which spent the whole payoff before anyone touched anything.
- */
-type DemoState = "idle" | "bowing" | "card" | "reading" | "done";
-
-/** How long the phone stays bowed onto the reader before the card arrives (see .demoTilt). */
-const DEMO_BOW_MS = 640;
-/** How long "Reading your receipt" holds — matches the clip's own progress bar. */
-const DEMO_READ_MS = 700;
-/** How long the "Save to PapeX" button holds its "Saved" confirmation. */
-const SAVED_MS = 1800;
-
-/**
- * The hero's live receipt demo — the biggest build in the customer path, and
- * the App Clip's real story beat for beat:
+ * The hero's visual (Web 2.1 P3-C4, Nico 2026-09-25: "just the phone tapping
+ * back and forth with a pause"). A locked iPhone dips onto the PapeX device,
+ * the device answers (NFC rings, glow, status light), the phone lifts back,
+ * rests, and it all goes round again: one ~4.6s cycle, set in
+ * customer.module.css (`.tapPhone` / `.tapRing` / `.tapGlow`, keyframes
+ * heroTap*). The WHOLE clip flow — card, "Reading your receipt", the receipt
+ * — is told once, by §02 How it works, so the hero no longer plays it and has
+ * nothing to click. It is a picture: one `role="img"` with a label, the
+ * phone and the device inside it hidden from assistive tech.
  *
- *   idle    the phone is LOCKED: only what iOS shows (status bar, island
- *           lock, date + clock, wallpaper, flashlight + camera). No App Clip
- *           card yet (iOS shows one only after an NFC tap) and, since W3
- *           (2026-09-24, Nico), no Live Activity either. The prompt lives
- *           OFF the phone: the phone leans toward the reader a few times,
- *           the reader glows and sends NFC rings off its top face, and a chip
- *           attached under the reader says "Tap the PapeX device". Clicking
- *           the reader, the chip OR the phone starts the tap.
- *   bowing  the visitor tapped the READER (the device is the button); the
- *           phone bows onto it and the reader's LED pulses.
- *   card    the phone is back up and iOS has slid the App Clip card in from
- *           the bottom edge — "PapeX / Tap to View Your Receipt" with the
- *           periwinkle View pill, which rings a few times to say "click me".
- *   reading the clip's "Reading your receipt" under iOS's launch banner.
- *   done    the rendered clip receipt (app kit ClipReceipt, via appui
- *           ClipApp): scrolls, ⋯ -> "View original receipt", "Save to PapeX".
+ * MOTION is CSS only (transform + opacity), every animated piece on the same
+ * duration so they stay in step. The keyframes are always attached but held
+ * `paused`; `data-run` on the stage lets them play, and it is set only while
+ * the stage is on screen (IntersectionObserver) AND the tab is visible AND
+ * motion is allowed. Pausing freezes every piece on the same frame, so a
+ * resume picks up in step.
  *
- * "Real" means the bytes in demoReceipt.ts go straight through THIS REPO'S
- * OWN `lib/escpos.ts` (`parseEscPos`) and `lib/receiptSummary.ts`
- * (`summarizeReceipt`) — computed once via useMemo, never re-implemented or
- * ported from the design prototype's standalone decoder script.
+ * STILL FRAME. Server render, no-JS and prefers-reduced-motion all show
+ * frame 0 — the phone resting above the device — which is also where each
+ * cycle starts and ends, so the first run never jumps. Reduced motion
+ * additionally drops the animations in CSS and holds one faint ring on the
+ * device, so the still picture still says "this goes on that".
  *
- * The device itself is <PhoneChrome>, the same component the walkthrough and
- * the Features shots render, so there is exactly one iPhone on this page.
+ * The lock screen's date + clock still come from the decoded demo receipt
+ * (this repo's own lib/escpos.ts + lib/receiptSummary.ts), so the hero's
+ * phone shows the same moment as §02's.
  */
 export function NfcPhone() {
-  const [demo, setDemo] = useState<DemoState>("idle");
-  const [saved, setSaved] = useState(false);
-  const prefersReduced = useReducedMotion();
-  const bowTimer = useRef<number | undefined>(undefined);
-  const readTimer = useRef<number | undefined>(undefined);
-  const savedTimer = useRef<number | undefined>(undefined);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [run, setRun] = useState(false);
 
-  useEffect(
-    () => () => {
-      window.clearTimeout(bowTimer.current);
-      window.clearTimeout(readTimer.current);
-      window.clearTimeout(savedTimer.current);
-    },
+  const moment = useMemo(
+    () => receiptMoment(summarizeReceipt(parseEscPos(demoReceiptBytes()).lines).dateline),
     [],
   );
 
-  const summary = useMemo(() => {
-    const receipt = parseEscPos(demoReceiptBytes());
-    return summarizeReceipt(receipt.lines);
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let onScreen = false;
+    const update = () => setRun(onScreen && !document.hidden && !motion.matches);
+    const io = new IntersectionObserver(
+      (entries) => {
+        onScreen = entries[entries.length - 1].isIntersecting;
+        update();
+      },
+      { threshold: 0 },
+    );
+    io.observe(stage);
+    document.addEventListener("visibilitychange", update);
+    motion.addEventListener("change", update);
+    return () => {
+      io.disconnect();
+      document.removeEventListener("visibilitychange", update);
+      motion.removeEventListener("change", update);
+    };
   }, []);
-  /* The lock screen's date + clock come from the decoded receipt, so the
-     phone is always tapped on the day (and at the time) the receipt printed. */
-  const moment = useMemo(() => receiptMoment(summary.dateline), [summary]);
-
-  /** Beat 1 — the reader was tapped (pointer, Enter or Space). */
-  function tapDevice() {
-    if (demo !== "idle") return;
-    if (prefersReduced) {
-      // No bow, and the card is simply there: reduced motion gets the state,
-      // not the choreography.
-      setDemo("card");
-      return;
-    }
-    setDemo("bowing");
-    window.clearTimeout(bowTimer.current);
-    bowTimer.current = window.setTimeout(() => setDemo("card"), DEMO_BOW_MS);
-  }
-
-  /** Beat 2 — the blue View pill on the App Clip card was clicked. */
-  function openClip() {
-    if (demo !== "card") return;
-    setDemo("reading");
-    window.clearTimeout(readTimer.current);
-    readTimer.current = window.setTimeout(() => setDemo("done"), DEMO_READ_MS);
-  }
-
-  /** The phone stays tappable as a convenience: it just does whatever the
-   *  current beat's real control would do. The reader is still the thing the
-   *  copy points at. */
-  function tapPhone() {
-    if (demo === "idle") tapDevice();
-    else if (demo === "card") openClip();
-    else if (demo === "done") reset();
-  }
-
-  function reset() {
-    window.clearTimeout(bowTimer.current);
-    window.clearTimeout(readTimer.current);
-    setDemo("idle");
-  }
-
-  /** The demo's own "Save to PapeX" — it has nowhere real to save to (no
-   *  account, no app), so a brief confirmation is the honest affordance:
-   *  it reacts, without pretending to actually save anything. Stops
-   *  propagation so it never also toggles the phone's replay. */
-  function save(event: ReactMouseEvent<HTMLButtonElement>) {
-    event.stopPropagation();
-    window.clearTimeout(savedTimer.current);
-    setSaved(true);
-    savedTimer.current = window.setTimeout(() => setSaved(false), SAVED_MS);
-  }
-
-  const idle = demo === "idle";
-  const locked = idle || demo === "bowing" || demo === "card";
-  // The hint copy has one line per visible beat; "reading" borrows the tap's.
-  const hint = demoContent.hint[demo === "reading" ? "bowing" : demo];
 
   return (
-    <div className={styles.demoStage}>
-      <div
-        role="button"
-        tabIndex={0}
-        aria-label={demo === "idle" ? demoContent.phoneStartLabel : demoContent.phoneLabel}
-        aria-pressed={demo !== "idle"}
-        onClick={tapPhone}
-        onKeyDown={(event) => {
-          if (event.key !== "Enter" && event.key !== " ") return;
-          event.preventDefault();
-          tapPhone();
-        }}
-        className={cn(styles.demoPhone, ip.phoneHit, demo === "bowing" && styles.demoPhoneBowing)}
-      >
-        <div className={styles.demoTilt}>
-          {/* The idle lean toward the device: its own wrapper, so it never
-              fights .demoTilt's bow transition. Reduced motion is handled by
-              the CSS media query only — gating the class on useReducedMotion()
-              (null on the server) caused a hydration class mismatch. */}
-          <div className={cn(ip.nudge, idle && ip.nudgeOn)}>
-          <PhoneChrome islandLock={locked}>
-            {/* 1. the locked phone. The App Clip card only exists from the
-                   "card" beat on — mounting it is what plays iOS's
-                   slide-up-from-the-bottom. */}
-            <div className={cn(styles.acLayer, locked && styles.acLayerOn)}>
-              <ClipLockScreen
-                card={demo === "card"}
-                pulse={!prefersReduced}
-                onView={openClip}
-                moment={moment}
-              />
-            </div>
-
-            {/* 2. the clip launching */}
-            <div className={cn(styles.acLayer, demo === "reading" && styles.acLayerOn)}>
-              {/* Mounted per beat so its one-shot progress runs when it shows. */}
-              {demo === "reading" ? <ClipReading time={moment.time} /> : null}
-            </div>
-
-            {/* 3. the receipt. Taps inside it belong to the receipt —
-                   opening "Original receipt" must not also fire the phone's
-                   replay. Stopping propagation here is what lets the two tap
-                   targets coexist: receipt UI in here, replay anywhere else
-                   on the phone (or the "Reset" link). */}
-            <div
-              className={cn(styles.acLayer, demo === "done" && styles.acLayerOn)}
-              onClick={(event) => event.stopPropagation()}
-              onKeyDown={(event) => event.stopPropagation()}
-            >
-              {demo === "done" ? (
-                <ClipApp
-                  summary={summary}
-                  interactive
-                  banner
-                  saved={saved}
-                  onSave={save}
-                  saveLabel={demoContent.saveLabel}
-                  savedLabel={demoContent.savedLabel}
-                  originalLabel={demoContent.sectionTitles.original}
-                />
-              ) : null}
-            </div>
-          </PhoneChrome>
-          </div>
-        </div>
+    <div
+      ref={stageRef}
+      className={styles.demoStage}
+      role="img"
+      aria-label={heroContent.visualLabel}
+      data-run={run ? "" : undefined}
+    >
+      <div className={styles.tapPhone} aria-hidden="true">
+        <PhoneChrome islandLock>
+          <ClipLockScreen card={false} moment={moment} />
+        </PhoneChrome>
       </div>
 
-      {/* THE tap target. The reader is what the hero asks you to tap, so it is
-          a real <button>: pointer, Enter and Space all start the sequence, and
-          it drops out of the tab order once it has been used. At rest it glows
-          and sends NFC rings off its top face (2.1): the box has to look like
-          something you can press, not a product shot. */}
-      <button
-        type="button"
-        className={cn(styles.demoRdh, ip.rdh, !idle && ip.rdhIdleOff)}
-        onClick={tapDevice}
-        disabled={demo !== "idle"}
-        aria-label={demoContent.deviceLabel}
-      >
-        <span className={cn(ip.rdhGlow, idle && ip.rdhGlowPulse)} aria-hidden="true" />
-        <RdhDevice pulsing={demo === "bowing"} />
-        {idle ? (
-          <>
-            <span className={cn(ip.rdhRing, ip.rdhRingPulse)} aria-hidden="true" />
-            <span className={cn(ip.rdhRing, ip.rdhRingPulse, ip.rdhRing2)} aria-hidden="true" />
-          </>
-        ) : null}
-      </button>
-
-      {/* The caption is attached to the device: at rest it is a chip right
-          under the box with a caret pointing up at it (clicking it also
-          taps). Later beats reuse the same spot for their one-line hint. */}
-      <div className={cn(styles.demoHintRow, ip.hintRow, idle && ip.hintRowIdle)}>
-        <span aria-live="polite">
-          {idle ? (
-            <button type="button" className={ip.chip} onClick={tapDevice}>
-              <span className={ip.chipDot} aria-hidden="true" />
-              {hint}
-            </button>
-          ) : (
-            hint
-          )}
-        </span>
-        <button
-          type="button"
-          onClick={reset}
-          disabled={demo !== "done"}
-          className={styles.demoResetLink}
-        >
-          {demoContent.resetLabel}
-        </button>
+      {/* The device. `ip.rdh` / `ip.rdhGlow` / `ip.rdhRing` give the halo and
+          the ring their shape and seat on the box's top face (iphone.module.css);
+          the hero's own classes only time them to the tap. */}
+      <div className={cn(styles.demoRdh, ip.rdh)} aria-hidden="true">
+        <span className={cn(ip.rdhGlow, styles.tapGlow)} />
+        <RdhDevice />
+        <span className={cn(ip.rdhRing, styles.tapRing)} />
+        <span className={cn(ip.rdhRing, styles.tapRing, styles.tapRing2)} />
       </div>
     </div>
   );

@@ -174,6 +174,58 @@
   }
 }
 
+/* The orange line under the hero H1 (P3-C4): "Scroll to see what happens",
+   a link to §02. A subtitle, so it sits one step below --fs-lead in the type
+   scale and hugs the headline (--gap-title is the lead's gap, below it). The
+   chevron bobs a few times with the page's shared arrowBob, then rests.
+   ChildStagger writes transform/transition inline on this link, so hover
+   only changes colour. */
+.scrollCue {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: max-content;
+  max-width: 100%;
+  margin-top: clamp(8px, 1.2vh, 14px);
+  font-family: var(--font-display);
+  font-size: clamp(17px, 1.45vw, 21px);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.005em;
+  text-decoration: none;
+  cursor: pointer;
+}
+/* Colour through `.hero` on purpose: papex-brand.css's `.rd a { color:
+   inherit }` (0,1,1) outranks a lone class and would turn this navy. */
+.hero .scrollCue {
+  color: var(--orange);
+  transition: color 0.2s ease;
+}
+.hero .scrollCue:hover {
+  color: var(--orange-hover);
+}
+.scrollCue:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+.scrollCueChevron {
+  display: inline-flex;
+  flex: none;
+  width: 1em;
+  height: 1em;
+}
+.scrollCueChevron svg {
+  width: 100%;
+  height: 100%;
+  animation: arrowBob 1.9s ease-in-out 1.2s 4;
+}
+@media (prefers-reduced-motion: reduce) {
+  .scrollCueChevron svg {
+    animation: none;
+  }
+}
+
 /* The hero's "How does that work? ↓" cue (Web 2.1). It replaced the
    foot-of-screen "Scroll" cue (.heroCue, absolutely positioned and hidden
    below 821px because it landed on the demo's hint row): this one sits in the
@@ -291,11 +343,11 @@
 }
 
 /* ==========================================================================
- * Hero live receipt demo — tap the phone, it bows onto the RDH, a REAL
- * receipt (lib/escpos.ts + lib/receiptSummary.ts, see NfcPhone.tsx) decodes
- * into App-Clip-styled UI (`.ac*`). Colours below are the App Clip's OWN
- * theme, deliberately not this site's — see DemoReceiptView.tsx's doc
- * comment and design-prototype/NOTES.md. Never swap these for --navy/--orange.
+ * Hero visual (Web 2.1 P3-C4) — a locked iPhone tapping the PapeX device,
+ * lifting back, resting, and again (NfcPhone.tsx). `.demoStage` sizes the
+ * phone; the tap loop's rules follow it. The `.ac*` rules further down are
+ * the App-Clip-styled receipt card (DemoReceiptView.tsx) and keep the App
+ * Clip's OWN theme on purpose — never swap those for --navy/--orange.
  * ========================================================================== */
 
 .demoStage {
@@ -354,6 +406,9 @@
      tall display stops growing the phone. 340px floor: at 1280x720 the hero
      runs ~6px past the screen but the cue stays on it. Phones keep the
      previous formula (below). */
+  /* P3-C4 (2026-09-25): the hint/chip row under the device is gone with the
+     click-through demo. The reserve is deliberately unchanged, so the phone
+     is exactly the size it was; the ~15px it freed is centred away. */
   --phone-h: clamp(340px, calc(min(100svh, 1100px) - var(--hero-pt, 104px) - 316px), 720px);
   --phone-w: calc(var(--phone-h) * 393 / 852);
 
@@ -386,73 +441,173 @@
   }
 }
 
-.demoPhone {
+/* --- The tap loop (P3-C4, 2026-09-25) --------------------------------------
+   One cycle, --tap-cycle long, shared by every moving piece so they stay in
+   step:
+      0-8%    rest
+      8-27%   the phone dips onto the device's top face
+      27-37%  contact: a small press, and the device answers — NFC rings off
+              its top face, the halo and the status light swell
+      37-56%  the phone lifts back
+      56-100% rest (~2s), then again
+   Frame 0 IS the resting pose for every piece, so the server render, no-JS,
+   reduced motion and a paused loop all show the same still picture and the
+   first run never jumps. The keyframes are always attached but held paused;
+   NfcPhone sets `data-run` only while the stage is on screen, the tab is
+   visible and motion is allowed. Transform + opacity only. */
+.demoStage {
+  --tap-cycle: 4.6s;
+  /* Where the phone's bottom-centre travels to at contact: right and down,
+     onto the visible part of the device's top face. In phone units, so the
+     tap lands in the same place at every phone size. */
+  --tap-x: calc(var(--phone-w) * 0.06);
+  --tap-y: calc(var(--phone-h) * 0.06);
+  --tap-r: 7deg;
+}
+
+/* The phone sits above the device (z 2), so at contact it lies over the
+   box's top face instead of sliding behind it. */
+.tapPhone {
   position: relative;
   z-index: 2;
-  cursor: pointer;
-  outline: none;
-  /* Matches PhoneChrome's outer radius so the focus ring hugs the device. */
-  border-radius: calc(var(--phone-w) * 0.19);
-}
-.demoPhone:focus-visible {
-  box-shadow: 0 0 0 3px rgba(235, 113, 0, 0.6);
-}
-
-.demoTilt {
-  transition: transform 0.42s cubic-bezier(0.45, 0, 0.2, 1);
   transform-origin: 50% 100%;
+  animation: heroTapPhone var(--tap-cycle) cubic-bezier(0.45, 0, 0.2, 1) infinite both;
 }
-.demoPhoneBowing .demoTilt {
-  transform: translateY(34px) rotate(7deg);
+@keyframes heroTapPhone {
+  0%,
+  8%,
+  56%,
+  100% {
+    transform: none;
+  }
+  27%,
+  37% {
+    transform: translate(var(--tap-x), var(--tap-y)) rotate(var(--tap-r));
+  }
+  /* the tap itself: a few pixels further in, then back up to contact */
+  31% {
+    transform: translate(var(--tap-x), calc(var(--tap-y) + 4px)) rotate(var(--tap-r));
+  }
 }
 
-/* The hero's device is <PhoneChrome> now — see --wp-size on .demoStage.
-   The private .demoShell / .demoScreen / .demoNotch rules that used to sit
-   here were deleted on 2026-09-22: they were a second, slightly different
-   iPhone (fatter bezel, 0.155/0.124 radii, its own island maths) drawn
-   beside the walkthrough's. Chrome changes belong in iphone.module.css. */
+/* The device's halo (shape and seat: iphone.module.css .rdhGlow) swells at
+   contact. Its transform keeps the -50%/-50% centring the base rule uses. */
+.tapGlow {
+  animation: heroTapGlow var(--tap-cycle) ease-in-out infinite both;
+}
+@keyframes heroTapGlow {
+  0%,
+  24%,
+  60%,
+  100% {
+    opacity: 0.55;
+    transform: translate(-50%, -50%) scale(0.98);
+  }
+  33% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.06);
+  }
+}
 
-/* The reader is now the demo's PRIMARY tap target (2026-09-22): the hero's
-   story is "tap the PapeX device", so the device is what you tap. It is a
-   real button — keyboard-reachable, with a visible focus ring — and it keeps
-   a pointer cursor so the affordance reads before anyone tabs to it. */
+/* Two NFC rings (shape and seat: iphone.module.css .rdhRing) spread off the
+   top face at contact, the second a beat behind the first. Invisible for the
+   rest of the cycle. */
+.tapRing {
+  animation: heroTapRing var(--tap-cycle) cubic-bezier(0.22, 0.61, 0.36, 1) infinite both;
+}
+.tapRing2 {
+  animation-delay: 0.32s;
+}
+/* Re-seated for the hero: centred on the part of the top face the tapping
+   phone leaves uncovered (right of the label, around the status light), so
+   the rings read at contact instead of spreading under the phone. Through
+   `.demoRdh` so it outranks iphone.module.css's single-class seat. */
+.demoRdh .tapRing {
+  left: 74%;
+  top: 33%;
+}
+@keyframes heroTapRing {
+  0%,
+  28% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.45);
+  }
+  29% {
+    opacity: 0.95;
+    transform: translate(-50%, -50%) scale(0.45);
+  }
+  54%,
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.6);
+  }
+}
+
+/* The device's status light (RdhDevice's .rdhLed, below) blinks up at
+   contact. Scoped to the hero stage: §02 drives the same light by prop. */
+.demoStage .rdhLed {
+  animation: heroTapLed var(--tap-cycle) ease-in-out infinite both;
+}
+@keyframes heroTapLed {
+  0%,
+  27%,
+  52%,
+  100% {
+    transform: none;
+  }
+  33% {
+    transform: scale(1.5);
+  }
+}
+
+.tapPhone,
+.tapGlow,
+.tapRing,
+.demoStage .rdhLed {
+  animation-play-state: paused;
+}
+.demoStage[data-run] .tapPhone,
+.demoStage[data-run] .tapGlow,
+.demoStage[data-run] .tapRing,
+.demoStage[data-run] .rdhLed {
+  animation-play-state: running;
+}
+
+/* Reduced motion: the still frame — phone resting above the device, halo at
+   full strength and one ring held on the top face, so the picture still
+   says "this goes on that". */
+@media (prefers-reduced-motion: reduce) {
+  .tapPhone,
+  .tapGlow,
+  .tapRing,
+  .demoStage .rdhLed {
+    animation: none;
+  }
+  .tapGlow {
+    opacity: 1;
+  }
+  .tapRing:not(.tapRing2) {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+}
+
+/* The hero's device is <PhoneChrome> — see --wp-size on .demoStage. Chrome
+   changes belong in iphone.module.css. */
+
+/* The PapeX device, seated under the phone's lower-right: pulled up so the
+   phone's foot overlaps its top face, and shifted right so the label shows.
+   Decorative since P3-C4 — the hero has nothing to click. */
 .demoRdh {
-  /* The seat offset was a bare translateX; it is a variable now because the
-     hover lift has to compose with it rather than replace it. */
-  --rdh-x: clamp(26px, 8.4vw, 108px);
   position: relative;
   z-index: 1;
   display: block;
-  padding: 0;
-  border: 0;
-  background: none;
-  cursor: pointer;
-  border-radius: 18px;
-  outline: none;
   margin-top: clamp(-120px, -8.6vw, -52px);
-  transform: translateX(var(--rdh-x));
+  transform: translateX(clamp(26px, 8.4vw, 108px));
   width: clamp(238px, 24vw, 318px);
   line-height: 0;
   /* Navy-tinted for the light hero — a black shadow on #F5F5F5 reads grey. */
   filter: drop-shadow(0 22px 36px rgba(0, 18, 29, 0.3));
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.demoRdh:hover:not(:disabled) {
-  transform: translateX(var(--rdh-x)) translateY(-3px);
-}
-.demoRdh:focus-visible {
-  box-shadow: 0 0 0 3px rgba(235, 113, 0, 0.65);
-}
-.demoRdh:disabled {
-  cursor: default;
-}
-@media (prefers-reduced-motion: reduce) {
-  .demoRdh {
-    transition: none;
-  }
-  .demoRdh:hover:not(:disabled) {
-    transform: translateX(var(--rdh-x));
-  }
 }
 .demoRdh svg {
   width: 100%;
@@ -467,33 +622,6 @@
 .rdhLedPulsing {
   opacity: 1;
   transform: scale(1.5);
-}
-
-.demoHintRow {
-  min-height: 22px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 13.5px;
-  /* Follows the page ground's faint ink (the hero is light since 2026-09-10). */
-  color: var(--flow-fg-3, rgba(0, 18, 29, 0.5));
-}
-.demoResetLink {
-  cursor: pointer;
-  color: var(--orange);
-  font-weight: 600;
-  font: inherit;
-  font-size: 13.5px;
-  background: none;
-  border: none;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  opacity: 1;
-  transition: opacity 0.2s ease;
-}
-.demoResetLink:disabled {
-  opacity: 0;
-  pointer-events: none;
 }
 
 .acScroll {
@@ -798,29 +926,6 @@
   background: linear-gradient(180deg, #34d168, #16a34a);
   color: #06240f;
   box-shadow: 0 calc(8 * var(--u)) calc(20 * var(--u)) rgba(22, 163, 74, 0.3);
-}
-
-/* The three beats of the hero's tap story are stacked layers, not screens:
- * the lock screen with the App Clip card, the "Reading your receipt" state,
- * and the rendered receipt. pointer-events follow opacity — both invisible
- * layers must also be untouchable, or a hidden one swallows the first tap. */
-.acLayer {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(calc(10 * var(--u)));
-  /* Same easing and 380-520ms band as every other motion on these phones. */
-  transition: opacity 0.46s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 0.46s cubic-bezier(0.16, 1, 0.3, 1);
-  z-index: 4;
-}
-.acLayerOn {
-  opacity: 1;
-  transform: none;
-  pointer-events: auto;
 }
 
 /* ==========================================================================
@@ -1166,9 +1271,7 @@
   .pinnedNfcRing,
   .pinnedNfcRingOffset,
   .arrowBob,
-  .demoTilt,
   .walkTilt,
-  .acLayer,
   .rdhLed {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;

@@ -20,6 +20,9 @@ export const heroContent = {
   // The eyebrow carries the search category, so "tap" isn't said twice.
   eyebrow: "The free digital receipts app",
   headline: "Tap your phone. Get your receipt.",
+  // P3-C4 (Nico, 2026-09-25): an orange line right under the H1 pointing at
+  // §02, where the tap is played out. Words may be refined in Phase 4.
+  scrollCue: "Scroll to see what happens",
   // Web 2.1 (spec §3.2): "no app to GET it, the free app to KEEP it" — the old
   // "saved… forever. No app required" line contradicted the Download button
   // right under it.
@@ -32,31 +35,16 @@ export const heroContent = {
   ctaSubtext: "Free · iPhone & Android",
   howCue: "How does that work?",
   faqCue: "Questions?",
+  // The hero visual is a picture since P3-C4 (a phone tapping the device on
+  // a loop, nothing to click): this is its accessible name.
+  visualLabel: "An iPhone tapping the PapeX device, then lifting away, on a loop.",
 };
 
-/** The hero's live receipt demo — hint copy per state, and the tappable phone's a11y label. */
+/** The App Clip receipt's own labels — shared by the §02 walkthrough
+ *  (WalkPhone), the Features receipt card and DemoReceiptView. The hero's
+ *  old tap-the-device demo copy (hints, reset, a11y labels, lock prompt) was
+ *  removed with that demo in P3-C4. */
 export const demoContent = {
-  phoneLabel: "Replay the tap",
-  /* The phone is a second way in (2.1): clicking it at rest starts the tap. */
-  phoneStartLabel: "Tap your phone on the PapeX device to receive a receipt",
-  /* The reader is the primary tap target now (2026-09-22): the hero's story is
-     "tap the PapeX device", and nothing happens until the visitor taps IT. */
-  deviceLabel: "Tap the PapeX device to receive a receipt",
-  /* The idle prompt ON the phone (2.1, 2026-09-23): an iOS Live Activity on
-     the lock screen, so the locked phone never reads as blank and points at
-     the device. The device's own chip says the same thing from below. */
-  lockPrompt: {
-    title: "Tap to get your receipt",
-    body: "Hold your iPhone near the PapeX device.",
-  },
-  hint: {
-    // Rendered as a chip attached to the device, caret pointing up at it.
-    idle: "Tap the PapeX device",
-    bowing: "Tapping…",
-    card: "Now tap View to open your receipt",
-    done: "Scroll it, open the original receipt, or tap the frame to replay.",
-  },
-  resetLabel: "Reset",
   saveLabel: "Save to PapeX",
   savedLabel: "Saved",
   sectionTitles: {
