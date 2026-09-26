@@ -5,6 +5,7 @@ import type { MouseEvent } from "react";
 import { ChildStagger, Magnetic, Ripple, Spotlight, WordReveal } from "@/components/motion";
 import { APP_STORE_URL, PLAY_STORE_URL, platformFromUserAgent } from "@/lib/storeLinks";
 import { FlowSection } from "../shared/FlowSection";
+import { NextSection } from "../shared/NextSection";
 import { SectionLabel } from "../shared/SectionLabel";
 import { FAQ_ANCHOR, HOW_IT_WORKS_ANCHOR, heroContent } from "./content";
 import { NfcPhone } from "./NfcPhone";
@@ -192,6 +193,9 @@ export function Hero() {
 
         <NfcPhone />
       </div>
+      {/* P3 run-through: the next-section arrow (desktop, full-screen hero).
+          The copy keeps its load-in stagger: it is on screen at scroll 0. */}
+      <NextSection targetId={HOW_IT_WORKS_ANCHOR} name="How it works" />
     </FlowSection>
   );
 }

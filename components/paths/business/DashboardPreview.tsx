@@ -1,5 +1,6 @@
 import type { CSSProperties, Ref } from "react"
 import { cn } from "@/lib/utils"
+import { ScrollReveal, ScrollWords } from "@/components/motion"
 import { SectionLabel } from "../shared/SectionLabel"
 import { storyDashboard } from "./story"
 import s from "./story.module.css"
@@ -25,17 +26,26 @@ export function DashboardCopy({
 }) {
   return (
     <div ref={ref} className={className} style={style}>
-      <SectionLabel>{storyDashboard.eyebrow}</SectionLabel>
+      {/* P3 run-through: the block rises in from below as it scrolls up
+          (scroll-linked, reverses on the way back; motion.css). */}
+      <ScrollReveal>
+        <SectionLabel>{storyDashboard.eyebrow}</SectionLabel>
+      </ScrollReveal>
       {/* --fs-h3, not --fs-h2: a sub-heading under the section's own h2. */}
-      <h3 className="mx-auto max-w-[30ch] text-[length:var(--fs-h3)] font-bold leading-[1.06] tracking-[-.02em] [font-family:var(--font-display)]">
-        {storyDashboard.heading}
-      </h3>
-      <p
-        className="mx-auto mt-[calc(var(--gap-title,24px)*.5)] max-w-[60ch] text-[15px] leading-[1.5] min-[821px]:text-[length:var(--fs-lead)]"
-        style={{ color: "var(--flow-fg-2)" }}
+      <ScrollWords
+        as="h3"
+        className="mx-auto max-w-[30ch] text-[length:var(--fs-h3)] font-bold leading-[1.06] tracking-[-.02em] [font-family:var(--font-display)]"
       >
-        {storyDashboard.lead} {storyDashboard.customerLine.lead} {storyDashboard.customerLine.body}
-      </p>
+        {storyDashboard.heading}
+      </ScrollWords>
+      <ScrollReveal>
+        <p
+          className="mx-auto mt-[calc(var(--gap-title,24px)*.5)] max-w-[60ch] text-[15px] leading-[1.5] min-[821px]:text-[length:var(--fs-lead)]"
+          style={{ color: "var(--flow-fg-2)" }}
+        >
+          {storyDashboard.lead} {storyDashboard.customerLine.lead} {storyDashboard.customerLine.body}
+        </p>
+      </ScrollReveal>
     </div>
   )
 }
@@ -51,12 +61,12 @@ export function DashboardColumns({
 }) {
   return (
     <div ref={ref} className={cn(s.cols, className)} style={style}>
-      {storyDashboard.columns.map((column) => (
-        <div key={column.title}>
+      {storyDashboard.columns.map((column, i) => (
+        <ScrollReveal key={column.title} order={i}>
           <div aria-hidden="true" className={s.colRule} />
           <h4 className={s.colTitle}>{column.title}</h4>
           <p className={s.colBody}>{column.body}</p>
-        </div>
+        </ScrollReveal>
       ))}
     </div>
   )

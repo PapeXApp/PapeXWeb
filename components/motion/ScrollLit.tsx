@@ -21,18 +21,23 @@ type ScrollLitProps = {
  * the dim state only exists inside the @supports/no-preference block, so
  * there is no way for the text to get stuck faded.
  *
- * Words stay inline text nodes in one element, so screen readers read the
- * statement normally.
+ * A heading carries the whole statement as its aria-label and the word
+ * spans are aria-hidden (same as ScrollWords): computed from the spans, the
+ * accessible name lost its spaces ("Followonereceipt.", measured P3-B8).
  */
 export function ScrollLit({ text, as = "p", className, style }: ScrollLitProps) {
   const Tag = as as ElementType
   const words = text.trim().split(/\s+/)
   const n = words.length
+  // Only a heading may take aria-label (ARIA prohibits naming a paragraph);
+  // other tags keep the words as their readable text.
+  const labelled = typeof as === "string" && /^h[1-6]$/.test(as)
   return (
-    <Tag className={["papex-lit", className].filter(Boolean).join(" ")} style={style}>
+    <Tag className={["papex-lit", className].filter(Boolean).join(" ")} style={style} aria-label={labelled ? text.trim() : undefined}>
       {words.map((word, i) => (
         <span
           key={i}
+          aria-hidden={labelled ? true : undefined}
           className="papex-lit-word"
           style={{ "--i": i, "--n": n } as CSSProperties}
         >

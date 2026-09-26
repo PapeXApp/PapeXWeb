@@ -697,28 +697,6 @@ button.viewBtn:active {
  * HERO INTERACTION (NfcPhone.tsx)
  * ========================================================================== */
 
-/* The idle phone leans toward the device every few seconds — a small version
-   of the real tap, so the motion itself says "this goes on that". It lives on
-   its own wrapper so it never fights .demoTilt's bow transition. */
-.nudge {
-  transform-origin: 50% 100%;
-}
-.nudgeOn {
-  animation: phoneNudge 3.6s cubic-bezier(0.45, 0, 0.2, 1) 1.2s 3;
-}
-@keyframes phoneNudge {
-  0%, 62%, 100% { transform: none; }
-  74% { transform: translateY(8px) rotate(2.2deg); }
-  84% { transform: none; }
-}
-
-.phoneHit {
-  transition: filter 0.3s ease;
-}
-.phoneHit:hover {
-  filter: brightness(1.04);
-}
-
 /* The device's affordance: an orange glow on its top face and NFC rings
    spreading from where the phone lands. Both sit INSIDE the button (which
    already makes a stacking context via its drop-shadow filter), behind the
@@ -745,14 +723,6 @@ button.viewBtn:active {
   opacity: 0.8;
   transition: opacity 0.3s ease;
 }
-.rdhGlowPulse {
-  /* Finite (W3): a handful of breaths, then it holds at full glow. */
-  animation: rdhGlow 2.4s ease-in-out 5 both;
-}
-@keyframes rdhGlow {
-  0%, 100% { opacity: 0.85; transform: translate(-50%, -50%) scale(0.98); }
-  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
-}
 /* An isometric ellipse (the top face is a diamond, ~1.7:1), drawn ABOVE the
    art so it reads on the black box, then faded as it grows. */
 .rdhRing {
@@ -766,96 +736,10 @@ button.viewBtn:active {
   box-shadow: 0 0 12px rgba(235, 113, 0, 0.6), inset 0 0 10px rgba(235, 113, 0, 0.35);
   opacity: 0;
 }
-.rdhRingPulse {
-  animation: rdhRing 2.4s cubic-bezier(0.22, 0.61, 0.36, 1) 5 both;
-}
-.rdhRingPulse.rdhRing2 {
-  animation-delay: 1.2s;
-}
-@keyframes rdhRing {
-  0% { opacity: 0.95; transform: translate(-50%, -50%) scale(0.45); }
-  80%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.25); }
-}
 .rdh:hover:not(:disabled) .rdhGlow {
   opacity: 1;
   animation-play-state: paused;
 }
-.rdhIdleOff .rdhGlow {
-  opacity: 0;
-}
-
-/* The caption, attached to the device: a chip right under it, with a caret
-   pointing up at it. Offset like .demoRdh (--rdh-x there) so it centres on
-   the box, not on the stage. */
-.hintRow {
-  position: relative;
-  z-index: 3;
-  justify-content: center;
-  text-align: center;
-}
-/* Only the idle chip is seated on the device; the later beats' one-line
-   hints are longer and stay centred on the stage so they never clip. */
-.hintRowIdle {
-  transform: translateX(clamp(26px, 8.4vw, 108px));
-  margin-top: clamp(-34px, -2.2vw, -14px);
-}
-.chip {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  padding: 8px 14px 8px 12px;
-  /* a real <button> (keyboard + assistive tech): reset the UA look */
-  -webkit-appearance: none;
-  appearance: none;
-  border: 0;
-  border-radius: 999px;
-  background: #00121d;
-  color: #fff;
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.005em;
-  cursor: pointer;
-  box-shadow: 0 8px 22px -6px rgba(0, 18, 29, 0.45);
-}
-.chip::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: -5px;
-  width: 11px;
-  height: 11px;
-  background: #00121d;
-  border-radius: 2px;
-  transform: translateX(-50%) rotate(45deg);
-}
-.chip:focus-visible {
-  outline: 3px solid rgba(235, 113, 0, 0.65);
-  outline-offset: 2px;
-}
-.chipDot {
-  position: relative;
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: #eb7100;
-  flex: 0 0 auto;
-}
-.chipDot::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 999px;
-  background: #eb7100;
-  animation: chipDot 1.6s ease-out 6 both;
-}
-@keyframes chipDot {
-  0% { opacity: 0.7; transform: scale(1); }
-  100% { opacity: 0; transform: scale(2.6); }
-}
-
 /* --- walkthrough scene switching (WalkPhone) ------------------------------ */
 .scene {
   position: absolute;
@@ -875,29 +759,10 @@ button.viewBtn:active {
   pointer-events: auto;
 }
 
-/* Reduced motion: every loop stops, every prompt stays. The glow holds at
-   full strength and one ring sits still, so the device still reads as the
-   thing to tap. */
+/* Reduced motion: every loop stops, every prompt stays. */
 @media (prefers-reduced-motion: reduce) {
-  .nudgeOn,
-  .rdhGlowPulse,
-  .chipDot::after {
-    animation: none;
-  }
-  .rdhGlowPulse {
-    opacity: 1;
-  }
-  .rdhRingPulse {
-    animation: none;
-    opacity: 0.8;
-    transform: translate(-50%, -50%) scale(0.9);
-  }
-  .rdhRingPulse.rdhRing2 {
-    opacity: 0;
-  }
   .leaves,
-  .scene,
-  .phoneHit {
+  .scene {
     transition: none;
   }
   .acard,
