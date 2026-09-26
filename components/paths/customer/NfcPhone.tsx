@@ -15,11 +15,14 @@ import ip from "./iphone.module.css";
 
 /**
  * The hero's visual (Web 2.1 P3-C4, Nico 2026-09-25: "just the phone tapping
- * back and forth with a pause"). A locked iPhone dips onto the PapeX device,
- * the device answers (NFC rings, glow, status light), the phone lifts back,
- * rests, and it all goes round again: one ~4.6s cycle, set in
- * customer.module.css (`.tapPhone` / `.tapRing` / `.tapGlow`, keyframes
- * heroTap*). The WHOLE clip flow — card, "Reading your receipt", the receipt
+ * back and forth with a pause"; P3-C5: make it an obvious back-and-forth).
+ * A locked iPhone waits up and to the left of the PapeX device, swings in and
+ * taps its foot onto the device's top face, the device answers (NFC rings,
+ * glow, status light), the phone swings back out, pauses ~1.5s, and it all
+ * goes round again: one 4.2s cycle, ~25% of the phone's height of travel,
+ * set in customer.module.css (`.tapPhone` / `.tapRing` / `.tapGlow`,
+ * keyframes heroTap*; the device is dropped by `--tap-drop` to make room).
+ * The WHOLE clip flow — card, "Reading your receipt", the receipt
  * — is told once, by §02 How it works, so the hero no longer plays it and has
  * nothing to click. It is a picture: one `role="img"` with a label, the
  * phone and the device inside it hidden from assistive tech.
@@ -32,8 +35,8 @@ import ip from "./iphone.module.css";
  * resume picks up in step.
  *
  * STILL FRAME. Server render, no-JS and prefers-reduced-motion all show
- * frame 0 — the phone resting above the device — which is also where each
- * cycle starts and ends, so the first run never jumps. Reduced motion
+ * frame 0 — the phone resting on the device, leaning in — which is also where
+ * each cycle starts and ends, so the first run never jumps. Reduced motion
  * additionally drops the animations in CSS and holds one faint ring on the
  * device, so the still picture still says "this goes on that".
  *
