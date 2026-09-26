@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils"
 import s from "./hero.module.css"
 
 /**
@@ -59,7 +60,7 @@ export function CashierBody({ className }: { className?: string }) {
   )
 }
 
-export function CashierHands({ className }: { className?: string }) {
+export function CashierHands({ className, raised = false }: { className?: string; raised?: boolean }) {
   return (
     <svg viewBox="0 0 400 600" className={className} aria-hidden="true" focusable="false">
       {/* their right arm (our left): forearm on the counter top, hand flat */}
@@ -69,13 +70,59 @@ export function CashierHands({ className }: { className?: string }) {
         d="M98 538C92 552 96 570 110 580C124 590 150 590 162 580C168 572 166 562 158 554C152 546 144 540 138 538Z"
       />
       <path className={s.artInkSoft} d="M122 566L128 584M134 564L142 586M146 560L154 580" />
-      {/* their left arm, the mirror image */}
-      <path className={s.artFill} d="M327 470C328 500 320 526 302 542L260 540C272 520 286 496 292 470Z" />
+      {/* their left arm, the mirror image: it lifts off the counter when
+          they pick up the scanner (ScannerArm), so it can fade out */}
+      <g className={cn(s.restHand, raised && s.restHandUp)}>
+        <path className={s.artFill} d="M327 470C328 500 320 526 302 542L260 540C272 520 286 496 292 470Z" />
+        <path
+          className={s.artFill}
+          d="M302 538C308 552 304 570 290 580C276 590 250 590 238 580C232 572 234 562 242 554C248 546 256 540 262 538Z"
+        />
+        <path className={s.artInkSoft} d="M278 566L272 584M266 564L258 586M254 560L246 580" />
+      </g>
+    </svg>
+  )
+}
+
+/**
+ * The cashier's left arm (our right), raised off the counter holding a small
+ * handheld barcode scanner, nose towards the customer's phone (P3-B7). Its
+ * own box, in the cashier's units (1 unit = 0.001 of the scene's height):
+ * viewBox 240..560 x 250..570, placed by .scanArm so the elbow (300, 505)
+ * sits where the resting forearm lies; .scanArm rotates it about that elbow.
+ * The scanner's window is red; its beam is drawn by the scene (.beam), so it
+ * can reach the phone wherever the column puts it.
+ */
+export function ScannerArm({ className, done = false }: { className?: string; done?: boolean }) {
+  return (
+    <svg viewBox="240 250 320 320" className={className} aria-hidden="true" focusable="false">
+      {/* forearm, elbow on the counter, rising to the wrist */}
       <path
         className={s.artFill}
-        d="M302 538C308 552 304 570 290 580C276 590 250 590 238 580C232 572 234 562 242 554C248 546 256 540 262 538Z"
+        d="M286 520C278 506 282 488 296 478C318 458 340 432 356 408C362 398 376 396 384 404C392 412 390 424 382 432C364 456 342 486 322 512C312 526 294 530 286 520Z"
       />
-      <path className={s.artInkSoft} d="M278 566L272 584M266 564L258 586M254 560L246 580" />
+      <path className={s.artInkSoft} d="M300 478C296 490 296 502 302 512" />
+      {/* the scanner: a rounded head with the red window at its nose, the
+          grip angled back into the fist, a trigger */}
+      <path
+        className={s.artDevice}
+        d="M372 350C372 338 380 330 392 330H452C462 330 470 336 472 344L474 352C476 362 470 368 460 368H428L420 398C418 406 410 410 402 408C394 406 390 398 392 390L398 368H392C380 368 372 362 372 350Z"
+      />
+      <path className={s.artInkSoft} d="M384 342H440" />
+      <rect className={s.scanWindow} x="466" y="336" width="9" height="26" rx="4" />
+      {/* green once the coupon has scanned (a second window over the red one,
+          so only its opacity changes) */}
+      <rect className={cn(s.scanWindowOk, done && s.scanWindowOkOn)} x="466" y="336" width="9" height="26" rx="4" />
+      {/* the fist round the grip: curled fingers, a thumb over the top */}
+      <path
+        className={s.artFill}
+        d="M384 380C394 372 410 372 418 380C426 388 426 402 420 412C414 422 400 426 390 422C380 418 374 408 374 398C374 390 378 384 384 380Z"
+      />
+      <path className={s.artInkSoft} d="M382 394C392 391 404 392 416 396M380 406C390 404 402 405 414 409" />
+      <path
+        className={s.artFill}
+        d="M392 380C396 368 406 362 416 364C424 366 426 374 420 380C414 386 404 388 396 386Z"
+      />
     </svg>
   )
 }
@@ -84,14 +131,21 @@ export function CashierHands({ className }: { className?: string }) {
  * The customer's right hand, holding the phone with the screen towards us.
  * Both halves are drawn in the PHONE FRAME's own box (viewBox 0 0 100 206.3 =
  * the iPhone frame's 0.4847 aspect, see customer/iphone.module.css), so they
- * scale and turn with the phone (proportions: the frame's 100 units are a
- * ~72mm-wide iPhone, so a finger is ~22 units, the wrist ~66):
- *   HandBack   behind the phone: the palm (only its heel shows, under the
- *              phone), the knuckles behind the left edge, the ball of the
- *              thumb right of it, the wrist, a cuff and the sleeve, which
- *              widens gently as it leaves the scene down and to the right
- *   HandFront  in front of it: the four fingers curling round the left edge
- *              onto the bezel, and the thumb along the right edge
+ * scale and turn with the phone (the frame's 100 units are a ~72mm-wide
+ * iPhone, so a finger is ~18-22 units thick, the wrist ~60).
+ *
+ * P3-B7 (Nico: "the hand holding it has a flat line. That should be more
+ * curved to make it look more like a hand"): no straight edge anywhere. Every
+ * contour is a curve — the palm's heel, the ball of the thumb, the wrist, the
+ * cuff and the sleeve's folds — and the four fingers are four separate,
+ * rounded fingers, each bending round the phone's left edge (a rounded middle
+ * knuckle behind, a rounded fingertip on the bezel, a nail), stepping in and
+ * getting shorter towards the little finger.
+ *   HandBack   behind the phone: the palm (its heel shows under the phone,
+ *              the ball of the thumb right of it), the wrist, a cuff and the
+ *              sleeve, which widens as it leaves the scene down and right
+ *   HandFront  in front of it: the four fingers and the thumb, which rises
+ *              along the right edge with its tip on the bezel
  */
 export function HandBack({ className }: { className?: string }) {
   return (
@@ -102,17 +156,58 @@ export function HandBack({ className }: { className?: string }) {
       aria-hidden="true"
       focusable="false"
     >
-      <path className={s.artSleeve} d="M22 262C26 330 28 400 32 480H162C152 400 134 330 108 256Z" />
+      {/* sleeve: soft, slightly bowed sides and a rounded end */}
+      <path
+        className={s.artSleeve}
+        d="M31 256C27 312 31 392 38 470C76 494 132 494 172 470C160 400 138 328 108 250C84 264 54 266 31 256Z"
+      />
+      <path className={s.artInkSoft} d="M58 292C66 344 70 396 72 450M104 290C118 332 128 376 134 420" />
+      {/* palm: the heel under the phone, the ball of the thumb to its right */}
       <path
         className={s.artFill}
-        d="M30 252C18 238 6 222 -4 204C-12 194 -17 188 -19 180L-10 95H60L100 128C110 140 118 156 120 176C122 200 114 222 100 240C97 244 96 248 96 252Z"
+        d="M6 126C34 116 72 118 97 131C112 139 122 154 123.5 172C125 190 119 207 109 219C102 228 99 237 99 246C81 255 59 256 41 250C27 243 13 232 4 218C-3 207 -8 196 -8 184C-8 160 -4 138 6 126Z"
       />
-      <path className={s.artCuff} d="M24 244C48 254 82 252 102 242L107 260C84 272 46 274 22 264Z" />
+      {/* the heel's crease */}
+      <path className={s.artInkSoft} d="M24 222C37 232 55 237 76 235" />
+      {/* cuff: a curved band round the wrist */}
+      <path
+        className={s.artCuff}
+        d="M35 246C57 256 83 256 101 244C104 250 106 256 107 263C86 276 56 277 33 266C33 259 34 252 35 246Z"
+      />
     </svg>
   )
 }
 
+/** One finger bending round the phone's left edge: top edge out to the
+ *  rounded tip on the bezel (x = tip), back along the underside to the
+ *  rounded middle knuckle at x = knuckle. `y` is its top, `h` its thickness. */
+function finger(y: number, h: number, tip: number, knuckle: number): string {
+  const r = (n: number) => Math.round(n * 10) / 10
+  return [
+    `M${r(knuckle + 8)} ${r(y + 1)}`,
+    `C${r(knuckle + 16)} ${r(y - 1)} ${r(tip - 6)} ${r(y - 0.5)} ${r(tip - 1)} ${r(y + h * 0.18)}`,
+    `C${r(tip + 2.5)} ${r(y + h * 0.36)} ${r(tip + 2.5)} ${r(y + h * 0.7)} ${r(tip - 1.5)} ${r(y + h * 0.9)}`,
+    `C${r(tip - 5)} ${r(y + h * 1.04)} ${r(knuckle + 16)} ${r(y + h * 1.06)} ${r(knuckle + 7)} ${r(y + h * 0.98)}`,
+    `C${r(knuckle - 1)} ${r(y + h * 0.92)} ${r(knuckle - 2.5)} ${r(y + h * 0.66)} ${r(knuckle - 1.5)} ${r(y + h * 0.44)}`,
+    `C${r(knuckle - 0.5)} ${r(y + h * 0.18)} ${r(knuckle + 3)} ${r(y + h * 0.04)} ${r(knuckle + 8)} ${r(y + 1)}Z`,
+  ].join("")
+}
+/** The nail on a fingertip: a short arc just inside the tip. */
+function nail(y: number, h: number, tip: number): string {
+  const r = (n: number) => Math.round(n * 10) / 10
+  return `M${r(tip - 5)} ${r(y + h * 0.26)}C${r(tip - 1.5)} ${r(y + h * 0.34)} ${r(tip - 1.5)} ${r(y + h * 0.66)} ${r(tip - 5)} ${r(y + h * 0.74)}`
+}
+/** Index, middle, ring, little: [top, thickness, tip x, knuckle x]. The
+ *  little finger is drawn first so each finger above overlaps the next. */
+const FINGERS: [number, number, number, number][] = [
+  [108, 21, 9, -17],
+  [128, 21, 10, -18],
+  [148, 19.5, 9, -16.5],
+  [166, 17, 6.5, -13],
+]
+
 export function HandFront({ className }: { className?: string }) {
+  const drawOrder = [...FINGERS].reverse()
   return (
     <svg
       viewBox="0 0 100 206.3"
@@ -121,24 +216,26 @@ export function HandFront({ className }: { className?: string }) {
       aria-hidden="true"
       focusable="false"
     >
-      {/* the four fingers: one outline, the tips curled onto the bezel */}
-      <path
-        className={s.artFill}
-        d="M-19 187C-22 170 -22 120 -19 104C-18 98 -14 95 -9 95H2C7 95 10 101 10 107.5C10 114 7 120 2 120C8 120 11 126 11 132C11 138 8 144 2 144C7 144 10 150 10 155.5C10 161 7 167 2 167C6 167 8 172 8 177C8 182 5 187 0 187Z"
-      />
-      <path className={s.artInkSoft} d="M2 120H-12M2 144H-13M2 167H-12" />
+      {drawOrder.map(([y, h, tip, knuckle]) => (
+        <g key={y}>
+          <path className={s.artFill} d={finger(y, h, tip, knuckle)} />
+          <path className={s.artInkSoft} d={nail(y, h, tip)} />
+        </g>
+      ))}
       {/* the thumb, up along the right edge; its base is open (it grows out of
           the ball of the thumb behind the phone), so the fill and the outline
           are two paths */}
       <path
         className={s.artFillOnly}
-        d="M122 214C122 192 116 170 108 154C104 146 99 139 94 137C88 135 84 140 85 147C86 156 91 166 94 178C97 190 98 202 97 214Z"
+        d="M123 200C124.5 181 120 162 112 148C107 139 101 132 95.5 129.5C89.5 127 84.5 131.5 85.5 138.5C86.5 147 91 157 94 168C97 180 97.5 194 96.5 207C104 212 116 210 123 200Z"
       />
       <path
         className={s.artInk}
-        d="M121 206C120 188 115 168 108 154C104 146 99 139 94 137C88 135 84 140 85 147C86 156 91 166 94 178C97 190 98 200 98 208"
+        d="M123 200C124.5 181 120 162 112 148C107 139 101 132 95.5 129.5C89.5 127 84.5 131.5 85.5 138.5C86.5 147 91 157 94 168C97 180 97.5 194 96.5 207"
       />
-      <path className={s.artInkSoft} d="M91 158C96 156 101 156 106 158" />
+      {/* thumbnail, and the crease at the thumb's joint */}
+      <path className={s.artInkSoft} d="M88 136C89.5 131.5 94 131 97 134" />
+      <path className={s.artInkSoft} d="M93 160C98 157.5 104 157.5 109 160" />
     </svg>
   )
 }

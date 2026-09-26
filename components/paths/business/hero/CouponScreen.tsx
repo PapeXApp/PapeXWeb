@@ -1,12 +1,13 @@
 import type { CSSProperties } from "react"
 import { cn } from "@/lib/utils"
-import { AppKitRoot, CouponDetail, StatusBar, demoCoupons, demoStore, type KitCoupon } from "@/components/app-kit"
+import { AppKitRoot, CouponDetail, CouponRow, StatusBar, demoCoupons, demoStore, type KitCoupon } from "@/components/app-kit"
+import { clip } from "@/lib/app-kit/tokens"
 import { CheckGlyph } from "./SceneArt"
 import { loop } from "./loop"
 import s from "./hero.module.css"
 
 /**
- * Beats 3 and 4 of the hero loop, on the phone: the coupon the customer was
+ * Beats 4 and 5 of the hero loop, on the phone: the coupon the customer was
  * just sent, as the PapeX app shows it — the app kit's own CouponDetail
  * (components/app-kit, synced from PapeXV2 app/couponDetail.tsx), imported,
  * not forked. It is the site's one partner-tap coupon (sampleData `c1`,
@@ -15,8 +16,8 @@ import s from "./hero.module.css"
  *
  * Hero-only layers on top, all transform/opacity, driven by `state`:
  *   "landed"  a one-shot orange glow round the coupon card as it arrives
- *   "scan"    an orange scan line sweeps the barcode once (beat 4)
- *   "used"    a "Coupon used" stamp over the barcode (beat 4, and the still)
+ *   "scan"    a red scan line (the counter's scanner) sweeps the barcode once
+ *   "used"    a "Coupon used" stamp over the barcode (beat 5, and the still)
  *
  * Positions are app points (the kit's --pt), measured from the kit's own
  * layout of this coupon (card, stub) — see CARD / STUB below.
@@ -59,5 +60,23 @@ export function CouponScreen({ state, time }: { state: CouponState; time?: strin
         </span>
       </span>
     </AppKitRoot>
+  )
+}
+
+/**
+ * The same coupon, as it sits ON TOP of the App Clip receipt (P3-B7, Nico:
+ * "it's the receipt with a coupon on top and the items at the bottom"): a
+ * heading in the clip's own section-header style (ClipReceipt's "Items
+ * Purchased": 20pt medium, clip orange) over the app kit's CouponRow. Passed
+ * to ClipApp as its `lead`, inside ClipApp's AppKitRoot.
+ */
+export function ClipCouponLead() {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "calc(12 * var(--pt))" }}>
+      <div style={{ fontFamily: "var(--akc-font)", fontSize: "calc(20 * var(--pt))", fontWeight: 500, lineHeight: 1.2, color: clip.color.orange }}>
+        {loop.clipCouponHeading}
+      </div>
+      <CouponRow coupon={COUPON} store={STORE} mode="dark" showHeart={false} />
+    </div>
   )
 }

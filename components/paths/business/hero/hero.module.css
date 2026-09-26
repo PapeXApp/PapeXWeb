@@ -54,6 +54,12 @@
   /* The App Clip receipt body's own unit (customer.module.css .acBody),
      same formula as the /customers hero's stage. */
   --ac-u: max(0.72px, calc(var(--wp-size) * 393 / 852 / 346));
+  /* Beat 5, the "offer" pose: where the phone is when it is turned to the
+     counter (x in --hero-sx, y in --hero-sh, scale). The scanner's beam
+     (.beam) is sized from the same numbers, so the two always meet. */
+  --opx: 0.24;
+  --opy: -0.08;
+  --opk: 0.52;
 
   position: relative;
   width: 100%;
@@ -273,14 +279,15 @@
   --py: -0.1;
   --pr: -13deg;
   --pk: 0.47;
+  --pry: 0deg;
   --pt: 0.7s;
   --pe: cubic-bezier(0.45, 0, 0.35, 1);
   position: absolute;
   z-index: 4;
   left: calc(50% - var(--wp-size) * 0.2537);
   top: calc(50% - var(--wp-size) * 0.5231);
-  transform: translate(calc(var(--px) * var(--hero-sx)), calc(var(--py) * var(--hero-sh))) rotate(var(--pr))
-    scale(var(--pk));
+  transform: translate(calc(var(--px) * var(--hero-sx)), calc(var(--py) * var(--hero-sh))) perspective(1300px)
+    rotateY(var(--pry)) rotate(var(--pr)) scale(var(--pk));
   transition: transform var(--pt) var(--pe);
   filter: drop-shadow(0 30px 44px rgba(0, 0, 0, 0.45));
 }
@@ -321,35 +328,26 @@
   --pt: 1.5s;
   --pe: cubic-bezier(0.65, 0, 0.35, 1);
 }
-/* Closer still, on the coupon card that just landed (the top of the screen):
-   the card fills the scene's width and its text reads big. The phone runs
-   off the stage's foot, which the stage clips. */
-.held[data-pose="focus"] {
-  --px: 0;
-  --py: 0.237;
-  --pr: 0deg;
-  --pk: 1.5;
-  --pt: 1.4s;
-  --pe: cubic-bezier(0.45, 0, 0.25, 1);
-}
-/* Next visit: back in the hand, held up at the counter, screen to the
-   person behind it. */
+/* Back out: in the hand again, screen to us, over the counter. */
 .held[data-pose="show"] {
   --px: 0.2;
   --py: -0.07;
-  --pr: -8deg;
-  --pk: 0.6;
+  --pr: -6deg;
+  --pk: 0.56;
   --pt: 1.5s;
   --pe: cubic-bezier(0.65, 0, 0.35, 1);
 }
-/* Scanned and used: a small nudge towards the counter. */
-.held[data-pose="give"] {
-  --px: 0.17;
-  --py: -0.085;
-  --pr: -10deg;
-  --pk: 0.6;
-  --pt: 0.9s;
-  --pe: cubic-bezier(0.45, 0, 0.35, 1);
+/* Turned to the person behind the counter: the screen swings towards them
+   (a turn about the phone's upright axis), so we still see the coupon,
+   foreshortened, and their scanner can read it. */
+.held[data-pose="offer"] {
+  --px: var(--opx);
+  --py: var(--opy);
+  --pry: -40deg;
+  --pr: -7deg;
+  --pk: var(--opk);
+  --pt: 1.1s;
+  --pe: cubic-bezier(0.45, 0, 0.3, 1);
 }
 
 /* The whole cycle resets here, off stage: no transition may run back. */
@@ -404,16 +402,6 @@
   opacity: 1;
   transform: none;
 }
-/* The receipt scrolls by TRANSFORM (the clip's own list would scroll with
-   scrollTop, which is layout): its cards all move up by --rs. */
-.layer .recScroll {
-  overflow: hidden;
-}
-.recScroll > * {
-  transform: translateY(calc(var(--rs, 0px) * -1));
-  transition: transform 3.8s cubic-bezier(0.45, 0.05, 0.3, 1);
-}
-
 /* --- the coupon screen (CouponScreen.tsx): the kit's CouponDetail + hero
    layers, all in app points (--pt) ------------------------------------------ */
 .kitFill {
@@ -457,9 +445,9 @@
   right: 0;
   top: 0;
   height: calc(3 * var(--pt));
-  background: #eb7100;
-  box-shadow: 0 0 calc(12 * var(--pt)) calc(2 * var(--pt)) rgba(235, 113, 0, 0.7);
-  animation: heroScan 0.9s cubic-bezier(0.45, 0, 0.55, 1) both;
+  background: #ff3b30;
+  box-shadow: 0 0 calc(12 * var(--pt)) calc(2 * var(--pt)) rgba(255, 59, 48, 0.7);
+  animation: heroScan 0.9s cubic-bezier(0.45, 0, 0.55, 1) 0.15s both;
 }
 @keyframes heroScan {
   0% {
@@ -512,6 +500,156 @@
   flex: 0 0 auto;
 }
 
+/* --- beat 5: the cashier's scanner ------------------------------------------
+   ScannerArm (SceneArt.tsx) in the cashier's units: its 320-unit box starts
+   at (240, 250) of the cashier's 400x600 box, and it turns about the elbow
+   (300, 505) = (18.75%, 79.7%) of its own box. Down (faded, turned onto the
+   counter) until "raise"; the resting hand it replaces fades out. */
+.scanArm {
+  position: absolute;
+  left: calc(50% - 0.42 * var(--hero-sx) + 0.24 * var(--hero-sh));
+  top: calc(50% - 0.23 * var(--hero-sh));
+  width: calc(0.32 * var(--hero-sh));
+  height: calc(0.32 * var(--hero-sh));
+  overflow: visible;
+  transform-origin: 18.75% 79.7%;
+  transform: rotate(48deg);
+  opacity: 0;
+  transition:
+    transform 0.8s cubic-bezier(0.45, 0, 0.3, 1),
+    opacity 0.35s ease;
+}
+.scanArmUp {
+  transform: none;
+  opacity: 1;
+}
+.restHand {
+  transition: opacity 0.35s ease;
+}
+.restHandUp {
+  opacity: 0;
+}
+.artDevice {
+  fill: #0c1a24;
+  stroke: rgba(233, 238, 242, 0.85);
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+/* The scanner's window: red and lit; a green window fades in over it once
+   the coupon has scanned (opacity only). */
+.scanWindow,
+.scanWindowOk {
+  fill: #ff3b30;
+  stroke: none;
+  filter: drop-shadow(0 0 4px rgba(255, 59, 48, 0.9));
+}
+.scanWindowOk {
+  fill: #34c759;
+  filter: drop-shadow(0 0 4px rgba(52, 199, 89, 0.9));
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.scanWindowOkOn {
+  opacity: 1;
+}
+/* The red beam, from the scanner's window to the phone's barcode: a thin fan
+   whose box runs from the window (x) to the barcode, sized from the offer
+   pose (--opx), so they meet at any column width. Plays out once per scan
+   (transform: scaleX from the window). */
+.beam {
+  position: absolute;
+  /* under the phone (.held, z 4): it reaches the phone's edge and the red
+     line on the barcode (CouponScreen .scanLine) is where it lands */
+  z-index: 3;
+  left: calc(50% - 0.42 * var(--hero-sx) + 0.474 * var(--hero-sh));
+  top: calc(50% - 0.181 * var(--hero-sh));
+  height: calc(0.1 * var(--hero-sh));
+  width: max(calc(0.04 * var(--hero-sh)), calc((var(--opx) + 0.42) * var(--hero-sx) - 0.534 * var(--hero-sh)));
+  background: linear-gradient(90deg, rgba(255, 59, 48, 0.95), rgba(255, 59, 48, 0.35));
+  clip-path: polygon(0 45%, 100% 0, 100% 100%, 0 55%);
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 0.25s ease,
+    opacity 0.25s ease;
+}
+.beamOn {
+  transform: none;
+  opacity: 1;
+  animation: heroBeam 0.28s ease-in-out 0.3s 3 alternate;
+}
+@keyframes heroBeam {
+  to {
+    opacity: 0.6;
+  }
+}
+/* Scanned: an orange check pops over the scanner's nose, like its beep. */
+.okPop {
+  position: absolute;
+  z-index: 7;
+  left: calc(50% - 0.42 * var(--hero-sx) + 0.474 * var(--hero-sh) - 0.035 * var(--hero-sh));
+  top: calc(50% - 0.27 * var(--hero-sh));
+  width: calc(0.07 * var(--hero-sh));
+  height: calc(0.07 * var(--hero-sh));
+  border-radius: 999px;
+  background: #eb7100;
+  color: #fff;
+  box-shadow: 0 0 22px rgba(235, 113, 0, 0.6);
+  padding: calc(0.012 * var(--hero-sh));
+  opacity: 0;
+  transform: scale(0.4);
+  transition:
+    opacity 0.3s ease,
+    transform 0.5s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.okPopOn {
+  opacity: 1;
+  transform: none;
+}
+.okGlyph {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* --- the scripted finger on the screen ---------------------------------------
+   A soft touch (iOS's touch indicator), placed in app points by LoopVisual
+   (TOUCH), mounted per beat: it lands, presses in, and lifts. */
+.touch {
+  position: absolute;
+  z-index: 30;
+  width: calc(58 * var(--pt));
+  height: calc(58 * var(--pt));
+  margin: calc(-29 * var(--pt)) 0 0 calc(-29 * var(--pt));
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.34);
+  box-shadow:
+    inset 0 0 0 calc(2 * var(--pt)) rgba(255, 255, 255, 0.75),
+    0 calc(4 * var(--pt)) calc(16 * var(--pt)) rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  animation: heroTouch 0.8s cubic-bezier(0.3, 0.7, 0.3, 1) both;
+}
+@keyframes heroTouch {
+  0% {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
 /* --- the guide: four steps, and the playing one as a sentence under them -- */
 .foot {
   display: flex;
@@ -526,7 +664,7 @@
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  gap: 8px 9px;
+  gap: 8px 6px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -534,8 +672,8 @@
 .step {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13.5px;
+  gap: 5px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--flow-fg);
   white-space: nowrap;
@@ -543,7 +681,7 @@
 }
 .step::after {
   content: "\2192";
-  margin-left: 3px;
+  margin-left: 2px;
   color: var(--flow-fg-3);
   font-weight: 400;
 }
@@ -644,6 +782,12 @@
     /* Under the text on a phone: sized by the column, taller than wide so
        the close-up phone is as big as the width allows. */
     --hero-sh: clamp(300px, min(calc(100cqi * 1.39), calc(100svh - 270px)), 600px);
+    /* The narrow column closes the scene up sideways (--hero-sx), so the
+       phone turned to the counter goes a little smaller and further right,
+       clear of the scanner's nose, with its barcode still on the beam. */
+    --opx: 0.31;
+    --opy: -0.089;
+    --opk: 0.42;
   }
   .sayLine {
     font-size: 15px;

@@ -65,7 +65,7 @@ function Bubble({ children, radius, style }: { children: ReactNode; radius: numb
   );
 }
 
-export function ClipReceipt({ data, statusBar = true, footer = true, style }: { data: ClipReceiptData; statusBar?: boolean; footer?: boolean; style?: CSSProperties }) {
+export function ClipReceipt({ data, statusBar = true, footer = true, lead, style }: { data: ClipReceiptData; statusBar?: boolean; footer?: boolean; /** Optional block drawn first in the content column, above the merchant card (the /business hero puts the next-visit coupon here). Omitted everywhere else. */ lead?: ReactNode; style?: CSSProperties }) {
   const c = clip.color;
   const sp = clip.spacing;
   const insetTop = 59; // device safe area (iPhone 15/16)
@@ -76,6 +76,7 @@ export function ClipReceipt({ data, statusBar = true, footer = true, style }: { 
     <div data-app-kit-clip="" className={s.screen} style={{ background: 'var(--akc-background)', color: c.textPrimary, ...style }}>
       {/* content */}
       <div style={{ position: 'absolute', left: 0, right: 0, top: pt(insetTop + 74), padding: `0 ${pt(sp.md)}`, display: 'flex', flexDirection: 'column', gap: pt(sp.md) }}>
+        {lead}
         <ClipCard padding={22} edge={c.standardOutline}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: pt(17) }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: pt(sp.sm) }}>

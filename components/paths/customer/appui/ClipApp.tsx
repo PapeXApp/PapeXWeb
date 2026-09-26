@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { MouseEvent as ReactMouseEvent } from "react";
+import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import { AppKitRoot, ClipReceipt, type ClipReceiptData } from "@/components/app-kit";
 import { kitStyles } from "@/components/app-kit/primitives";
 import type { ReceiptLine } from "@/lib/escpos";
@@ -120,6 +120,9 @@ const DOC = "M7 3.5h7l4 4V20a.5.5 0 0 1-.5.5h-10A.5.5 0 0 1 7 20ZM14 3.5V8h4M9.5
 const BUBBLE = "M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v8.5A1.5 1.5 0 0 1 19 17h-8l-4 3.5V17H5a1.5 1.5 0 0 1-1.5-1.5V7A1.5 1.5 0 0 1 5 5.5ZM12 8.5v3.5M12 14.4v.1";
 const INFO = "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM12 11v5.5M12 7.6v.1";
 
+/** A pressed capsule (the /business hero's scripted taps). */
+const PRESSED: CSSProperties = { transform: "scale(0.95)", filter: "brightness(0.85)" };
+
 export function ClipApp({
   summary,
   interactive = false,
@@ -129,6 +132,9 @@ export function ClipApp({
   saveLabel,
   savedLabel,
   originalLabel,
+  lead,
+  contentStyle,
+  savePressed = false,
 }: {
   summary: ReceiptSummary;
   /** Real buttons (hero). The walkthrough draws the same screen inert. */
@@ -141,6 +147,14 @@ export function ClipApp({
   savedLabel: string;
   /** Title of the verbatim sheet ("Original receipt"). */
   originalLabel: string;
+  /** Optional block above the merchant card (ClipReceipt `lead`). /business
+   *  hero only: the next-visit coupon on top of the receipt. */
+  lead?: ReactNode;
+  /** Extra style on the receipt column. /business hero only: it scrolls the
+   *  column by transform. Default: none (the page is unchanged). */
+  contentStyle?: CSSProperties;
+  /** Draw the (non-interactive) Save capsule pressed in. /business hero only. */
+  savePressed?: boolean;
 }) {
   const [menu, setMenu] = useState(false);
   const [sheet, setSheet] = useState(false);
@@ -151,7 +165,7 @@ export function ClipApp({
     <AppKitRoot mode="dark" width="var(--wp-w)" className={x.root}>
       <div data-app-kit-clip="" className={x.clip}>
         <div className={cn(x.flow, !interactive && x.flowStatic)}>
-          <ClipReceipt data={data} statusBar={false} footer={false} style={{ height: "auto", minHeight: "100%" }} />
+          <ClipReceipt data={data} statusBar={false} footer={false} lead={lead} style={{ height: "auto", minHeight: "100%", ...contentStyle }} />
         </div>
 
         {/* Floating TopBar (Swift TopBar): 44pt back circle, PapeX lockup
@@ -221,7 +235,9 @@ export function ClipApp({
                   {saved ? savedLabel : saveLabel}
                 </button>
               ) : (
-                <span className={x.save}>{saveLabel}</span>
+                <span className={cn(x.save, saved && x.saveDone)} style={savePressed ? PRESSED : undefined}>
+                  {saved ? savedLabel : saveLabel}
+                </span>
               )}
               <span className={x.share} aria-hidden="true">
                 <ShareGlyph />
