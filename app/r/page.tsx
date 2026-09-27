@@ -140,15 +140,52 @@ export async function generateMetadata({
   const showAppClipBanner =
     route.kind === "sid" || (route.kind === "rid" && ridAppClipBannerEnabled());
 
+  // The page's OWN url, not the layout's `https://papex.app`. iMessage builds
+  // its link card from og:url, and the card's "View" button invokes the App
+  // Clip (or, with the app installed, opens the app) with THAT url — not the
+  // one that was sent. Inheriting the layout's root og:url made every shared
+  // receipt's "View" button open the clip with no path ("This isn't a PapeX
+  // receipt link.") or drop the app on its home screen. Safari was unaffected
+  // because its banner uses the address-bar url.
+  const receiptUrl = receiptPageUrl(params, route);
+  const title = "Your PapeX Receipt";
+  const description = "View your digital receipt from PapeX.";
+
   return {
-    title: "Your PapeX Receipt",
-    description: "View your digital receipt from PapeX.",
+    title,
+    description,
+    alternates: { canonical: receiptUrl },
+    // Declaring openGraph here replaces the layout's whole block, image included.
+    openGraph: {
+      type: "website",
+      siteName: "PapeX",
+      url: receiptUrl,
+      title,
+      description,
+      images: [{ url: "https://papex.app/og-image-v2.png", width: 1200, height: 630, alt: "PapeX" }],
+    },
     robots: {
       index: false,
       follow: false,
     },
     ...(showAppClipBanner ? { other: { "apple-itunes-app": APP_CLIP_BANNER_CONTENT } } : {}),
   };
+}
+
+/** The absolute url this request is for, keeping only the param the route
+ * acts on (sid wins, as in resolveReceiptRoute) so tracking junk never
+ * reaches a Messages card. */
+function receiptPageUrl(params: ReceiptSearchParams, route: ReturnType<typeof resolveReceiptRoute>): string {
+  const url = new URL("https://papex.app/r");
+  if (route.kind === "sid") {
+    const sid = Array.isArray(params.sid) ? params.sid[0] : params.sid;
+    if (sid) url.searchParams.set("sid", sid.trim());
+  } else if (route.kind === "rid") {
+    url.searchParams.set("rid", route.rid);
+  } else if (routeInputFrom(params).demoRequested) {
+    url.searchParams.set("demo", "1");
+  }
+  return url.toString();
 }
 
 // Every render depends on a query param + a live upstream fetch — never
