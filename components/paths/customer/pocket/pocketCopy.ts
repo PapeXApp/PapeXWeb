@@ -37,19 +37,25 @@ export const pocketCopy = {
   /** The card line printed on the receipts. Never a full number, never a brand. */
   cardLine: "Card •••• 4242",
   /**
-   * The email receipt that gets forwarded. A different store from the paper
-   * receipt (Tidewick Cafe) so the two new rows read as two receipts.
+   * The email receipt that gets forwarded, drawn as a real mail client
+   * (window chrome, From / To / date header, bold subject, the merchant's
+   * HTML receipt as the body). A different store from the paper receipt
+   * (Tidewick Cafe) so the two new rows read as two receipts. Sender and
+   * recipient use reserved `.example` / example.com domains: clearly fake.
    *
-   * The address is the app's own format, not an invented one: PapeXV2
-   * app/papexEmailSetup.tsx `EMAIL_DOMAIN = 'receipts.papex.app'`, and
-   * "yourname" is that screen's username placeholder.
+   * The forwarding address is PapeX's current receiving domain,
+   * `@papexmail.com` (Nico, 2026-09-29); "yourname" stands in for the
+   * username the app lets you pick.
    */
   email: {
     mailbox: "Inbox",
-    fromLabel: "From",
     from: "Quillbrook Market",
-    subjectLabel: "Subject",
-    subject: "Your receipt",
+    fromAddress: "receipts@quillbrook.example",
+    toLabel: "To",
+    to: "you@example.com",
+    date: "Today, 9:41 AM",
+    subject: "Your Quillbrook Market receipt",
+    brand: "Quillbrook Market",
     greeting: "Thanks for shopping with us.",
     items: [
       { name: "Sourdough loaf", amount: 6.5 },
@@ -57,10 +63,14 @@ export const pocketCopy = {
       { name: "Oat milk", amount: 5.49 },
     ],
     total: 16.84,
+    footer: "Questions? Just reply to this email.",
     reply: "Reply",
     forward: "Forward",
-    toLabel: "To",
-    address: "yourname@receipts.papex.app",
+    fromLabel: "From",
+    fwdSubjectLabel: "Subject",
+    fwdBanner: "Forwarded message",
+    fwdSubject: "Fwd: Your Quillbrook Market receipt",
+    address: "yourname@papexmail.com",
   },
   /**
    * The printed demo coupon. It is Copperpeg Hardware's "$5 off" — the same
@@ -79,7 +89,7 @@ export const pocketCopy = {
   },
   /** Reduced motion / no-JS: the static composition's image labels. */
   staticLabels: {
-    email: "An email receipt from a demo store, being forwarded to yourname@receipts.papex.app",
+    email: "An email receipt from a demo store, being forwarded to yourname@papexmail.com",
     phoneEmail: "The same receipt at the top of the Receipts tab in the PapeX app, marked Email by you",
     paperReceipt: "A paper receipt from a demo store, framed by the scanner",
     phoneReceipt: "The paper receipt saved in the Receipts tab, marked Scanned by you, above the emailed one",

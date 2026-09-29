@@ -697,46 +697,115 @@
 }
 
 /* --- the email receipt (Paper.tsx EmailReceipt) -----------------------------
-   A light mail-client card, sized in em off the flyer's --pf like the paper.
-   No text under 1em (>= 13px). Orange TEXT on this light card is #A04E00;
-   #EB7100 is used only for fills, rims and glyph strokes. Four parts start at
-   their p = 0 state and are driven by the frame: the Forward button's active
-   look, the compose strip, the address wipe, the Send press. `.emailStill`
-   pins them to the forwarded state (static version). */
+   A mail window (Apple Mail / Gmail cues, hand-built), sized in em off the
+   flyer's --pf like the paper. No text under 1em (>= 13px); grey text is
+   #5b6672 (6.1:1 on white). Orange TEXT on light is #A04E00; #EB7100 only
+   fills, rims and strokes. Four parts start at their p = 0 state and are
+   driven by the frame: the Forward press, the compose sheet (slides up from
+   the bottom edge, clipped by the window), the address wipe, the Send press.
+   `.emailStill` pins them to the forwarded state (static version). */
 .email {
-  width: 22em;
+  position: relative;
+  width: 23em;
   /* a mail client: the system face, not the page's */
   font-family: -apple-system, "SF Pro Text", system-ui, "Helvetica Neue", sans-serif;
   font-size: 1em;
-  line-height: 1.4;
+  line-height: 1.35;
   color: #1b242e;
   background: #ffffff;
-  border-radius: 1em;
+  border: 1px solid rgba(0, 18, 29, 0.12);
+  border-radius: 0.8em;
   overflow: hidden;
   box-shadow:
     0 1px 1px rgba(0, 18, 29, 0.08),
-    0 22px 48px -10px rgba(0, 18, 29, 0.34);
+    0 24px 52px -12px rgba(0, 18, 29, 0.36);
 }
-.eBar {
-  padding: 0.55em 1.1em;
-  background: #eef1f4;
-  border-bottom: 1px solid #dde2e7;
+.eChrome {
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+  padding: 0.45em 0.6em 0.45em 0.8em;
+  background: linear-gradient(#f6f7f9, #eceff2);
+  border-bottom: 1px solid #d9dee3;
+}
+.eDots {
+  display: inline-flex;
+  gap: 0.4em;
+}
+.eDot {
+  width: 0.72em;
+  height: 0.72em;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.14);
+}
+.eDotR {
+  background: #ff5f57;
+}
+.eDotY {
+  background: #febc2e;
+}
+.eDotG {
+  background: #28c840;
 }
 .eBox {
   font-weight: 600;
+  color: #33404c;
+}
+.eTools {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2em;
   color: #4a5561;
+}
+.eTool {
+  display: grid;
+  place-items: center;
+  width: 1.9em;
+  height: 1.9em;
+  border-radius: 0.45em;
+}
+.eGlyph {
+  width: 1.1em;
+  height: 1.1em;
+  flex: none;
+}
+.eFwd {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  padding: 0.25em 0.65em;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-weight: 600;
+  color: #33404c;
+}
+/* the pressed look: an orange copy of the button over it, faded in */
+.eFwdOn {
+  position: absolute;
+  inset: -1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3em;
+  border: 1.5px solid #eb7100;
+  border-radius: inherit;
+  background: #fdeee0;
+  color: #a04e00;
+  opacity: 0;
+  will-change: opacity;
 }
 .eHead {
   display: flex;
-  align-items: center;
-  gap: 0.75em;
-  padding: 0.9em 1.1em 0.7em;
-  border-bottom: 1px solid #e6e9ed;
+  align-items: flex-start;
+  gap: 0.7em;
+  padding: 0.75em 0.9em 0.3em;
 }
 .eAvatar {
   flex: none;
-  width: 2.4em;
-  height: 2.4em;
+  width: 2.5em;
+  height: 2.5em;
   border-radius: 999px;
   display: grid;
   place-items: center;
@@ -747,24 +816,86 @@
   font-size: 1.05em;
 }
 .eMeta {
+  flex: 1 1 auto;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  min-width: 0;
 }
-.eLine {
+.eFromRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6em;
+}
+.eFrom {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.eDate {
+  margin-left: auto;
+  white-space: nowrap;
+  color: #5b6672;
+}
+.eAddr {
+  color: #5b6672;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.eLabel {
-  color: #5b6672;
+.eSubject {
+  padding: 0.35em 0.9em 0.7em;
+  font-size: 1.12em;
+  font-weight: 700;
+  line-height: 1.25;
+  border-bottom: 1px solid #e6e9ed;
 }
-.eBody {
-  padding: 0.8em 1.1em 0.6em;
+/* the body + the compose sheet that slides up over it */
+.eBodyWrap {
+  position: relative;
+  overflow: hidden;
+}
+/* the merchant's HTML email, centred on a light canvas */
+.eCanvas {
+  padding: 0.8em 0.9em 0.9em;
+  background: #f1f3f5;
+}
+.eMail {
+  background: #ffffff;
+  border-radius: 0.5em;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(0, 18, 29, 0.06);
+}
+.eBand {
+  display: flex;
+  align-items: center;
+  gap: 0.55em;
+  padding: 0.6em 0.9em;
+  background: #2f6b3f;
+  color: #ffffff;
+}
+.eLogo {
+  flex: none;
+  width: 1.8em;
+  height: 1.8em;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: #ffffff;
+  color: #2f6b3f;
+  font-family: Georgia, serif;
+  font-weight: 700;
+}
+.eBrand {
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.eInner {
+  padding: 0.7em 0.9em 0.6em;
 }
 .eGreeting {
-  margin-bottom: 0.45em;
-  color: #4a5561;
+  margin-bottom: 0.4em;
+  font-weight: 600;
 }
 .eRow {
   display: flex;
@@ -779,54 +910,50 @@
   font-weight: 700;
 }
 .eCard {
-  margin-top: 0.25em;
+  margin-top: 0.2em;
   color: #5b6672;
 }
-.eActions {
-  display: flex;
-  gap: 0.6em;
-  padding: 0.5em 1.1em 0.9em;
+.eFoot {
+  padding: 0.5em 0.9em 0.6em;
+  border-top: 1px solid #eef0f2;
+  color: #5b6672;
+  text-align: center;
 }
-.eBtn {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35em;
-  padding: 0.35em 0.9em;
-  border: 1px solid #d3d9df;
-  border-radius: 999px;
-  font-weight: 600;
-  color: #33404c;
-  isolation: isolate;
-}
-.eBtnFwd {
-  color: #a04e00;
-}
-/* the active look: orange rim + tint, faded in by the frame */
-.eBtnOn {
-  position: absolute;
-  z-index: -1;
-  inset: -1px;
-  border: 1.5px solid #eb7100;
-  border-radius: inherit;
-  background: rgba(235, 113, 0, 0.12);
-  opacity: 0;
-  will-change: opacity;
-}
-.eGlyph {
-  width: 1.05em;
-  height: 1.05em;
-}
+/* Forward's compose sheet: covers the body (so it never cuts a line in
+   half) with To, Subject and the quoted original */
 .eCompose {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  padding: 0.35em 0.9em 0.8em;
+  background: #ffffff;
+  border-top: 1px solid #f0d6be;
+  border-radius: 0.8em 0.8em 0 0;
+  box-shadow: 0 -10px 28px -10px rgba(0, 18, 29, 0.3);
+  opacity: 0;
+  transform: translateY(104%);
+  will-change: transform, opacity;
+}
+.eGrab {
+  display: block;
+  width: 2.6em;
+  height: 0.28em;
+  margin: 0 auto 0.3em;
+  border-radius: 999px;
+  background: #d3d9df;
+}
+.eCRow {
   display: flex;
   align-items: center;
-  gap: 0.6em;
-  padding: 0.7em 0.8em 0.7em 1.1em;
-  background: #fff6ee;
-  border-top: 1px solid #f3dcc6;
-  opacity: 0;
-  transform: translateY(-0.6em);
-  will-change: transform, opacity;
+  gap: 0.45em;
+  min-height: 2.3em;
+}
+.eCRow + .eCRow {
+  border-top: 1px solid #e6e9ed;
+}
+.eCLabel {
+  flex: none;
+  color: #5b6672;
 }
 .eAddress {
   flex: 1 1 auto;
@@ -835,6 +962,36 @@
   white-space: nowrap;
   clip-path: inset(0 100% 0 0);
   will-change: clip-path;
+}
+.eQuote {
+  margin-top: 0.5em;
+  padding: 0.1em 0 0 0.8em;
+  border-left: 2px solid #d3d9df;
+  color: #5b6672;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.eQuote > div {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.eQuoteHead {
+  margin-bottom: 0.2em;
+  font-weight: 600;
+}
+.eQuoteTotal {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.3em;
+  color: #1b242e;
+  font-weight: 700;
+}
+.eFwdSubject {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .eSend {
   position: relative;
@@ -860,7 +1017,7 @@
   width: 1.1em;
   height: 1.1em;
 }
-.emailStill .eBtnOn,
+.emailStill .eFwdOn,
 .emailStill .eCompose {
   opacity: 1;
   transform: none;
@@ -868,3 +1025,4 @@
 .emailStill .eAddress {
   clip-path: none;
 }
+

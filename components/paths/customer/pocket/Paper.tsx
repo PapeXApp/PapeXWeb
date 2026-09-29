@@ -135,50 +135,78 @@ export const PaperCoupon = forwardRef<HTMLDivElement, PaperProps>(function Paper
 })
 
 type EmailRefs = {
-  /** The Forward button's active (orange) look, faded in by the scene. */
+  /** The Forward button's pressed (orange) look, faded in by the scene. */
   forwardOnRef?: Ref<HTMLSpanElement>
-  /** The compose strip ("To  yourname@…  ⬆"), faded + risen in. */
+  /** The "Fwd:" compose sheet, slid up from the window's bottom edge. */
   composeRef?: Ref<HTMLDivElement>
-  /** The address, typed out by a clip-path wipe. */
+  /** The To address, typed out by a clip-path wipe. */
   addressRef?: Ref<HTMLSpanElement>
   /** The Send button's pressed look. */
   sendOnRef?: Ref<HTMLSpanElement>
 }
 
+const stroke = {
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 2,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+}
+
 function ForwardGlyph() {
   return (
-    <svg viewBox="0 0 24 24" className={s.eGlyph} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M14 6l6 6-6 6" />
-      <path d="M20 12H9a5 5 0 0 0-5 5v1" />
+    <svg viewBox="0 0 24 24" className={s.eGlyph} aria-hidden="true">
+      <path {...stroke} d="M14 6l6 6-6 6" />
+      <path {...stroke} d="M20 12H9a5 5 0 0 0-5 5v1" />
     </svg>
   )
 }
 
 function ReplyGlyph() {
   return (
-    <svg viewBox="0 0 24 24" className={s.eGlyph} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M10 6l-6 6 6 6" />
-      <path d="M4 12h11a5 5 0 0 1 5 5v1" />
+    <svg viewBox="0 0 24 24" className={s.eGlyph} aria-hidden="true">
+      <path {...stroke} d="M10 6l-6 6 6 6" />
+      <path {...stroke} d="M4 12h11a5 5 0 0 1 5 5v1" />
+    </svg>
+  )
+}
+
+function TrashGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" className={s.eGlyph} aria-hidden="true">
+      <path {...stroke} d="M4.5 7h15M9.5 7V4.8h5V7M6.5 7l.9 12.2h9.2L17.5 7" />
     </svg>
   )
 }
 
 function SendGlyph() {
   return (
-    <svg viewBox="0 0 24 24" className={s.eSendGlyph} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 19V5" />
-      <path d="m6 11 6-6 6 6" />
+    <svg viewBox="0 0 24 24" className={s.eSendGlyph} aria-hidden="true">
+      <path {...stroke} strokeWidth={2.4} d="M12 19V5" />
+      <path {...stroke} strokeWidth={2.4} d="m6 11 6-6 6 6" />
     </svg>
   )
 }
 
+/** Reply + Forward as they sit in the toolbar; the pressed copy overlays it. */
+function ForwardLabel() {
+  return (
+    <>
+      <ForwardGlyph />
+      {pocketCopy.email.forward}
+    </>
+  )
+}
+
 /**
- * The email receipt of the §02 headline beat: a small mail-client card (From
- * Quillbrook Market, Subject "Your receipt", the receipt in the body, Reply /
- * Forward), then a compose strip forwarding it to the app's address format,
- * `yourname@receipts.papex.app`. The scene lights Forward, brings in the
- * strip, types the address, presses Send, and flies the card into the phone.
- * `still` draws the forwarded state (static version).
+ * The email receipt of the §02 headline beat, drawn as a real mail client:
+ * window chrome (traffic lights, "Inbox", Delete / Reply / Forward), the
+ * message header (sender + address, To, date, bold subject), and the body as
+ * the merchant's HTML receipt email (colour band + logo, greeting, item table,
+ * total, card line, footer). Pressing Forward slides up a compose sheet —
+ * "Fwd: Your Quillbrook Market receipt" — whose To field types out
+ * `yourname@papexmail.com`; Send; then the scene flies the whole window into
+ * the phone. `still` draws the forwarded state (static version).
  */
 export const EmailReceipt = forwardRef<HTMLDivElement, EmailRefs & { className?: string; still?: boolean }>(function EmailReceipt(
   { className, still = false, forwardOnRef, composeRef, addressRef, sendOnRef },
@@ -188,54 +216,103 @@ export const EmailReceipt = forwardRef<HTMLDivElement, EmailRefs & { className?:
   return (
     <div ref={ref} className={cn(s.flyer, className)}>
       <div className={cn(s.email, still && s.emailStill)}>
-        <div className={s.eBar}>
+        {/* window chrome + Mail's message toolbar */}
+        <div className={s.eChrome}>
+          <span className={s.eDots} aria-hidden="true">
+            <span className={cn(s.eDot, s.eDotR)} />
+            <span className={cn(s.eDot, s.eDotY)} />
+            <span className={cn(s.eDot, s.eDotG)} />
+          </span>
           <span className={s.eBox}>{e.mailbox}</span>
+          <span className={s.eTools}>
+            <span className={s.eTool} aria-hidden="true">
+              <TrashGlyph />
+            </span>
+            <span className={s.eTool} aria-label={e.reply}>
+              <ReplyGlyph />
+            </span>
+            <span className={s.eFwd}>
+              <ForwardLabel />
+              <span ref={forwardOnRef} className={s.eFwdOn} aria-hidden="true">
+                <ForwardLabel />
+              </span>
+            </span>
+          </span>
         </div>
+
+        {/* the message header */}
         <div className={s.eHead}>
           <span className={s.eAvatar}>Q</span>
           <span className={s.eMeta}>
-            <span className={s.eLine}>
-              <span className={s.eLabel}>{e.fromLabel}</span> <strong>{e.from}</strong>
+            <span className={s.eFromRow}>
+              <strong className={s.eFrom}>{e.from}</strong>
+              <span className={s.eDate}>{e.date}</span>
             </span>
-            <span className={s.eLine}>
-              <span className={s.eLabel}>{e.subjectLabel}</span> {e.subject}
+            <span className={s.eAddr}>&lt;{e.fromAddress}&gt;</span>
+            <span className={s.eAddr}>
+              {e.toLabel}: {e.to}
             </span>
           </span>
         </div>
-        <div className={s.eBody}>
-          <div className={s.eGreeting}>{e.greeting}</div>
-          {e.items.map((item) => (
-            <div key={item.name} className={s.eRow}>
-              <span>{item.name}</span>
-              <span>${money(item.amount)}</span>
+        <div className={s.eSubject}>{e.subject}</div>
+
+        <div className={s.eBodyWrap}>
+          {/* the body: the merchant's HTML receipt email */}
+          <div className={s.eCanvas}>
+            <div className={s.eMail}>
+              <div className={s.eBand}>
+                <span className={s.eLogo}>Q</span>
+                <span className={s.eBrand}>{e.brand}</span>
+              </div>
+              <div className={s.eInner}>
+                <div className={s.eGreeting}>{e.greeting}</div>
+                {e.items.map((item) => (
+                  <div key={item.name} className={s.eRow}>
+                    <span>{item.name}</span>
+                    <span>${money(item.amount)}</span>
+                  </div>
+                ))}
+                <div className={cn(s.eRow, s.eTotal)}>
+                  <span>Total</span>
+                  <span>${money(e.total)}</span>
+                </div>
+                <div className={s.eCard}>{pocketCopy.cardLine}</div>
+              </div>
+              <div className={s.eFoot}>{e.footer}</div>
             </div>
-          ))}
-          <div className={cn(s.eRow, s.eTotal)}>
-            <span>Total</span>
-            <span>${money(e.total)}</span>
           </div>
-          <div className={s.eCard}>{pocketCopy.cardLine}</div>
-        </div>
-        <div className={s.eActions}>
-          <span className={s.eBtn}>
-            <ReplyGlyph />
-            {e.reply}
-          </span>
-          <span className={cn(s.eBtn, s.eBtnFwd)}>
-            <span ref={forwardOnRef} className={s.eBtnOn} aria-hidden="true" />
-            <ForwardGlyph />
-            {e.forward}
-          </span>
-        </div>
-        <div ref={composeRef} className={s.eCompose}>
-          <span className={s.eLabel}>{e.toLabel}</span>
-          <span ref={addressRef} className={s.eAddress}>
-            {e.address}
-          </span>
-          <span className={s.eSend}>
-            <span ref={sendOnRef} className={s.eSendOn} aria-hidden="true" />
-            <SendGlyph />
-          </span>
+
+          {/* Forward: the compose sheet slides up over the body */}
+          <div ref={composeRef} className={s.eCompose}>
+            <span className={s.eGrab} aria-hidden="true" />
+            <div className={s.eCRow}>
+              <span className={s.eCLabel}>{e.toLabel}:</span>
+              <span ref={addressRef} className={s.eAddress}>
+                {e.address}
+              </span>
+              <span className={s.eSend}>
+                <span ref={sendOnRef} className={s.eSendOn} aria-hidden="true" />
+                <SendGlyph />
+              </span>
+            </div>
+            <div className={s.eCRow}>
+              <span className={s.eCLabel}>{e.fwdSubjectLabel}:</span>
+              <span className={s.eFwdSubject}>{e.fwdSubject}</span>
+            </div>
+            <div className={s.eQuote}>
+              <div className={s.eQuoteHead}>{e.fwdBanner}</div>
+              <div>
+                {e.fromLabel}: {e.from} &lt;{e.fromAddress}&gt;
+              </div>
+              <div>
+                {e.fwdSubjectLabel}: {e.subject}
+              </div>
+              <div className={s.eQuoteTotal}>
+                <span>Total</span>
+                <span>${money(e.total)}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
