@@ -9,7 +9,8 @@
 //     forever" (both off-limits here) -> `txSub`.
 //   - Devices subtitle: "RDH boxes" -> "PapeX devices".
 // The Intelligence tabs are left out on purpose (not a live feature).
-// Everything shown is invented and labelled `demoTag`.
+// Everything shown is invented and labelled `demoTag`. "Request a change"
+// (Profile) is left out: the demo can't send one.
 
 export const merchantCopy = {
   brand: "papex",
@@ -28,6 +29,9 @@ export const merchantCopy = {
   txTitle: "Transactions",
   txSub: "Every receipt your PapeX device captures, searchable.",
   exportCsv: "Export CSV",
+  // Demo only: the button never downloads anything here (Nico 2026-09-29).
+  exported: "Exported",
+  exportedNote: "In your dashboard this downloads every sale as a CSV.",
   searchPlaceholder: "Search receipt #, item, card, or merchant…",
   min: "Min $",
   max: "Max $",
@@ -39,6 +43,9 @@ export const merchantCopy = {
   noMatchTitle: "No matching transactions",
   noMatchBody: "Try a different search term, widen the date range, or clear a filter.",
   clearFilters: "Clear filters",
+  showMore: "Show more",
+  showing: (shown: number, total: number) => `Showing ${shown.toLocaleString("en-US")} of ${total.toLocaleString("en-US")}`,
+  card: "Card",
 
   // Receipt (app/merchant/tx/[sid]/page.tsx)
   back: "Back to transactions",
@@ -53,7 +60,8 @@ export const merchantCopy = {
     { value: "30d", label: "30 days" },
   ],
   tiles: { count: "Transactions", gross: "Gross", avg: "Avg ticket", tap: "Tap rate" },
-  tapSub: (claimed: number, total: number) => `${claimed} of ${total} receipts viewed on PapeX`,
+  tapSub: (claimed: number, total: number) =>
+    `${claimed.toLocaleString("en-US")} of ${total.toLocaleString("en-US")} receipts viewed on PapeX`,
   byHour: "By hour of day",
   byDay: "By day of week",
   topItems: "Top items",
@@ -65,18 +73,23 @@ export const merchantCopy = {
   devicesSub: "Your PapeX devices and when they last checked in.",
   lastUpload: "last upload",
 
-  // Profile (app/merchant/profile/page.tsx)
+  // Profile (app/merchant/profile/page.tsx). No "Request a change" here: it
+  // can't do anything in the demo, so it isn't shown (Nico 2026-09-29).
   profileTitle: "Profile",
-  profileSub: "What customers see on your PapeX profile. Want something changed? Send us a request.",
-  requestChange: "Request a change",
-  requestNote: "In your dashboard, this sends your request to the PapeX team. They make the change for you.",
-  about: "A neighborhood coffee bar. Tap your phone on the PapeX device at the counter to get your receipt.",
+  profileSub: "What customers see on your PapeX profile.",
+  profileCaption: "How it looks in the PapeX app",
   blurb: "Coffee, pastries and a window seat.",
   category: "Cafe",
+  aboutTitle: "About",
+  about: "A neighbourhood coffee bar. Tap your phone on the PapeX device at the counter to get your receipt.",
+  hoursTitle: "Hours",
   hours: [
     ["Mon–Fri", "7:00 AM – 6:00 PM"],
     ["Sat–Sun", "8:00 AM – 4:00 PM"],
   ],
+  locationTitle: "Location",
+  // Invented, like the rest of the shop (same header as every demo receipt).
+  address: ["48 Demo Street", "San Francisco, CA 94100"],
 
   // The coupons mock (inside Profile; not a screen of the live dashboard yet)
   coupons: {

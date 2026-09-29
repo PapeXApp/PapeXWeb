@@ -1,19 +1,20 @@
 "use client"
 
-import { useEffect, useMemo, useState, type ReactNode } from "react"
-import { ArrowLeft, BarChart3, ChevronRight, Download, Radio, Receipt, Search, Store, Ticket } from "lucide-react"
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import { ArrowLeft, BarChart3, Check, ChevronRight, Download, Radio, Receipt, Search, Store } from "lucide-react"
 // The LIVE dashboard's own presentational pieces, imported read-only. Nothing
 // in app/merchant is edited for this demo, and nothing here can reach it: the
 // data below is passed in from the marketing page, never fetched, and there
 // is no URL/cookie switch — merchant.papex.app never renders this file.
-import { Button, Card, DeviceStatusPill, FilterPill, Input, PaymentChip, StatTile } from "@/app/merchant/ui/primitives"
+import { Button, Card, DeviceStatusPill, FilterPill, Input, StatTile } from "@/app/merchant/ui/primitives"
 import { T } from "@/app/merchant/ui/tokens"
 import { formatMoney, hourLabel, hourLabelLong } from "@/app/merchant/ui/format"
 import { BarChart } from "@/app/merchant/insights/BarChart"
-import { BrandHeaderPreview } from "@/app/merchant/profile/BrandHeaderPreview"
-import { SectionCard } from "@/app/merchant/profile/sections"
 import { ReceiptView } from "@/app/r/ui"
-import { demoSales } from "../demoSales"
+import { PapexCafeLogo } from "../../PapexCafeLogo"
+import { cafeCoupons } from "../cafeCouponStore"
+import { demoSales, type DemoSale } from "../demoSales"
+import { CafeProfile } from "./CafeProfile"
 import { merchantCopy as c } from "./copy"
 import { DOW, demoDevices, insightsFor, type DemoWindow } from "./data"
 
@@ -27,14 +28,21 @@ import { DOW, demoDevices, insightsFor, type DemoWindow } from "./data"
  * breakpoint, because the "laptop" is a drawing on a wide page.
  *
  * The Intelligence tabs are not shown (not a live feature). Profile carries
- * a coupons MOCK, labelled "Demo data" like everything else here.
+ * a coupons MOCK, labelled "Demo data" like everything else here; its
+ * switches write the shared coupon store (cafeCouponStore.ts) the demo iPhone
+ * reads. Nothing here leaves the page: "Export CSV" only shows that it would
+ * have downloaded, and there is no "Request a change" (Nico 2026-09-29).
+ *
+ * ~2,200 invented sales: the table renders the delivered sale plus the newest
+ * PAGE of the rest that match, with "Show more"; search and filters run over
+ * every row.
  *
  * Scroll-scene contract (RetainStory.tsx): the delivered sale's row is
  * `data-fill="0"` and the count line `data-fill="1"` / `data-empty="1"`. Every
- * view stays mounted (hidden with `display: none`), and every row is always
- * rendered (filtered ones hidden), so the scene's once-collected elements
- * never go stale. `reset` changing puts everything back to the delivered
- * frame.
+ * view stays mounted (hidden with `display: none`), and the delivered row is
+ * always rendered as the table's first row (hidden when filtered out), so the
+ * scene's once-collected elements never go stale. `reset` changing puts
+ * everything back to the delivered frame (coupons included).
  */
 
 type View = "tx" | "insights" | "devices" | "profile"
@@ -47,6 +55,23 @@ const NAV: { id: View; label: string; icon: typeof Receipt }[] = [
 ]
 
 const show = (on: boolean) => (on ? undefined : ({ display: "none" } as const))
+
+/** Rows per page in Transactions. */
+const PAGE = 50
+/** How long "Exported" stays on the button. */
+const EXPORTED_MS = 3500
+
+/** The payment cell: invented cards only ever show as "Card •••• 4242". */
+function CardChip({ last4 }: { last4: string | null }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className="rounded px-[6px] py-[2px] text-[10px] font-bold uppercase tracking-[0.4px]" style={{ background: "#334155", color: "#FFFFFF" }}>
+        {c.card}
+      </span>
+      {last4 ? <span style={{ color: T.textSecondary }}>{`•••• ${last4}`}</span> : null}
+    </span>
+  )
+}
 
 function DemoPill() {
   return (
@@ -90,8 +115,17 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
   const [hour, setHour] = useState<number | null>(null)
   const [dow, setDow] = useState<number | null>(null)
   const [win, setWin] = useState<DemoWindow>("7d")
-  const [note, setNote] = useState(false)
-  const [coupons, setCoupons] = useState<boolean[]>(() => c.coupons.items.map((i) => i.on))
+  const [limit, setLimit] = useState(PAGE)
+  const [exported, setExported] = useState(false)
+  const exportTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastReset = useRef(reset)
+
+  useEffect(
+    () => () => {
+      if (exportTimer.current) clearTimeout(exportTimer.current)
+    },
+    [],
+  )
 
   // Back to the frame the scroll scene delivered.
   useEffect(() => {
@@ -105,14 +139,19 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
     setHour(null)
     setDow(null)
     setWin("7d")
-    setNote(false)
-    setCoupons(c.coupons.items.map((i) => i.on))
+    setLimit(PAGE)
+    setExported(false)
+    // The shared coupons go back too, but only when the scene actually resets
+    // (not on mount), so mounting a dashboard never undoes a visitor's switch.
+    if (reset !== lastReset.current) {
+      lastReset.current = reset
+      cafeCoupons.reset()
+    }
   }, [reset])
 
   const go = (v: View) => {
     setView(v)
     setOpenId(null)
-    setNote(false)
   }
 
   const match = useMemo(() => {
@@ -137,7 +176,13 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
       return true
     }
   }, [q, min, max, from, to, hour, dow])
-  const matched = sales.filter(match).length
+  const deliveredShown = match(delivered)
+  const rest = useMemo(() => sales.slice(1).filter(match), [sales, match])
+  const matched = rest.length + (deliveredShown ? 1 : 0)
+  // a new search or filter starts again from the newest page
+  useEffect(() => setLimit(PAGE), [match])
+  const page = rest.slice(0, Math.max(0, limit - (deliveredShown ? 1 : 0)))
+  const shownCount = page.length + (deliveredShown ? 1 : 0)
   const anyFilter = Boolean(q || min || max || from || to || hour != null || dow != null)
   const clearAll = () => {
     setQ("")
@@ -172,18 +217,11 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
     go("tx")
   }
 
+  // Demo only: nothing is downloaded, the button just shows it worked.
   const exportCsv = () => {
-    const rows = sales.filter(match)
-    const csv = [
-      "Date,Time,Receipt #,Total,Payment,Card last 4",
-      ...rows.map((r) => [r.iso, r.time, r.receiptNumber, r.total.toFixed(2), r.network ?? "", r.lastFour ?? ""].join(",")),
-    ].join("\n")
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }))
-    const a = document.createElement("a")
-    a.href = url
-    a.download = "papex-demo-transactions.csv"
-    a.click()
-    setTimeout(() => URL.revokeObjectURL(url), 1000)
+    setExported(true)
+    if (exportTimer.current) clearTimeout(exportTimer.current)
+    exportTimer.current = setTimeout(() => setExported(false), EXPORTED_MS)
   }
 
   const open = openId ? sales.find((s) => s.id === openId) : undefined
@@ -204,16 +242,69 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
     </div>
   )
 
+  const row = (t: DemoSale) => (
+    <tr
+      key={t.id}
+      data-fill={t.delivered ? 0 : undefined}
+      data-kind={t.delivered ? "rise" : undefined}
+      onClick={() => setOpenId(t.id)}
+      className="cursor-pointer border-b transition hover:bg-white/[0.03]"
+      style={{ borderColor: T.divider, ...(t.delivered ? show(deliveredShown) : undefined) }}
+    >
+      <td className="whitespace-nowrap px-5 py-3.5">
+        <div style={{ color: T.text }}>{t.day}</div>
+        <div className="text-xs" style={{ color: T.textMuted }}>
+          {t.time}
+        </div>
+      </td>
+      <td className="whitespace-nowrap px-5 py-3.5 font-medium" style={{ color: T.text }}>
+        {formatMoney(t.total)}
+      </td>
+      <td className="whitespace-nowrap px-5 py-3.5">
+        <CardChip last4={t.lastFour} />
+      </td>
+      <td className="whitespace-nowrap px-5 py-3.5" style={{ color: T.textSecondary }}>
+        {t.receiptNumber}
+      </td>
+      <td className="whitespace-nowrap px-5 py-3.5 text-right">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            setOpenId(t.id)
+          }}
+          aria-label={`Open receipt ${t.order}, ${t.day} ${t.time}, ${formatMoney(t.total)}`}
+          className="inline-flex rounded-full p-1 outline-none focus-visible:ring-2 focus-visible:ring-[#FB8500]/70"
+        >
+          <ChevronRight className="h-4 w-4" style={{ color: T.textMuted }} />
+        </button>
+      </td>
+    </tr>
+  )
+
   const tx = (
     <div className="flex flex-col gap-5" style={show(view === "tx" && !open)}>
-      {title(
-        c.txTitle,
-        c.txSub,
-        <Button variant="outline" onClick={exportCsv}>
-          <Download className="h-4 w-4" strokeWidth={2} />
-          {c.exportCsv}
-        </Button>,
-      )}
+      <div>
+        {title(
+          c.txTitle,
+          c.txSub,
+          <Button variant="outline" onClick={exportCsv} className={exported ? "!border-[#10B981]/60" : ""}>
+            {exported ? (
+              <Check className="h-4 w-4" strokeWidth={2.5} style={{ color: T.success }} />
+            ) : (
+              <Download className="h-4 w-4" strokeWidth={2} />
+            )}
+            {exported ? c.exported : c.exportCsv}
+          </Button>,
+        )}
+        <p
+          role="status"
+          className={exported ? "mt-3 rounded-2xl border px-4 py-2.5 text-sm" : ""}
+          style={exported ? { borderColor: "rgba(16,185,129,0.35)", background: "rgba(16,185,129,0.1)", color: T.textSecondary } : undefined}
+        >
+          {exported ? c.exportedNote : ""}
+        </p>
+      </div>
       <Card className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-[200px] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: T.textMuted }} />
@@ -266,10 +357,10 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
         <span className="ml-auto grid text-xs" style={{ color: T.textMuted }} aria-live="polite">
           {/* the "before" twin: hidden unless the scroll scene shows it */}
           <span data-empty={1} style={{ gridArea: "1 / 1", opacity: 0 }} aria-hidden="true">
-            {`${matched - 1} matching transactions`}
+            {`${(matched - 1).toLocaleString("en-US")} matching transactions`}
           </span>
           <span data-fill={1} data-kind="fade" style={{ gridArea: "1 / 1" }}>
-            {`${matched} matching transaction${matched === 1 ? "" : "s"}`}
+            {`${matched.toLocaleString("en-US")} matching transaction${matched === 1 ? "" : "s"}`}
           </span>
         </span>
       </div>
@@ -302,49 +393,21 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
                 </tr>
               </thead>
               <tbody>
-                {sales.map((t) => (
-                  <tr
-                    key={t.id}
-                    data-fill={t.delivered ? 0 : undefined}
-                    data-kind={t.delivered ? "rise" : undefined}
-                    onClick={() => setOpenId(t.id)}
-                    className="cursor-pointer border-b transition hover:bg-white/[0.03]"
-                    style={{ borderColor: T.divider, ...show(match(t)) }}
-                  >
-                    <td className="whitespace-nowrap px-5 py-3.5">
-                      <div style={{ color: T.text }}>{t.day}</div>
-                      <div className="text-xs" style={{ color: T.textMuted }}>
-                        {t.time}
-                      </div>
-                    </td>
-                    <td className="whitespace-nowrap px-5 py-3.5 font-medium" style={{ color: T.text }}>
-                      {formatMoney(t.total)}
-                    </td>
-                    <td className="whitespace-nowrap px-5 py-3.5">
-                      <PaymentChip method={t.network} last4={t.lastFour} />
-                    </td>
-                    <td className="whitespace-nowrap px-5 py-3.5" style={{ color: T.textSecondary }}>
-                      {t.receiptNumber}
-                    </td>
-                    <td className="whitespace-nowrap px-5 py-3.5 text-right">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setOpenId(t.id)
-                        }}
-                        aria-label={`Open receipt ${t.order}, ${t.day} ${t.time}, ${formatMoney(t.total)}`}
-                        className="inline-flex rounded-full p-1 outline-none focus-visible:ring-2 focus-visible:ring-[#FB8500]/70"
-                      >
-                        <ChevronRight className="h-4 w-4" style={{ color: T.textMuted }} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {/* always the first row, so the scene's collected element never goes stale */}
+                {row(delivered)}
+                {page.map(row)}
               </tbody>
             </table>
           </div>
         </Card>
+        <div className="mt-3 flex items-center justify-between gap-3 text-xs" style={{ color: T.textMuted }}>
+          <span>{c.showing(shownCount, matched)}</span>
+          {shownCount < matched ? (
+            <Button variant="outline" onClick={() => setLimit((n) => n + PAGE)}>
+              {c.showMore}
+            </Button>
+          ) : null}
+        </div>
       </div>
     </div>
   )
@@ -369,7 +432,7 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
             {`${DOW[open.dow]}, ${open.day}, ${open.iso.slice(0, 4)}, ${open.time}`}
           </p>
         </div>
-        <PaymentChip method={open.network} last4={open.lastFour} />
+        <CardChip last4={open.lastFour} />
       </div>
       <ReceiptView summary={open.summary} hasStructure={open.hasStructure} />
     </div>
@@ -403,7 +466,7 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
         </div>
       </div>
       <div className={`grid gap-3 ${desk ? "grid-cols-4" : "grid-cols-2"}`}>
-        <StatTile label={c.tiles.count} value={String(ins.count)} />
+        <StatTile label={c.tiles.count} value={ins.count.toLocaleString("en-US")} />
         <StatTile label={c.tiles.gross} value={formatMoney(ins.gross)} />
         <StatTile label={c.tiles.avg} value={formatMoney(ins.avgTicket)} />
         <Card className="flex flex-col gap-1.5">
@@ -508,79 +571,10 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
     </div>
   )
 
-  const request = () => setNote(true)
   const profile = (
     <div className="flex flex-col gap-5" style={show(view === "profile")}>
-      {title(
-        c.profileTitle,
-        c.profileSub,
-        <Button onClick={request}>{c.requestChange}</Button>,
-      )}
-      {note ? (
-        <p role="status" className="rounded-2xl border px-4 py-3 text-sm" style={{ borderColor: T.glassBorder, background: "rgba(16,185,129,0.1)", color: T.textSecondary }}>
-          {c.requestNote}
-        </p>
-      ) : null}
-      <BrandHeaderPreview name={c.merchantLabel} brandColor="#6B3E26" brandColorSecondary="#C9894B" category={c.category} blurb={c.blurb} />
-
-      {/* The coupons MOCK: not a screen of the live dashboard yet. */}
-      <Card className="flex flex-col gap-4">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full" style={{ background: T.orangeDim }}>
-              <Ticket className="h-4 w-4" style={{ color: T.orange }} strokeWidth={2} />
-            </span>
-            <h2 className="truncate font-barlow text-base font-medium" style={{ color: T.text }}>
-              {c.coupons.title}
-            </h2>
-          </div>
-          <DemoPill />
-        </div>
-        <p className="text-sm" style={{ color: T.textSecondary }}>
-          {c.coupons.lead}
-        </p>
-        <div className="flex flex-col gap-2">
-          {c.coupons.items.map((it, i) => (
-            <div key={it.title} className="flex items-center justify-between gap-3 rounded-xl border px-3.5 py-3" style={{ borderColor: T.glassBorder }}>
-              <span className="text-sm" style={{ color: T.text }}>
-                {it.title}
-              </span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={coupons[i]}
-                aria-label={it.title}
-                onClick={() => setCoupons((cur) => cur.map((v, k) => (k === i ? !v : v)))}
-                className="flex items-center gap-2 text-xs font-medium outline-none focus-visible:ring-2 focus-visible:ring-[#FB8500]/70 rounded-full"
-                style={{ color: coupons[i] ? T.text : T.textMuted }}
-              >
-                {coupons[i] ? c.coupons.on : c.coupons.off}
-                <span className="relative h-5 w-9 rounded-full transition" style={{ background: coupons[i] ? T.orange : "rgba(255,255,255,0.14)" }}>
-                  <span className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white transition-transform" style={{ transform: coupons[i] ? "translateX(16px)" : "none" }} />
-                </span>
-              </button>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      <div className={`grid gap-3 ${desk ? "grid-cols-2" : ""}`}>
-        <SectionCard section="about" onRequest={request}>
-          <p className="text-sm leading-relaxed" style={{ color: T.textSecondary }}>
-            {c.about}
-          </p>
-        </SectionCard>
-        <SectionCard section="hours" onRequest={request}>
-          <dl className="flex flex-col gap-1.5 text-sm">
-            {c.hours.map(([d, h]) => (
-              <div key={d} className="flex justify-between gap-3">
-                <dt style={{ color: T.textSecondary }}>{d}</dt>
-                <dd style={{ color: T.text }}>{h}</dd>
-              </div>
-            ))}
-          </dl>
-        </SectionCard>
-      </div>
+      {title(c.profileTitle, c.profileSub)}
+      <CafeProfile desk={desk} demoPill={<DemoPill />} />
     </div>
   )
 
@@ -623,9 +617,7 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
           </nav>
           <div className="mt-auto flex flex-col gap-3 border-t pt-4" style={{ borderColor: T.glassBorder }}>
             <div className="flex items-center gap-2.5 px-2">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-medium" style={{ background: T.orangeDim, color: T.orange }}>
-                N
-              </div>
+              <PapexCafeLogo size={32} className="shrink-0" />
               <span className="min-w-0 truncate text-sm" style={{ color: T.textSecondary }}>
                 {c.merchantLabel}
               </span>
@@ -650,7 +642,10 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
       {/* Mobile top bar (below the phone's status bar area) */}
       <header className="absolute inset-x-0 top-0 z-20 flex items-center justify-between border-b px-4 pb-3 pt-12" style={{ borderColor: T.glassBorder, background: "rgba(12,15,20,0.85)" }}>
         <Brand small />
-        <DemoPill />
+        <div className="flex items-center gap-2">
+          <PapexCafeLogo size={24} />
+          <DemoPill />
+        </div>
       </header>
       {/* Mobile bottom nav */}
       <nav className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-around border-t px-2 pb-5 pt-2" style={{ borderColor: T.glassBorder, background: "rgba(12,15,20,0.9)" }} aria-label="Dashboard">
