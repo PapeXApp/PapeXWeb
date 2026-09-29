@@ -276,34 +276,46 @@ export const featuresContent = {
 };
 
 export const howItWorksContent = {
-  eyebrow: "How it works",
-  // Web 2.1: step 2 is NOT a tap — the receipt opens by itself — so the old
-  // "three taps" headline is gone.
-  headline: "No app to get it. The free app to keep it.",
-  phoneAriaLabel: "Step through how PapeX works",
+  // Web 2.1 P4 (Nico, 2026-09-28): this walkthrough moved from §02 to §06,
+  // after "Why does it matter?", because most visitors can't tap yet. The
+  // framing is "live, and spreading": available TODAY at select Bay Area
+  // stores — never "coming soon". The thing you tap is the PapeX tag on the
+  // counter (NfcTag.tsx), not the RDH box.
+  eyebrow: "Now in the Bay Area",
+  headline: "At select stores, just tap your phone for your receipt.",
+  phoneAriaLabel: "Step through a tap on a PapeX tag",
   /** Cue line under the phone, one per step — index 2's "Replay" is bold in the design. */
   cues: [
-    "Tap the phone on the PapeX device",
+    "Tap the phone on the PapeX tag",
     "It opened by itself. Tap to save it to PapeX",
     "That's it: saved, searchable, yours.",
   ],
   replayLabel: "Replay",
   /** The same cues when the section is scroll-pinned (desktop): scrolling is
-   *  the other way through, and a tap on the last step moves on to the next
-   *  section instead of replaying — hence "Continue". */
+   *  the other way through. */
   scrollCues: [
-    "Scroll, or tap the phone on the PapeX device",
+    "Scroll, or tap the phone on the PapeX tag",
     "It opened by itself. Keep scrolling to save it",
     "That's it: saved, searchable, yours.",
   ],
   continueLabel: "Continue",
+  /** The one privacy promise here. It is true of the TAP only (the app has
+   *  an account), so it lives with the tap, not in a general privacy list. */
+  privacyNote: "A tap sends your receipt and nothing else: no name, no email, no sign-up.",
+  /** What is printed on the counter tag, and its accessible name. */
+  tag: {
+    line: "Tap for your receipt",
+    sub: "No app needed",
+    label:
+      "The PapeX tag by the register: a small acrylic stand with the PapeX logo, a phone-tap icon and the words \u201cTap for your receipt\u201d.",
+  },
   steps: [
     {
       number: "01",
-      title: "Tap at checkout",
-      body: "Hold your phone to the PapeX device at the register. No app needed.",
+      title: "Tap the PapeX tag",
+      body: "Hold your phone to it. No app needed.",
       phoneHeadline: "Ready to tap",
-      phoneSubline: "Hold your phone to the device",
+      phoneSubline: "Hold your phone to the PapeX tag",
     },
     {
       number: "02",
@@ -315,9 +327,8 @@ export const howItWorksContent = {
     {
       number: "03",
       title: "Save it to PapeX",
-      // Web 2.1 (Nico, 2026-09-24): saved receipts sit next to any coupons
-      // from stores you shop at — coupons are live, not "coming soon".
-      body: "Save it to the free PapeX app and it's always searchable — right alongside coupons from stores you shop at.",
+      // Saving is a step the SHOPPER takes (the tap alone saves nothing).
+      body: "Save it to the free PapeX app and it's always searchable, right next to any coupons you've saved.",
     },
   ],
 };

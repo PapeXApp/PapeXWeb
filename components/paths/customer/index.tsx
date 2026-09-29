@@ -11,7 +11,7 @@ import { Personas } from "./Personas";
 import { Features } from "./Features";
 import { HowItWorks } from "./HowItWorks";
 import { Vision } from "./Vision";
-import { Privacy } from "./Privacy";
+import { Pocket } from "./Pocket";
 import { customerFaq, customerFaqHeading } from "./faq";
 import styles from "./customer.module.css";
 
@@ -79,12 +79,12 @@ export function CustomerPath() {
     <div className={styles.path}>
       <FlowGround initial="light" footer={<SiteFooter inFlow />}>
         <Hero />
-        <HowItWorks />
-        <MarqueeBand />
-        <Problem />
+        <Pocket />
         <Personas />
         <Features />
-        <Privacy eyebrowIndex="06" />
+        <Problem />
+        <HowItWorks />
+        <MarqueeBand />
         <Vision />
         <Faq id="faq" eyebrowIndex="08" ground="navy" heading={customerFaqHeading} items={customerFaq} />
       </FlowGround>

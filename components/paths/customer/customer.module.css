@@ -999,6 +999,16 @@
   z-index: 2;
   cursor: pointer;
   outline: none;
+  /* The phone frame's own corner (iphone.module.css .frame: screen 0.14w +
+     bezel 0.038w + band 0.012w), so the focus ring below hugs the device. */
+  border-radius: calc(var(--wp-size, min(560px, 62vh)) * 393 / 852 * 0.19);
+}
+/* Keyboard focus (P4): the phone is a role="button" the keys step through, so
+   it needs a visible ring. #A04E00 is the orange that holds 5.4:1 on the
+   light ground (#EB7100 is 2.8:1 and fails even the 3:1 non-text bar). */
+.walkPhone:focus-visible {
+  outline: 3px solid #a04e00;
+  outline-offset: 6px;
 }
 .walkTilt {
   transition: transform 0.42s cubic-bezier(0.45, 0, 0.2, 1);
@@ -1022,12 +1032,15 @@
 }
 .walkCue {
   font-size: 13.5px;
-  color: var(--muted-light-1);
+  /* Was --muted-light-1 (#8a8a8a, 3.2:1 on the light ground); the flow ink
+     holds 6:1 and follows the ground. */
+  color: var(--flow-fg-2);
   min-height: 20px;
   text-align: center;
 }
 .walkCue b {
-  color: var(--orange);
+  /* Orange TEXT on light is #A04E00 (5.4:1), never #EB7100 (2.8:1). */
+  color: #a04e00;
   font-weight: 600;
 }
 
@@ -1130,10 +1143,13 @@
   .walkStage .walkStep:not(:last-child) .walkStepText {
     padding-bottom: clamp(10px, calc(10px + 12 * var(--walk-t)), 22px);
   }
-  /* Right column: the reader shrinks with the height (and still with the
-     width, as before), and so do the column's gaps. */
-  .walkStage .walkRdhSeat {
-    --walk-rdh-w: max(150px, min(clamp(190px, 17vw, 228px), calc(150px + 78 * var(--walk-t))));
+  .walkStage .walkPrivacy {
+    margin-top: clamp(10px, calc(10px + 14 * var(--walk-t)), 24px);
+  }
+  /* Right column: the tag shrinks with the height (and still with the
+     width), and so do the column's gaps. */
+  .walkStage .walkTagSeat {
+    --walk-tag-w: max(140px, min(clamp(170px, 15vw, 210px), calc(140px + 70 * var(--walk-t))));
   }
   .walkStage .walkPhoneCol {
     gap: var(--walk-col-gap);
@@ -1143,8 +1159,8 @@
   }
   /* The phone column's fixed overhead, top to bottom:
        --walk-pad-top                   .walkStage padding-top
-       --walk-rdh-w * --walk-rdh-seat   the RDH seat's own padding-top
-                                        (both vars set on .walkRdhSeat, an
+       --walk-tag-w * --walk-tag-seat   the tag seat's own padding-top
+                                        (both vars set on .walkTagSeat, an
                                         ancestor of .walkPhone, so they inherit
                                         here)
        --walk-col-gap + --walk-dots-mt  the column's flex gap PLUS .wpDots' own
@@ -1160,14 +1176,14 @@
      that's ~4.6% of --wp-size, so the frame's real footprint is
      --wp-size * 1.047, not --wp-size. Solving "fixed + footprint <= 100vh"
      for --wp-size gives the calc below. Recompute all of this together if any
-     of those constants (or the RDH seat's own numbers) move. */
+     of those constants (or the tag seat's own numbers) move. */
   .walkStage .walkPhone {
     --wp-size: min(
       520px,
       calc(
         (
             100vh - var(--walk-pad-top) - var(--walk-pad-bottom) - 2 * var(--walk-col-gap) -
-              var(--walk-dots-mt) - 27px - (var(--walk-rdh-w) * var(--walk-rdh-seat, 0.72))
+              var(--walk-dots-mt) - 27px - (var(--walk-tag-w) * var(--walk-tag-seat, 0.8))
           ) / 1.047
       )
     );
@@ -1194,7 +1210,8 @@
   font-family: var(--font-label);
   font-weight: 500;
   font-size: 12px;
-  color: var(--orange);
+  /* Orange text on light = #A04E00 (5.4:1); #EB7100 is 2.8:1. */
+  color: #a04e00;
   letter-spacing: 0.08em;
 }
 .walkStepTitle {
@@ -1202,6 +1219,10 @@
   font-weight: 600;
   font-size: clamp(21px, 2.4vw, 28px);
   margin-top: 3px;
+  /* The active step leads in full ink; the others sit in the body ink
+     (6:1), mixed continuously by --walk-near so the pinned scroll still
+     glides. Both ends pass 4.5:1, so every point between them does. */
+  color: color-mix(in srgb, var(--flow-fg) calc(var(--walk-near, 1) * 100%), var(--flow-fg-2));
 }
 .walkStepBody {
   margin-top: 7px;
@@ -1227,24 +1248,26 @@
   display: flex;
   gap: 22px;
   cursor: pointer;
-  opacity: calc(0.32 + 0.68 * var(--walk-near));
+  /* No opacity fade any more (P4): the old 0.32 floor put inactive text at
+     ~1.5:1. Emphasis is the title's ink (.walkStepTitle), the orange rail
+     and this small lean, and every step stays readable at 4.5:1+. */
   transform: translateX(calc(-8px * (1 - var(--walk-near))));
 }
-/* Phones (2026-09-23): below 821px the walkthrough never pins, and the list
-   sits a full phone-height ABOVE the phone it narrates, so steps faded to 32%
-   read as greyed-out, disabled blocks rather than "not yet". The floor is
-   raised here; the active step still leads through full ink and its orange
-   rail. Same 820/821 split as the pin and the site's grids. */
-@media (max-width: 820px) {
+/* Reduced motion: nothing plays, so all three steps show in full. */
+@media (prefers-reduced-motion: reduce) {
   .walkStep {
-    opacity: calc(0.62 + 0.38 * var(--walk-near));
+    --walk-near: 1;
+    transform: none;
+  }
+  .walkStepFill {
+    transform: none;
   }
 }
 /* Row hover/press — the row is the click target (see HowItWorks.tsx), so it
    needs its own affordance independent of the scroll-driven --walk-near
    emphasis above. */
-.walkStep:hover {
-  opacity: 1;
+.walkStep:hover .walkStepTitle {
+  color: var(--flow-fg);
 }
 .walkStep:active {
   transform: scale(0.99);
@@ -1270,7 +1293,7 @@
 /* Tap-only mode: the position jumps, so ease it. Pinned mode moves with the
    scroll and must not lag behind it. */
 .walkStepsEased .walkStep {
-  transition: opacity 0.45s ease, transform 0.45s ease;
+  transition: transform 0.45s ease;
 }
 .walkStepsEased .walkStepFill {
   transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1291,35 +1314,49 @@
   border-radius: 4px;
 }
 
-/* --- The RDH behind the phone --------------------------------------------
- * <RdhDevice view="front"/>: the same generated box as the hero, seen steeply
- * from its sticker end. HowItWorks feeds two fractions of the art's width in
- * from RDH_VIEWS (emitted by scripts/generate-rdh-device.mjs, so they follow
- * any camera change): --walk-rdh-cx, the box's centre — the art is shifted to
- * put THAT over the phone, not the viewBox centre (the cable trails off to
- * the right); and --walk-rdh-seat, where the phone's top edge sits — just
- * below the top face, over the plain front face — so the lockup and the LED
- * stay clear, and the bow lifts the phone onto the sticker. */
-.walkRdhSeat {
-  --walk-rdh-w: clamp(190px, 17vw, 228px);
-  padding-top: calc(var(--walk-rdh-w) * var(--walk-rdh-seat, 0.72));
+/* The one privacy line (P4): true of the tap only, so it sits under the
+   steps that narrate the tap. */
+.walkPrivacy {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 24px;
+  max-width: 40ch;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--flow-fg-2);
 }
-.walkRdh {
+.walkPrivacyIcon {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  color: var(--flow-fg);
+}
+
+/* --- The PapeX tag behind the phone --------------------------------------
+ * <NfcTag/> stands behind the phone, centred on it. HowItWorks feeds
+ * --walk-tag-seat (NfcTag's TAG_READ_LINE): the phone's top edge sits that
+ * fraction of the tag's width below the tag's top, so the logo, the tap
+ * glyph and the printed line stay clear and only the acrylic foot is
+ * covered; the bow lifts the phone onto the glyph. */
+.walkTagSeat {
+  --walk-tag-w: clamp(170px, 15vw, 210px);
+  padding-top: calc(var(--walk-tag-w) * var(--walk-tag-seat, 0.8));
+}
+.walkTag {
   position: absolute;
   z-index: 1;
   top: 0;
   left: 50%;
-  width: var(--walk-rdh-w);
-  margin-left: calc(var(--walk-rdh-w) * var(--walk-rdh-cx, 0.35) * -1);
-  line-height: 0;
+  width: var(--walk-tag-w);
+  /* Stood back and to the LEFT of the phone, not dead centre: its left side
+     and acrylic foot show beside the phone, so it reads as a stand on the
+     counter rather than a card behind the screen, and the bow (which tilts
+     the phone's top left) leans the phone onto its tap glyph. */
+  margin-left: calc(var(--walk-tag-w) * (-0.5 - var(--walk-tag-shift, 0.4)));
   /* Navy-tinted, like the hero's .demoRdh — this section is light. */
-  filter: drop-shadow(0 18px 28px rgba(0, 18, 29, 0.28));
-}
-.walkRdh svg {
-  width: 100%;
-  height: auto;
-  display: block;
-  overflow: visible;
+  filter: drop-shadow(0 16px 24px rgba(0, 18, 29, 0.22));
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { Reveal, WordReveal } from "@/components/motion";
 import { FlowSection } from "../shared/FlowSection";
 import { SectionLabel } from "../shared/SectionLabel";
-import { RDH_VIEWS, RdhDevice } from "./RdhDevice";
+import { NfcTag, TAG_READ_LINE } from "./NfcTag";
 import { WALK_CARD_MS, WalkPhone } from "./WalkPhone";
 import { HOW_IT_WORKS_ANCHOR, howItWorksContent } from "./content";
 import styles from "./customer.module.css";
@@ -28,18 +28,20 @@ const AUTO_CLIP_HOLD_MS = 2400;
  *  so a normal ~780px laptop window scrolls through the steps again. */
 const PIN_QUERY = "(prefers-reduced-motion: no-preference) and (min-width: 821px) and (min-height: 640px)";
 
-/** Seats the phone under the "front" RDH view (see .walkRdhSeat). The phone's
- *  top edge sits 9 viewBox units below the top face's nearest corner, so a
- *  strip of the plain front face shows — that strip is what makes the art read
- *  as a box behind the phone rather than a tilted card. */
-const RDH = RDH_VIEWS.front;
-const RDH_SEAT = {
-  ["--walk-rdh-seat" as string]: ((RDH.frontEdgeY + 9) / RDH.width).toFixed(4),
-  ["--walk-rdh-cx" as string]: (RDH.boxCentreX / RDH.width).toFixed(4),
+/** Seats the phone in front of the PapeX tag (see .walkTagSeat): its top
+ *  edge sits at the tag's read line, so the logo, the tap glyph and "Tap for
+ *  your receipt" all show above it and only the acrylic foot is covered. The
+ *  bow then lifts the phone onto the glyph. */
+const TAG_SEAT = {
+  ["--walk-tag-seat" as string]: TAG_READ_LINE.toFixed(4),
 } as CSSProperties;
 
 /**
- * 2.6 How it works — light. Two ways through the same three steps:
+ * §06 The tap — light (was §02 "How it works" until Web 2.1 P4, 2026-09-28:
+ * most visitors can't tap yet, so it now follows "Why does it matter?" and
+ * is framed as live at select Bay Area stores; the thing you tap is the
+ * PapeX counter tag, NfcTag.tsx, not the RDH box). Two ways through the same
+ * three steps:
  *
  *   TAP  — tap/click/Enter/swipe/arrows on the phone, or click a step in the
  *          list. Tap-only mode (reduced motion, narrow or short screens) is
@@ -373,7 +375,7 @@ export function HowItWorks() {
   // than widen WalkPhone's props to allow undefined.
   const tapCopy = {
     headline: howItWorksContent.steps[0].phoneHeadline ?? "Tap to receive",
-    subline: howItWorksContent.steps[0].phoneSubline ?? "Hold near the PapeX device",
+    subline: howItWorksContent.steps[0].phoneSubline ?? "Hold your phone to the PapeX tag",
     caption: howItWorksContent.steps[1].phoneCaption ?? "Saved to your receipts",
   };
 
@@ -391,7 +393,7 @@ export function HowItWorks() {
     // `id`: the hero's "How does that work?" cue scrolls here (content.ts).
     <FlowSection
       ground="light"
-      index="02"
+      index="06"
       id={HOW_IT_WORKS_ANCHOR}
       className={`${styles.screen} ${styles.rhythm}`}
     >
@@ -412,7 +414,7 @@ export function HowItWorks() {
             }}
           >
             <Reveal variant="up">
-              <SectionLabel index="02">{howItWorksContent.eyebrow}</SectionLabel>
+              <SectionLabel index="06">{howItWorksContent.eyebrow}</SectionLabel>
               <WordReveal
                 as="h2"
                 className={cn(
@@ -453,15 +455,26 @@ export function HowItWorks() {
                   </div>
                 ))}
               </div>
+              <p className={styles.walkPrivacy}>
+                <svg viewBox="0 0 16 16" className={styles.walkPrivacyIcon} aria-hidden="true">
+                  <rect x="3" y="7" width="10" height="7.5" rx="1.8" fill="currentColor" />
+                  <path d="M5.2 7V5.2a2.8 2.8 0 0 1 5.6 0V7" fill="none" stroke="currentColor" strokeWidth="1.6" />
+                </svg>
+                <span>{howItWorksContent.privacyNote}</span>
+              </p>
             </Reveal>
 
             <Reveal variant="up" className={styles.walkPhoneCol}>
-              <div className={cn("relative flex items-end justify-center", styles.walkRdhSeat)} style={RDH_SEAT}>
-                {/* The reader: the SAME generated box as the hero, from its
-                    sticker end. It sits behind the phone; the bow lifts the
-                    phone onto its sticker and the LED pulses. */}
-                <div className={styles.walkRdh}>
-                  <RdhDevice view="front" pulsing={bowing} />
+              <div className={cn("relative flex items-end justify-center", styles.walkTagSeat)} style={TAG_SEAT}>
+                {/* The PapeX counter tag. It stands behind the phone; the bow
+                    lifts the phone onto its tap glyph and the waves answer. */}
+                <div className={styles.walkTag}>
+                  <NfcTag
+                    pulsing={bowing}
+                    label={howItWorksContent.tag.label}
+                    line={howItWorksContent.tag.line}
+                    sub={howItWorksContent.tag.sub}
+                  />
                 </div>
 
                 {/* Tap OR swipe. Swipe matters more than tap: most visitors will

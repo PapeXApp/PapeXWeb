@@ -1,0 +1,184 @@
+/* The PapeX tap tag (NfcTag.tsx). Every length is in cqw — percent of the
+   tag's own width — so the caller sets only the width. TAG_RATIO (1.06) and
+   TAG_READ_LINE (0.8) in NfcTag.tsx describe this geometry: keep them in
+   step with the aspect-ratio and the face's stack below. */
+
+.tag {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1.06;
+  container-type: inline-size;
+  line-height: 1;
+}
+
+/* The acrylic's thickness: a second, darker slab showing past the plaque's
+   right and bottom edges, so it reads as a block, not a flat card. */
+.edge {
+  position: absolute;
+  inset: 1.6cqw -1.4cqw 5cqw 1.6cqw;
+  border-radius: 9cqw;
+  background: linear-gradient(180deg, rgba(150, 172, 188, 0.55), rgba(110, 132, 150, 0.6));
+}
+
+/* Clear acrylic plaque: a bright rim around the printed navy face. */
+.plaque {
+  position: absolute;
+  inset: 0 0 6cqw 0;
+  padding: 3.2cqw;
+  border-radius: 9cqw;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.75), rgba(214, 224, 232, 0.42) 55%, rgba(255, 255, 255, 0.6));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.95),
+    inset 0 -1.5cqw 2.5cqw rgba(0, 18, 29, 0.1),
+    0 0 0 1px rgba(0, 18, 29, 0.1);
+  overflow: hidden;
+}
+
+.face {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  padding-top: 7cqw;
+  border-radius: 6.4cqw;
+  background:
+    radial-gradient(120% 70% at 50% 0%, #0a2c3f 0%, rgba(10, 44, 63, 0) 70%),
+    #00121d;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.logo {
+  display: block;
+  width: 44cqw;
+  height: auto;
+}
+
+.iconWrap {
+  position: relative;
+  width: 25cqw;
+  height: 25cqw;
+  margin-top: 5cqw;
+}
+.icon {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.line {
+  margin: 3.6cqw 0 0;
+  padding: 0 6cqw;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 8.4cqw;
+  line-height: 1.08;
+  letter-spacing: -0.01em;
+  text-align: center;
+  color: #ffffff;
+}
+.sub {
+  margin: 2.6cqw 0 0;
+  font-family: var(--font-label);
+  font-size: 4.4cqw;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.74);
+}
+
+/* A diagonal sheen across the acrylic. */
+.glint {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    rgba(255, 255, 255, 0) 30%,
+    rgba(255, 255, 255, 0.16) 38%,
+    rgba(255, 255, 255, 0) 46%
+  );
+}
+
+/* The acrylic foot the plaque slots into — in front of the plaque's lower
+   edge, with the slot drawn as a dark line along its top. */
+.base {
+  position: absolute;
+  left: -4cqw;
+  right: -4cqw;
+  bottom: 0;
+  height: 13cqw;
+  border-radius: 2.6cqw 2.6cqw 3.6cqw 3.6cqw;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(214, 223, 231, 0.9) 60%, rgba(186, 199, 210, 0.92));
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.95),
+    inset 0 1.4cqw 0 -0.6cqw rgba(0, 18, 29, 0.28),
+    0 0 0 1px rgba(0, 18, 29, 0.12);
+}
+
+/* --- The tap -------------------------------------------------------------
+   Each rising edge of `pulsing` re-keys .rings (so they play in full) and
+   flips data-flash between "1" and "0"; the two values name two identical
+   keyframes, so switching the name restarts the waves' flash. */
+.rings {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.ring {
+  position: absolute;
+  inset: -6cqw;
+  border-radius: 50%;
+  border: 0.9cqw solid #eb7100;
+  opacity: 0;
+  animation: tagRing 0.95s cubic-bezier(0.2, 0.6, 0.3, 1) forwards;
+}
+.ring2 {
+  animation-delay: 0.18s;
+}
+@keyframes tagRing {
+  0% {
+    opacity: 0.85;
+    transform: scale(0.55);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.7);
+  }
+}
+
+.waves path {
+  transform-box: fill-box;
+}
+.icon[data-flash="1"] .waves path {
+  animation: tagWaveA 0.8s ease-out both;
+}
+.icon[data-flash="0"] .waves path {
+  animation: tagWaveB 0.8s ease-out both;
+}
+.icon[data-flash] .waves path:nth-child(2) {
+  animation-delay: 0.08s;
+}
+.icon[data-flash] .waves path:nth-child(3) {
+  animation-delay: 0.16s;
+}
+@keyframes tagWaveA {
+  0% { stroke: #ffffff; }
+  100% { stroke: #eb7100; }
+}
+@keyframes tagWaveB {
+  0% { stroke: #ffffff; }
+  100% { stroke: #eb7100; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rings {
+    display: none;
+  }
+  .icon[data-flash] .waves path {
+    animation: none;
+  }
+}
