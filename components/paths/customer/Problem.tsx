@@ -3,7 +3,7 @@ import { FlowSection } from "../shared/FlowSection";
 import { NextSection } from "../shared/NextSection";
 import { SectionLabel } from "../shared/SectionLabel";
 import { FlipCardGrid } from "./FlipCards";
-import { personasContent, problemContent } from "./content";
+import { HOW_IT_WORKS_ANCHOR, howItWorksContent, problemContent } from "./content";
 import styles from "./customer.module.css";
 
 /**
@@ -37,7 +37,8 @@ export function Problem() {
         </ScrollWords>
         <FlipCardGrid />
       </div>
-      <NextSection targetId="quiz" name={personasContent.eyebrow} />
+      {/* Next in the page order (index.tsx): the tap walkthrough. */}
+      <NextSection targetId={HOW_IT_WORKS_ANCHOR} name={howItWorksContent.eyebrow} />
     </FlowSection>
   );
 }

@@ -128,7 +128,7 @@ export const SHARE_RECEIPT: KitReceipt = {
   ],
   subtotal: 33.95,
   tax: 4.22,
-  payment: "Mastercard •••• 2280",
+  payment: "Card ************2280",
   sharedWith: [DEMO_PERSON],
   sharedGroup: DEMO_GROUP,
 };

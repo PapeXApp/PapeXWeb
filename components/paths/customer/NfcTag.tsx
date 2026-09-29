@@ -13,8 +13,9 @@ import styles from "./nfcTag.module.css";
  * waves, white type); the lockup is the real FullLogo, recoloured for navy.
  *
  * Replaces the RDH box in §06 "How it works" (Nico: most visitors can't tap
- * yet, and the tag is what they will actually see at the counter). The box
- * (RdhDevice.tsx) still exists for the hero and /business.
+ * yet, and the tag is what they will actually see at the counter). /customers
+ * no longer draws the box anywhere (its RdhDevice.tsx was deleted in P5);
+ * /business keeps its own components/paths/business/RdhDevice.tsx.
  *
  * Built in HTML/CSS + one inline SVG, sized off its own width with container
  * query units (cqw), so the caller sets only the width and every part scales

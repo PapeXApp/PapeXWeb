@@ -18,7 +18,7 @@ import ip from "../iphone.module.css";
  *                   status bar, flashlight + camera. After a tap, iOS's App
  *                   Clip card rises from the bottom: 3:2 card image with a
  *                   close button, "PapeX / Tap to View Your Receipt", the
- *                   periwinkle View pill, then "Powered by PapeX 17+" and
+ *                   periwinkle View pill, then "Powered by PapeX 16+" and
  *                   "App Store >". No Live Activity on /customers (Nico:
  *                   nothing on the lock screen before the tap but time, date
  *                   and wallpaper); `prompt` is kept only for /business's
@@ -275,7 +275,7 @@ export function ClipLockScreen({
               <span className={ip.cardCreditText}>
                 <span className={ip.cardPowered}>Powered by</span>
                 <span className={ip.cardCreditName}>
-                  PapeX <span className={ip.age}>17+</span>
+                  PapeX <span className={ip.age}>16+</span>
                 </span>
               </span>
               <span className={ip.cardStore}>

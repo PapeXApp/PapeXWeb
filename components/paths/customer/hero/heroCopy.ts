@@ -9,7 +9,8 @@ import type { ListRow } from "../appui";
  *
  * Only claim what is true. The app HAS an account (sign-in), so nothing here
  * may say "no sign-up" or "no account". A card line, where one is drawn, only
- * ever shows the last four digits of the dummy test card: "Card •••• 4242".
+ * ever shows the last four digits of the dummy test card, printed the way a
+ * paper receipt prints it: "Card ************4242".
  */
 export const heroCopy = {
   eyebrow: "The free receipts and coupons app",
@@ -49,7 +50,7 @@ export const heroSlip = {
   tax: { label: "Tax", price: "0.92" },
   total: { label: "TOTAL", price: "12.42" },
   // Never a full card number anywhere on the site.
-  card: "Card •••• 4242",
+  card: "Card ************4242",
 };
 
 const TIDEWICK_BG = "linear-gradient(160deg,#9a5a2c,#5a2f14)";

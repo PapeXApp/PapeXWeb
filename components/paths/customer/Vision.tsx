@@ -93,7 +93,7 @@ export function Vision() {
                   {fact.value}
                 </span>
                 <span
-                  className="text-[11.5px] min-[821px]:max-w-[30ch] font-medium uppercase leading-[1.5] tracking-[.1em]"
+                  className="text-[13px] min-[821px]:max-w-[30ch] font-medium uppercase leading-[1.5] tracking-[.1em]"
                   style={{ fontFamily: "var(--font-label)", color: "var(--flow-fg-2)" }}
                 >
                   {fact.label}

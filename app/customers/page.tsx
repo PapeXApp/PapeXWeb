@@ -43,6 +43,7 @@ export const metadata: Metadata = {
     type: 'website',
     url: 'https://papex.app/customers',
     siteName: 'PapeX',
+    locale: 'en_US',
     title: TITLE,
     description: DESCRIPTION,
     images: [OG_IMAGE],

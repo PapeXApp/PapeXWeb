@@ -74,11 +74,11 @@
   max-width: 14ch;
 }
 
-.hint {
-  margin-top: var(--gap-title);
-  font-size: var(--fs-body);
-  line-height: 1.55;
-  color: var(--flow-fg-3);
+/* The optional action under the list (Faq `footer`, deck c-37). */
+.footer {
+  margin-top: var(--gap-body);
+  /* Line up with the questions, which sit inside each row's 20px padding. */
+  padding-left: 20px;
 }
 
 /* --- The list ----------------------------------------------------------- */

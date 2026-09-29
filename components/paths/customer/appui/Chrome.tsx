@@ -11,7 +11,7 @@ import ip from "../iphone.module.css";
  * row styles, a serif screen title the app has never shipped).
  *
  * Nothing here holds state or reads the DOM — these render in server
- * components (FeatureScreens) and client ones (NfcPhone/WalkPhone) alike.
+ * components (FeatureScreens) and client ones (WalkPhone) alike.
  */
 
 /**

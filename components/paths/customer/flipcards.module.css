@@ -205,7 +205,8 @@
 }
 .label {
   font-family: var(--fc-mono);
-  font-size: 11px;
+  /* 13px floor for labels people read (deck s-26); was 11. */
+  font-size: 13px;
   font-weight: 400;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -280,7 +281,8 @@
   align-items: center;
   justify-content: space-between;
   font-family: var(--fc-mono);
-  font-size: 10.5px;
+  /* 13px floor (deck s-26); was 10.5. */
+  font-size: 13px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--fc-muted);

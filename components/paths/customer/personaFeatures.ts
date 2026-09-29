@@ -13,7 +13,9 @@
 // each row shows, and (for Find, on the Non-Keeper) the row title.
 //
 // Lines marked NICO are his, verbatim (2026-09-24) — change them only with his
-// sign-off. The others are 2026-09-25 (P3-C2) drafts for the new Export row
+// sign-off. (P5, 2026-09-29, signed off in q-07: "split a bill" → "share a
+// bill", and coupons are the ones you "earn or scan", never "from the stores
+// you shop at".) The others are 2026-09-25 (P3-C2) drafts for the new Export row
 // and the Non-Keeper's "find it for a return" framing; words are finalised in
 // Phase 4.
 //
@@ -43,9 +45,9 @@ export const personaFeatureLines: Record<PersonaId, Record<FeatureKey, string>> 
     // NICO
     add: "Bring the whole folder: snap your paper receipts and forward email ones to your PapeX address.",
     // NICO
-    share: "Send proof of purchase or split a bill in a tap, with a group or one person.",
+    share: "Send proof of purchase or share a bill in a tap, with a group or one person.",
     // NICO
-    deals: "Keep coupons from the stores you shop at, and favorite the ones you'll use.",
+    deals: "Keep the coupons you earn or scan, and favorite the ones you'll use.",
   },
   casual: {
     // NICO
@@ -53,17 +55,17 @@ export const personaFeatureLines: Record<PersonaId, Record<FeatureKey, string>> 
     // NICO
     find: "Find any receipt in seconds, already sorted by store and category.",
     // NICO
-    deals: "Coupons from stores you like, saved right next to your receipts.",
+    deals: "Coupons you've earned or scanned, saved right next to your receipts.",
     // NICO
     share: "A receipt a friend or roommate needs? Send it in a tap.",
     export: "Need a few for an expense report? Select them and share one PDF.",
   },
   non: {
     // NICO
-    deals: "Something back for your trouble: coupons from stores you shop at, saved and favorited.",
-    find: "Taking something back? Search the store's name and the receipt is right there, no digging.",
+    deals: "Something back for your trouble: coupons you earn or scan, saved and favorited.",
+    find: "Returning something? Search the store's name and the receipt is right there.",
     // NICO
-    share: "Splitting a bill or proving a purchase? Send it in a tap, no digging.",
+    share: "Sharing a bill or proving a purchase? Send it in a tap, no digging.",
     // NICO
     add: "Even the paper ones: snap it before you toss it.",
     export: "And if you ever need a stack of them, select them and share one PDF.",
@@ -78,21 +80,21 @@ export const personaFeatureTitles: Partial<Record<PersonaId, Partial<Record<Feat
 
 /**
  * The header over the rows. Named after the quiz's own results (content.ts
- * `personasContent.results`: The Keeper / The Casual / The Non-Keeper).
+ * `personasContent.results`: The Keeper / The Casual Keeper / The Non-Keeper).
  * `default` is shown before the quiz (and on the server / with no JS): the
  * casual order, with an invitation to answer.
  */
 export const pickedHeader: Record<PersonaId | "default", { label: string; summary: string }> = {
   default: {
-    label: "Showing: The Casual",
-    summary: "Our everyday order. Answer the 3 questions to put what matters to you first.",
+    label: "Showing: everyday picks",
+    summary: "Answer the 3 questions above to put what matters to you first.",
   },
   keeper: {
     label: "Picked for you: The Keeper",
     summary: "Search, auto-sorting and PDF export first: the tools you'll use most.",
   },
   casual: {
-    label: "Picked for you: The Casual",
+    label: "Picked for you: The Casual Keeper",
     summary: "A bit of everything: getting receipts in, finding them, and coupons.",
   },
   non: {

@@ -95,11 +95,15 @@ export function Hero() {
                 {/* Navy ripple on the orange pill; .ctaPill carries the glow
                     and press scale (customer.module.css, shared with Vision). */}
                 <Ripple variant="navy" className={`overflow-hidden rounded-full ${styles.ctaPill}`}>
+                  {/* data-hero-cta: the nav hides its own "Download the app"
+                      while this button is on screen (site-nav.tsx watches
+                      [data-hero-cta] — deck s-02). */}
                   <a
                     href={storeUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className={`${styles.ctaButton} ${h.ctaButton}`}
+                    data-hero-cta=""
                   >
                     {heroCopy.ctaLabel}
                   </a>

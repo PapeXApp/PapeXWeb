@@ -8,7 +8,7 @@ import { NextSection } from "../shared/NextSection";
 import { PointerLitGroup } from "../shared/PointerLit";
 import { SectionLabel } from "../shared/SectionLabel";
 import { FeatureShot } from "./FeatureScreens";
-import { featuresContent, type FeatureKey } from "./content";
+import { featuresContent, problemContent, type FeatureKey } from "./content";
 import {
   DEFAULT_PERSONA,
   answerQuizLabel,
@@ -42,7 +42,7 @@ const CHANGE_ANSWERS_LABEL = "Change my answers";
  * the benefit line each shows, any per-persona title, and what the phones
  * show (personaFeatures.ts, featureData.ts). Before the quiz — and on the
  * server, and with no JS — the rows show the `casual` order under a
- * "Showing: The Casual" header that invites the visitor to answer.
+ * "Showing: everyday picks" header that invites the visitor to answer.
  *
  * The header is always there and always the same size (label, one summary
  * line, one button), so the rows never move when a result arrives except by
@@ -247,7 +247,8 @@ export function Features() {
           </PointerLitGroup>
         </div>
       </div>
-      <NextSection targetId="privacy" name="Privacy" />
+      {/* Next in the page order (index.tsx): [03] "Why does it matter?". */}
+      <NextSection targetId="problem" name={problemContent.eyebrow} />
     </FlowSection>
   );
 }
