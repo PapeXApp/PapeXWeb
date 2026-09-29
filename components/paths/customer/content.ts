@@ -3,42 +3,15 @@
 // Keep all strings here so the sections stay markup-only.
 
 /**
- * The id of the section the hero's "How does that work?" cue scrolls to.
- * ONE constant on purpose: the page order is still being settled, so the cue
- * and its target (HowItWorks.tsx puts this id on its section) read the same
- * value — repoint the cue by moving the id, never by editing the cue.
+ * The tap walkthrough's section id (HowItWorks.tsx puts it on its section;
+ * Problem's next-section arrow points at it). ONE constant so the link and
+ * its target can't drift. The hero's words live in hero/heroCopy.ts.
  */
 export const HOW_IT_WORKS_ANCHOR = "how-it-works";
 
 /** The customer FAQ's id (index.tsx reserves it for task C3's FAQ). The
  *  hero's quiet "Questions?" link jumps here. */
 export const FAQ_ANCHOR = "faq";
-
-export const heroContent = {
-  // Web 2.1 H1 (Nico, 2026-09-24): the H1 says WHAT PapeX is, as a familiar
-  // gesture + one twist, and sets up the "How does that work?" cue below.
-  // The eyebrow carries the search category, so "tap" isn't said twice.
-  eyebrow: "The free digital receipts app",
-  headline: "Tap your phone. Get your receipt.",
-  // P3-C4 (Nico, 2026-09-25): an orange line right under the H1 pointing at
-  // §02, where the tap is played out. Words may be refined in Phase 4.
-  scrollCue: "Scroll to see what happens",
-  // Web 2.1 (spec §3.2): "no app to GET it, the free app to KEEP it" — the old
-  // "saved… forever. No app required" line contradicted the Download button
-  // right under it.
-  // Web 2.1 (Nico, 2026-09-24): "not just a receipt" — at select stores a
-  // tap earns a coupon too. Still no app needed to GET it (spec §3.2).
-  lead: "Tap your phone at checkout and your receipt appears. At select stores, a coupon for next time can come with it. No app needed to get it: the free PapeX app keeps every receipt and coupon in one place.",
-  ctaLabel: "Download the app",
-  // True of both listings (lib/storeLinks.ts). Also shown under the quiz
-  // result's CTA (Personas.tsx).
-  ctaSubtext: "Free · iPhone & Android",
-  howCue: "How does that work?",
-  faqCue: "Questions?",
-  // The hero visual is a picture since P3-C4 (a phone tapping the device on
-  // a loop, nothing to click): this is its accessible name.
-  visualLabel: "An iPhone tapping the PapeX device, then lifting away, on a loop.",
-};
 
 /** The App Clip receipt's own labels — shared by the §02 walkthrough
  *  (WalkPhone), the Features receipt card and DemoReceiptView. The hero's
@@ -97,7 +70,7 @@ export const problemContent = {
       question: "What does that cost the forest?",
       hint: "Tap to reveal",
       value: "3.7M",
-      caption: "trees cut down every year for US receipts, plus 10 billion gallons of water.",
+      caption: "trees cut down every year for US receipts, and 10 billion gallons of water to make them.",
       source: "Green America, Skip the Slip (2022)",
     },
     {
@@ -118,7 +91,7 @@ export const marqueeContent = {
   // "Coupons at select stores." added 2026-09-24 (Nico) — never every store.
   phrases: [
     "One tap.",
-    "No app to receive.",
+    "No app needed to receive. Download it to collect them all.",
     "iPhone & Android.",
     "Free.",
     "Coupons at select stores.",
@@ -196,21 +169,21 @@ export const personasContent = {
       tag: "That's you",
       eyebrow: "The Keeper",
       title: "You already do the work.",
-      body: "You keep everything, and it still takes effort. PapeX files it the moment you tap: searchable, exportable, no shoebox.",
+      body: "You keep everything, and it still takes effort. Save it once and PapeX files it: searchable, exportable, and with no hassle.",
     },
     {
       id: "casual",
       tag: "That's you",
-      eyebrow: "The Casual",
+      eyebrow: "The Casual Keeper",
       title: "You mean to keep them.",
-      body: "No more wondering where it went. Every receipt saves itself when you tap, so the one time you need it, it is already there.",
+      body: "No more wondering where it went. Save it with one tap, and the one time you need it, it's already there.",
     },
     {
       id: "non",
       tag: "That's you",
       eyebrow: "The Non-Keeper",
       title: "You have been leaving money on the table.",
-      body: "Returns, warranties and deductions all need proof you never kept. One tap covers you, without changing how you shop.",
+      body: "Returns and warranties need proof you never kept. Tap, save, and you're covered, without changing how you shop.",
     },
   ] satisfies PersonaResult[],
 };
@@ -266,7 +239,9 @@ export const featuresContent = {
       tags: ["Shared groups", "Person to person"],
     },
     deals: {
-      eyebrow: "Deals",
+      // "Coupons", not "Deals": in the app a Deal is a store promotion, and
+      // this row is about the coupons a shopper earns or scans (P5 c-22).
+      eyebrow: "Coupons",
       title: "Coupons and store pages.",
       tags: ["Coupons", "Favorites", "Store pages"],
     },
@@ -286,19 +261,18 @@ export const howItWorksContent = {
   phoneAriaLabel: "Step through a tap on a PapeX tag",
   /** Cue line under the phone, one per step — index 2's "Replay" is bold in the design. */
   cues: [
-    "Tap the phone on the PapeX tag",
-    "It opened by itself. Tap to save it to PapeX",
+    "Tap the phone on the PapeX tag.",
+    "Your receipt opens. Tap to save it to PapeX.",
     "That's it: saved, searchable, yours.",
   ],
   replayLabel: "Replay",
   /** The same cues when the section is scroll-pinned (desktop): scrolling is
    *  the other way through. */
   scrollCues: [
-    "Scroll, or tap the phone on the PapeX tag",
-    "It opened by itself. Keep scrolling to save it",
+    "Scroll, or tap the phone on the PapeX tag.",
+    "Your receipt opens. Keep scrolling to save it.",
     "That's it: saved, searchable, yours.",
   ],
-  continueLabel: "Continue",
   /** The one privacy promise here. It is true of the TAP only (the app has
    *  an account), so it lives with the tap, not in a general privacy list. */
   privacyNote: "A tap sends your receipt and nothing else: no name, no email, no sign-up.",
@@ -314,21 +288,19 @@ export const howItWorksContent = {
       number: "01",
       title: "Tap the PapeX tag",
       body: "Hold your phone to it. No app needed.",
-      phoneHeadline: "Ready to tap",
-      phoneSubline: "Hold your phone to the PapeX tag",
     },
     {
       number: "02",
       title: "It opens",
-      // Spec §6a (Android): Android taps too; it opens in the browser.
-      body: "On iPhone it opens instantly. On Android it opens in the browser. Nothing to install.",
-      phoneCaption: "Opened the instant you tapped",
+      // Spec §6a (Android): Android taps too. P5 c-05 (Nico): both open
+      // instantly, so the copy never makes them sound different.
+      body: "Your receipt opens instantly, on iPhone and Android.",
     },
     {
       number: "03",
       title: "Save it to PapeX",
       // Saving is a step the SHOPPER takes (the tap alone saves nothing).
-      body: "Save it to the free PapeX app and it's always searchable, right next to any coupons you've saved.",
+      body: "Save it to the free PapeX app: always searchable, next to your saved coupons and the store's profile.",
     },
   ],
 };
@@ -336,10 +308,7 @@ export const howItWorksContent = {
 // Merchant seeds for the appui receipt rows (appui/data.ts owns the rest of
 // each row: dates, provenance, the unreviewed flag — see app-reference.md).
 //
-// INVENTED names only — no real merchants on the site (Web 2.1). The café
-// must keep "blue" in its name: appui/data.ts searches the list for
-// SEARCH_QUERY = "blue", and the app only ever shows rows that match the
-// query. Categories are PapeXV2's defaults (constants/receiptCategories.ts);
+// INVENTED names only — no real merchants on the site (Web 2.1). Categories are PapeXV2's defaults (constants/receiptCategories.ts);
 // a ride is "Travel", not "Gas & auto".
 export const receiptsListContent = {
   rows: [
@@ -360,15 +329,17 @@ export const proofContent = {
   counters: [
     { value: 1, label: "tap to get it" },
     { value: 0, label: "apps needed to receive it" },
-    { value: 2, label: "ways to open it: iPhone instantly, any phone in the browser" },
+    // P5 c-30 (Nico: "this is also unclear"): one plain fact — both phone
+    // kinds open the tapped receipt.
+    { value: 2, label: "phones it works on: iPhone and Android" },
   ],
 };
 
 export const visionContent = {
   eyebrow: "The vision",
-  headline: "A world where every receipt is useful, and none of them are wasted.",
+  headline: "Every receipt useful. None wasted.",
   // Web 2.1 (Nico, 2026-09-24): ties receipts to coupons, no numbers, no
   // "every store" implication — "select stores" per the approved facts.
-  body: "We're modernizing the most ignored moment of every purchase. Less paper, less waste, and receipts that pay you back — with coupons at select stores.",
+  body: "We're modernizing the most ignored moment of every purchase. Less paper, less waste, and receipts worth keeping, with coupons at select stores.",
   primaryCta: "Download the app",
 };

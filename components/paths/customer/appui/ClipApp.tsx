@@ -45,10 +45,12 @@ import x from "./clipApp.module.css";
 
 /** ReceiptSummary (lib/receiptSummary) -> the kit's ClipReceiptData. */
 export function toClipData(summary: ReceiptSummary): ClipReceiptData {
+  // Every card line on the site reads the way a paper receipt prints it:
+  // "Card", 12 stars, the last 4 — never a card brand (P5 c-10 / q-04 / q-08).
   const network = summary.paymentLine ? detectPaymentMethod(summary.paymentLine) : null;
   const lastFour = summary.paymentLine ? extractLastFour(summary.paymentLine) : null;
   const label = network ? PAYMENT_METHOD_STYLES[network].label : null;
-  const payment = label && lastFour ? `${label} •••• ${lastFour}` : label ?? (lastFour ? `•••• ${lastFour}` : summary.paymentLine);
+  const payment = lastFour ? `Card ************${lastFour}` : label ?? summary.paymentLine;
   const subtotal = summary.subtotal ?? summary.items.reduce((sum, item) => sum + item.amount, 0);
   return {
     merchantName: summary.merchantName ?? "Receipt",

@@ -160,7 +160,7 @@ export const demoReceipts: KitReceipt[] = [
     ],
     subtotal: 11.25,
     tax: 1.15,
-    payment: 'Visa •••• 4417',
+    payment: 'Card ************4417',
     sharedWith: [],
   },
   {
@@ -185,7 +185,7 @@ export const demoReceipts: KitReceipt[] = [
     ],
     subtotal: 33.95,
     tax: 4.22,
-    payment: 'Mastercard •••• 2280',
+    payment: 'Card ************2280',
     sharedWith: ['Priya'],
     sharedGroup: 'Home Crew',
   },

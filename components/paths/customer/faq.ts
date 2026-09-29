@@ -29,11 +29,11 @@ export const customerFaq: FaqItem[] = [
   },
   {
     q: "Does PapeX work on Android?",
-    a: "Yes. iPhone or Android: tap and your receipt opens (iPhone in an App Clip, Android in the browser).",
+    a: "Yes. Tap and your receipt opens instantly, on iPhone and Android.",
   },
   {
     q: "Where can I tap my phone for a receipt?",
-    a: "PapeX devices are live in the Bay Area, with more stores coming. Anywhere else, scan or forward your receipt.",
+    a: "PapeX is live at select stores in the Bay Area. Look for the PapeX device at the register.",
   },
   {
     q: "What if the store doesn't have PapeX?",
@@ -41,12 +41,12 @@ export const customerFaq: FaqItem[] = [
   },
   {
     q: "Is my data safe with PapeX?",
-    a: "A tap sends your receipt and nothing else: no name, no email, no phone number, and never more of your card than the last 4 digits already printed on the receipt.\n\nIn the app, your receipts are yours. Delete any receipt, or your whole account, any time. [Read our privacy policy](/privacy).",
+    a: "A tap sends only your receipt: no name, email or phone number. Like a paper receipt, it shows just the last 4 digits of your card. PapeX never touches card data.\n\nIn the app, your receipts are yours. Delete any receipt, or your whole account, any time. [Read our privacy policy](/privacy).",
   },
   {
     // Q8, answered by Nico in spec §6a round 2 (published on the lead's
     // round-2 instruction).
-    q: "How long can I open a receipt I tapped for?",
+    q: "How long does a tapped receipt stay open?",
     a: "Your receipt stays open until you close it or save it to PapeX.",
   },
   {

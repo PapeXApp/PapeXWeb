@@ -159,6 +159,25 @@
   outline-offset: 3px;
   border-radius: 4px;
 }
+/* Phones: both cues get a >=44px-tall tap area (deck s-25) from an invisible
+   ::after, so nothing moves or changes size. The 26px column gap keeps the
+   two areas from overlapping. */
+@media (max-width: 820px) {
+  .downCue,
+  .faqCue {
+    position: relative;
+  }
+  .downCue::after,
+  .faqCue::after {
+    content: "";
+    position: absolute;
+    left: -6px;
+    right: -6px;
+    top: 50%;
+    height: 48px;
+    transform: translateY(-50%);
+  }
+}
 
 /* ==========================================================================
  * THE STAGE — one phone plus room either side for the slip and the chips.

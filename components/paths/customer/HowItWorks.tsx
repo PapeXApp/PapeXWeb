@@ -12,7 +12,7 @@ import { WALK_CARD_MS, WalkPhone } from "./WalkPhone";
 import { HOW_IT_WORKS_ANCHOR, howItWorksContent } from "./content";
 import styles from "./customer.module.css";
 
-/** How long the phone stays lifted onto the reader before the receipt lands (mirrors NfcPhone's bow). */
+/** How long the phone stays lifted onto the reader before the receipt lands (the phone's bow). */
 const BOW_MS = 380;
 
 /** Autoplay timing (P3-C1). A beat on the idle lock screen before the tap,
@@ -369,15 +369,7 @@ export function HowItWorks() {
 
   const cue = (pinned ? howItWorksContent.scrollCues : howItWorksContent.cues)[step];
   // A tap on the finished demo replays it in both modes now (P3-C1), so the
-  // last cue offers "Replay" in pinned mode too (content.continueLabel is no
-  // longer shown).
-  // The optional-copy fields are typed loosely in content.ts; fall back rather
-  // than widen WalkPhone's props to allow undefined.
-  const tapCopy = {
-    headline: howItWorksContent.steps[0].phoneHeadline ?? "Tap to receive",
-    subline: howItWorksContent.steps[0].phoneSubline ?? "Hold your phone to the PapeX tag",
-    caption: howItWorksContent.steps[1].phoneCaption ?? "Saved to your receipts",
-  };
+  // last cue offers "Replay" in pinned mode too.
 
   // Pinned: the scroll listener writes --walk-s straight onto the stage every
   // frame, so React must not own it. Tap-only: it is simply the step.
@@ -511,7 +503,7 @@ export function HowItWorks() {
                   style={{ touchAction: "pan-y", cursor: "grab" }}
                 >
                   <div className={styles.walkTilt}>
-                    <WalkPhone step={step} tapCopy={tapCopy} active={inView} />
+                    <WalkPhone step={step} active={inView} />
                   </div>
                 </div>
               </div>
@@ -527,7 +519,12 @@ export function HowItWorks() {
               <div className={styles.walkCue} data-nojs="walk-cue" aria-live="polite">
                 {step === last ? (
                   <>
-                    {cue} <b>{howItWorksContent.replayLabel}</b>
+                    {cue}{" "}
+                    {/* The phone replays on a tap too; this is the same
+                        action as a real button (keyboard + >=44px area). */}
+                    <button type="button" className={styles.walkReplay} onClick={() => stepForward()}>
+                      {howItWorksContent.replayLabel}
+                    </button>
                   </>
                 ) : (
                   cue

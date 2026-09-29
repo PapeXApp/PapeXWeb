@@ -184,11 +184,21 @@
 .panel {
   text-align: center;
 }
+/* Animation LONGHANDS, never the shorthand, in this file: with var() inside
+   an `animation` shorthand the CSS-modules compiler leaves the keyframe name
+   un-hashed, so it matched no @keyframes and these four never played (P5
+   c-19 / q-23 turned them on; same fix as the hero tap loop, 36479c8). */
 .enterForward {
-  animation: quizEnterForward 0.5s var(--ease-out-expo) both;
+  animation-name: quizEnterForward;
+  animation-duration: 0.5s;
+  animation-timing-function: var(--ease-out-expo);
+  animation-fill-mode: both;
 }
 .enterBack {
-  animation: quizEnterBack 0.5s var(--ease-out-expo) both;
+  animation-name: quizEnterBack;
+  animation-duration: 0.5s;
+  animation-timing-function: var(--ease-out-expo);
+  animation-fill-mode: both;
 }
 @keyframes quizEnterForward {
   from {
@@ -343,7 +353,10 @@
   transform: none;
 }
 .optionsPending .optionSelected {
-  animation: quizPicked 0.42s var(--ease-out-expo) both;
+  animation-name: quizPicked;
+  animation-duration: 0.42s;
+  animation-timing-function: var(--ease-out-expo);
+  animation-fill-mode: both;
 }
 @keyframes quizPicked {
   0% {
@@ -378,7 +391,10 @@
   border-radius: var(--r-card);
   background: var(--q-surface);
   box-shadow: 0 28px 60px rgba(235, 113, 0, 0.18);
-  animation: quizLand 0.6s var(--ease-out-expo) both;
+  animation-name: quizLand;
+  animation-duration: 0.6s;
+  animation-timing-function: var(--ease-out-expo);
+  animation-fill-mode: both;
 }
 @keyframes quizLand {
   0% {

@@ -205,5 +205,5 @@ export const demoClipReceipt: ClipReceiptData = {
   subtotal: 11.25,
   tax: 1.15,
   total: 12.4,
-  payment: 'Visa •••• 4417',
+  payment: 'Card ************4417',
 };

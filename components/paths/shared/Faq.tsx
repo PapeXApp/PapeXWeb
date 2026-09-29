@@ -41,6 +41,9 @@ export type FaqProps = {
   heading: string
   items: FaqItem[]
   ground: Ground
+  /** Optional action under the question list (e.g. /customers' "Download
+   *  the app", deck c-37), so the page ends on something to do. */
+  footer?: ReactNode
 }
 
 const LINK_RE = /\[([^\]]+)\]\(([^)\s]+)\)/g
@@ -131,7 +134,7 @@ function safeJson(value: unknown): string {
  * Emits FAQPage JSON-LD from the VISIBLE items only, so structured data never
  * claims an answer the page doesn't show.
  */
-export function Faq({ id, eyebrowIndex, eyebrow = "FAQ", heading, items, ground }: FaqProps) {
+export function Faq({ id, eyebrowIndex, eyebrow = "FAQ", heading, items, ground, footer }: FaqProps) {
   const visible = useMemo(() => items.filter((item) => !item.hidden), [items])
   const [open, setOpen] = useState<ReadonlySet<number>>(() => new Set())
   const baseId = useId()
@@ -183,8 +186,10 @@ export function Faq({ id, eyebrowIndex, eyebrow = "FAQ", heading, items, ground 
   return (
     <FlowSection ground={ground} id={id} index={eyebrowIndex} className={styles.section}>
       <div className={styles.inner}>
-        {/* P3-R1: scroll-linked — label, title word by word, hint, then each
-            question rises on its own position. */}
+        {/* P3-R1: scroll-linked — label, title word by word, then each
+            question rises on its own position. (The "Pick a question to see
+            the answer." hint was removed in P5, deck c-32: the + icons
+            already say it, and with JS off it sat above open answers.) */}
         <div className={styles.head}>
           <ScrollReveal>
             <SectionLabel index={eyebrowIndex}>{eyebrow}</SectionLabel>
@@ -192,9 +197,6 @@ export function Faq({ id, eyebrowIndex, eyebrow = "FAQ", heading, items, ground 
           <ScrollWords as="h2" className={styles.heading}>
             {heading}
           </ScrollWords>
-          <ScrollReveal as="p" className={styles.hint}>
-            Pick a question to see the answer.
-          </ScrollReveal>
         </div>
 
         <div>
@@ -246,6 +248,7 @@ export function Faq({ id, eyebrowIndex, eyebrow = "FAQ", heading, items, ground 
               )
             })}
           </ul>
+          {footer ? <ScrollReveal className={styles.footer}>{footer}</ScrollReveal> : null}
         </div>
       </div>
 

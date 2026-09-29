@@ -594,6 +594,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    /* >=44px tap target (deck s-25): the three sit in one grid row, so this
+       only lifts a row whose titles all fit on one line. */
+    min-height: 44px;
     padding: 9px 8px;
     border-radius: 14px;
     text-align: center;
@@ -623,7 +626,8 @@
   .mBody {
     grid-area: 1 / 1;
     margin: 0;
-    font-size: 15px;
+    /* Phone body text is 16px (deck s-26); was 15. */
+    font-size: 16px;
     line-height: 1.5;
     color: var(--flow-fg-2);
     opacity: 0;

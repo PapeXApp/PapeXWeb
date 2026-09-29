@@ -17,7 +17,7 @@ import h from "./hero.module.css";
  *
  * Beats (seconds from first paint; hero.module.css owns the numbers):
  *   0.10-0.80  the phone rises in (Receipts tab, 1 unreviewed)
- *   0.85-1.25  the paper slip appears to the phone's left, "Card •••• 4242"
+ *   0.85-1.25  the paper slip appears to the phone's left, "Card ************4242"
  *   1.30-2.00  the scan frame locks on and a scan line sweeps down it
  *   2.05-2.60  the slip flies into the phone, shrinking into the top row
  *   2.25-2.80  the older rows slide down; "Today" + Tidewick Cafe land at the

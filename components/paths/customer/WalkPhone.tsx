@@ -94,11 +94,9 @@ export function PhoneChrome({
 
 export function WalkPhone({
   step,
-  tapCopy,
   active = true,
 }: {
   step: number;
-  tapCopy: { headline: string; subline: string; caption: string };
   /** The phone is on screen. The step-3 tab alternation pauses while false. */
   active?: boolean;
 }) {
@@ -162,7 +160,7 @@ export function WalkPhone({
     <PhoneChrome mediaSlot={slot} islandLock={lockOn}>
       {/* --- 0: ready to tap — the idle lock screen, as in the hero; the
              App Clip card rises only during the 0 -> 1 beat ------------- */}
-      <div className={cn(ip.scene, lockOn && ip.sceneOn)} aria-label={tapCopy.headline}>
+      <div className={cn(ip.scene, lockOn && ip.sceneOn)}>
         <ClipLockScreen card={cardBeat} moment={moment} />
       </div>
 

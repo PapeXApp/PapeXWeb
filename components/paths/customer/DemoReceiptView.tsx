@@ -18,7 +18,8 @@ import styles from "./customer.module.css";
  *   "Items Purchased" (orange) above a glass card of priced line items, with
  *   the "YOU SAVED …" line under them when the receipt carries a discount
  *   a totals card with an ORANGE RIM: Subtotal/Tax orange, a thick orange
- *   rule, "Total" orange against a big white amount, then Payment + VISA
+ *   rule, "Total" orange against a big white amount, then Payment + the card
+ *   line as a paper receipt prints it ("Card ************4729")
  *
  * Palette is the App Clip's OWN — deliberately not this site's navy/orange
  * (PapeXWeb/CLAUDE.md → "the /customers receipt demo intentionally uses the
@@ -138,7 +139,10 @@ export function DemoReceiptView({ summary }: { summary: ReceiptSummary }) {
             <div className={styles.acTrow}>
               <span className={styles.acTlabel}>Payment</span>
               <span style={{ display: "flex", alignItems: "center", gap: "calc(8 * var(--u))" }}>
-                {paymentStyle && (
+                {/* A card line reads the way a paper receipt prints it: "Card",
+                    12 stars, the last 4 — never a card brand (P5 c-10). The
+                    network chip is only for a tender with no card digits. */}
+                {paymentStyle && !lastFour && (
                   <span
                     className={styles.acChip}
                     style={{ background: paymentStyle.bg, color: paymentStyle.textColor }}
@@ -146,7 +150,7 @@ export function DemoReceiptView({ summary }: { summary: ReceiptSummary }) {
                     {paymentStyle.label}
                   </span>
                 )}
-                {lastFour && <span className={styles.acTval}>•••• {lastFour}</span>}
+                {lastFour && <span className={styles.acTval}>Card ************{lastFour}</span>}
                 {!paymentStyle && !lastFour && <span className={styles.acTval}>{summary.paymentLine}</span>}
               </span>
             </div>

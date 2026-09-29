@@ -7,7 +7,8 @@ import { FlowSection } from "../shared/FlowSection";
 import { NextSection } from "../shared/NextSection";
 import { PointerLitGroup } from "../shared/PointerLit";
 import { SectionLabel } from "../shared/SectionLabel";
-import { featuresContent, heroContent, personasContent, type PersonaId } from "./content";
+import { featuresContent, personasContent, type PersonaId } from "./content";
+import { heroCopy } from "./hero/heroCopy";
 import { onRetakeRequest, setPersona } from "./personaStore";
 import { useStoreUrl } from "./Hero";
 import styles from "./personas.module.css";
@@ -284,9 +285,9 @@ export function Personas() {
                   </div>
                   <div className={styles.resultActions}>
                     <a href={storeUrl} target="_blank" rel="noopener noreferrer" className={styles.cta}>
-                      {heroContent.ctaLabel}
+                      {heroCopy.ctaLabel}
                     </a>
-                    <span className={styles.ctaSub}>{heroContent.ctaSubtext}</span>
+                    <span className={styles.ctaSub}>{heroCopy.ctaSubtext}</span>
                   </div>
                   <button type="button" className={styles.retake} onClick={restart}>
                     <span aria-hidden="true">↺</span>

@@ -3,7 +3,7 @@
 // that name wrapped to two lines in the phone mockups), otherwise byte-for-byte
 // the same stream the design prototype scripted
 // (design-prototype/source/PapeX Home.dc.html → demoReceiptBytes()). Decoding is
-// never re-implemented here: NfcPhone.tsx feeds this straight into this repo's
+// never re-implemented here: WalkPhone.tsx feeds this straight into this repo's
 // own lib/escpos.ts (`parseEscPos`) and lib/receiptSummary.ts (`summarizeReceipt`),
 // same as the App Clip's real receipt path.
 export function demoReceiptBytes(): Uint8Array {
@@ -40,7 +40,9 @@ export function demoReceiptBytes(): Uint8Array {
   line("TOTAL                      12.42");
   out.push(0x1b, 0x45, 0x00); // ESC E 0  bold off
   out.push(0x0a);
-  line("VISA  ****4729   APPROVED");
+  // Card line as a paper receipt prints it: the word "Card", 12 stars and
+  // the last 4 (P5, Nico's rule for every mockup — never a brand, never more).
+  line("Card ************4729   APPROVED");
   out.push(0x0a);
   out.push(0x1b, 0x61, 0x01); // ESC a 1  centre
   line("Thanks for stopping in!");

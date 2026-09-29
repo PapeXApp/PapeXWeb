@@ -343,346 +343,12 @@
 }
 
 /* ==========================================================================
- * Hero visual (Web 2.1 P3-C4) — a locked iPhone tapping the PapeX device,
- * lifting back, resting, and again (NfcPhone.tsx). `.demoStage` sizes the
- * phone; the tap loop's rules follow it. The `.ac*` rules further down are
- * the App-Clip-styled receipt card (DemoReceiptView.tsx) and keep the App
- * Clip's OWN theme on purpose — never swap those for --navy/--orange.
+ * The `.ac*` rules below are the App-Clip-styled receipt card
+ * (DemoReceiptView.tsx, also used by /business Tap to Retain) and keep the
+ * App Clip's OWN theme on purpose — never swap those for --navy/--orange.
+ * (The old hero tap-loop rules — .demoStage, .tapPhone, .demoRdh, .rdhLed —
+ * went with NfcPhone.tsx / RdhDevice.tsx in P5.)
  * ========================================================================== */
-
-.demoStage {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-
-  /* ---- The phone's geometry, from ONE source -----------------------------
-     It used to be sized on two independent axes — width: clamp(288px,34vw,376px)
-     and height: clamp(380px,100vh-342px,610px) — which at a 1440x900 desktop
-     produced 376x580: a 0.65 aspect ratio. A real iPhone is 0.46, so the thing
-     read as a squat foldable slab rather than a phone.
-     Now the HEIGHT is the only free variable (it still has to share the
-     viewport with the reader below it) and the width is derived from it at the
-     true iPhone 15/16 ratio, so the silhouette is correct at every size. */
-  /* THE HERO MUST FIT IN 100vh, or the scroll cue — which is absolutely
-     positioned at the section's bottom — lands below the fold and looks like it
-     was never built. That is exactly what happened on Nico's smaller screen.
-     The reserve is everything in the hero that is NOT the phone screen:
-        hero padding      ~84-200px (viewport-aware, see Hero.tsx)
-        the RDH device    ~149px net (233px tall, pulled up ~84px by demoRdh)
-        stage gaps + hint  ~42px
-     400px covers all of it with a little slack. Verified to fit at 660, 700,
-     800, 900, 982 and 1080 tall. Re-measure if the reader artwork or the hint
-     row ever changes size. */
-  /* Round 2 (2026-09-22): the hero is CAPPED now, not full-screen (Hero.tsx,
-     min-height min(100vh,760px), top-aligned). Two things changed here:
-     the reserve is 420, not 400, because the hero's padding grew to
-     clamp(96,12vh,128) + --section-pad-y (~218 at 1440x900, above the 84-200
-     this budget assumed); and the viewport term is capped at 860 so the phone
-     — and therefore the whole hero — stops growing on a tall display instead
-     of tracking 100vh forever. At 1440x900 that gives a 440px phone and an
-     ~849px hero, so the absolutely-positioned scroll cue still fits. */
-  /* Nico 2026-09-22: at ~150px wide the phone read as a toy. The height
-     budget below is the same one as before, with the reserve cut from 420
-     to 368 (hero top padding 96->80 at the floor, and the reader pulled
-     ~36px further up by .demoRdh) and the viewport term uncapped to 1000.
-     Net: +16% at a 720-tall window (still fits 1280x720 with the scroll
-     cue on screen), +23% at 900, +45% at 1080. */
-  /* Round 3 (2026-09-23): the hero is a FULL SCREEN again (Hero.tsx,
-     `.screen`, "screens, not sections" parity with /business), and two things
-     had to fit inside it that did not before:
-       - the whole phone BELOW the nav. The top padding is --hero-pt
-         (clamp(104px,12vh,128px) from 821px), which clears the 94px nav
-         band; it used to be clamp(80,10vh,112), so the device's top — and
-         the lock-screen clock — sat under the glass nav.
-       - the scroll cue on its OWN line. The hero's bottom padding is 100px
-         from 821px, so the demo's hint row ends ~28px above the cue instead
-         of sharing its baseline 25px to the side.
-     Reserve = --hero-pt + 316px (the ~204px of stage below/around the phone
-     — frame, reader net of its pull-up, hint row, gaps — plus that 100px
-     bottom and 12px slack). The viewport term is capped at 1100px so a very
-     tall display stops growing the phone. 340px floor: at 1280x720 the hero
-     runs ~6px past the screen but the cue stays on it. Phones keep the
-     previous formula (below). */
-  /* P3-C4 (2026-09-25): the hint/chip row under the device is gone with the
-     click-through demo. The reserve is deliberately unchanged, so the phone
-     is exactly the size it was; the ~15px it freed is centred away. */
-  --phone-h: clamp(340px, calc(min(100svh, 1100px) - var(--hero-pt, 104px) - 316px), 720px);
-  --phone-w: calc(var(--phone-h) * 393 / 852);
-
-  /* The hero no longer draws its own device. It renders <PhoneChrome> — the
-     SAME component and the same iPhone chrome (iphone.module.css) as
-     the walkthrough and the Features shots — and only tells it how tall to be.
-     Before 2026-09-22 the hero had a private .demoShell/.demoNotch/.demoScreen
-     copy, which is how the two phones drifted into different corner radii,
-     bezels and islands. One device, fixed once. */
-  --wp-size: var(--phone-h);
-
-  /* The MONOSPACE receipt body's unit only (.acBody/.acLine). Equals 1px when
-     the screen is 346px wide — the width at which a standard 32-column receipt
-     body stops needing to pan. Everything else in the clip now scales on --u
-     below; this one keeps its own unit because the column arithmetic is what
-     makes the original receipt legible. */
-  --ac-u: max(0.72px, calc(var(--phone-w) / 346));
-
-  /* The appui kit's unit: 1 iPhone POINT (a 393pt-wide screen), so every value
-     in appui.module.css is the real number read off app-media/reference/.
-     Floored so the drawn UI can never go illegible on a small phone. */
-  --u: max(0.66px, calc(var(--phone-w) / 393));
-}
-
-/* Below 821px the hero is content-height (no `.screen`), so the phone keeps
-   the pre-2026-09-23 budget — phones are unchanged by the full-screen hero. */
-@media (max-width: 820px) {
-  .demoStage {
-    --phone-h: clamp(360px, calc(min(100vh, 1000px) - 368px), 720px);
-  }
-}
-
-/* --- The tap loop (P3-C4, 2026-09-25; travel P3-C5) -----------------------
-   Nico, P3-C5: the P3-C4 dip (6% of the phone) "reads as a still picture —
-   it should be doing like a tap back and forth". So the phone now travels
-   ~25% of its own height between two poses:
-      AWAY    lifted up and to the left of the device, standing upright (0deg)
-      CONTACT its foot on the device's top face, leaning in (+7deg)
-   The room for that travel comes from DROPPING THE DEVICE (--tap-drop, a
-   transform on .demoRdh, so no layout moves) instead of lifting the phone,
-   which would put it under the nav band or over the H1 column.
-
-   One cycle, --tap-cycle long, shared by every moving piece so they stay in
-   step. Frame 0 is the phone resting ON the device, so the server render,
-   no-JS, reduced motion and a paused loop all show that picture ("this goes
-   on that") and the first run never jumps:
-      0-6%    resting on the device
-      6-26%   lifts back out
-      26-62%  away (~1.5s)
-      62-82%  moves in
-      82-89%  contact: a small press, and the device answers — NFC rings off
-              its top face, the halo and the status light swell
-      89-100% resting on the device, then again
-   The keyframes are always attached but held paused; NfcPhone sets
-   `data-run` only while the stage is on screen, the tab is visible and
-   motion is allowed. Transform + opacity only. */
-.demoStage {
-  --tap-cycle: 4.2s;
-  /* Every distance is in phone units, so the tap lands in the same place at
-     every phone size. CONTACT: where the phone's bottom-centre sits on the
-     device's top face (the P3-C4 contact point, plus the drop). */
-  --tap-drop: calc(var(--phone-h) * 0.12);
-  --tap-x: calc(var(--phone-w) * 0.06);
-  --tap-y: calc(var(--tap-drop) + var(--phone-h) * 0.06);
-  --tap-r: 7deg;
-  /* AWAY: up and to the left, standing straight up. Nico, 2026-09-28: the
-     swing was "a tad much — the phone should stop when it's straight up", so
-     it no longer tilts back past vertical (-4deg) and travels ~35% less. */
-  --away-x: calc(var(--phone-h) * -0.045);
-  --away-y: calc(var(--phone-h) * -0.025);
-  --away-r: 0deg;
-  /* The pose the still frame shows: contact, at rest. */
-  --tap-rest: translate(var(--tap-x), var(--tap-y)) rotate(var(--tap-r));
-}
-/* Phones (stacked hero): the phone spans the column and the copy sits just
-   above it, so there is no room up or left. AWAY stays at the phone's own
-   place, barely lifted; the travel is the drop plus a lean to the right.
-   The drop is smaller so the device stays inside the hero's bottom padding. */
-@media (max-width: 820px) {
-  .demoStage {
-    --tap-drop: calc(var(--phone-h) * 0.09);
-    --away-x: 0px;
-    --away-y: calc(var(--phone-h) * -0.03);
-    --away-r: 0deg;
-  }
-}
-
-/* The phone sits above the device (z 2), so at contact it lies over the
-   box's top face instead of sliding behind it. The base transform is the
-   still frame (reduced motion, where the animation is dropped). */
-.tapPhone {
-  position: relative;
-  z-index: 2;
-  transform-origin: 50% 100%;
-  transform: var(--tap-rest);
-  /* Longhands, not the shorthand: with var() inside an `animation` shorthand
-     the CSS-modules compiler leaves the name un-hashed, so it matches no
-     @keyframes and the loop never plays. */
-  animation-name: heroTapPhone;
-  animation-duration: var(--tap-cycle);
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-  animation-fill-mode: both;
-}
-@keyframes heroTapPhone {
-  0%,
-  6% {
-    transform: var(--tap-rest);
-    animation-timing-function: cubic-bezier(0.3, 0, 0.2, 1);
-  }
-  26%,
-  62% {
-    transform: translate(var(--away-x), var(--away-y)) rotate(var(--away-r));
-    animation-timing-function: cubic-bezier(0.5, 0, 0.3, 1);
-  }
-  82% {
-    transform: var(--tap-rest);
-    animation-timing-function: ease-out;
-  }
-  /* the tap itself: a few pixels further in, then back up to contact */
-  85% {
-    transform: translate(var(--tap-x), calc(var(--tap-y) + 3px)) rotate(var(--tap-r));
-    animation-timing-function: ease-in-out;
-  }
-  89%,
-  100% {
-    transform: var(--tap-rest);
-  }
-}
-
-/* The device's halo (shape and seat: iphone.module.css .rdhGlow) swells at
-   contact. Its transform keeps the -50%/-50% centring the base rule uses. */
-.tapGlow {
-  animation-name: heroTapGlow;
-  animation-duration: var(--tap-cycle);
-  animation-timing-function: ease-in-out;
-  animation-iteration-count: infinite;
-  animation-fill-mode: both;
-}
-@keyframes heroTapGlow {
-  0%,
-  79%,
-  100% {
-    opacity: 0.55;
-    transform: translate(-50%, -50%) scale(0.98);
-  }
-  87% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1.06);
-  }
-}
-
-/* Two NFC rings (shape and seat: iphone.module.css .rdhRing) spread off the
-   top face at contact, the second a beat behind the first. Invisible for the
-   rest of the cycle. */
-.tapRing {
-  animation-name: heroTapRing;
-  animation-duration: var(--tap-cycle);
-  animation-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
-  animation-iteration-count: infinite;
-  animation-fill-mode: both;
-}
-.tapRing2 {
-  animation-delay: 0.32s;
-}
-/* Re-seated for the hero: centred on the part of the top face the tapping
-   phone leaves uncovered (right of the label, around the status light), so
-   the rings read at contact instead of spreading under the phone. Through
-   `.demoRdh` so it outranks iphone.module.css's single-class seat. */
-.demoRdh .tapRing {
-  left: 74%;
-  top: 33%;
-}
-@keyframes heroTapRing {
-  0%,
-  82% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.45);
-  }
-  83% {
-    opacity: 0.95;
-    transform: translate(-50%, -50%) scale(0.45);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(1.6);
-  }
-}
-
-/* The device's status light (RdhDevice's .rdhLed, below) blinks up at
-   contact. Scoped to the hero stage: §02 drives the same light by prop. */
-.demoStage .rdhLed {
-  animation-name: heroTapLed;
-  animation-duration: var(--tap-cycle);
-  animation-timing-function: ease-in-out;
-  animation-iteration-count: infinite;
-  animation-fill-mode: both;
-}
-@keyframes heroTapLed {
-  0%,
-  81%,
-  100% {
-    transform: none;
-  }
-  87% {
-    transform: scale(1.5);
-  }
-}
-
-.tapPhone,
-.tapGlow,
-.tapRing,
-.demoStage .rdhLed {
-  animation-play-state: paused;
-}
-.demoStage[data-run] .tapPhone,
-.demoStage[data-run] .tapGlow,
-.demoStage[data-run] .tapRing,
-.demoStage[data-run] .rdhLed {
-  animation-play-state: running;
-}
-
-/* Reduced motion: the still frame — phone resting on the device, halo at
-   full strength and one ring held on the top face, so the picture still
-   says "this goes on that". */
-@media (prefers-reduced-motion: reduce) {
-  .tapPhone,
-  .tapGlow,
-  .tapRing,
-  .demoStage .rdhLed {
-    animation: none;
-  }
-  .tapGlow {
-    opacity: 1;
-  }
-  .tapRing:not(.tapRing2) {
-    opacity: 0.8;
-    transform: translate(-50%, -50%) scale(0.9);
-  }
-}
-
-/* The hero's device is <PhoneChrome> — see --wp-size on .demoStage. Chrome
-   changes belong in iphone.module.css. */
-
-/* The PapeX device, seated under the phone's lower-right: pulled up so the
-   phone's foot overlaps its top face, and shifted right so the label shows.
-   Decorative since P3-C4 — the hero has nothing to click. */
-.demoRdh {
-  position: relative;
-  z-index: 1;
-  display: block;
-  margin-top: clamp(-120px, -8.6vw, -52px);
-  /* translateY: the tap loop's drop (--tap-drop on .demoStage) — a transform,
-     so the hero's height never changes. */
-  transform: translate(clamp(26px, 8.4vw, 108px), var(--tap-drop, 0px));
-  width: clamp(238px, 24vw, 318px);
-  line-height: 0;
-  /* Navy-tinted for the light hero — a black shadow on #F5F5F5 reads grey. */
-  filter: drop-shadow(0 22px 36px rgba(0, 18, 29, 0.3));
-}
-.demoRdh svg {
-  width: 100%;
-  height: auto;
-  display: block;
-  overflow: visible;
-}
-.rdhLed {
-  transition: opacity 0.3s ease, transform 0.3s ease;
-  transform-origin: 29px 59px;
-}
-.rdhLedPulsing {
-  opacity: 1;
-  transform: scale(1.5);
-}
 
 .acScroll {
   flex: 1;
@@ -1038,10 +704,37 @@
   min-height: 20px;
   text-align: center;
 }
-.walkCue b {
+.walkCue b,
+.walkReplay {
   /* Orange TEXT on light is #A04E00 (5.4:1), never #EB7100 (2.8:1). */
   color: #a04e00;
   font-weight: 600;
+}
+/* "Replay" is a real button (deck s-25) that looks like the bold word it
+   replaced; an invisible ::after gives it a >=44px tap area. */
+.walkReplay {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.walkReplay::after {
+  content: "";
+  position: absolute;
+  left: -10px;
+  right: -10px;
+  top: 50%;
+  height: 44px;
+  transform: translateY(-50%);
+}
+.walkReplay:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 3px;
+  border-radius: 4px;
 }
 
 /* --- Scroll-pinned walkthrough (2026-09-10) -------------------------------
@@ -1313,6 +1006,25 @@
   outline-offset: 3px;
   border-radius: 4px;
 }
+/* Phones: step titles get a >=44px tap area (deck s-25) without moving, and
+   the step body is 16px like the rest of the phone body copy (s-26). */
+@media (max-width: 820px) {
+  .walkStepBtn {
+    position: relative;
+  }
+  .walkStepBtn::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 44px;
+    transform: translateY(-50%);
+  }
+  .walkStepBody {
+    font-size: 16px;
+  }
+}
 
 /* The one privacy line (P4): true of the tap only, so it sits under the
    steps that narrate the tap. */
@@ -1368,8 +1080,7 @@
   .pinnedNfcRing,
   .pinnedNfcRingOffset,
   .arrowBob,
-  .walkTilt,
-  .rdhLed {
+  .walkTilt {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;

@@ -35,7 +35,7 @@ export const pocketCopy = {
   /** Shown on the scene: the receipts and coupon are sample data. */
   demoTag: "Demo data",
   /** The card line printed on the receipts. Never a full number, never a brand. */
-  cardLine: "Card •••• 4242",
+  cardLine: "Card ************4242",
   /**
    * The email receipt that gets forwarded, drawn as a real mail client
    * (window chrome, From / To / date header, bold subject, the merchant's

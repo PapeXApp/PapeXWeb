@@ -12,6 +12,7 @@ import { Features } from "./Features";
 import { HowItWorks } from "./HowItWorks";
 import { Vision } from "./Vision";
 import { Pocket } from "./Pocket";
+import { DownloadCta } from "./DownloadCta";
 import { customerFaq, customerFaqHeading } from "./faq";
 import styles from "./customer.module.css";
 
@@ -22,29 +23,27 @@ import styles from "./customer.module.css";
  * FlowGround crossfades ONE page-level ground between them (see
  * components/paths/shared/flow.module.css).
  *
- * Web 2.1 FINAL ORDER (Nico, 2026-09-24, merge wiring). Show WHAT first,
- * then answer the visitor's next question, in the order they ask it:
- *   01 Hero                              light
- *   02 How it works (walkthrough)        light  (the hero cue scrolls here)
- *      ribbon                            (no ground of its own)
- *   03 Problem — "Why does it matter?"   light
- *   04 Quiz — "What's in it for you?"    NAVY
- *   05 Features — "What else can I do?"  NAVY   id="features"
- *      (the quiz result re-orders Features' five rows and swaps their
- *      lines/titles/phones: personaStore.ts; restored as two sections in
- *      P3-C3 after the P3-C2 merge — Nico: "don't touch the questionnaire")
- *   06 Privacy                           light
- *   07 Get it — Vision + Download        NAVY
- *   08 FAQ                               NAVY   id="faq"
- *      footer                            NAVY   (FlowGround's footer slot,
- *                                                outside <main>)
- * 04→05 is navy next to navy by Nico's order; 07→08→footer is also navy next
- * to navy, so there's no colour change from Get it through the footer;
- * everything else alternates.
+ * PAGE ORDER (Web 2.1 P4 reorder, Nico 2026-09-28 — the app first, because
+ * most visitors can't tap a PapeX device yet). Render order, with each
+ * section's own [NN] eyebrow and id:
+ *   [01] Hero — the app                        light
+ *   [02] Pocket — the app, step by step        light  id="pocket"
+ *   [04] Quiz — "What's in it for you?"        NAVY   id="quiz"
+ *   [05] Features — "Once it's yours"          NAVY   id="features"
+ *        (the quiz result re-orders Features' five rows and swaps their
+ *        lines/titles/phones: personaStore.ts — Nico: "don't touch the
+ *        questionnaire")
+ *   [03] Problem — "Why does it matter?"       light  id="problem"
+ *   [06] How it works — the tap walkthrough    light  id="how-it-works"
+ *        ribbon                                (no ground of its own)
+ *   [07] Get it — Vision + Download            NAVY   id="get-it"
+ *   [08] FAQ + a closing "Download the app"    NAVY   id="faq"
+ *        footer                                NAVY   (FlowGround's footer
+ *                                              slot, outside <main>)
+ * The old Privacy section is retired (its headline became the hero's).
  *
- * The [NN] eyebrows live inside each section file (or are passed as
- * `eyebrowIndex` for the shared Faq and Privacy); keep them in step with
- * this list.
+ * The [NN] indexes above are the ones each section file passes; they are
+ * no longer rendered (SectionLabel), so their pre-reorder values are harmless.
  *
  * `initial="light"` is the hero's colour and MUST match the fork's bottom half.
  *
@@ -86,7 +85,14 @@ export function CustomerPath() {
         <HowItWorks />
         <MarqueeBand />
         <Vision />
-        <Faq id="faq" eyebrowIndex="08" ground="navy" heading={customerFaqHeading} items={customerFaq} />
+        <Faq
+          id="faq"
+          eyebrowIndex="08"
+          ground="navy"
+          heading={customerFaqHeading}
+          items={customerFaq}
+          footer={<DownloadCta />}
+        />
       </FlowGround>
     </div>
   );
