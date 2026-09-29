@@ -213,16 +213,23 @@
     .shotWipe {
       animation-name: shotWipe;
       animation-duration: auto;
-      animation-timing-function: cubic-bezier(0.7, 0, 0.15, 1);
+      /* Nico, 2026-09-28: "starts smaller and gets bigger the deeper I scroll,
+         but also starts earlier". The window now opens as the shot's top
+         crosses ~96% of the viewport and finishes at ~38%; across it the shot
+         also grows from 80% to full size, anchored on the side it opens from.
+         A gentler ease, since the window is longer. */
+      animation-timing-function: cubic-bezier(0.45, 0, 0.2, 1);
       animation-fill-mode: both;
       animation-timeline: view();
-      animation-range-start: cover 30vh;
+      animation-range-start: cover 4vh;
       animation-range-end: cover 62vh;
+      transform-origin: calc(50% + 50% * var(--wipe-dir)) 50%;
     }
   }
 }
 @keyframes shotWipe {
   from {
+    transform: scale(0.8);
     clip-path: inset(
       calc(-1 * var(--wipe-bleed))
         calc((1 - var(--wipe-dir)) / 2 * (100% + 2 * var(--wipe-bleed)) - var(--wipe-bleed))
@@ -231,6 +238,7 @@
     );
   }
   to {
+    transform: none;
     clip-path: inset(calc(-1 * var(--wipe-bleed)));
   }
 }
