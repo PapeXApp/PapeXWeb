@@ -61,9 +61,6 @@
     font-size: 76px; line-height: 1.06; letter-spacing: -0.012em;
   }
   .headline em { font-style: normal; color: var(--orange); }
-  /* The business H1 is longer than the default line: balanced lines, and a
-     touch smaller so it keeps clear of the logo and the URL. */
-  .business .headline { font-size: 64px; text-wrap: balance; }
   .url {
     position: absolute; left: 78px; bottom: 60px;
     font-size: 27px; letter-spacing: 0.01em; color: rgba(0, 18, 29, 0.72);
@@ -266,10 +263,8 @@
     // Copy per variant. Max ~8 words on the image (copy gate).
     const COPY = {
       default: 'Your receipt,<br><em>one tap</em> away.',
-      // /business: its H1 (Nico, round 2 d-01), for owners who get a shared
-      // link. Ten words, over the ~8 gate, because it must match the page's
-      // H1; the business rule below balances it into even lines.
-      business: 'Every sale is the first step to <em>bringing them back</em>.',
+      // /business: its H1 (Nico, q-01), for owners who get a shared link.
+      business: 'Close the loop<br>on <em>every sale</em>.',
     };
     const URLS = { business: 'papex.app/business' };
     const q = new URLSearchParams(location.search).get('v');

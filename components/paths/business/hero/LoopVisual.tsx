@@ -15,7 +15,7 @@ import { loop } from "./loop"
 import s from "./hero.module.css"
 
 /**
- * The /business hero visual — the return-visit loop, a 12-second story at
+ * The /business hero visual — "CLOSE THE LOOP", a 12-second looped story at
  * a checkout counter (P3-B1, 2026-09-25; art and guide redone in P3-B6; story
  * redone in P3-B7 to Nico's storyboard; retimed from 26.8s to 12s in P3-B10).
  *

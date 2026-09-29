@@ -66,11 +66,9 @@ export function Hero() {
       <div className="relative mx-auto grid w-full max-w-[1150px] grid-cols-1 items-center gap-[clamp(30px,5vw,70px)] min-[900px]:grid-cols-[1.14fr_.86fr]">
         <ChildStagger className="max-w-[620px]">
           <SectionLabel index="01">{hero.eyebrow}</SectionLabel>
-          {/* Round 2 (d-01): the longer H1 is balanced so it never ends on a
-              lone "back." (four even lines at 1440, 390 and 320). */}
           <WordReveal
             as="h1"
-            className="text-[length:var(--fs-h1-merchant)] font-bold leading-[1.02] tracking-[-.025em] [font-family:var(--font-display)] [text-wrap:balance]"
+            className="text-[length:var(--fs-h1-merchant)] font-bold leading-[1.02] tracking-[-.025em] [font-family:var(--font-display)]"
           >
             {hero.heading}
           </WordReveal>

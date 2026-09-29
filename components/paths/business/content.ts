@@ -56,7 +56,7 @@ export const hero = {
   // ("free") is carried by the lead. The same words head the business share
   // image (scripts/og/og.html, public/og-business.png).
   eyebrow: "Tap to Retain",
-  heading: "Every sale is the first step to bringing them back.",
+  heading: "Close the loop on every sale.",
   lead: "A free PapeX device, our Receipt Delivery Hardware, sits at your counter and works like a printer. Customers tap their phone for a digital receipt. You get a dashboard of every sale.",
   // Nico's approved paper wording (§6a round 2). No longer a required pair
   // (the H1 no longer says "Zero paper"), kept as the hero's sub-line. If
@@ -141,7 +141,7 @@ export const howItWorks = {
   // the heading. No per-step minutes (we have no measured split to show).
   lead: "One short visit, and you're live.",
   axisStart: "0 min",
-  axisEnd: "about 15 min",
+  axisEnd: "15 min",
   steps: [
     {
       number: "01",

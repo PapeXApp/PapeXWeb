@@ -1,4 +1,4 @@
-// Copy for the /business hero visual: the return-visit loop animation (P3-B1,
+// Copy for the /business hero visual: the "CLOSE THE LOOP" animation (P3-B1,
 // 2026-09-25; story redone in P3-B7 to Nico's storyboard). One 12-second loop at a
 // checkout counter, one beat at a time:
 //   1. Tap      the phone touches the PapeX device; the App Clip card pops up;

@@ -80,7 +80,7 @@ export const problemContent = {
       question: "What do businesses pay for it?",
       hint: "Tap to reveal",
       value: "$540M+",
-      caption: "spent by US businesses on receipt paper in a single year (2025 forecast).",
+      caption: "spent by US businesses on receipt paper in a single year (2025).",
       source: "Epson, citing Grand View Research (2025)",
     },
   ] satisfies ProblemCard[],
