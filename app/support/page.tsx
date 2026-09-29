@@ -14,13 +14,32 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { FramerPageShell } from '@/components/framer/framer-page-shell'
 import { SALES_PHONE, SALES_PHONE_HREF } from '@/components/brand/links'
+import { DEFAULT_OG_IMAGE } from '@/components/blog/image'
+
+const OG_ALT =
+  'The PapeX logo and the words Your receipt, one tap away, beside an iPhone showing a PapeX receipt'
 
 export const metadata: Metadata = {
-  title: 'PapeX Merchant Support',
+  title: 'Help for your PapeX device | PapeX',
   description:
-    'Support and troubleshooting for your PapeX Receipt Delivery Hardware (RDH). Status light guide, common issues, and contact info.',
+    'Status lights, quick fixes and how to reach us for your PapeX tap device.',
   robots: { index: true, follow: true },
   alternates: { canonical: 'https://papex.app/support' },
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://papex.app/support',
+    siteName: 'PapeX',
+    title: 'Help for your PapeX device | PapeX',
+    description: 'Status lights, quick fixes and how to reach us for your PapeX tap device.',
+    images: [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630, alt: OG_ALT }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Help for your PapeX device | PapeX',
+    description: 'Status lights, quick fixes and how to reach us for your PapeX tap device.',
+    images: [DEFAULT_OG_IMAGE],
+  },
 }
 
 type Signal = 'normal' | 'attention'
@@ -148,14 +167,14 @@ const TROUBLESHOOTING: { title: string; steps: string[] }[] = [
   {
     title: 'Customer tapped but nothing happened',
     steps: [
-      'Make sure their phone has NFC enabled (most modern phones do by default).',
+      'Make sure their phone’s tap reader (NFC) is on. Most phones have it on already.',
       'Ask the customer to hold their phone flat against the device for 2–3 seconds.',
       'Phone cases can block NFC. Try without the case.',
-      'If the App Clip opened but no receipt appeared, it may still be processing. It will show up in a few seconds.',
+      'If the receipt card opened but is still blank, it may still be processing. It will show up in a few seconds.',
     ],
   },
   {
-    title: 'Customer says the App Clip is stuck loading',
+    title: 'Customer says the receipt is still loading',
     steps: [
       'This is normal. The receipt is being processed. It typically appears within a few seconds.',
       'If it takes more than 30 seconds, offer to reprint from your POS.',
@@ -207,7 +226,7 @@ const DONTS: string[] = [
 const CUSTOMER_QA: { q: string; a: React.ReactNode }[] = [
   {
     q: '“What’s that thing?”',
-    a: 'It’s a digital receipt reader. When you’re done paying, you can tap your phone on it and your receipt goes straight to your phone.',
+    a: 'That’s PapeX. Tap your phone on it and your receipt pops up. No paper, no app needed.',
   },
   {
     q: '“How does it work?”',
@@ -215,15 +234,15 @@ const CUSTOMER_QA: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: '“Do I need to download an app?”',
-    a: 'Nope, your receipt pops up right away. But if you want to keep all your receipts in one place, you can download the full app from there. It lets you search, organize, track expenses, all that.',
+    a: 'Nope, your receipt pops up right away. The app is optional. It keeps all your receipts and coupons in one place, easy to find.',
   },
   {
     q: '“Is there an app?”',
-    a: 'Yeah, it’s free. It keeps all your digital receipts in one place so you can search them, organize them, track expenses, or pull one up if you need to do a return. You can download it from the App Store.',
+    a: 'It’s a free app that keeps all your receipts and coupons in one place, so finding one for a return takes seconds. It’s free on the App Store.',
   },
   {
     q: '“Is it free?”',
-    a: 'Yep, totally free. It just sends your receipt to your phone instead of printing it.',
+    a: 'Yep, it’s free. It just sends your receipt to your phone instead of printing it.',
   },
   {
     q: '“Is my info safe?”',
@@ -276,13 +295,13 @@ export default function SupportPage() {
           {/* Header */}
           <header className="space-y-3 text-center md:text-left">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#EB7100]">
-              PapeX RDH
+              For businesses
             </p>
             <h1 className="text-3xl md:text-4xl font-bold text-[#00121D] leading-tight">
-              Merchant Support
+              Help with your PapeX device
             </h1>
             <p className="text-lg text-[#00121D]/70 leading-relaxed">
-              Everything you need for your PapeX RDH.
+              Status lights, quick fixes, and how to reach us.
             </p>
           </header>
 
@@ -291,9 +310,9 @@ export default function SupportPage() {
 
           {/* Status Light */}
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#00121D]">Status Light</h2>
+            <h2 className="text-2xl font-semibold text-[#00121D]">Status light</h2>
             <p className="text-[#00121D]/70 leading-relaxed">
-              Your RDH has one visible status light. Here&rsquo;s what each state means:
+              Your PapeX device has one status light. Here&rsquo;s what each state means:
             </p>
             <div className="overflow-x-auto rounded-2xl border border-[#00121D]/15">
               <table className="w-full min-w-[38rem] text-sm">
@@ -351,7 +370,7 @@ export default function SupportPage() {
                   key={item.title}
                   className="group rounded-2xl border border-[#00121D]/15 bg-white p-5 open:shadow-sm"
                 >
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold text-[#00121D]">
+                  <summary className="-my-2.5 flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-3 font-semibold text-[#00121D]">
                     <span>{item.title}</span>
                     <span
                       aria-hidden
@@ -378,7 +397,7 @@ export default function SupportPage() {
 
           {/* Do's and Don'ts */}
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#00121D]">Do&rsquo;s and Don&rsquo;ts</h2>
+            <h2 className="text-2xl font-semibold text-[#00121D]">Do&rsquo;s and don&rsquo;ts</h2>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="rounded-2xl border border-green-200 bg-green-50/50 p-6">
                 <h3 className="text-lg font-semibold text-green-700">Do</h3>
@@ -409,11 +428,11 @@ export default function SupportPage() {
             </div>
           </section>
 
-          {/* FAQ's — compact dropdown boxes laid out in a 2-column grid.
+          {/* What to tell customers — compact dropdown boxes laid out in a 2-column grid.
               items-start so a collapsed box next to an expanded one keeps its
               own height instead of stretching to match its row neighbour. */}
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#00121D]">FAQ&rsquo;s</h2>
+            <h2 className="text-2xl font-semibold text-[#00121D]">What to tell customers</h2>
             <p className="text-[#00121D]/70 leading-relaxed">
               Quick answers you can give at the counter.
             </p>
@@ -423,7 +442,7 @@ export default function SupportPage() {
                   key={item.q}
                   className="group rounded-xl border border-[#00121D]/15 bg-white p-4 open:shadow-sm"
                 >
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-sm font-semibold text-[#00121D]">
+                  <summary className="-my-3 flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-2 text-base font-semibold text-[#00121D] sm:text-sm">
                     <span>{item.q}</span>
                     <span
                       aria-hidden
@@ -432,7 +451,7 @@ export default function SupportPage() {
                       +
                     </span>
                   </summary>
-                  <div className="mt-3 text-sm text-[#00121D]/85 leading-relaxed">{item.a}</div>
+                  <div className="mt-3 text-base text-[#00121D]/85 leading-relaxed sm:text-sm">{item.a}</div>
                 </details>
               ))}
             </div>
@@ -440,9 +459,9 @@ export default function SupportPage() {
 
           {/* Never touches card data — navy gradient callout matching the site's subpage CTA.
               NOTE: framer-site.css sets `.framer-site a { color: inherit }`, which
-              outranks Tailwind's `text-white` on links (class+element > class). The
-              `!text-white` important modifier is required so the button label is
-              visible (white) rather than inheriting the dark body color. */}
+              outranks Tailwind's text colour on links (class+element > class). The
+              `!text-[#00121D]` important modifier is required so the button label is
+              navy on the orange (o-18) rather than inheriting the body color. */}
           <section className="overflow-hidden rounded-2xl border-t-4 border-[#EB7100] bg-gradient-to-b from-[#00121D] to-[#0a2431] p-8 shadow-md">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
               <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-white/10 text-[#EB7100]">
@@ -465,12 +484,12 @@ export default function SupportPage() {
               <div className="flex-1">
                 <h2 className="text-xl font-semibold text-white">Never touches card data</h2>
                 <p className="mt-2 leading-relaxed text-white/75">
-                  Your PapeX device (RDH) is a POS peripheral: it doesn&rsquo;t store, process or
-                  transmit cardholder data. The full PCI scope letter is at papex.app/pci.
+                  Your PapeX device only sees the receipt. It never touches card data: nothing
+                  stored, processed or sent.
                 </p>
                 <Link
                   href="/pci"
-                  className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#EB7100] px-6 py-3 text-sm font-semibold !text-white shadow-sm transition hover:bg-[#cc6300]"
+                  className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#EB7100] px-6 py-3 text-sm font-semibold !text-[#00121D] shadow-sm transition hover:bg-[#cc6300]"
                 >
                   How we handle card data
                   <svg

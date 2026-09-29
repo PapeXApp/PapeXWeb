@@ -20,13 +20,32 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { FramerPageShell } from '@/components/framer/framer-page-shell'
 import { SALES_PHONE, SALES_PHONE_HREF } from '@/components/brand/links'
+import { DEFAULT_OG_IMAGE } from '@/components/blog/image'
+
+const OG_ALT =
+  'The PapeX logo and the words Your receipt, one tap away, beside an iPhone showing a PapeX receipt'
 
 export const metadata: Metadata = {
-  title: 'PCI DSS Scoping Statement',
+  title: 'PCI DSS Scoping Statement | PapeX',
   description:
     'PapeX Receipt Delivery Hardware (RDH) PCI DSS scoping documentation for qualified security assessors and compliance reviews.',
   robots: { index: true, follow: true },
   alternates: { canonical: 'https://papex.app/pci' },
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://papex.app/pci',
+    siteName: 'PapeX',
+    title: 'PCI DSS Scoping Statement | PapeX',
+    description: 'PapeX Receipt Delivery Hardware (RDH) PCI DSS scoping documentation for qualified security assessors and compliance reviews.',
+    images: [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630, alt: OG_ALT }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'PCI DSS Scoping Statement | PapeX',
+    description: 'PapeX Receipt Delivery Hardware (RDH) PCI DSS scoping documentation for qualified security assessors and compliance reviews.',
+    images: [DEFAULT_OG_IMAGE],
+  },
 }
 
 const SPECS: { label: string; value: string; emphasis?: boolean }[] = [
@@ -88,7 +107,7 @@ export default function PciCompliancePage() {
           {/* Header */}
           <header className="space-y-4 border-b border-[#00121D]/10 pb-8">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#EB7100]">
-              PapeX, Inc. — Compliance Documentation
+              PapeX, Inc. — Card-data scope
             </p>
             <h1 className="text-3xl md:text-4xl font-bold text-[#00121D] leading-tight">
               PCI DSS Scoping Statement
@@ -328,7 +347,7 @@ export default function PciCompliancePage() {
               <section> to keep exactly one footer landmark. */}
           <section className="border-t border-[#00121D]/10 pt-6">
             <p className="text-xs text-[#00121D]/50 uppercase tracking-wide">
-              PapeX, Inc. — Provided to merchant for PCI compliance documentation.
+              PapeX, Inc. — Provided to merchants for their PCI DSS review.
             </p>
           </section>
         </article>

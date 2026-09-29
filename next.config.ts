@@ -44,6 +44,7 @@ const nextConfig: NextConfig = {
       // now removed).
       { source: '/pos-value-prop', destination: '/business', permanent: false },
       { source: '/waitlist', destination: '/', permanent: false },
+      { source: '/survey', destination: '/', permanent: false },
       { source: '/contact', destination: '/about', permanent: false },
     ];
   },
