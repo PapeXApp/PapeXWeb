@@ -41,18 +41,22 @@
   transition-duration: 700ms;
   transition-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
+/* --flow-fg-3 is the faint tier (s-24): the least ink that still clears
+   4.5:1 on its ground, with a little room for the aurora pools. Was .46 on
+   both grounds (3.1:1 light, 4.3:1 navy). Now .6 on light = 4.9:1 and .52 on
+   navy = 5.3:1; it stays visibly fainter than --flow-fg-2 (.66). */
 .flow[data-ground="light"] {
   --flow-ground: #f5f5f5;
   --flow-fg: #00121d;
   --flow-fg-2: rgba(0, 18, 29, 0.66);
-  --flow-fg-3: rgba(0, 18, 29, 0.46);
+  --flow-fg-3: rgba(0, 18, 29, 0.6);
   --flow-hair: rgba(0, 18, 29, 0.09);
 }
 .flow[data-ground="navy"] {
   --flow-ground: #00121d;
   --flow-fg: #f5f5f5;
   --flow-fg-2: rgba(245, 245, 245, 0.66);
-  --flow-fg-3: rgba(245, 245, 245, 0.46);
+  --flow-fg-3: rgba(245, 245, 245, 0.52);
   --flow-hair: rgba(245, 245, 245, 0.09);
 }
 

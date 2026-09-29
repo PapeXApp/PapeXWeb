@@ -11,7 +11,7 @@ type ScrollLitProps = {
 }
 
 /**
- * A statement whose words start dim (~22% opacity) and light up one after
+ * A statement whose words start dim (half ink, still readable) and light up one after
  * another as the paragraph scrolls up through the viewport.
  *
  * Pure CSS — no JS, no listener. The paragraph is a named view timeline and

@@ -35,3 +35,8 @@ export const SOCIAL_LINKS = {
   x: '',
   instagram: '',
 }
+
+// The id every shell puts on the page's <main>, and the "Skip to content"
+// link's target (components/brand/skip-link.tsx). Lives here, not in the
+// 'use client' skip-link module, so server components can read the string.
+export const MAIN_ID = 'main'

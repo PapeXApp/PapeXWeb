@@ -7,7 +7,7 @@
 // The footer is NOT mounted here. CustomerPath and BusinessPath each render
 // <SiteFooter inFlow /> INSIDE their FlowGround, so it joins the page's ground
 // crossfade instead of being a flat slab below it. The fork has no footer at
-// all, and the ten legacy routes get theirs from
+// all, and the legacy routes get theirs from
 // components/framer/framer-page-shell.tsx.
 //
 // `<main>` (2026-09-24, docs/design/footer-landmark.md): the shell renders the
@@ -25,6 +25,8 @@
 import type { ReactNode } from 'react'
 import { SiteNav, type SitePath } from './site-nav'
 import { RememberPath } from './remember-path'
+import { SkipLink } from './skip-link'
+import { MAIN_ID } from './links'
 
 export function SiteShell({
   path,
@@ -46,8 +48,16 @@ export function SiteShell({
   return (
     <div className="rd">
       {pathChoice && <RememberPath choice={pathChoice} />}
+      {/* First tab stop on the page (s-07), before the nav. */}
+      <SkipLink />
       <SiteNav path={path} />
-      {main ? <main>{children}</main> : children}
+      {main ? (
+        <main id={MAIN_ID} tabIndex={-1}>
+          {children}
+        </main>
+      ) : (
+        children
+      )}
     </div>
   )
 }

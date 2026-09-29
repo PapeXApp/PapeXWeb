@@ -378,8 +378,11 @@
   background: rgba(0, 18, 29, 0.07);
   color: var(--navy);
 }
+/* s-23: on light glass the current page reads navy on its pale orange pill
+   (orange-on-pale-orange measured 2.4:1). On the dark glass the orange text
+   stays: it is 6.2:1 on navy, and navy text there would vanish. */
 [data-glass="light"] .rd-navlink[aria-current="page"] {
-  color: var(--orange);
+  color: var(--navy);
   background: rgba(235, 113, 0, 0.14);
 }
 
@@ -431,8 +434,111 @@
 .rd-menu-sheet a:last-child {
   border-bottom: none;
 }
+/* Current page in the phone sheet: the sheet's glass reads mid-grey over a
+   light page, where orange text measured ~2:1. Keep the text light, make it
+   bold and mark it with an orange dot, so the state isn't colour alone. */
 .rd-menu-sheet a[aria-current="page"] {
-  color: var(--orange);
+  color: var(--offwhite);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.rd-menu-sheet a[aria-current="page"]::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--orange);
+  flex: none;
+}
+
+/* Nav button hidden (s-02: while the hero's own button is on screen; f-01:
+   always on the fork). visibility, not display: the box keeps its place so
+   the burger and the links bubble never shift, and a hidden link is out of
+   the tab order and the accessibility tree. The fade-in is skipped under
+   reduced motion by the global rule at the bottom of this file. */
+.rd-btn-nav {
+  transition: transform var(--dur-hover) var(--ease-out-expo),
+    box-shadow var(--dur-hover) ease, opacity 0.25s ease, visibility 0s linear 0s;
+}
+.rd-btn-nav[data-hidden] {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, visibility 0s linear 0.2s;
+}
+
+@media (max-width: 820px) {
+  .rd-btn-nav[data-hidden="fork"] {
+    display: none;
+  }
+}
+
+.rd-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+/* Narrow phones (320-380): logo + "Download the app" + burger overran the
+   right edge by up to 30px at 320 (the burger was cut off). Trim the side
+   padding, gaps and the button's padding; every target stays >= 44px tall
+   through the hit areas below. */
+@media (max-width: 380px) {
+  .rd {
+    --nav-pad-x: 10px;
+  }
+  .rd-nav {
+    gap: 8px;
+  }
+  .rd-nav-actions {
+    gap: 6px;
+  }
+  .rd-logo-bubble {
+    padding: 8px 12px 8px 10px;
+  }
+  .rd-btn-nav {
+    padding: 11px 14px;
+    font-size: 13.5px;
+  }
+}
+
+/* "Skip to content" (s-07, components/brand/skip-link.tsx): the first tab
+   stop on every page, invisible until it has keyboard focus. */
+.rd-skip {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 200;
+  padding: 12px 18px;
+  border-radius: var(--r-pill);
+  background: var(--navy);
+  color: var(--offwhite) !important;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1.2;
+  box-shadow: var(--sh-nav);
+}
+.rd-skip:not(:focus) {
+  clip-path: inset(50%);
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+/* The landmark it lands on takes focus only to move the caret; no ring. */
+main[tabindex="-1"]:focus {
+  outline: none;
+}
+
+/* Keyboard focus, everywhere in the chrome: the site's orange ring (same as
+   the blog cards and form inputs). Zero-specificity :where, so any
+   component that styles its own focus state still wins. */
+.rd :where(a, button, input, select, textarea, summary, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 3px;
 }
 
 /* Single breakpoint, per README "Responsive": 820px swaps the links bubble for
@@ -552,11 +658,15 @@ html[data-fork-skip] .rd-fork {
 
 /* --- Footer --------------------------------------------------------------- */
 .rd-footer {
-  /* Default (the ten legacy FramerPageShell routes): flat navy slab. */
+  /* Default (the legacy FramerPageShell routes): flat navy slab. */
   --foot-ink: var(--white);
   --foot-ink-2: rgba(245, 245, 245, 0.55);
-  --foot-ink-3: var(--on-dark-faint);
+  /* s-24: .4 measured 3.6:1 on navy for the fine print; .52 = 5.3:1. */
+  --foot-ink-3: rgba(245, 245, 245, 0.52);
   --foot-link: rgba(245, 245, 245, 0.7);
+  /* Column titles (s-17): a step under the links, still well clear of 4.5:1
+     (.6 on navy = 6.7:1). */
+  --foot-head: rgba(245, 245, 245, 0.6);
   --foot-hair: var(--on-dark-border);
   background: var(--navy);
   color: var(--offwhite);
@@ -576,6 +686,7 @@ html[data-fork-skip] .rd-fork {
   --foot-ink-2: var(--flow-fg-2);
   --foot-ink-3: var(--flow-fg-3);
   --foot-link: var(--flow-fg-2);
+  --foot-head: var(--flow-fg-2);
   --foot-hair: var(--flow-hair);
   background: transparent;
   color: var(--flow-fg);
@@ -586,7 +697,10 @@ html[data-fork-skip] .rd-fork {
   max-width: var(--section-max);
   margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  /* 180px (was 200) so the five columns left after the sign-up box went
+     (s-14) share one row at desktop widths instead of orphaning "Get in
+     touch" on a second row. */
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: clamp(30px, 5vw, 60px);
 }
 .rd-foot-heading {
@@ -594,12 +708,17 @@ html[data-fork-skip] .rd-fork {
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  /* Fixed, not --foot-ink-3: on navy (the footer's only ground, flat or
-     in-flow) --foot-ink-3 measured 4.34:1 (#717a80), below the 4.5:1 text
-     floor. This is the smallest bump that clears it: rgba(245,245,245,.48)
-     on #00121d = #767f85, 4.66:1. */
-  color: rgba(245, 245, 245, 0.48);
+  /* s-17: follows the page's ink like the links do. A fixed light tone
+     vanished (~1:1) while the in-flow footer scrolled in over a still-light
+     ground; --foot-head is the live --flow-fg-2 there (6:1 on light, 7.9:1 on
+     navy) and a flat .6 on the legacy navy slab. */
+  color: var(--foot-head);
   margin: 0 0 16px;
+}
+.rd-foot-links {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
 }
 .rd-foot-link {
   font-size: 15px;
@@ -625,30 +744,6 @@ html[data-fork-skip] .rd-fork {
   border-color: var(--orange);
   color: var(--orange);
 }
-.rd-foot-input {
-  flex: 1;
-  min-width: 0;
-  padding: 11px 14px;
-  border-radius: var(--r-10);
-  border: 1px solid var(--foot-hair);
-  background: color-mix(in srgb, var(--foot-ink) 6%, transparent);
-  color: var(--foot-ink);
-  font-size: 14px;
-  outline: none;
-}
-.rd-foot-input::placeholder {
-  color: var(--foot-ink-3);
-}
-.rd-foot-join {
-  border: none;
-  cursor: pointer;
-  padding: 11px 16px;
-  border-radius: var(--r-10);
-  background: var(--orange);
-  color: var(--navy);
-  font-weight: 600;
-  font-size: 14px;
-}
 .rd-foot-bottom {
   max-width: var(--section-max);
   margin: 44px auto 0;
@@ -661,6 +756,55 @@ html[data-fork-skip] .rd-fork {
   gap: 12px;
   font-size: 13px;
   color: var(--foot-ink-3);
+}
+
+/* --- Tap targets on phones (s-25) ------------------------------------------
+   Every link and button in the chrome gets a hit area at least 44px tall
+   (and 44px wide) without changing how it looks: an invisible ::after,
+   centred on the element.
+   .rd-btn drops its overflow:hidden here (it clipped the hit area; nothing
+   inside a button needs clipping — Ripple brings its own host). */
+@media (max-width: 820px) {
+  /* The column lists are the one place a hit area alone can't reach 44px:
+     at 23px links on an 11px gap the rows are 34px apart, so neighbouring
+     areas would overlap. A 21px gap puts them 44px apart (the phone menu
+     sheet's rhythm); the links themselves don't change. */
+  .rd-foot-links {
+    gap: 21px;
+  }
+  .rd-foot-link,
+  .rd-logo-bubble {
+    position: relative;
+  }
+  .rd-btn {
+    overflow: visible;
+  }
+  .rd-foot-link::after,
+  .rd-logo-bubble::after,
+  .rd-btn::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: min(0px, calc(50% - 22px));
+    right: min(0px, calc(50% - 22px));
+    height: max(44px, 100%);
+    transform: translateY(-50%);
+  }
+}
+
+/* --- Scroll reveals meet the keyboard (b-28) --------------------------------
+   Anything that fades or slides in on scroll shows at once when it, or
+   anything inside it, takes keyboard focus: a Tab can land on an element the
+   scroll hasn't revealed yet. Covers the JS reveals (Reveal/ChildStagger
+   write inline styles, beaten by !important) and the CSS scroll-driven ones
+   (ScrollReveal/ScrollWipe in components/motion/motion.css). */
+.rd :is([data-reveal], [data-reveal-group] > *, .papex-rv, .papex-wipe):focus-within {
+  opacity: 1 !important;
+  transform: none !important;
+  filter: none !important;
+  clip-path: none !important;
+  animation: none !important;
+  transition: none !important;
 }
 
 /* --- Motion keyframes ----------------------------------------------------- */
@@ -760,7 +904,7 @@ html[data-fork-skip] .rd-fork {
 @property --flow-fg-3 {
   syntax: "<color>";
   inherits: true;
-  initial-value: rgba(245, 245, 245, 0.46);
+  initial-value: rgba(245, 245, 245, 0.52);
 }
 @property --flow-hair {
   syntax: "<color>";
