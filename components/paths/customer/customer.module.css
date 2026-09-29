@@ -445,7 +445,7 @@
    Nico, P3-C5: the P3-C4 dip (6% of the phone) "reads as a still picture —
    it should be doing like a tap back and forth". So the phone now travels
    ~25% of its own height between two poses:
-      AWAY    lifted up and to the left of the device, tilted back (-4deg)
+      AWAY    lifted up and to the left of the device, standing upright (0deg)
       CONTACT its foot on the device's top face, leaning in (+7deg)
    The room for that travel comes from DROPPING THE DEVICE (--tap-drop, a
    transform on .demoRdh, so no layout moves) instead of lifting the phone,
@@ -474,10 +474,12 @@
   --tap-x: calc(var(--phone-w) * 0.06);
   --tap-y: calc(var(--tap-drop) + var(--phone-h) * 0.06);
   --tap-r: 7deg;
-  /* AWAY: up and to the left, tilted back. */
-  --away-x: calc(var(--phone-h) * -0.07);
-  --away-y: calc(var(--phone-h) * -0.035);
-  --away-r: -4deg;
+  /* AWAY: up and to the left, standing straight up. Nico, 2026-09-28: the
+     swing was "a tad much — the phone should stop when it's straight up", so
+     it no longer tilts back past vertical (-4deg) and travels ~35% less. */
+  --away-x: calc(var(--phone-h) * -0.045);
+  --away-y: calc(var(--phone-h) * -0.025);
+  --away-r: 0deg;
   /* The pose the still frame shows: contact, at rest. */
   --tap-rest: translate(var(--tap-x), var(--tap-y)) rotate(var(--tap-r));
 }
@@ -528,7 +530,7 @@
   }
   /* the tap itself: a few pixels further in, then back up to contact */
   85% {
-    transform: translate(var(--tap-x), calc(var(--tap-y) + 5px)) rotate(var(--tap-r));
+    transform: translate(var(--tap-x), calc(var(--tap-y) + 3px)) rotate(var(--tap-r));
     animation-timing-function: ease-in-out;
   }
   89%,
