@@ -520,7 +520,7 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
       </div>
       <div className={`grid gap-4 ${desk ? "grid-cols-2" : ""}`}>
         <Card>
-          <div className="mb-4 text-sm font-medium uppercase tracking-wide" style={{ color: T.textMuted }}>
+          <div className="mb-4 font-kameron text-sm font-medium uppercase tracking-wide" style={{ color: T.textMuted }}>
             {c.byHour}
           </div>
           {ins.count === 0 ? (
@@ -538,7 +538,7 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
           )}
         </Card>
         <Card>
-          <div className="mb-4 text-sm font-medium uppercase tracking-wide" style={{ color: T.textMuted }}>
+          <div className="mb-4 font-kameron text-sm font-medium uppercase tracking-wide" style={{ color: T.textMuted }}>
             {c.byDay}
           </div>
           <BarChart
@@ -550,7 +550,7 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
         </Card>
       </div>
       <Card>
-        <div className="mb-4 text-sm font-medium uppercase tracking-wide" style={{ color: T.textMuted }}>
+        <div className="mb-4 font-kameron text-sm font-medium uppercase tracking-wide" style={{ color: T.textMuted }}>
           {c.topItems} <span style={{ fontWeight: 400, textTransform: "none" }}>{c.approximate}</span>
         </div>
         <div className="flex flex-col gap-1">
