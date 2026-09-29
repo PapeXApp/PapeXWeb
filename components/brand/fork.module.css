@@ -193,16 +193,40 @@
   );
 }
 
-/* Tap target: each half IS the button (a full-width, half-viewport target).
-   These only stop iOS flashing a grey box over the whole half on tap and
-   remove the double-tap-zoom delay; no colour or motion changes. */
+/* Tap target: each half is covered edge to edge by its .hit button (a
+   full-width, half-viewport target laid over the content, f-06), so the
+   headline inside can be a real <h2>. tap-highlight/touch-action only stop
+   iOS flashing a grey box over the whole half on tap and remove the
+   double-tap-zoom delay; no colour or motion changes. */
 .half {
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
+.hit {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+/* Keyboard focus: the orange ring drawn INSIDE the half (.rd-fork clips
+   anything outside it). */
+.hit:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: -8px;
+  border-radius: 14px;
+}
 
-/* The headline measure stays the designer's 16ch / 15ch (it sets the line
-   breaks — copy unchanged); only the size is responsive. */
+/* The headline measure is the designer's 16ch on top (it sets the line
+   breaks); the bottom one was re-measured for its new copy (below). Only the
+   size is responsive. */
 .eyebrow {
   display: block;
   margin-bottom: var(--fork-eyebrow-gap);
@@ -216,8 +240,10 @@
 .headlineTop {
   max-width: 16ch;
 }
+/* The f-05 copy ("Every receipt and coupon, beautifully kept.") sets its
+   own three line breaks in fork.tsx; 17ch is its longest line. */
 .headlineBottom {
-  max-width: 15ch;
+  max-width: 17ch;
 }
 /* Two classes to beat .rd-fork-cue / .rd-fork-content (one class each, and
    module order vs papex-brand.css is not guaranteed). */
