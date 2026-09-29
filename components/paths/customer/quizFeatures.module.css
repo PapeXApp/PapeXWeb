@@ -132,9 +132,9 @@
   }
   .gridMirrored .shotCell {
     order: 1;
-    /* ScrollWipe (components/motion): a shot on the LEFT opens left → right.
-       Stacked rows never match this, so on phones every shot opens from the
-       right (the default, --wipe-dir: 1). Two classes outrank .papex-wipe. */
+    /* The shot wipe (below): a shot on the LEFT opens left → right. Stacked
+       rows never match this, so on phones every shot opens from the right
+       (the default, --wipe-dir: 1). Two classes outrank .shotCell. */
     --wipe-dir: -1;
   }
 }
@@ -177,6 +177,33 @@
 }
 .shotCell {
   min-width: 0;
+  --wipe-dir: 1;
+  /* The open clip ends this far OUTSIDE the box, so the card's shadow
+     (0 26px 60px -20px) is never cut once it is open. */
+  --wipe-bleed: 80px;
+}
+
+/* --- The shot wipe (Features.tsx, THE SHOT WIPE) ---------------------------
+ * The pre-R1 `<Reveal variant="mask">` motion, restored: a timed clip-path
+ * wipe, 1.1s cubic-bezier(.7,0,.15,1), no slide — plus direction by side.
+ * The hidden state exists ONLY under `[data-wipe="armed"]`, which Features.tsx
+ * sets after mount when motion is allowed: SSR, no-JS and reduced motion get
+ * the shot open and still. Hidden, the moving edge sits past the FAR bleed
+ * edge (the insets sum to exactly 100%, so nothing — not even the shadow — is
+ * painted); open, all four insets are -bleed. --wipe-dir 1 moves the edge
+ * right → left, -1 left → right. Re-arming (data-wipe-open removed) is
+ * instant: it only happens once the shot is fully off screen. */
+.list[data-wipe="armed"] .shotWipe {
+  clip-path: inset(
+    calc(-1 * var(--wipe-bleed))
+      calc((1 - var(--wipe-dir)) / 2 * (100% + 2 * var(--wipe-bleed)) - var(--wipe-bleed))
+      calc(-1 * var(--wipe-bleed))
+      calc((1 + var(--wipe-dir)) / 2 * (100% + 2 * var(--wipe-bleed)) - var(--wipe-bleed))
+  );
+}
+.list[data-wipe="armed"] .shotCell[data-wipe-open] .shotWipe {
+  clip-path: inset(calc(-1 * var(--wipe-bleed)));
+  transition: clip-path 1.1s cubic-bezier(0.7, 0, 0.15, 1);
 }
 
 /* --- The cropped phone (restored from before 78d243a) --------------------
@@ -280,6 +307,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Belt and braces: Features.tsx never arms under reduced motion. */
+  .list[data-wipe] .shotWipe {
+    clip-path: none;
+    transition: none;
+  }
   .pickedLabel,
   .pickedSummary,
   .title,

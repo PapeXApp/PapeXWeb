@@ -6,8 +6,9 @@
  *
  * The redaction is driven by `data-phase` on .receipt (see Privacy.tsx):
  *   rest      redacted, no transitions (SSR, no-JS, reduced motion)
- *   clear     armed: full digits showing, blocks wiped away
- *   redacted  blocks wipe in left-to-right (clip-path), digits fade out, the
+ *   clear     armed: full digits showing, dots clipped away
+ *   redacted  one left-to-right sweep turns each group's digits into navy
+ *             dots (two complementary clip-paths), the
  *             kept last-4 gets its underline, the stamp lands
  * Every channel is clip-path / opacity / transform, so it runs on the
  * compositor. Re-arming to "clear" is instant (it only happens once the card
@@ -284,28 +285,30 @@
   position: relative;
   display: inline-block;
 }
+/* The swap is ONE sweep, left to right (Nico, 2026-09-28: the masked groups
+   are dots in the same ink as the kept "4242", no dark boxes). The digits and
+   the dots share one box (the dots sit exactly over the digits, monospace, so
+   "••••" is as wide as "4242"), and two complementary clips meet at the same
+   moving edge: the digits are cut away from the left while the dots are
+   uncovered from the left, so no glyph ever overlaps another. */
 .digits {
   display: inline-block;
-  transition: opacity 200ms ease;
-  transition-delay: calc(var(--r-base) + var(--i) * var(--r-step) + 140ms);
-}
-.block {
-  position: absolute;
-  inset: -2px -3px;
-  display: grid;
-  place-items: center;
-  border-radius: 4px;
-  background: #00121d;
-  clip-path: inset(0 100% 0 0 round 4px);
+  clip-path: inset(0 0 0 0);
   transition: clip-path 260ms var(--r-ease);
   transition-delay: calc(var(--r-base) + var(--i) * var(--r-step));
 }
+.block {
+  position: absolute;
+  inset: 0;
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 260ms var(--r-ease);
+  transition-delay: calc(var(--r-base) + var(--i) * var(--r-step));
+}
+/* Same ink, weight and baseline as .kept: plain text on the digits' line. */
 .dots {
-  color: #ffffff;
-  letter-spacing: 0.08em;
-  opacity: 0;
-  transition: opacity 180ms ease;
-  transition-delay: calc(var(--r-base) + var(--i) * var(--r-step) + 200ms);
+  display: block;
+  color: #00121d;
+  font-weight: 700;
 }
 
 .kept {
@@ -362,14 +365,12 @@
 /* The redacted look — shared by the animated end state and the static rest. */
 .receipt[data-phase="redacted"] .digits,
 .receipt[data-phase="rest"] .digits {
-  opacity: 0;
+  clip-path: inset(0 0 0 100%);
 }
 .receipt[data-phase="redacted"] .block,
 .receipt[data-phase="rest"] .block {
-  clip-path: inset(0 0 0 0 round 4px);
+  clip-path: inset(0 0 0 0);
 }
-.receipt[data-phase="redacted"] .dots,
-.receipt[data-phase="rest"] .dots,
 .receipt[data-phase="redacted"] .rNote,
 .receipt[data-phase="rest"] .rNote {
   opacity: 1;
@@ -387,13 +388,11 @@
 /* Re-arming ("clear") happens off-screen, so undo it instantly. */
 .receipt[data-phase="clear"] .digits,
 .receipt[data-phase="clear"] .block,
-.receipt[data-phase="clear"] .dots,
 .receipt[data-phase="clear"] .kept::after,
 .receipt[data-phase="clear"] .rNote,
 .receipt[data-phase="clear"] .stamp,
 .receipt[data-phase="rest"] .digits,
 .receipt[data-phase="rest"] .block,
-.receipt[data-phase="rest"] .dots,
 .receipt[data-phase="rest"] .kept::after,
 .receipt[data-phase="rest"] .rNote,
 .receipt[data-phase="rest"] .stamp {
