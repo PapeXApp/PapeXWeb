@@ -45,7 +45,7 @@ export const personaFeatureLines: Record<PersonaId, Record<FeatureKey, string>> 
     // NICO
     add: "Bring the whole folder: snap your paper receipts and forward email ones to your PapeX address.",
     // NICO
-    share: "Send proof of purchase or share a bill in a tap, with a group or one person.",
+    share: "Share a receipt, and coupon, with a group or a friend.",
     // NICO
     deals: "Keep the coupons you earn or scan, and favorite the ones you'll use.",
   },
