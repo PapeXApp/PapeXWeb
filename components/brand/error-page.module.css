@@ -1,0 +1,124 @@
+/*
+ * The 404 and error pages (Phase 4, f-07…f-09): the normal site look — nav,
+ * a light page, the flat navy footer — around one illustration, a heading, a
+ * line and the way out. Sits inside SiteShell's `.rd` scope, so the brand
+ * tokens resolve.
+ */
+.page {
+  min-height: 100vh;
+  min-height: 100svh;
+  background: var(--offwhite);
+  color: var(--navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Clears the fixed 94px nav band, like every other page top. */
+  padding: calc(94px + var(--section-pad-y)) var(--section-pad-x) var(--section-pad-y);
+}
+
+.inner {
+  width: 100%;
+  max-width: 620px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.art {
+  display: block;
+  width: min(260px, 62vw);
+  height: auto;
+  margin-bottom: clamp(20px, 3vw, 32px);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--fs-h3);
+  line-height: 1.05;
+  color: var(--navy);
+}
+
+.lead {
+  margin: clamp(14px, 1.6vw, 20px) 0 0;
+  max-width: 44ch;
+  font-size: var(--fs-lead);
+  line-height: 1.55;
+  color: var(--on-light-text);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: clamp(24px, 3vw, 32px);
+}
+
+/* --- Idle motion: slow and small, and only for people who haven't asked
+   for less. The global `.rd *` reduced-motion rule would stop it anyway;
+   this media query means it never starts. */
+@media (prefers-reduced-motion: no-preference) {
+  .sway {
+    transform-box: view-box;
+    transform-origin: 50% 90%;
+    animation: err-sway 7s ease-in-out infinite;
+  }
+  .bubble {
+    animation: err-bubble 6s ease-in-out infinite;
+  }
+  .led {
+    animation: err-led 2.4s ease-in-out infinite;
+  }
+  .shudder {
+    animation: err-shudder 5s ease-in-out infinite;
+  }
+}
+
+@keyframes err-sway {
+  0%,
+  100% {
+    transform: rotate(-1.2deg);
+  }
+  50% {
+    transform: rotate(1.2deg);
+  }
+}
+@keyframes err-bubble {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-8px);
+    opacity: 0.75;
+  }
+}
+@keyframes err-led {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.15;
+  }
+}
+/* A jammed printer trying again every few seconds: two tiny nudges, then
+   still. */
+@keyframes err-shudder {
+  0%,
+  86%,
+  100% {
+    transform: translate(0, 0);
+  }
+  89% {
+    transform: translate(-1.5px, 0.5px);
+  }
+  92% {
+    transform: translate(1.5px, -0.5px);
+  }
+  95% {
+    transform: translate(-1px, 0);
+  }
+}
