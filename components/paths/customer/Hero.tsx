@@ -5,11 +5,12 @@ import type { MouseEvent } from "react";
 import { ChildStagger, Magnetic, Ripple, Spotlight, WordReveal } from "@/components/motion";
 import { APP_STORE_URL, PLAY_STORE_URL, platformFromUserAgent } from "@/lib/storeLinks";
 import { FlowSection } from "../shared/FlowSection";
-import { NextSection } from "../shared/NextSection";
 import { SectionLabel } from "../shared/SectionLabel";
-import { FAQ_ANCHOR, HOW_IT_WORKS_ANCHOR, heroContent } from "./content";
-import { NfcPhone } from "./NfcPhone";
+import { FAQ_ANCHOR } from "./content";
+import { HeroApp } from "./hero/HeroApp";
+import { POCKET_ANCHOR, heroCopy } from "./hero/heroCopy";
 import styles from "./customer.module.css";
+import h from "./hero/hero.module.css";
 
 /**
  * The store listing to lead with, matched to the visitor's device: Google Play
@@ -44,37 +45,32 @@ function scrollToHash(event: MouseEvent<HTMLAnchorElement>) {
 }
 
 /**
- * 2.1 Hero — LIGHT. "Tap your phone. Get your receipt." — the WHAT, first.
+ * /customers 01 Hero — LIGHT. "Your receipt, not your identity." (Web 2.1 P4,
+ * 2026-09-28.)
  *
- * Light because the fork's light bottom half leads here (2026-09-10): the
- * page must open on the same flat #F5F5F5 so the fork's commit reads as that
- * half growing into this page. The ground itself is painted by FlowGround
- * (`initial="light"`); this section only declares it. Text uses the ground's
- * --flow-* ink so it stays correct while the ground crossfades below.
+ * The page now leads with the free PapeX APP, not the tap hardware: most
+ * visitors can't tap a PapeX device yet (select Bay Area stores only). The
+ * headline is the old privacy section's, picked by Nico; its picture is now
+ * the app itself (hero/HeroApp.tsx): a paper receipt is scanned and filed at
+ * the top of the Receipts list, and three privacy chips land beside it.
  *
- * The visual (NfcPhone) is a locked iPhone tapping the PapeX device on a
- * loop (P3-C4) — the phone keeps its dark bezel, a phone is a dark object.
- * What the tap DOES is §02's job; the orange line under the H1 points there.
+ * Light because the fork's light bottom half leads here: the page must open
+ * on the same flat #F5F5F5 (FlowGround `initial="light"` in index.tsx). Text
+ * uses the ground's --flow-* ink so it survives the crossfade below.
+ *
+ * Words: hero/heroCopy.ts. Styles: hero/hero.module.css (the CTA pill's
+ * glow/press classes are shared with Vision, so they stay in
+ * customer.module.css).
  */
 export function Hero() {
   const storeUrl = useStoreUrl();
   return (
     <FlowSection
       ground="light"
-      // A FULL SCREEN again (2026-09-23, "screens, not sections" parity with
-      // /business). `styles.screen` makes it >= 100svh from 821px and centres
-      // the content column vertically; `items-center` centres the 1150 column
-      // horizontally in both directions of the flex box (column on desktop,
-      // row below 821px, where the hero is content-height again). The padding
-      // lives on `styles.hero` because the phone's height budget
-      // (.demoStage in customer.module.css) reads the same --hero-pt: the top
-      // clears the nav so the whole phone shows, and the bottom keeps the
-      // scroll cue on its own line.
-      className={`${styles.screen} ${styles.rhythm} ${styles.hero} flex items-center justify-center overflow-hidden`}
+      // A full screen from 821px (`styles.screen`); `styles.rhythm` carries
+      // the shared --gap-* tokens.
+      className={`${styles.screen} ${styles.rhythm} ${h.hero} flex items-center justify-center overflow-hidden`}
     >
-      {/* The hero keeps its own pointer-tracked glow: it is part of the live
-          demo moment, not decoration. Everything else (aurora, grain,
-          watermark, rails) comes from the page-level kit. */}
       <Spotlight strength={70} className="pointer-events-none absolute inset-0">
         <div
           aria-hidden="true"
@@ -86,116 +82,49 @@ export function Hero() {
         />
       </Spotlight>
 
-      {/* justify-START, not justify-between or justify-center. `justify-between`
-          once spent the phone's ~78px of width-correction as a 318px gap
-          instead of shrinking; centring the pair as a block pushed the
-          headline's left edge past where every other section's headline
-          starts (2026-09-10 — Nico: "text too far right"). This 1150 column
-          is the same one Problem/Features/HowItWorks/Vision use, so hugging
-          it to the left edge lines every left-aligned headline up. */}
-      <div
-        className="relative flex w-full flex-wrap items-center justify-start"
-        style={{ maxWidth: 1150, gap: "clamp(28px,4.5vw,64px)", zIndex: 1 }}
-      >
-        <div style={{ maxWidth: 560, flex: "1 1 420px" }}>
+      <div className={h.row}>
+        <div className={h.copy}>
           <ChildStagger>
-            <SectionLabel index="01">{heroContent.eyebrow}</SectionLabel>
-            <WordReveal
-              as="h1"
-              className="[font-family:var(--font-display)] font-bold text-[length:var(--fs-h1-customer)] leading-[.98] tracking-[-.025em] text-[var(--flow-fg)]"
-            >
-              {heroContent.headline}
+            <SectionLabel index="01">{heroCopy.eyebrow}</SectionLabel>
+            <WordReveal as="h1" className={h.title}>
+              {heroCopy.headline}
             </WordReveal>
-            {/* P3-C4 (Nico): the orange "Scroll to see what happens" line,
-                right under the H1. The hero's phone only taps; §02, the next
-                section, plays out what the tap does — so this is also a link
-                there (same smooth scroll as the cues below). */}
-            <a href={`#${HOW_IT_WORKS_ANCHOR}`} onClick={scrollToHash} className={styles.scrollCue}>
-              <span>{heroContent.scrollCue}</span>
-              <span aria-hidden="true" className={styles.scrollCueChevron}>
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m3.5 6 4.5 4.5L12.5 6" />
-                </svg>
-              </span>
-            </a>
-            {/* The lead's gap is 0.7 of --gap-title since the orange line
-                joined the H1 (P3-C4): the two read as one heading block, and
-                the hero keeps its height at 1440x760 (a full screen there). */}
-            <p
-              style={{
-                marginTop: "calc(var(--gap-title) * 0.7)",
-                fontSize: "var(--fs-lead)",
-                lineHeight: 1.5,
-                color: "var(--flow-fg-2)",
-                maxWidth: "44ch",
-                fontWeight: 400,
-              }}
-            >
-              {heroContent.lead}
-            </p>
-            {/* CTA, then its reassurance line UNDER it (Web 2.1), then the
-                "How does that work?" cue. */}
-            <div className="flex flex-col items-start" style={{ marginTop: "var(--gap-body)", gap: 10 }}>
+            <p className={h.lead}>{heroCopy.lead}</p>
+            <div className={h.ctaRow}>
               <Magnetic className={styles.ctaMagnetic}>
-                {/* Navy ripple: it's the press feedback ON the orange button,
-                    so it's right on either ground. The Ripple is the pill
-                    itself (styles.ctaPill): it clips the splash AND carries
-                    the hover glow and press scale, so the glow hugs the pill
-                    exactly — see .ctaPill in customer.module.css. */}
+                {/* Navy ripple on the orange pill; .ctaPill carries the glow
+                    and press scale (customer.module.css, shared with Vision). */}
                 <Ripple variant="navy" className={`overflow-hidden rounded-full ${styles.ctaPill}`}>
                   <a
                     href={storeUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={styles.ctaButton}
-                    style={{
-                      border: "none",
-                      cursor: "pointer",
-                      padding: "15px 30px",
-                      borderRadius: 999,
-                      background: "var(--orange)",
-                      color: "var(--navy)",
-                      fontWeight: 600,
-                      fontSize: 16,
-                      textDecoration: "none",
-                      display: "inline-flex",
-                    }}
+                    className={`${styles.ctaButton} ${h.ctaButton}`}
                   >
-                    {heroContent.ctaLabel}
+                    {heroCopy.ctaLabel}
                   </a>
                 </Ripple>
               </Magnetic>
-              <span style={{ fontSize: 14, color: "var(--flow-fg-3)", paddingLeft: 4 }}>
-                {heroContent.ctaSubtext}
-              </span>
+              <span className={h.ctaSub}>{heroCopy.ctaSubtext}</span>
             </div>
-            {/* Show WHAT first, then invite the "how?" (Nico, Web 2.1). One
-                cue at every width — it replaced the foot-of-screen "Scroll"
-                cue, which was hidden below 821px. The arrow keeps that cue's
-                bob. Targets: HOW_IT_WORKS_ANCHOR / FAQ_ANCHOR in content.ts. */}
-            <div
-              className="flex flex-wrap items-center"
-              style={{ marginTop: "clamp(22px,3vh,34px)", columnGap: 26, rowGap: 12 }}
-            >
-              <a href={`#${HOW_IT_WORKS_ANCHOR}`} onClick={scrollToHash} className={styles.howCue}>
-                <span>{heroContent.howCue}</span>
-                <span aria-hidden="true" className={styles.howCueArrow}>
-                  <span className={styles.arrowBob}>↓</span>
+            <div className={h.cues}>
+              <a href={`#${POCKET_ANCHOR}`} onClick={scrollToHash} className={h.downCue}>
+                <span>{heroCopy.downCue}</span>
+                <span aria-hidden="true" className={h.downRing}>
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M8 3v10M3.5 8.5 8 13l4.5-4.5" />
+                  </svg>
                 </span>
               </a>
-              {/* Quieter second door: straight to the FAQ (Web 2.1). */}
-              <a href={`#${FAQ_ANCHOR}`} onClick={scrollToHash} className={styles.faqCue}>
-                {heroContent.faqCue}
+              <a href={`#${FAQ_ANCHOR}`} onClick={scrollToHash} className={h.faqCue}>
+                {heroCopy.faqCue}
               </a>
             </div>
           </ChildStagger>
         </div>
 
-        <NfcPhone />
+        <HeroApp />
       </div>
-      {/* P3 run-through: the next-section arrow (desktop, full-screen hero).
-          The copy keeps its load-in stagger: it is on screen at scroll 0. */}
-      <NextSection targetId={HOW_IT_WORKS_ANCHOR} name="How it works" band="inset" />
     </FlowSection>
   );
 }
