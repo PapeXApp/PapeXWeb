@@ -21,7 +21,9 @@ import s from "../story.module.css"
 
 const PT: CSSProperties = { ["--pt" as string]: "calc(var(--wp-w) / 393)" }
 
-const titleCase = (t: string) => t.toLowerCase().replace(/\b[a-z]/g, (m) => m.toUpperCase())
+// "PAPEX CAFE" must read "PapeX Cafe", not "Papex Cafe".
+const titleCase = (t: string) =>
+  t.toLowerCase().replace(/\b[a-z]/g, (m) => m.toUpperCase()).replace(/\bPapex\b/g, "PapeX")
 
 function paymentLabel(summary: ReceiptSummary): string | undefined {
   const net = summary.paymentLine ? detectPaymentMethod(summary.paymentLine) : null
@@ -33,7 +35,7 @@ function paymentLabel(summary: ReceiptSummary): string | undefined {
 
 export function clipData(summary: ReceiptSummary): ClipReceiptData {
   return {
-    merchantName: titleCase(summary.merchantName ?? "Tidewick Cafe"),
+    merchantName: titleCase(summary.merchantName ?? "PapeX Cafe"),
     addressLines: summary.addressLines.slice(0, 2),
     dateline: summary.dateline,
     items: summary.items.map((i) => ({ label: i.name, quantity: i.qty, amount: i.amount })),
