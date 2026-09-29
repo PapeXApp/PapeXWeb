@@ -16,7 +16,7 @@ export default function TermsPage() {
               <p>Last Updated: November 7, 2025</p>
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-[#00121D] uppercase">
-              PapeX, Inc. – Terms of Agreement
+              PapeX, Inc. – Terms of Service
             </h1>
             <p className="text-[#00121D]/80 leading-relaxed">
               These Terms of Agreement (the &ldquo;Terms&rdquo;) constitute a legally binding contract between you (&ldquo;User,&rdquo;
@@ -99,10 +99,10 @@ export default function TermsPage() {
             <p className="text-[#00121D]/80 leading-relaxed">
               Your use of the Service is governed by the PapeX Privacy Policy, available at{' '}
               <a
-                href="https://www.papex.app/privacy"
+                href="https://papex.app/privacy"
                 className="text-[#EB7100] underline decoration-transparent hover:decoration-[#EB7100] transition"
               >
-                https://www.papex.app/privacy
+                https://papex.app/privacy
               </a>. By using the Service, you consent to the collection, processing, and storage of your information as outlined
               in the Privacy Policy.
             </p>
@@ -194,10 +194,10 @@ export default function TermsPage() {
                 <div>
                   Website:{' '}
                   <a
-                    href="https://www.papex.app"
+                    href="https://papex.app"
                     className="text-[#EB7100] underline decoration-transparent hover:decoration-[#EB7100] transition"
                   >
-                    https://www.papex.app
+                    https://papex.app
                   </a>
                 </div>
               </address>

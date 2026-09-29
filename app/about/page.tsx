@@ -19,10 +19,11 @@ import { FlowSection } from '@/components/paths/shared/FlowSection'
 import { SectionLabel } from '@/components/paths/shared/SectionLabel'
 import { SiteFooter } from '@/components/brand/site-footer'
 import { DEFAULT_OG_IMAGE } from '@/components/blog/image'
-import { SALES_PHONE, SALES_PHONE_HREF, SUPPORT_EMAIL } from '@/components/brand/links'
 import { teamGroups, initialsFor } from './team'
 import styles from './about.module.css'
 
+const OG_ALT =
+  'The PapeX logo and the words Your receipt, one tap away, beside an iPhone showing a PapeX receipt'
 const TITLE = 'About PapeX | Digital Receipts, One Tap at Checkout'
 const DESCRIPTION =
   'Meet the team building PapeX: the tap that gets your receipt to your phone, and the free app that keeps it. Get in touch anytime.'
@@ -38,11 +39,10 @@ export const metadata: Metadata = {
     siteName: 'PapeX',
     title: TITLE,
     description: DESCRIPTION,
-    images: [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630, alt: 'PapeX' }],
+    images: [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630, alt: OG_ALT }],
   },
   twitter: {
     card: 'summary_large_image',
-    site: '@papex_receipts',
     title: TITLE,
     description: DESCRIPTION,
     images: [DEFAULT_OG_IMAGE],
@@ -56,12 +56,11 @@ export default function AboutPage() {
         <FlowSection ground="light" className={styles.top}>
           <div className={styles.wrap}>
             <header className={styles.head}>
-              <SectionLabel>About</SectionLabel>
+              <SectionLabel>Our team</SectionLabel>
               <h1 className={`rd-display ${styles.title}`}>About PapeX</h1>
               <p className={styles.lead}>
-                A world where every receipt is useful, and none of them are wasted.
-                We&rsquo;re building the tap that gets it to your phone, and the app that
-                keeps it.
+                Receipts should be useful, not trash. So we&rsquo;re building the tap that
+                sends yours to your phone, and the app that keeps it.
               </p>
             </header>
 
@@ -107,19 +106,8 @@ export default function AboutPage() {
 
         <FlowSection ground="light" className={styles.contactSection}>
           <div className={styles.contactCard}>
-            <h2 className={`rd-display ${styles.contactTitle}`}>Get in touch</h2>
-            <p className={styles.contactBody}>
-              Questions, feedback, or want PapeX at your checkout? We&rsquo;d love to hear
-              from you.
-            </p>
-            <div className={styles.contactRow}>
-              <a href={`mailto:${SUPPORT_EMAIL}`} className={styles.contactLink}>
-                {SUPPORT_EMAIL}
-              </a>
-              <a href={SALES_PHONE_HREF} className={styles.contactLink}>
-                {SALES_PHONE}
-              </a>
-            </div>
+            <h2 className={`rd-display ${styles.contactTitle}`}>Want PapeX at your checkout?</h2>
+            <p className={styles.contactBody}>We&rsquo;ll show you how it works.</p>
             <div className={styles.contactCta}>
               <Link href="/business#demo" className="rd-btn rd-btn-primary">
                 Request a demo
