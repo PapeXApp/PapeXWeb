@@ -171,23 +171,6 @@
   line-height: 1.6;
   color: var(--on-light-text);
 }
-.contactRow {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: clamp(12px, 2vw, 28px);
-  margin-top: clamp(20px, 2.4vw, 28px);
-  font-size: 15.5px;
-}
-.contactLink {
-  color: var(--navy) !important;
-  font-weight: 600;
-  transition: color var(--dur-hover, 240ms) ease;
-}
-.contactLink:hover {
-  color: var(--orange) !important;
-}
 .contactCta {
   margin-top: clamp(20px, 2.4vw, 28px);
 }

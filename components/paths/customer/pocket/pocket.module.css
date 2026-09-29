@@ -686,7 +686,17 @@
   .pinHead {
     display: block;
     flex: none;
-    padding-bottom: clamp(20px, 3.4svh, 36px);
+    padding-bottom: clamp(14px, 2.6svh, 32px);
+  }
+  /* Round 4 (Nico, 2026-09-29: "this also shouldn't get cut off so we need
+     to use the space better"): everything in the pin fits 100svh on short
+     laptops (1280x720, 1366x768, 1536x730...). The pinned heading is sized by
+     the screen's HEIGHT as well as its width, and the lead tightens up. */
+  .pinHead h2 {
+    font-size: min(var(--fs-h2), 6.6svh);
+  }
+  .pinHead p {
+    margin-top: clamp(8px, 1.8svh, 24px);
   }
   .layout {
     flex: 1 1 0;
@@ -695,8 +705,61 @@
     max-height: calc(560px * 1.05);
     container-type: size;
   }
+  /* The phone takes the height the pin leaves it (the layout is a size
+     container), so it can never run past the bottom edge. */
   .phone {
     --wp-size: min(560px, calc(100cqh / 1.05));
+  }
+  /* The email window and the paper scale with the height left too, so the
+     tallest of them (the email, ~27em) stays inside the layout. */
+  .layout .flyer {
+    --pf: clamp(13px, min(1.08vw, 3.05cqh), 16px);
+  }
+  /* Compact cards: less padding, height-aware type. The email card stays a
+     size up (the headline); all three keep their words, so the column is a
+     fixed height and nothing moves when the highlight changes. */
+  .cards {
+    gap: clamp(10px, 1.7svh, 20px);
+  }
+  .card {
+    padding: clamp(12px, 1.9svh, 22px) clamp(16px, 1.8vw, 24px);
+  }
+  .cardTitle {
+    font-size: clamp(18px, min(1.6vw, 2.7svh), 22px);
+  }
+  .cardBody {
+    margin-top: clamp(4px, 0.8svh, 8px);
+    font-size: clamp(15px, 2.1svh, 16.5px);
+    line-height: 1.5;
+  }
+  .cardLead {
+    padding: clamp(14px, 2.3svh, 26px) clamp(18px, 2vw, 26px);
+  }
+  .cardLead .cardTitle {
+    font-size: clamp(22px, min(2.1vw, 3.5svh), 28px);
+  }
+  .cardLead .cardBody {
+    font-size: clamp(15.5px, 2.25svh, 17.5px);
+  }
+}
+
+/* Wide desktops: the lead sits beside the H2 (bottom-aligned) instead of
+   under it, which gives the scene back a line of height. */
+@media (min-width: 1180px) and (min-height: 680px) and (prefers-reduced-motion: no-preference) {
+  .pinHead > * {
+    max-width: none;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: clamp(28px, 3.4vw, 56px);
+    align-items: end;
+  }
+  .pinHead > * > [data-section-label] {
+    grid-column: 1 / -1;
+  }
+  .pinHead p {
+    margin-top: 0;
+    padding-bottom: 0.3em;
+    max-width: 34ch;
   }
 }
 

@@ -346,13 +346,15 @@
   .lbl {
     font-size: 14px;
   }
+  /* s-26: phone body text 16px (was 14); the title steps up one so it
+     still reads as the step's heading above it */
   .title {
     margin-top: 4px;
-    font-size: 16px;
+    font-size: 17px;
   }
   .body {
     margin-top: 4px;
-    font-size: 14px;
+    font-size: 16px;
   }
   /* rail: dot centre to the next dot centre */
   .conn {

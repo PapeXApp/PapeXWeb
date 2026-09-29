@@ -6,6 +6,7 @@
 // Truth rules (spec 2026-09-24 §6a): no stats, no merchant names or logos,
 // never "zero paper" / "PCI compliant" / "forever". Every dashboard feature
 // named below exists in app/merchant today: search + filters and CSV export
+// ("export it to a spreadsheet" in the copy)
 // (app/merchant/page.tsx), busiest hours/days + top items + tap rate
 // (app/merchant/insights/page.tsx), device status (app/merchant/devices).
 // The receipt in the scene is the /customers demo receipt ("PapeX Cafe", an
@@ -13,21 +14,21 @@
 // same sale.
 
 export const story = {
-  eyebrow: "Tap to Retain",
+  eyebrow: "How does it work?",
   heading: "Follow one receipt.",
   lead: "From your printer, to your customer's phone, to your dashboard. Scroll to watch it go.",
 
   /**
-   * One line under the scene per beat. Also rendered as a screen-reader list
-   * and as the captions of the reduced-motion version, so the story reads the
-   * same with or without the animation.
+   * One caption per beat, shown under the part of the scene it describes (b-14)
+   * and announced politely to screen readers as it changes. Also rendered as a
+   * screen-reader list, so the whole story is there without scrolling.
    */
   beats: {
     print: "A sale prints a paper receipt.",
     trash: "Paper gets folded, lost or tossed.",
     merge: "With PapeX, the same receipt goes to the PapeX device at your counter.",
     tap: "Your customer taps their phone on the device…",
-    view: "…the App Clip card slides up, and they tap View…",
+    view: "…a receipt card slides up on their phone, and they tap View…",
     receipt: "…and the receipt opens on their phone. No app needed.",
     spark: "The same receipt lands on your dashboard.",
     dash: "Searchable, counted and charted the moment it lands.",
@@ -39,7 +40,7 @@ export const story = {
     {
       key: "tap",
       title: "With PapeX: one tap",
-      body: "Your customer taps their phone on the PapeX device and the receipt opens: in an App Clip on iPhone, in the browser on Android.",
+      body: "Your customer taps their phone on the PapeX device and the receipt opens instantly.",
     },
     { key: "dash", title: "And on your side", body: "The same receipt lands on your dashboard." },
   ],
@@ -55,7 +56,7 @@ export const story = {
    * a label over each screen once the story rests, where both are real,
    * usable UIs. On phones the dashboard phone takes the laptop's label.
    * Decorative (aria-hidden): the screens' own regions and buttons carry the
-   * names. Wording may be refined in Phase 4.
+   * names.
    */
   screenLabels: {
     laptop: "What you see",
@@ -70,12 +71,12 @@ export const story = {
 /** The dashboard info, in flow after the scene (heading block, then columns). */
 export const storyDashboard = {
   eyebrow: "Your dashboard, included",
-  heading: "Every receipt, working for you.",
+  heading: "See every sale, your busiest hours and top items.",
   lead: "Each receipt the PapeX device captures shows up on your dashboard as soon as it prints.",
   columns: [
     {
       title: "Every receipt, searchable",
-      body: "Find any sale by item, amount, date or the last 4 digits on the receipt, open it exactly as your customer saw it, and export to CSV.",
+      body: "Find any sale by item, amount, date or the last 4 digits on the receipt, open it exactly as your customer saw it, and export it to a spreadsheet.",
     },
     {
       title: "What sells, and when",
@@ -83,7 +84,7 @@ export const storyDashboard = {
     },
     {
       title: "Taps and devices",
-      body: "Your tap rate: how many receipts customers opened. And when each PapeX device last checked in.",
+      body: "Your tap rate: how many receipts customers opened. Plus when each PapeX device was last online.",
     },
   ],
   /** Read as the lead's second beat (DashboardCopy), not a line of its own. */

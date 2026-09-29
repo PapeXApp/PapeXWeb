@@ -48,3 +48,28 @@
 
 /* The setup section (05, #setup) has its own module since Web 2.1 W3:
    components/paths/business/setup/setup.module.css. */
+
+/* --- Tap targets on phones (s-25) ---------------------------------------
+   A text link keeps its look; an invisible ::after grows its hit area to at
+   least 44px tall, centred on the text, on touch-size screens only. The link
+   becomes the containing block (position: relative); `inline-block` keeps the
+   area to one box when the link sits inside a sentence. */
+@media (max-width: 820px) {
+  .hit,
+  .hitInline {
+    position: relative;
+  }
+  .hitInline {
+    display: inline-block;
+  }
+  .hit::after,
+  .hitInline::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 44px;
+    transform: translateY(-50%);
+  }
+}

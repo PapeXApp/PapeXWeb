@@ -80,6 +80,10 @@ function validate(fields: DemoFormState): Errors {
     errors.phone = "Enter a valid phone number."
   }
 
+  // b-32 (Nico): the POS system is needed. Client-side only: the sign-up
+  // route still accepts a blank one, so an old tab can't start failing.
+  if (!fields.posSystem.trim()) errors.posSystem = "POS system is required."
+
   return errors
 }
 
@@ -249,7 +253,16 @@ export function DemoForm() {
             {demo.body}
           </ScrollReveal>
           <ScrollReveal as="p" className="mt-[var(--gap-body)] text-[16px] font-semibold" style={{ color: "var(--flow-fg)" }}>
-            {demo.phonePrefix} <a href={SALES_PHONE_HREF} style={{ color: "var(--orange)" }}>{demo.phone}</a>
+            {demo.phonePrefix}{" "}
+            <a href={SALES_PHONE_HREF} className={`${styles.hitInline} whitespace-nowrap`} style={{ color: "var(--orange)" }}>
+              {demo.phone}
+            </a>
+            ,{" "}
+            {/* q-25 (Nico): the email next to the number. */}
+            {demo.emailPrefix}{" "}
+            <a href={demo.emailHref} className={`${styles.hitInline} whitespace-nowrap`} style={{ color: "var(--orange)" }}>
+              {demo.email}
+            </a>
           </ScrollReveal>
         </div>
 
@@ -307,7 +320,7 @@ export function DemoForm() {
                   style={inputStyle}
                 />
                 {errors.fullName && (
-                  <p id="demo-fullName-error" role="alert" className="text-[13px]" style={{ color: ERROR_INK }}>
+                  <p id="demo-fullName-error" role="alert" className="text-[14px]" style={{ color: ERROR_INK }}>
                     {errors.fullName}
                   </p>
                 )}
@@ -334,7 +347,7 @@ export function DemoForm() {
                   style={inputStyle}
                 />
                 {errors.businessName && (
-                  <p id="demo-businessName-error" role="alert" className="text-[13px]" style={{ color: ERROR_INK }}>
+                  <p id="demo-businessName-error" role="alert" className="text-[14px]" style={{ color: ERROR_INK }}>
                     {errors.businessName}
                   </p>
                 )}
@@ -362,7 +375,7 @@ export function DemoForm() {
                   style={inputStyle}
                 />
                 {errors.email && (
-                  <p id="demo-email-error" role="alert" className="text-[13px]" style={{ color: ERROR_INK }}>
+                  <p id="demo-email-error" role="alert" className="text-[14px]" style={{ color: ERROR_INK }}>
                     {errors.email}
                   </p>
                 )}
@@ -371,7 +384,7 @@ export function DemoForm() {
               <div className="grid grid-cols-1 gap-[var(--gap-list)] min-[481px]:grid-cols-2 min-[821px]:grid-cols-1">
                 <ScrollReveal order={1} className="grid gap-2">
                   <Label htmlFor="demo-phone" className={labelClass} style={labelStyle}>
-                    Phone
+                    Phone (optional)
                   </Label>
                   <Input
                     id="demo-phone"
@@ -390,14 +403,14 @@ export function DemoForm() {
                     style={inputStyle}
                   />
                   {errors.phone && (
-                    <p id="demo-phone-error" role="alert" className="text-[13px]" style={{ color: ERROR_INK }}>
+                    <p id="demo-phone-error" role="alert" className="text-[14px]" style={{ color: ERROR_INK }}>
                       {errors.phone}
                     </p>
                   )}
                 </ScrollReveal>
                 <ScrollReveal order={2} className="grid gap-2">
                   <Label htmlFor="demo-posSystem" className={labelClass} style={labelStyle}>
-                    POS system
+                    POS system (required)
                   </Label>
                   <Input
                     id="demo-posSystem"
@@ -408,9 +421,17 @@ export function DemoForm() {
                     ref={(el) => {
                       fieldRefs.current.posSystem = el
                     }}
+                    aria-invalid={Boolean(errors.posSystem)}
+                    aria-describedby={errors.posSystem ? "demo-posSystem-error" : undefined}
+                    required
                     className="h-auto"
                     style={inputStyle}
                   />
+                  {errors.posSystem && (
+                    <p id="demo-posSystem-error" role="alert" className="text-[14px]" style={{ color: ERROR_INK }}>
+                      {errors.posSystem}
+                    </p>
+                  )}
                 </ScrollReveal>
               </div>
 

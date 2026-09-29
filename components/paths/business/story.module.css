@@ -203,13 +203,16 @@
   margin-inline: auto;
   width: min(100% - 40px, 62ch);
   /* two lines reserved, so a wrapping hint never moves the stage */
-  min-height: 2.9em;
-  font-family: var(--font-label);
-  font-size: 13px;
-  line-height: 1.45;
-  letter-spacing: 0.04em;
+  min-height: 2.8em;
+  /* b-14: normal reading size in the body face (was 13px mono). On desktop
+     RetainStory lifts it (transform only) to just under the piece it
+     describes; this spot at the pin's foot is where it rests. */
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.4;
   text-align: center;
   color: var(--flow-fg-2);
+  will-change: transform;
 }
 
 /* Desktop with room for the heading in the pin. The in-flow copy (and with
@@ -227,7 +230,7 @@
        up by the same length (.runway margin-bottom), so the screens ->
        dashboard heading gap is --after-gap exactly as before; only the
        empty band under the screens goes. */
-    --cam-final-foot: calc(clamp(12px, 2.4svh, 24px) + 52px);
+    --cam-final-foot: calc(clamp(12px, 2.4svh, 24px) + 58px);
   }
   .flowHead {
     display: none;
@@ -1165,8 +1168,8 @@
 /* --- phones and tablets ------------------------------------------------------- */
 /* B6 (Nico at 375-390px: "I want to see a full phone... we have a lot of blank
    space, use it well"). The stage is a 1:2 box, as tall as the pin allows
-   under the nav: 64px nav band + 12px gap + 38px (two-line hint) + ~14px of
-   margin = 128px. At 375x812 that is 335x670, at 390x844 350x700.
+   under the nav: 64px nav band + 12px gap + 45px (two-line 16px hint) + ~14px
+   of margin = 136px. At 375x812 that is 335x670, at 390x844 350x700.
    The tap pose's iPhone is 158cqw of screen (a ~165cqw frame, ~80% of the
    stage's height), whole, with the PapeX device fully in view under its lower
    right. Once the receipt lands the pair shrinks, whole, to the top-right
@@ -1182,7 +1185,7 @@
   }
   .stage {
     /* the runway is edge to edge: the section's gutter comes back here */
-    width: min(100% - 2 * var(--story-px), calc((100svh - 128px) / 2));
+    width: min(100% - 2 * var(--story-px), calc((100svh - 136px) / 2));
     aspect-ratio: 1 / 2;
     /* no camera: the 1:2 stage already fills the pin */
     --cam: 0;

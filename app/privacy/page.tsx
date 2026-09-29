@@ -255,10 +255,10 @@ export default function PrivacyPolicyPage() {
                 <div>
                   Website:{' '}
                   <a
-                    href="https://www.papex.app"
+                    href="https://papex.app"
                     className="text-[#EB7100] underline decoration-transparent hover:decoration-[#EB7100] transition"
                   >
-                    https://www.papex.app
+                    https://papex.app
                   </a>
                 </div>
               </address>
