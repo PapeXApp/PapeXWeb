@@ -2,7 +2,7 @@
 
 // components/brand/site-footer.tsx
 //
-// Shared dark footer for both paths (docs/design/forked-landing/source/
+// Shared dark footer for every page but the fork (docs/design/forked-landing/source/
 // PapeX Footer.dc.html). Structure salvaged from origin/feat/site-redesign's
 // site-footer.tsx; columns and styling re-cut to the prototype.
 //
@@ -11,42 +11,44 @@
 // The /dashboard login form is cosmetic. Removing this as "dead UI" locks Nico
 // out of the CMS. Keep it in every footer variant.
 //
-// Link set (Web 2.1 spec §3.5). The Platform column deep-links to sections on
-// the path homes: #features and #faq on /customers, #setup and #faq on
-// /business (the #features/#setup/#faq ids land with the /customers and
-// /business tasks). Waitlist and POS Calculator are no longer linked: both
-// now redirect (next.config.ts, 307: /waitlist → /, /pos-calculator →
-// /business). The page code stays in the repo.
+// Link set (Web 2.1 spec §3.5, renamed in Phase 4 s-09…s-13). The Explore
+// column deep-links to sections on the path homes: #features and #faq on
+// /customers, #setup and #faq on /business. Waitlist and POS Calculator are
+// no longer linked: both now redirect (next.config.ts, 307: /waitlist → /,
+// /pos-calculator → /business). The page code stays in the repo.
 //
-// `inFlow` (2026-09-22): on the two path homes the footer is rendered INSIDE
+// No email sign-up (Phase 4, s-14/o-24, Nico: "remove the blog sign up
+// entirely"). /api/signup stays: the /business demo form still posts to it.
+//
+// `inFlow` (2026-09-22): on the FlowGround pages (the two path homes, /about,
+// /blog and each post) the footer is rendered INSIDE
 // FlowGround, so it joins the page's ground crossfade instead of being a flat
 // navy slab bolted on below it. Pass it through FlowGround's `footer` slot
 // (2026-09-24), not as a child: the slot keeps it inside the crossfade but
 // outside <main> and outside any <section>, which is what makes this <footer>
 // the page's contentinfo landmark (docs/design/footer-landmark.md). In that mode
 // it paints no background of its own (the flow's ground is already navy
-// underneath) and takes its ink from --flow-*. The ten legacy FramerPageShell
+// underneath) and takes its ink from --flow-*. The legacy FramerPageShell
 // routes mount <SiteFooter /> with no prop and keep the flat navy footer —
 // never make the transparent variant the global default.
 //
 import Link from 'next/link'
 import { FullLogo } from './full-logo'
 import { AdminLogin } from '@/components/AdminLogin'
-import { BlogSubscribeForm } from '@/components/blog/BlogSubscribeForm'
 import { SALES_PHONE, SALES_PHONE_HREF, SOCIAL_LINKS, SUPPORT_EMAIL } from './links'
 
 const COLUMNS: { title: string; links: { href: string; label: string }[] }[] = [
   {
-    title: 'Platform',
+    title: 'Explore',
     links: [
       { href: '/customers#features', label: 'Features' },
-      { href: '/business#setup', label: 'Integration' },
-      { href: '/customers#faq', label: 'FAQ' },
-      { href: '/business#faq', label: 'For businesses FAQ' },
+      { href: '/business#setup', label: 'Setup' },
+      { href: '/customers#faq', label: 'Shopper FAQ' },
+      { href: '/business#faq', label: 'Business FAQ' },
     ],
   },
   {
-    title: 'Product',
+    title: 'PapeX',
     links: [
       { href: '/customers', label: 'For Customers' },
       { href: '/business', label: 'For Businesses' },
@@ -56,8 +58,9 @@ const COLUMNS: { title: string; links: { href: string; label: string }[] }[] = [
   {
     title: 'Company',
     links: [
-      { href: '/support', label: 'Support' },
-      { href: '/pci', label: 'PCI Docs' },
+      { href: '/support', label: 'Business support' },
+      { href: '/app-support', label: 'App help' },
+      { href: '/pci', label: 'How we handle card data' },
       { href: '/about', label: 'About us' },
     ],
   },
@@ -91,7 +94,7 @@ export function SiteFooter({ inFlow = false }: { inFlow?: boolean }) {
               maxWidth: '30ch',
             }}
           >
-            Digital receipts, one tap at checkout. No paper, no hassle.
+            Getting a receipt is now easier than saying no thank you.
           </p>
           {/* Social chips are brand texture only — PapeX has no confirmed
               profile URLs in this repo yet, so each chip only renders once
@@ -122,7 +125,7 @@ export function SiteFooter({ inFlow = false }: { inFlow?: boolean }) {
         {COLUMNS.map((column) => (
           <div key={column.title}>
             <h3 className="rd-foot-heading">{column.title}</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
+            <div className="rd-foot-links">
               {column.links.map((link) => (
                 <Link key={link.href} href={link.href} className="rd-foot-link">
                   {link.label}
@@ -131,16 +134,6 @@ export function SiteFooter({ inFlow = false }: { inFlow?: boolean }) {
             </div>
           </div>
         ))}
-
-        <div>
-          {/* Newsletter signup REMOVED (Web 2.1, 2026-09-24), then RESTORED
-              (Web 2.1, S1b) once it had somewhere real to write: it now posts
-              to POST /api/signup (kind "blog"), the same route the blog's own
-              sign-up box uses — see components/blog/BlogSubscribeForm.tsx and
-              docs/SIGNUP_ROUTE.md. Reuses the existing .rd-foot-input /
-              .rd-foot-join classes from papex-brand.css. */}
-          <BlogSubscribeForm source="footer" variant="footer" />
-        </div>
 
         <div>
           <h3 className="rd-foot-heading">Get in touch</h3>

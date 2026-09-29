@@ -5,7 +5,7 @@
 // app/blog/_lib/posts.ts), so the title, body, per-post <title>/description/
 // Open Graph and the Article JSON-LD are all in the initial HTML. ISR keeps
 // it fresh; slugs published after a deploy render on first request.
-// The only client islands: the admin "Edit post" control and "Get the app".
+// The only client islands: the admin "Edit post" control and "Download the app".
 
 import type { Metadata } from 'next'
 import Link from 'next/link'
@@ -15,7 +15,6 @@ import { FlowGround } from '@/components/paths/shared/FlowGround'
 import { FlowSection } from '@/components/paths/shared/FlowSection'
 import { BlogImage } from '@/components/blog/BlogImage'
 import { BlogCta } from '@/components/blog/BlogCta'
-import { BlogSubscribeForm } from '@/components/blog/BlogSubscribeForm'
 import { SiteFooter } from '@/components/brand/site-footer'
 import { LazyPostAdminEdit } from '@/components/blog/AdminIslands'
 import { formatPostDate } from '@/components/blog/format'
@@ -67,7 +66,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card: 'summary_large_image',
-      site: '@papex_receipts',
       title: post.title,
       description,
       images: [image],
@@ -153,7 +151,6 @@ export default async function BlogPostPage({ params }: Props) {
         </FlowSection>
 
         <BlogCta />
-        <BlogSubscribeForm source="blog-post" path={`/blog/${post.slug}`} variant="card" />
       </FlowGround>
     </SiteShell>
   )

@@ -154,16 +154,18 @@ export const metadata: Metadata = {
   title: DEFAULT_TITLE,
   description: DEFAULT_DESCRIPTION,
   generator: 'Next.js',
+  // Search keywords (s-19). Keep growing this list: every phrase someone might
+  // type when looking for anything PapeX does belongs here (Nico: "SEO and SAO").
   keywords: [
-    'PapeX', 'papex', 'digital receipts', 'paperless receipts', 'electronic receipts', 
-    'receipt management', 'financial management', 'eco-friendly receipts', 'green technology',
-    'retail technology', 'POS integration', 'expense tracking', 'receipt app', 
-    'digital receipt platform', 'paperless transactions', 'receipt digitization',
-    'sustainable business', 'receipt automation', 'mobile receipts', 'cloud receipts',
-    'receipt storage', 'expense management', 'business receipts', 'retail receipts'
+    'PapeX', 'digital receipts', 'paperless receipts', 'receipt app', 'tap to receipt',
+    'tap for receipt', 'mobile receipts', 'coupons', 'coupon app', 'receipt scanner',
+    'coupon scanner', 'auto categorization app', 'receipt organizer', 'digital receipt app',
+    'e-receipts', 'email receipts', 'save receipts', 'store coupons', 'receipt sharing',
+    'free receipt app',
   ],
-  authors: [{ name: 'PapeX Team' }, { name: 'Nicolas Courbage' }, { name: 'Michael Khoury' }],
-  creator: 'PapeX Team',
+  // s-20: the company is the author of every page, not a list of people.
+  authors: [{ name: 'PapeX' }],
+  creator: 'PapeX',
   publisher: 'PapeX',
   robots: {
     index: true,
@@ -192,8 +194,8 @@ export const metadata: Metadata = {
     title: DEFAULT_TITLE,
     description: DEFAULT_DESCRIPTION,
     images: [DEFAULT_OG_IMAGE.url],
-    creator: '@papex_receipts',
-    site: '@papex_receipts'
+    // No X handle (s-18): none is confirmed yet. Add `site`/`creator` back
+    // together with the footer's SOCIAL_LINKS.x once there is one.
   },
   alternates: {
     canonical: 'https://papex.app',

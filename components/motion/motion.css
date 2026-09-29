@@ -38,8 +38,10 @@
 }
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
+    /* c-31: unlit words sit at half ink (was .22, 1.9:1), so the sentence
+       reads at any scroll point; lighting still takes them .5 -> 1. */
     .papex-lit-word {
-      opacity: 0.22;
+      opacity: 0.5;
       animation: papex-lit-word linear both;
       animation-timeline: --papex-lit;
       animation-range:
