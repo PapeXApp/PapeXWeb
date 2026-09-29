@@ -27,6 +27,7 @@ export const story = {
     trash: "Paper gets folded, lost or tossed.",
     merge: "With PapeX, the same receipt goes to the PapeX device at your counter.",
     tap: "Your customer taps their phone on the device…",
+    view: "…the App Clip card slides up, and they tap View…",
     receipt: "…and the receipt opens on their phone. No app needed.",
     spark: "The same receipt lands on your dashboard.",
     dash: "Searchable, counted and charted the moment it lands.",

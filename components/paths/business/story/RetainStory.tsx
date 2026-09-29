@@ -33,6 +33,9 @@ import { useDemoReceipt } from "./receipt"
 import { SlipBody } from "./Slip"
 import { StaticStory } from "./StaticStory"
 import s from "../story.module.css"
+// the App Clip card's own classes (read-only: to find the card and its View
+// pill inside the reused ClipLockScreen, P4-BT)
+import ip from "../../customer/iphone.module.css"
 
 /**
  * "Tap to Retain" — one receipt followed from paper to phone to dashboard,
@@ -49,10 +52,15 @@ import s from "../story.module.css"
  *   0.27-0.41  MERGE    printer and bin glide together into one slab, the
  *                       slab settles into the PapeX device, and an iPhone
  *                       rises in front of it (lock screen, "Tap to get...")
- *   0.42-0.55  TAP      the phone bows onto the device, NFC rings go out,
- *                       the App Clip card, "Reading your receipt", then the
- *                       receipt itself — the /customers App Clip kit
- *   0.56-0.73  SPARK    phone + device slide RIGHT, the laptop appears on the
+ *   0.42-0.63  TAP      the phone bows onto the device, NFC rings go out;
+ *                       then (P4-BT, Nico: "a part where we see a tap on the
+ *                       App Clip, so it makes sense how you get into the
+ *                       receipt") iOS's App Clip card SLIDES UP from the
+ *                       bottom of the lock screen, a fingertip lands on its
+ *                       View pill (press + ripple), and the card EXPANDS
+ *                       into "Reading your receipt", then the receipt itself
+ *                       — all the /customers App Clip kit, imported as is
+ *   0.64-0.81  SPARK    phone + device slide RIGHT, the laptop appears on the
  *                       LEFT (Nico, via the lead); a spark runs from the phone
  *                       to the laptop and its lid opens. On phones (<=820px)
  *                       there is no laptop: the pair shrinks, whole, into the
@@ -60,9 +68,9 @@ import s from "../story.module.css"
  *                       left, and the DASHBOARD PHONE (the real mobile layout)
  *                       blooms open from where it lands (a clip-path circle),
  *                       covering the stage while the pair fades under it.
- *   0.72-0.80  DELIVER  the sale lands on the dashboard: its row slides into
+ *   0.80-0.88  DELIVER  the sale lands on the dashboard: its row slides into
  *                       the top of Transactions and the count ticks up
- *   0.80-0.90  HOLD     nothing moves: laptop (phone dashboard on phones) and
+ *   0.88-0.98  HOLD     nothing moves: laptop (phone dashboard on phones) and
  *                       the customer's phone are USABLE here, full size; the
  *                       caption fades from 0.86 and the story latches open.
  *                       (P3-B2: the old VALUE act — the row docking to the top
@@ -112,8 +120,14 @@ import s from "../story.module.css"
  * The story's p runs 0..P_END over the scroll. P_END < 1 drops the tail of
  * the old VALUE act (the dock), keeping the same scroll speed for every beat
  * (320vh per unit of p, as before): the acts land where they always did.
+ *
+ * P4-BT: the App Clip beat (card slides up -> View pressed -> card expands)
+ * gets its OWN CLIP_P of p, inserted after the tap: every beat from there on
+ * moved later by CLIP_P and the runway grew by CLIP_P * 320vh (408vh ->
+ * 434vh), so no other beat was squeezed.
  */
-const P_END = 0.9
+const CLIP_P = 0.08
+const P_END = 0.9 + CLIP_P
 /** Scroll budget in viewport heights for the story itself (0..P_END). */
 const SCROLL_VH = Math.round(320 * P_END)
 /**
@@ -156,24 +170,32 @@ const T = {
   ringsA: 0.44,
   upA: 0.47,
   upB: 0.505,
+  // P4-BT, the App Clip beat (CLIP_P of p): iOS's card slides up from the
+  // lock screen's foot, a fingertip lands on View, presses (pill + tip
+  // squash, a ripple), lifts; the card then grows into the clip's
+  // "Reading your receipt", which hands over to the receipt
   cardA: 0.455,
-  cardB: 0.475,
-  readA: 0.495,
-  readB: 0.515,
-  rcptA: 0.525,
-  rcptB: 0.55,
+  cardB: 0.495,
+  touchA: 0.5,
+  pressA: 0.51,
+  pressB: 0.518,
+  touchB: 0.532,
+  expA: 0.535,
+  expB: 0.57,
+  rcptA: 0.595,
+  rcptB: 0.625,
   // the spark
-  slideA: 0.56,
-  slideB: 0.61,
-  sparkA: 0.61,
-  sparkB: 0.68,
-  openA: 0.665,
-  openB: 0.73,
+  slideA: 0.56 + CLIP_P,
+  slideB: 0.61 + CLIP_P,
+  sparkA: 0.61 + CLIP_P,
+  sparkB: 0.68 + CLIP_P,
+  openA: 0.665 + CLIP_P,
+  openB: 0.73 + CLIP_P,
   // delivery onto the dashboard, then the usable hold (fillB..dockA)
-  fillA: 0.72,
-  fillB: 0.8,
+  fillA: 0.72 + CLIP_P,
+  fillB: 0.8 + CLIP_P,
   // the settle: the caption fades, the story latches open
-  dockA: 0.86,
+  dockA: 0.86 + CLIP_P,
 } as const
 
 /** Act 1's own clock (fractions of 0..T.act1), the old scene's beats, compressed. */
@@ -209,7 +231,7 @@ const LEAD_FREE: readonly [number, number] = [0.065, HEAD_END]
 const SPARK_N = 40
 const SPARK_TRAIL = 11
 
-type Phase = "idle" | "print" | "trash" | "landed" | "merge" | "tap" | "receipt" | "spark" | "dash" | "info"
+type Phase = "idle" | "print" | "trash" | "landed" | "merge" | "tap" | "view" | "receipt" | "spark" | "dash" | "info"
 
 const HINT: Record<Phase, string> = {
   idle: story.beats.print,
@@ -218,6 +240,7 @@ const HINT: Record<Phase, string> = {
   landed: story.beats.trash,
   merge: story.beats.merge,
   tap: story.beats.tap,
+  view: story.beats.view,
   receipt: story.beats.receipt,
   spark: story.beats.spark,
   dash: story.beats.dash,
@@ -425,6 +448,8 @@ export function RetainStory({ header }: { header: ReactNode }) {
   const cardRef = useRef<HTMLDivElement>(null)
   const readRef = useRef<HTMLDivElement>(null)
   const rcptRef = useRef<HTMLDivElement>(null)
+  const touchRef = useRef<HTMLSpanElement>(null)
+  const rippleRef = useRef<HTMLSpanElement>(null)
   const laptopRef = useRef<HTMLDivElement>(null)
   const cardDashRef = useRef<HTMLDivElement>(null)
   const lidRef = useRef<HTMLDivElement>(null)
@@ -558,6 +583,24 @@ export function RetainStory({ header }: { header: ReactNode }) {
       persp: 1400,
       runTop: 0,
       runTotal: 0,
+      /**
+       * P4-BT, the App Clip beat, in the phone screen's own px (layout, no
+       * transforms): the card's box and corner radii, the screen's size, and
+       * the View pill (the element pressed, found once here).
+       */
+      clip: null as null | {
+        x: number
+        y: number
+        w: number
+        h: number
+        rTop: number
+        rBot: number
+        sw: number
+        sh: number
+        /** one iPhone point, px: the fingertip comes in from 22pt x 64pt away */
+        pt: number
+      },
+      viewEl: null as HTMLElement | null,
     }
 
     /**
@@ -713,6 +756,35 @@ export function RetainStory({ header }: { header: ReactNode }) {
       M.bowX = (db.x + db.w * 0.45 - (phb.x + phb.w / 2)) * 0.18
       M.bowY = 4.2 * cq
       M.lapIn = 5 * cq
+
+      // P4-BT: the App Clip card inside its layer (the reused ClipLockScreen
+      // draws it at rest; the frame slides the whole layer up and clips it
+      // to the card), and where the fingertip + ripple sit: on its View pill
+      const cardLayer = cardRef.current
+      const acard = cardLayer?.querySelector<HTMLElement>(`.${ip.acard}`) ?? null
+      const pill = acard?.querySelector<HTMLElement>(`.${ip.viewBtn}`) ?? null
+      M.clip = null
+      M.viewEl = pill
+      if (cardLayer && acard && pill) {
+        const ab = offsetIn(acard, cardLayer)
+        const vb = offsetIn(pill, cardLayer)
+        const acs = getComputedStyle(acard)
+        M.clip = {
+          ...ab,
+          rTop: parseFloat(acs.borderTopLeftRadius) || 0,
+          rBot: parseFloat(acs.borderBottomLeftRadius) || 0,
+          sw: cardLayer.offsetWidth,
+          sh: cardLayer.offsetHeight,
+          pt: cardLayer.offsetWidth / 393,
+        }
+        const cx = `${(vb.x + vb.w / 2).toFixed(1)}px`
+        const cy = `${(vb.y + vb.h / 2).toFixed(1)}px`
+        for (const el of [touchRef.current, rippleRef.current]) {
+          if (!el) continue
+          el.style.left = cx
+          el.style.top = cy
+        }
+      }
 
       // the spark: phone screen centre -> the laptop's hinge, as a quadratic
       // curve bowed away from the straight line (up on a wide stage, out to
@@ -1103,10 +1175,45 @@ export function RetainStory({ header }: { header: ReactNode }) {
         "phT",
       )
       op(phoneRef.current, rise * 3, "phO")
-      // the screen: lock -> App Clip card -> "Reading" -> the receipt
-      op(cardRef.current, seg(p, T.cardA, T.cardB), "card")
-      op(readRef.current, seg(p, T.readA, T.readB), "read")
+      // the screen: lock -> App Clip card -> "Reading" -> the receipt.
+      // P4-BT: the card SLIDES UP from below the screen (its layer is
+      // clipped to the card, so the lock screen stays put around it), a
+      // fingertip presses View, and "Reading" grows out of the card's box
+      // to the full screen. Everything here is a pure function of p.
+      const C = M.clip
+      const slideUp = ease(seg(p, T.cardA, T.cardB))
+      const expand = ease(seg(p, T.expA, T.expB))
+      if (C) {
+        const cr = `${C.rTop.toFixed(1)}px ${C.rTop.toFixed(1)}px ${C.rBot.toFixed(1)}px ${C.rBot.toFixed(1)}px`
+        const cardInset = (k: number) =>
+          `inset(${(C.y * k).toFixed(1)}px ${((C.sw - C.x - C.w) * k).toFixed(1)}px ${((C.sh - C.y - C.h) * k).toFixed(1)}px ${(C.x * k).toFixed(1)}px round ${cr})`
+        set(cardRef.current, "clip-path", cardInset(1), "cardC")
+        // from just under the screen's foot to its resting place
+        set(cardRef.current, "transform", `translateY(${((1 - slideUp) * (C.sh - C.y + 2)).toFixed(1)}px)`, "cardT")
+        // "Reading" grows from the card's box; the corners open with it
+        set(readRef.current, "clip-path", expand >= 0.999 ? "none" : cardInset(1 - expand), "readC")
+      }
+      op(cardRef.current, (p > T.cardA ? 1 : 0) * (1 - seg(p, T.expA + 0.012, T.expB)), "card")
+      op(readRef.current, C ? seg(p, T.expA, T.expA + 0.012) : seg(p, T.expA, T.expB), "read")
       op(rcptRef.current, seg(p, T.rcptA, T.rcptB), "rcpt")
+      // the press: the tip lands (in from below-right, settling from a
+      // wider contact), squashes with the pill, lifts; a ring spreads from
+      // it as the pill goes down
+      const land = ease(seg(p, T.touchA, T.pressA))
+      const pressed = ease(seg(p, T.pressA, T.pressB)) * (1 - ease(seg(p, T.pressB + 0.004, T.touchB)))
+      const lift = seg(p, T.pressB + 0.004, T.touchB)
+      const pt = C?.pt ?? 1
+      set(
+        touchRef.current,
+        "transform",
+        `translate(-50%, -50%) translate(${((1 - land) * 22 * pt).toFixed(1)}px, ${((1 - land) * 64 * pt).toFixed(1)}px) scale(${((1.35 - 0.35 * land) * (1 - 0.2 * pressed)).toFixed(3)})`,
+        "tchT",
+      )
+      op(touchRef.current, land * (1 - lift), "tchO")
+      set(M.viewEl, "transform", pressed > 0.001 ? `scale(${(1 - 0.08 * pressed).toFixed(4)})` : "none", "viewT")
+      const rip = seg(p, T.pressA + 0.003, T.touchB + 0.006)
+      op(rippleRef.current, rip > 0 && rip < 1 ? 0.9 * (1 - rip) : 0, "ripO")
+      set(rippleRef.current, "transform", `translate(-50%, -50%) scale(${(0.5 + 1.5 * rip).toFixed(3)})`, "ripT")
       // NFC rings off the device's top face, one after another
       for (let n = 0; n < 3; n++) {
         const t = seg(p, T.ringsA + n * 0.018, T.ringsA + n * 0.018 + 0.04)
@@ -1261,17 +1368,19 @@ export function RetainStory({ header }: { header: ReactNode }) {
             ? "dash"
             : p >= T.slideA
               ? "spark"
-              : p >= T.rcptA - 0.01
+              : p >= T.expA
                 ? "receipt"
-                : p >= T.bowA
-                  ? "tap"
-                  : p >= T.convA
-                    ? "merge"
-                    : q >= Q.lid
-                      ? "landed"
-                      : q >= Q.shiftA
-                        ? "trash"
-                        : "print",
+                : p >= T.cardA + 0.008
+                  ? "view"
+                  : p >= T.bowA
+                    ? "tap"
+                    : p >= T.convA
+                      ? "merge"
+                      : q >= Q.lid
+                        ? "landed"
+                        : q >= Q.shiftA
+                          ? "trash"
+                          : "print",
       )
     }
 
@@ -1550,7 +1659,7 @@ export function RetainStory({ header }: { header: ReactNode }) {
                 />
               ))}
             </div>
-            <div className={s.phone} ref={phoneRef}>
+            <div className={s.phone} ref={phoneRef} data-story-phone="">
               <PhoneChrome islandLock>
                 <div className={cn(s.layer, s.layerBase)}>
                   <ClipLockScreen card={false} prompt={story.lockPrompt} moment={moment} />
@@ -1564,6 +1673,9 @@ export function RetainStory({ header }: { header: ReactNode }) {
                 <div className={cn(s.layer, s.layerClip)} ref={rcptRef}>
                   <ClipScreen summary={summary} />
                 </div>
+                {/* P4-BT: the fingertip on the card's View pill, and its ripple */}
+                <span className={s.clipRipple} ref={rippleRef} aria-hidden="true" />
+                <span className={s.clipTouch} ref={touchRef} aria-hidden="true" />
                 <PhoneApp summary={summary} live={live && !phoneDash} reset={reset} />
               </PhoneChrome>
               <ScreenLabel on={live && !phoneDash} title={story.screenLabels.phone} className={s.scrPhone} />
