@@ -4,14 +4,16 @@
 // components (no server imports). Never throws: network failures and
 // unexpected responses come back as { ok: false, error }.
 //
-//   const res = await subscribeToBlog({ email, source: "footer", path: location.pathname })
+//   const res = await requestDemo({ ...formFields, hp })
 //   if (res.ok) showThanks() else if (res.fields?.email) showFieldError(res.fields.email)
+//
+// The only caller today is the /business demo form (the blog email sign-up was
+// removed; /api/signup still accepts kind "blog", but nothing posts it).
 //
 // Pass the form's honeypot input value as `hp` (see HONEYPOT_FIELD in
 // ./schema): leave it undefined when the form has no honeypot input.
 
 import type {
-  BlogSignupPayload,
   DemoRequestPayload,
   SignupErrorCode,
   SignupFieldErrors,
@@ -73,8 +75,4 @@ export async function submitSignup(payload: SignupPayload, opts: SignupRequestOp
 
 export function requestDemo(fields: Omit<DemoRequestPayload, "kind">, opts?: SignupRequestOptions): Promise<SignupResult> {
   return submitSignup({ kind: "demo", ...fields }, opts);
-}
-
-export function subscribeToBlog(fields: Omit<BlogSignupPayload, "kind">, opts?: SignupRequestOptions): Promise<SignupResult> {
-  return submitSignup({ kind: "blog", ...fields }, opts);
 }

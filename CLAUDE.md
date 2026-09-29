@@ -2,7 +2,7 @@
 
 The papex.app website (Next.js 15 App Router, deployed on Vercel). Four surfaces now live here, not one:
 
-1. **Marketing site** — the forked landing (`/` → `/customers` | `/business`), plus `/about`, blog + hidden admin CMS, and support/legal pages. The business demo form and blog sign-ups post to `/api/signup`.
+1. **Marketing site** — the forked landing (`/` → `/customers` | `/business`), plus `/about`, blog + hidden admin CMS, and support/legal pages. Only the `/business` demo form posts to `/api/signup` (the blog email sign-up was removed in the 2.1 polish).
 2. **RDH receipt web fallback** (`/r`) — the non-App-Clip path for `https://papex.app/r?sid=<sid>`. It **does** call `api.papex.app`, server-side.
 3. **Merchant dashboard** (`/merchant/*`) — the RDH pilot's transaction/insights UI, talking to `api.papex.app` through same-origin proxies.
 4. **Universal-link host** for the whole iOS ecosystem — it serves the AASA file that lets the mobile app and App Clip intercept `papex.app` URLs.
@@ -47,7 +47,7 @@ API routes:
 - `app/api/r/[sid]/parsed` — same-origin proxy for `GET /receipt/{sid}/parsed`, for the polling island in `app/r/ReceiptUpgrade.tsx`.
 - `app/api/rdh/claim` — posts to the **adapter EC2** at `https://adapter.api.papex.app` (an A record in the `api.papex.app` Route 53 zone; nginx terminates TLS). Not the RDH Lambda backend.
 - `app/api/rdh/merchant/[...path]` — proxy to `https://api.papex.app` for the merchant dashboard.
-- `app/api/signup` — public sign-ups (business demo form → `waitlist`, blog → `blog_subscribers`), server-side firebase-admin on `papexweb-aed97` + SES v2 notification email. Contract, env and fallback: `docs/SIGNUP_ROUTE.md`.
+- `app/api/signup` — public sign-ups: only the `/business` demo form posts here now (→ `waitlist`); the route still accepts the old blog kind (→ `blog_subscribers`) but nothing on the site sends it, server-side firebase-admin on `papexweb-aed97` + SES v2 notification email. Contract, env and fallback: `docs/SIGNUP_ROUTE.md`.
 - `app/api/merchant/{profile,change-requests}` and `app/api/merchant/admin/{merchants,change-requests}/…` — merchant profile + change-request API, firebase-admin on **`papexv2`** (`lib/server/firebaseAdminV2.ts`, env `PAPEXV2_SERVICE_ACCOUNT`).
 
 ## Data, auth, env

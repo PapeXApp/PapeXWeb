@@ -1,5 +1,4 @@
 import { demoReceipts, demoStore, demoStores, type KitReceipt, type KitStore } from "@/components/app-kit"
-import { demoReceiptBytes } from "../customer/demoReceipt"
 
 /**
  * The ONE invented store every /business demo uses: "PapeX Cafe" (Nico
@@ -17,19 +16,9 @@ import { demoReceiptBytes } from "../customer/demoReceipt"
  */
 
 export const CAFE_NAME = "PapeX Cafe"
-const CAFE_HEADER = "PAPEX CAFE"
-
-/** The /customers demo ticket with its header swapped to PAPEX CAFE. Same
- *  ESC/POS stream otherwise, so it still decodes through lib/escpos.ts. */
-export function papexCafeReceiptBytes(): Uint8Array {
-  const src = demoReceiptBytes()
-  const text = Array.from(src, (b) => String.fromCharCode(b)).join("")
-  // The header swap is same-length; the card line is the paper-receipt form
-  // "Card ************4242" (still inside the 32-column ticket). No real card brand on
-  // a demo receipt (Nico, 2026-09-29: "make sure those are not real receipts").
-  const out = text.replace("TIDEWICK CAFE", CAFE_HEADER).replace("VISA  ****4729", "Card ************4242")
-  return Uint8Array.from(out, (c) => c.charCodeAt(0) & 0xff)
-}
+/** The ticket bytes (header PAPEX CAFE, card Card ************4242) live in
+ *  a pure module so the swaps are unit-tested; re-exported here. */
+export { papexCafeReceiptBytes } from "./papexCafeTicket"
 
 /** The kit's monogram logo (a letter on a brand-colour disc), as an SVG data URI. */
 function monogram(letter: string, bg: string): string {

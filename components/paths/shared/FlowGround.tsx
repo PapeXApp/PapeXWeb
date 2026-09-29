@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, type ReactNode } from "react"
+import { MAIN_ID } from "@/components/brand/links"
 import { PlaneMark } from "@/components/brand/plane-mark"
 import type { Ground } from "./FlowSection"
 import { publishFlowGround } from "./flowSignal"
@@ -113,7 +114,10 @@ export function FlowGround({
         </div>
       </div>
       <div className={styles.content}>
-        <main>{children}</main>
+        {/* id="main": the skip link's target, so it works without JS too. */}
+        <main id={MAIN_ID} tabIndex={-1}>
+          {children}
+        </main>
         {footer && (
           <div data-ground="navy" data-nav-theme="dark" className={styles.section}>
             {footer}

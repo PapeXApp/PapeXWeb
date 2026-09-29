@@ -508,13 +508,13 @@
   padding-top: 12px;
   border-top: 1px solid var(--fc-line-soft);
   font-family: var(--fc-mono);
-  font-size: 10.5px;
-  line-height: 1.5;
-  /* Always reserve two lines (3em at line-height 1.5, + padding + border) so the
-     rule above the source sits at the same height on every card, whether its
-     citation wraps or not. */
-  min-height: calc(3em + 15px);
-  letter-spacing: 0.04em;
+  font-size: 13px;
+  line-height: 1.4;
+  /* Always reserve two lines (2.8em at line-height 1.4, + padding + border) so
+     the rule above the source sits at the same height on every card, whether
+     its citation wraps or not. */
+  min-height: calc(2.8em + 15px);
+  letter-spacing: 0;
   color: rgba(0, 18, 29, 0.58);
 }
 /* the one thing on the card you can press that isn't the flip. Two classes on

@@ -928,10 +928,12 @@
   align-items: center;
   gap: 0.45em;
   font-family: var(--font-label);
-  font-size: 0.66em;
+  /* 0.66em of the title, but never under 13px ON SCREEN: the floor is in
+     the same camera units as the title (13px × --label-k lands at 13px). */
+  font-size: max(0.66em, calc(13px * var(--label-k, 1)));
   font-weight: 500;
   line-height: 1.2;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--flow-fg-2);
 }
@@ -949,6 +951,9 @@
   bottom: calc(100% + 0.85em);
   font-size: calc(var(--scr-label-px, 16px) * var(--label-k, 1) / var(--g-post-s, 1));
 }
+.scrPhone .scrSub {
+  font-size: max(0.66em, calc(13px * var(--label-k, 1) / var(--g-post-s, 1)));
+}
 /* phones: over the dashboard phone, in the stage's top margin, on one row
    (the margin is two lines short) */
 .scrPd {
@@ -956,6 +961,10 @@
   flex-direction: row;
   gap: 0.7em;
   font-size: 14px;
+}
+.scrPd .scrSub {
+  font-size: 13px;
+  letter-spacing: 0.08em;
 }
 @media (prefers-reduced-motion: reduce) {
   .scrLabel {

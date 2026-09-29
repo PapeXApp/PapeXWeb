@@ -15,7 +15,7 @@ import type { ListRow } from "../appui";
 export const heroCopy = {
   eyebrow: "The free receipts and coupons app",
   headline: "Your receipt, not your identity.",
-  lead: "The free PapeX app keeps every receipt and coupon in one place. Scan a paper receipt or forward an email one. PapeX never touches card data, and you can delete anything, anytime.",
+  lead: "The free PapeX app keeps every receipt and coupon in one place. Scan a paper receipt or forward an email one. PapeX never touches card data.",
   ctaLabel: "Download the app",
   // True of both store listings (lib/storeLinks.ts).
   ctaSubtext: "Free · iPhone & Android",
@@ -24,7 +24,7 @@ export const heroCopy = {
   faqCue: "Questions?",
   /** The visual is a picture (nothing to click): its accessible name. */
   visualLabel:
-    "The PapeX app on an iPhone. A scanned paper receipt from Tidewick Cafe is filed at the top of the Receipts list. Beside it: no card number, no name or email on the receipt, delete anytime.",
+    "The PapeX app on an iPhone. A scanned paper receipt from Tidewick Cafe is filed at the top of the Receipts list. Beside it: no card number, no name or email on the receipt.",
   /** The three privacy chips, in the order they appear. */
   chips: [
     { key: "card", label: "No card number" },

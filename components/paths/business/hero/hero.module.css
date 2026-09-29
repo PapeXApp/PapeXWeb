@@ -924,7 +924,7 @@
   align-items: center;
   justify-content: center;
   font-family: var(--font-label, ui-monospace, monospace);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   background: color-mix(in srgb, var(--flow-fg) 14%, transparent);
 }
@@ -998,8 +998,8 @@
 }
 .demoTag {
   font-family: var(--font-label, ui-monospace, monospace);
-  font-size: 9.5px;
-  letter-spacing: 0.1em;
+  font-size: 13px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
   color: var(--flow-fg-3);
