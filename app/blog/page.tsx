@@ -4,7 +4,7 @@
 // posts are read on the server (Firestore REST, app/blog/_lib/posts.ts) and
 // the page is ISR'd, so crawlers get real titles and links in the HTML
 // instead of the old client-only skeleton. The only client islands are the
-// admin "new post" button and the device-matched "Get the app" link.
+// admin "new post" button and the device-matched "Download the app" link.
 
 import type { Metadata } from 'next'
 import Link from 'next/link'
@@ -14,7 +14,6 @@ import { FlowSection } from '@/components/paths/shared/FlowSection'
 import { SectionLabel } from '@/components/paths/shared/SectionLabel'
 import { BlogImage } from '@/components/blog/BlogImage'
 import { BlogCta } from '@/components/blog/BlogCta'
-import { BlogSubscribeForm } from '@/components/blog/BlogSubscribeForm'
 import { SiteFooter } from '@/components/brand/site-footer'
 import { LazyBlogAdminCreate } from '@/components/blog/AdminIslands'
 import { formatPostDate } from '@/components/blog/format'
@@ -44,7 +43,6 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    site: '@papex_receipts',
     title: TITLE,
     description: DESCRIPTION,
     images: [DEFAULT_OG_IMAGE],
@@ -126,7 +124,6 @@ export default async function BlogPage() {
         </FlowSection>
 
         <BlogCta />
-        <BlogSubscribeForm source="blog-index" variant="card" />
       </FlowGround>
       <LazyBlogAdminCreate />
     </SiteShell>

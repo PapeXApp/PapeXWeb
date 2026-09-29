@@ -38,6 +38,7 @@ export const metadata: Metadata = {
   alternates: { canonical: 'https://papex.app' },
   openGraph: {
     type: 'website',
+    locale: 'en_US',
     url: 'https://papex.app',
     siteName: 'PapeX',
     title: TITLE,
