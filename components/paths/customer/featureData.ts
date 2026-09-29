@@ -3,7 +3,7 @@ import type { PersonaId } from "./content";
 import { DEMO_GROUP, DEMO_PERSON } from "./appui/data";
 
 /**
- * DEMO DATA for the five feature phones (section 05 Features, the quiz's outcome). Everything is INVENTED, and
+ * DEMO DATA for the six feature phones (section 05 Features, the quiz's outcome). Everything is INVENTED, and
  * only these names appear: the stores Tidewick Cafe, Copperpeg Hardware,
  * Mossbrook Pharmacy and Quillbrook Market (the app kit's demo stores, with
  * their monogram logos), the person Jordan Reyes and the group Housemates
@@ -15,8 +15,8 @@ import { DEMO_GROUP, DEMO_PERSON } from "./appui/data";
  *
  * THE QUIZ CHANGES THE DATA, not just the order: each persona searches for a
  * different store in the Find shot, the Export shot selects a different set
- * of receipts, and the Deals shot opens on the tab that persona cares about
- * (see `dealsTab`). Before the quiz the page shows
+ * of receipts. The Merchant profiles and Coupons shots are the same for every
+ * persona. Before the quiz the page shows
  * `casual`, and so does the server render, so first paint never changes.
  */
 
@@ -133,34 +133,29 @@ export const SHARE_RECEIPT: KitReceipt = {
   sharedGroup: DEMO_GROUP,
 };
 
-/** DEALS — the shopper's coupons. The first is the partner-tap coupon, the
- *  same everywhere on the site ("$2 OFF" / "$2 off your next visit" /
- *  "Expires in 30 days" — the kit's c1). The rest were scanned. */
-export const DEAL_COUPONS: KitCoupon[] = [
+/** COUPONS — the Coupons tab list (2026-09-29, its own row). Only the three
+ *  /customers demo stores. The first is the partner-tap coupon, the same
+ *  everywhere on the site ("$2 OFF" / "$2 off your next visit" / "Expires in
+ *  30 days" — the kit's c1); the rest were scanned. */
+export const COUPON_LIST: KitCoupon[] = [
   ...demoCoupons,
   {
-    id: "c4",
-    storeId: "demo-mossbrook-pharmacy",
+    id: "c5",
+    storeId: "demo-copperpeg-hardware",
     kind: "percent",
-    title: "20% off vitamins",
-    expiresAt: "2026-10-18T23:59:00",
+    title: "10% off paint supplies",
+    expiresAt: "2026-10-20T23:59:00",
     via: "scan",
   },
 ];
 /** Coupons the shopper has hearted (Favorites). */
-export const DEAL_FAVORITES = ["c1", "c3"];
+export const COUPON_FAVORITES = ["c1", "c3"];
 
-/** The Stores tab grid: every store the shopper has a receipt from. */
-export const DEAL_STORES = [tidewick, copper, quill, moss];
-export const DEAL_FAVORITE_STORES = [tidewick.id];
-
-/** Which tab the Deals phone opens on, per persona. The Keeper keeps store
- *  pages and favorites; everyone else sees the coupons themselves first. */
-export const dealsTab: Record<PersonaId, "stores" | "coupons"> = {
-  keeper: "stores",
-  casual: "coupons",
-  non: "coupons",
-};
+/** MERCHANT PROFILES — the Stores tab grid: every store the shopper has a
+ *  receipt from, each tile the door to that store's profile. Tiles count the
+ *  shopper's own coupons there (COUPON_LIST). */
+export const PROFILE_STORES = [tidewick, copper, quill, moss];
+export const PROFILE_FAVORITE_STORES = [tidewick.id];
 
 /** EXPORT — the Receipts tab in SELECT MODE (app-reference.md §1.4 and
  *  "Select mode": title row [✕] [N Selected] [•••], checkboxes on every row,

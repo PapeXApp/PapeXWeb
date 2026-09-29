@@ -37,8 +37,8 @@ const CHANGE_ANSWERS_LABEL = "Change my answers";
  * persona's order with its lines, titles and phone data. id="features" is the
  * footer's /customers#features target, as at 9ef8fd4.
  *
- * FIVE ROWS, ALWAYS (live features only): Find · Export · Add · Share ·
- * Deals. The quiz result (personaStore.ts, in memory only) sets their ORDER,
+ * SIX ROWS, ALWAYS (live features only): Find · Export · Add · Share ·
+ * Merchant profiles · Coupons. The quiz result (personaStore.ts, in memory only) sets their ORDER,
  * the benefit line each shows, any per-persona title, and what the phones
  * show (personaFeatures.ts, featureData.ts). Before the quiz — and on the
  * server, and with no JS — the rows show the `casual` order under a

@@ -190,8 +190,9 @@ export const personasContent = {
   ] satisfies PersonaResult[],
 };
 
-// Section 05 Features — five rows, live app features only (Nico's list,
-// 2026-09-24, plus Export 2026-09-25). Each row is drawn as a REAL app screen
+// Section 05 Features — six rows, live app features only (Nico's list,
+// 2026-09-24, plus Export 2026-09-25; 2026-09-29 the old "Coupons and store
+// pages" row split in two: Merchant profiles + Coupons). Each row is drawn as a REAL app screen
 // by FeatureScreens.tsx (built from PapeXV2's own tokens, per
 // docs/design/app-reference.md), not an image. The ORDER of the rows, the
 // benefit line each shows and any per-persona title come from the quiz
@@ -204,7 +205,7 @@ export const personasContent = {
 // cut (it promised automation that doesn't exist). Still cut: filtering "by
 // amount" (app-reference.md shows the amount on a row, but no amount FILTER
 // is confirmed).
-export type FeatureKey = "find" | "export" | "add" | "share" | "deals";
+export type FeatureKey = "find" | "export" | "add" | "share" | "profiles" | "coupons";
 
 export interface FeatureRow {
   /** The row's one-word label, set as its [05.N] eyebrow. */
@@ -240,12 +241,21 @@ export const featuresContent = {
       title: "Share it.",
       tags: ["Shared groups", "Person to person"],
     },
-    deals: {
+    profiles: {
+      // Nico, 2026-09-29: the old "Coupons and store pages" row, renamed to
+      // accentuate the store pages. "Receipts by store" = a store profile's
+      // Receipts tab (PapeXV2 app/store/[id].tsx: basic profile = Coupons |
+      // Receipts).
+      eyebrow: "Merchant profiles",
+      title: "Merchant profiles.",
+      tags: ["Merchant profiles", "Favorites", "Receipts by store"],
+    },
+    coupons: {
       // "Coupons", not "Deals": in the app a Deal is a store promotion, and
       // this row is about the coupons a shopper earns or scans (P5 c-22).
       eyebrow: "Coupons",
-      title: "Coupons and store pages.",
-      tags: ["Coupons", "Favorites", "Store pages"],
+      title: "Coupons.",
+      tags: ["Coupons", "Swipe to favorite", "Earn or scan"],
     },
   } satisfies Record<FeatureKey, FeatureRow>,
   /** Small caption on every app shot: the rows in them are invented. */
