@@ -1,25 +1,57 @@
 /* NextSection — the "go to the next screen" arrow (Web 2.1 P3-R1).
    Desktop only (>= 821px, where sections are full screens via `.screen`);
-   below that sections stack and scroll, and the arrow is not rendered at all
-   (display: none, so it is also out of the tab order).
+   below that sections stack and scroll, and neither the arrow nor its band is
+   rendered at all (display: none, so the arrow is also out of the tab order).
 
-   It sits in the section's BOTTOM PADDING: every arrowed section pads its
-   bottom with --section-pad-y (60px at 1440, ~58px at 1280), and the 44px hit
-   target is centred in that band, so it can never cover content. The ring is
-   40px inside the 44px target. */
-.next {
+   Spacing (Web 2.1 P4 — Nico: "this is too close. we need to fix spacing").
+   It used to be centred in the section's bottom padding (--section-pad-y,
+   60px at 1440), which left the ring ~10px under the last card. Now:
+
+     last content
+       --next-gap            clear air, never less (the band guarantees it)
+     ( ring, 40px )          inside the 44px hit target
+       --next-gap            to the section's edge
+     next section
+
+   `.band` is an in-flow spacer rendered just before the arrow, so the
+   section's content box ends --next-gap above the ring whatever the content
+   is. In a centred full screen (`.screen`, flex column) with free space it
+   only recentres the content; a screen that is already full grows by the
+   band. Its height assumes the section pads its bottom with --section-pad-y
+   (every arrowed section does; the two that opt out with band="inset"
+   are listed in NextSection.tsx): band + pad = --next-gap + 40px + --next-gap.
+
+   --next-gap is the one dial. */
+.next,
+.band {
   display: none;
 }
 @media (min-width: 821px) {
+  .next,
+  .band {
+    --next-gap: 48px;
+  }
+  .band {
+    display: block;
+    flex: none;
+    height: max(0px, calc(2 * var(--next-gap) + 40px - var(--section-pad-y, 60px)));
+    pointer-events: none;
+  }
   .next {
     position: absolute;
     left: 0;
     right: 0;
+    /* inset (legacy): the 44px target centred in the bottom padding */
     bottom: max(0px, calc((var(--section-pad-y, 60px) - 44px) / 2));
     z-index: 2;
     display: flex;
     justify-content: center;
     pointer-events: none;
+  }
+  /* reserve: the ring's bottom edge sits --next-gap above the section's edge
+     (the ring is inset 2px inside the 44px target) */
+  .nextBand {
+    bottom: calc(var(--next-gap) - 2px);
   }
 }
 

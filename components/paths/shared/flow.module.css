@@ -262,7 +262,7 @@
   position: relative;
 }
 
-/* --- Section label: "[02] The problem" ---------------------------------- */
+/* --- Section label: "The problem" (no number since Web 2.1 P4) ---------- */
 .label {
   display: inline-flex;
   align-items: baseline;
@@ -275,11 +275,6 @@
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--flow-fg-2);
-}
-.labelIdx {
-  color: var(--orange);
-  letter-spacing: 0.04em;
-  font-variant-numeric: tabular-nums;
 }
 
 /* --- Ribbon (was the full-bleed orange marquee band) -----------------------

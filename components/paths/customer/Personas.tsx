@@ -298,7 +298,7 @@ export function Personas() {
           </div>
         </ScrollReveal>
       </div>
-      <NextSection targetId="features" name={featuresContent.eyebrow} />
+      <NextSection targetId="features" name={featuresContent.eyebrow} band="inset" />
     </FlowSection>
   );
 }

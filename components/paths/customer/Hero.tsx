@@ -195,7 +195,7 @@ export function Hero() {
       </div>
       {/* P3 run-through: the next-section arrow (desktop, full-screen hero).
           The copy keeps its load-in stagger: it is on screen at scroll 0. */}
-      <NextSection targetId={HOW_IT_WORKS_ANCHOR} name="How it works" />
+      <NextSection targetId={HOW_IT_WORKS_ANCHOR} name="How it works" band="inset" />
     </FlowSection>
   );
 }
