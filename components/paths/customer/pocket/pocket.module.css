@@ -655,6 +655,11 @@
   .staticPhone {
     --wp-size: min(560px, calc((100vw - 40px) * 1.8));
   }
+  /* the 23em email mock must fit the column on the narrowest phones (320px):
+     unchanged 14px from ~370px up, scales down below that */
+  .staticLead .staticPaper .flyer {
+    --pf: min(14px, calc((100vw - 40px) / 23.4));
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
