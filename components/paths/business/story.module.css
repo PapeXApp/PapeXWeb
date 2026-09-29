@@ -614,6 +614,37 @@
   flex-direction: column;
 }
 
+/* P4-BT: the tap on the App Clip card's View pill. A soft fingertip (iOS's
+   touch indicator, as the /business hero draws it) and a ring spreading from
+   it. Placed on the pill by measure() (left / top, once); the frame writes
+   only their transform + opacity. Above every screen layer. */
+.clipTouch,
+.clipRipple {
+  position: absolute;
+  left: 50%;
+  top: 80%;
+  z-index: 7;
+  border-radius: 999px;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+}
+.clipTouch {
+  width: calc(58 * var(--pt));
+  height: calc(58 * var(--pt));
+  background: rgba(255, 255, 255, 0.34);
+  box-shadow:
+    inset 0 0 0 calc(2 * var(--pt)) rgba(255, 255, 255, 0.75),
+    0 0 0 calc(1 * var(--pt)) rgba(0, 18, 29, 0.28),
+    0 calc(4 * var(--pt)) calc(16 * var(--pt)) rgba(0, 0, 0, 0.35);
+}
+.clipRipple {
+  width: calc(64 * var(--pt));
+  height: calc(64 * var(--pt));
+  border: calc(2.5 * var(--pt)) solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 calc(12 * var(--pt)) rgba(147, 170, 246, 0.7);
+}
+
 /* --- the laptop (appears on the left once phone + device move right) -------- */
 .laptop {
   position: absolute;
