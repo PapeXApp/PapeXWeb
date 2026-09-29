@@ -502,7 +502,14 @@
   z-index: 2;
   transform-origin: 50% 100%;
   transform: var(--tap-rest);
-  animation: heroTapPhone var(--tap-cycle) linear infinite both;
+  /* Longhands, not the shorthand: with var() inside an `animation` shorthand
+     the CSS-modules compiler leaves the name un-hashed, so it matches no
+     @keyframes and the loop never plays. */
+  animation-name: heroTapPhone;
+  animation-duration: var(--tap-cycle);
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-fill-mode: both;
 }
 @keyframes heroTapPhone {
   0%,
@@ -533,7 +540,11 @@
 /* The device's halo (shape and seat: iphone.module.css .rdhGlow) swells at
    contact. Its transform keeps the -50%/-50% centring the base rule uses. */
 .tapGlow {
-  animation: heroTapGlow var(--tap-cycle) ease-in-out infinite both;
+  animation-name: heroTapGlow;
+  animation-duration: var(--tap-cycle);
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-fill-mode: both;
 }
 @keyframes heroTapGlow {
   0%,
@@ -552,7 +563,11 @@
    top face at contact, the second a beat behind the first. Invisible for the
    rest of the cycle. */
 .tapRing {
-  animation: heroTapRing var(--tap-cycle) cubic-bezier(0.22, 0.61, 0.36, 1) infinite both;
+  animation-name: heroTapRing;
+  animation-duration: var(--tap-cycle);
+  animation-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
+  animation-iteration-count: infinite;
+  animation-fill-mode: both;
 }
 .tapRing2 {
   animation-delay: 0.32s;
@@ -584,7 +599,11 @@
 /* The device's status light (RdhDevice's .rdhLed, below) blinks up at
    contact. Scoped to the hero stage: §02 drives the same light by prop. */
 .demoStage .rdhLed {
-  animation: heroTapLed var(--tap-cycle) ease-in-out infinite both;
+  animation-name: heroTapLed;
+  animation-duration: var(--tap-cycle);
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-fill-mode: both;
 }
 @keyframes heroTapLed {
   0%,
