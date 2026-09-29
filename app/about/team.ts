@@ -4,9 +4,9 @@
 // 2026-09-24 §6a Q14, round 2). One typed array so photos and LinkedIn URLs
 // can be dropped in later without touching the page.
 //
-// Photos: only the seven people we have a real headshot for get one
-// (`public/profiles/`, verified to exist 2026-09-24); everyone else renders
-// an initials bubble in the brand palette. No personal emails on cards —
+// Photos: every member has a real headshot in `public/profiles/` (the last
+// nine added 2026-09-29 from Nico, 400×400 JPEG); a member without one would
+// render an initials bubble in the brand palette. No personal emails on cards —
 // LinkedIn only, and a chip renders only once `linkedin` is filled in.
 
 export type TeamMember = {
@@ -30,9 +30,9 @@ export const teamGroups: TeamGroup[] = [
       { name: 'Nicolas Courbage', role: 'CEO & Founder', photo: '/profiles/nico_courbage.jpeg' },
       { name: 'Noah Thompson', role: 'CTO & Co-founder', photo: '/profiles/noah_thompson.jpeg' },
       { name: 'Conor McKenna', role: 'CMO & Co-founder', photo: '/profiles/connor_mckenna.jpeg' },
-      { name: 'Will Alcorn', role: 'UI/UX & Data Engineer' },
-      { name: 'Ali Thompson', role: 'Marketing Lead' },
-      { name: 'Yash Shah', role: 'Full-Time Developer' },
+      { name: 'Will Alcorn', role: 'UI/UX & Data Engineer', photo: '/profiles/will_alcorn.jpeg' },
+      { name: 'Ali Thompson', role: 'Marketing Lead', photo: '/profiles/ali_thompson.jpeg' },
+      { name: 'Yash Shah', role: 'Full-Time Developer', photo: '/profiles/yash_shah.jpeg' },
     ],
   },
   {
@@ -53,17 +53,17 @@ export const teamGroups: TeamGroup[] = [
         role: 'Advisor & Board Member',
         photo: '/profiles/michael_khoury.jpeg',
       },
-      { name: 'Matt Baker', role: 'Advisor' },
-      { name: 'Bert Friedman', role: 'Advisor', photo: '/profiles/bert_720.jpeg' },
-      { name: 'Jonathan Wess', role: 'Advisor' },
+      { name: 'Matt Baker', role: 'Advisor', photo: '/profiles/matt_baker.jpeg' },
+      { name: 'Bert Friedman', role: 'Advisor', photo: '/profiles/bert_friedman.jpeg' },
+      { name: 'Jonathan Wess', role: 'Advisor', photo: '/profiles/jonathan_wess.jpeg' },
     ],
   },
   {
     title: 'Interns',
     members: [
-      { name: 'Marvik Patel', role: 'Dev Intern' },
-      { name: 'Aditya Jha', role: 'Dev Intern' },
-      { name: 'Priyansh Dhanuka', role: 'Dev Intern' },
+      { name: 'Marvik Patel', role: 'Dev Intern', photo: '/profiles/marvik_patel.jpeg' },
+      { name: 'Aditya Jha', role: 'Dev Intern', photo: '/profiles/aditya_jha.jpeg' },
+      { name: 'Priyansh Dhanuka', role: 'Dev Intern', photo: '/profiles/priyansh_dhanuka.jpeg' },
     ],
   },
 ]
