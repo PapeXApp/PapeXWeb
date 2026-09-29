@@ -5,9 +5,10 @@ import Image from "next/image"
 import { cn } from "@/lib/utils"
 import type { ReceiptSummary } from "@/lib/receiptSummary"
 import { PhoneChrome } from "../../customer/WalkPhone"
-import { ClipApp, ClipLockScreen, WalkAppScreen } from "../../customer/appui"
+import { ClipApp, ClipLockScreen } from "../../customer/appui"
 import { receiptMoment } from "../../customer/appui/Clip"
 import { demoContent } from "../../customer/content"
+import { CafeWalkAppScreen } from "./CafeAppScreen"
 import { ClipCouponLead, CouponScreen, type CouponState } from "./CouponScreen"
 import { CashierBody, CashierHands, CheckGlyph, HandBack, HandFront, ScannerArm } from "./SceneArt"
 import { loop } from "./loop"
@@ -372,7 +373,7 @@ export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock:
             {/* 3: saved into the PapeX app: Receipts, then Coupons */}
             <div className={cn(s.layer, s.layerFade, within(beat, "app", "couponOpen") && s.layerOn)}>
               {within(beat, "saved", "couponOpen") ? (
-                <WalkAppScreen summary={summary} coupons={from(beat, "coupons")} time={moment.time} />
+                <CafeWalkAppScreen summary={summary} coupons={from(beat, "coupons")} time={moment.time} />
               ) : null}
             </div>
             {/* 4: the coupon, opened */}

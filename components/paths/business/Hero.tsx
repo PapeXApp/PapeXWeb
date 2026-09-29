@@ -5,7 +5,7 @@ import { NextSection } from "../shared/NextSection"
 import { SectionLabel } from "../shared/SectionLabel"
 import { parseEscPos } from "@/lib/escpos"
 import { summarizeReceipt } from "@/lib/receiptSummary"
-import { demoReceiptBytes } from "../customer/demoReceipt"
+import { papexCafeReceiptBytes } from "./papexCafe"
 import { receiptMoment } from "../customer/appui/Clip"
 import { hero, tapToRetain } from "./content"
 import { LoopVisual } from "./hero/LoopVisual"
@@ -39,9 +39,9 @@ const tapToRetainName = tapToRetain.eyebrow
 
 export function Hero() {
   // The demo receipt is decoded HERE, on the server, through this repo's own
-  // lib/escpos.ts + lib/receiptSummary.ts (same bytes and path as /customers),
+  // lib/escpos.ts + lib/receiptSummary.ts (the /customers ticket re-headed PAPEX CAFE, same path),
   // so the parser never ships in the /business bundle.
-  const summary = summarizeReceipt(parseEscPos(demoReceiptBytes()).lines)
+  const summary = summarizeReceipt(parseEscPos(papexCafeReceiptBytes()).lines)
   const clock = receiptMoment(summary.dateline).time
   return (
     <FlowSection

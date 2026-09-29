@@ -15,7 +15,7 @@
 // CLAIM RULES (same as content.ts): coupons are live (merchants set them up in
 // their dashboard; at partner stores a tap sends the customer one for their
 // next visit), so nothing here says "Coming soon". The store is the invented
-// "Tidewick Cafe" used everywhere else on the site, and the visual carries a
+// "PapeX Cafe" used across every /business demo, and the visual carries a
 // "Demo data" tag. No figures, no retention metric, no real merchants, and
 // nothing that reads as collecting the shopper's data (a shopper may read it).
 // Wording is provisional: Phase 4 finalises the words.
@@ -32,7 +32,7 @@ export const loop = {
     { label: "Scan", sub: "it at the counter: coupon used" },
   ],
   /** The demo coupon on the phone is the app kit's partner-tap coupon
-   *  (components/app-kit sampleData `c1`: Tidewick Cafe, "$2 off your next
+   *  (components/app-kit sampleData `c1`: PapeX Cafe, "$2 off your next
    *  visit", expires in 30 days), plus this demo barcode so the counter has
    *  something to scan. */
   coupon: {
@@ -47,5 +47,5 @@ export const loop = {
   /** Screen-reader description of the whole visual (the drawing itself is
    *  aria-hidden: the numbered steps under it carry the words). */
   description:
-    "Demo with an invented store, Tidewick Cafe: at checkout a customer taps their phone on the PapeX device and the App Clip card pops up. They tap View and the receipt opens, with a coupon for $2 off their next visit on top and the items below. They save it to the PapeX app and open the coupon. At the counter they turn the phone to the person behind it, who scans the coupon's barcode, and the coupon is used.",
+    "Demo with an invented store, PapeX Cafe: at checkout a customer taps their phone on the PapeX device and the App Clip card pops up. They tap View and the receipt opens, with a coupon for $2 off their next visit on top and the items below. They save it to the PapeX app and open the coupon. At the counter they turn the phone to the person behind it, who scans the coupon's barcode, and the coupon is used.",
 } as const

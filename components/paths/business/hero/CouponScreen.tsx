@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react"
 import { cn } from "@/lib/utils"
-import { AppKitRoot, CouponCard, CouponDetail, StatusBar, demoCoupons, demoStore, type KitCoupon } from "@/components/app-kit"
+import { AppKitRoot, CouponCard, CouponDetail, StatusBar, demoCoupons, type KitCoupon } from "@/components/app-kit"
+import { cafeStoreFor } from "../papexCafe"
 import { clip } from "@/lib/app-kit/tokens"
 import { CheckGlyph } from "./SceneArt"
 import { loop } from "./loop"
@@ -11,7 +12,7 @@ import s from "./hero.module.css"
  * just sent, as the PapeX app shows it — the app kit's own CouponDetail
  * (components/app-kit, synced from PapeXV2 app/couponDetail.tsx), imported,
  * not forked. It is the site's one partner-tap coupon (sampleData `c1`,
- * Tidewick Cafe, "$2 off your next visit", expires in 30 days) plus a demo
+ * PapeX Cafe, "$2 off your next visit", expires in 30 days) plus a demo
  * barcode, so the counter has something to scan.
  *
  * Hero-only layers on top, all transform/opacity, driven by `state`:
@@ -27,7 +28,7 @@ export type CouponState = "pending" | "landed" | "shown" | "scan" | "used"
 
 const TAP = demoCoupons.find((c) => c.via === "tap") ?? demoCoupons[0]
 const COUPON: KitCoupon = { ...TAP, barcode: loop.coupon.barcode }
-const STORE = demoStore(COUPON.storeId)
+const STORE = cafeStoreFor(COUPON.storeId)
 
 /** One app point = the phone screen's width / 393 (same as story/PhoneApp). */
 const PT: CSSProperties = { ["--pt" as string]: "calc(var(--wp-w) / 393)" }

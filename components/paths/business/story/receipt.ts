@@ -3,15 +3,15 @@
 import { useMemo } from "react"
 import { parseEscPos } from "@/lib/escpos"
 import { summarizeReceipt, type ReceiptSummary } from "@/lib/receiptSummary"
-import { demoReceiptBytes } from "../../customer/demoReceipt"
+import { papexCafeReceiptBytes } from "../papexCafe"
 
 /**
- * The one sale this whole scene follows: the /customers demo receipt, decoded
+ * The one sale this whole scene follows: the /customers demo receipt re-headed PAPEX CAFE, decoded
  * through this repo's own ESC/POS parser (never a second, hand-typed copy), so
  * the paper slip, the phone and the dashboard all show the same numbers.
  */
 export function useDemoReceipt(): ReceiptSummary {
-  return useMemo(() => summarizeReceipt(parseEscPos(demoReceiptBytes()).lines), [])
+  return useMemo(() => summarizeReceipt(parseEscPos(papexCafeReceiptBytes()).lines), [])
 }
 
 export const money = (n?: number) => (typeof n === "number" ? n.toFixed(2) : "")
