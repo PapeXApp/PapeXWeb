@@ -25,10 +25,13 @@ export const metadata: Metadata = {
 
 type Signal = 'normal' | 'attention'
 
+// Source of truth: Papex_RDH_Firmware feat/tcp9100-pilot — include/led.h and
+// src/state_machine.c / upload.c / net_wifi.c (green language rebuilt
+// 2026-08-18, 3f0ed97). That branch's README table predates it; the code wins.
 const LIGHT_ROWS: {
   light: string
   color: 'green' | 'red' | 'off'
-  blink?: 'slow' | 'fast'
+  blink?: 'slow' | 'medium' | 'fast'
   meaning: string
   detail: string
   signal: Signal
@@ -36,7 +39,7 @@ const LIGHT_ROWS: {
   {
     light: 'Solid green',
     color: 'green',
-    meaning: 'Idle / ready',
+    meaning: 'Ready',
     detail: 'Waiting for the next sale. Normal.',
     signal: 'normal',
   },
@@ -44,7 +47,7 @@ const LIGHT_ROWS: {
     light: 'Slow green blink',
     color: 'green',
     blink: 'slow',
-    meaning: 'Processing a receipt',
+    meaning: 'Working on a receipt',
     detail: 'A receipt just printed and is on its way. A few seconds.',
     signal: 'normal',
   },
@@ -57,26 +60,26 @@ const LIGHT_ROWS: {
     signal: 'normal',
   },
   {
-    light: 'Slow red blink',
-    color: 'red',
-    blink: 'slow',
-    meaning: 'Wi-Fi setup',
-    detail: 'Needs credentials. Call PapeX.',
-    signal: 'attention',
-  },
-  {
     light: 'Solid red',
     color: 'red',
     meaning: 'Connecting',
-    detail: 'Joining Wi-Fi. Wait 15–30s.',
+    detail: 'Joining Wi-Fi, including just after it’s plugged in. Wait 15–30s.',
     signal: 'attention',
   },
   {
     light: 'Slow red blink',
     color: 'red',
     blink: 'slow',
-    meaning: 'NFC fix',
-    detail: 'Self-recovering. Wait 10–15s.',
+    meaning: 'Sorting itself out',
+    detail: 'Needs Wi-Fi setup, is resending a receipt, or is resetting its tap reader. Wait 30s. Still blinking? Call PapeX.',
+    signal: 'attention',
+  },
+  {
+    light: 'Medium red blink',
+    color: 'red',
+    blink: 'medium',
+    meaning: 'Not recognized',
+    detail: 'PapeX needs to re-activate the device. Call PapeX.',
     signal: 'attention',
   },
   {
@@ -90,9 +93,9 @@ const LIGHT_ROWS: {
   {
     light: 'Off',
     color: 'off',
-    meaning: 'Booting',
-    detail: 'Starting up. Wait 30–60s.',
-    signal: 'normal',
+    meaning: 'No power',
+    detail: 'A working device is never dark. Check the plug and outlet.',
+    signal: 'attention',
   },
 ]
 
@@ -104,11 +107,12 @@ const SIGNAL_STYLES: Record<Signal, { label: string; className: string }> = {
 // The light plus its rhythm, drawn static (no looping animation anywhere on
 // the site): a dot in the light's colour, then a short strip showing the
 // on/off pattern over time: one unbroken line = solid, two long dashes =
-// slow blink, five short dashes = fast blink. Decorative; the row's own words
+// slow blink, three mid dashes = medium blink, five short dashes = fast blink. Decorative; the row's own words
 // ("Slow green blink" ...) carry the meaning for screen readers.
-const RHYTHM: Record<'solid' | 'slow' | 'fast', string | undefined> = {
+const RHYTHM: Record<'solid' | 'slow' | 'medium' | 'fast', string | undefined> = {
   solid: undefined,
   slow: '9 5',
+  medium: '5 4',
   fast: '2.8 3',
 }
 
@@ -117,7 +121,7 @@ function LightDot({
   blink,
 }: {
   color: 'green' | 'red' | 'off'
-  blink?: 'slow' | 'fast'
+  blink?: 'slow' | 'medium' | 'fast'
 }) {
   const base = 'inline-block h-3 w-3 rounded-full flex-shrink-0'
   if (color === 'off') {
@@ -160,7 +164,8 @@ const TROUBLESHOOTING: { title: string; steps: string[] }[] = [
   {
     title: 'Light is blinking red',
     steps: [
-      'Slow blink: may need Wi-Fi setup or is self-recovering. Wait 30 seconds.',
+      'Slow blink: it needs Wi-Fi setup, is resending a receipt, or is resetting its tap reader. Wait 30 seconds. Still blinking? Call PapeX.',
+      'Medium blink (about 3 times a second): the device needs to be re-activated. Call PapeX.',
       'Fast blink: power-cycle. Unplug, wait 10 seconds, plug back in.',
       'Still fast after restart? Call PapeX support.',
     ],
@@ -230,7 +235,7 @@ const CUSTOMER_QA: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: '“What if it didn’t work / nothing happened?”',
-    a: 'Try holding your phone flat against it for a couple seconds. Sometimes a phone case can block it too. If the little green light isn’t on, it means it’s still loading and you can try again in a sec.',
+    a: 'Try holding your phone flat against it for a couple seconds. Sometimes a phone case can block it too. When the green light blinks fast, it’s ready for your tap.',
   },
   {
     q: '“Does it work with my phone?”',
@@ -331,8 +336,8 @@ export default function SupportPage() {
             </div>
             <div className="rounded-xl border-l-4 border-[#EB7100] bg-[#EB7100]/[0.06] px-5 py-3">
               <p className="text-[#00121D] font-medium">
-                <span className="font-semibold">Quick rule:</span> Solid green = idle. Blinking
-                green = processing or tap now. Red = check the table.
+                <span className="font-semibold">Quick rule:</span> Solid green = ready. Slow green
+                = working. Fast green = tap now. Any red = check the table.
               </p>
             </div>
           </section>
