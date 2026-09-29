@@ -252,7 +252,15 @@ type Fill = { el: HTMLElement; key: number; kind: string }
  * One camera frame: the stage point (x, y) to centre, at zoom s, placed at
  * the free area's centre (rx, ry) — all in stage px.
  */
-type Cam = { x: number; y: number; s: number; rx: number; ry: number }
+type Cam = {
+  x: number
+  y: number
+  s: number
+  rx: number
+  ry: number
+  /** the framed box's height (stage px, before zoom): the caption sits under its foot (b-14) */
+  h?: number
+}
 /** A box in stage px (layout, no transforms). */
 type Box = { x: number; y: number; w: number; h: number }
 /** The camera's free area in stage px, and the pin's size (px). */
@@ -274,6 +282,7 @@ const fit = (R: Region, b: Box, fill: number, maxH = 1): Cam => ({
   s: Math.min((R.w * fill) / b.w, (R.h * fill) / b.h, (R.pinH * maxH) / b.h),
   rx: R.x + R.w / 2,
   ry: R.y + R.h / 2,
+  h: b.h,
 })
 /** The tap frame's share of the free area. */
 const TAP_FILL = 0.96
@@ -316,7 +325,7 @@ function place(
     align === "top" ? y0 + (s * U.h) / 2 : align === "bottom" ? y1 - (s * U.h) / 2 : (y0 + y1) / 2
   if (!head) {
     const s = Math.min((R.w * o.fill) / U.w, (R.h * o.fill) / U.h, cap)
-    return { x: U.x + U.w / 2, y: U.y + U.h / 2, s, rx: R.x + R.w / 2, ry: vy(R.y, R.y + R.h, s), mask: 0 }
+    return { x: U.x + U.w / 2, y: U.y + U.h / 2, s, rx: R.x + R.w / 2, ry: vy(R.y, R.y + R.h, s), h: U.h, mask: 0 }
   }
   const all = (1 << pieces.length) - 1
   // The translations t (screen = s * stage + t) that keep the union inside
@@ -369,7 +378,7 @@ function place(
   }
   const x = U.x + U.w / 2
   const y = U.y + U.h / 2
-  return { x, y, s, rx: tx + s * x, ry: ty + s * y, mask }
+  return { x, y, s, rx: tx + s * x, ry: ty + s * y, h: U.h, mask }
 }
 
 /**
@@ -560,6 +569,21 @@ export function RetainStory({ header }: { header: ReactNode }) {
       labLap: 0,
       labPhone: 0,
       labPhoneX: 0,
+      /**
+       * b-14: the caption's resting box (pin px, layout, no transforms) and
+       * where the stage sits in the pin, so draw() can lift it to just under
+       * the framed piece and centre it there. null when the camera is off.
+       */
+      cap: null as null | {
+        top: number
+        left: number
+        w: number
+        stageTop: number
+        stageLeft: number
+        pinW: number
+        side: number
+        gap: number
+      },
       /** the free area, and the tap pose's phone + device boxes (stage px) */
       region: null as Region | null,
       /**
@@ -838,6 +862,7 @@ export function RetainStory({ header }: { header: ReactNode }) {
       // a zoom. The free area: under the nav (--cam-top), above the caption,
       // --cam-side from the viewport's edges, in the stage's own coordinates.
       M.cams = []
+      M.cap = null
       M.region = null
       M.finalRegion = null
       M.head = null
@@ -858,6 +883,17 @@ export function RetainStory({ header }: { header: ReactNode }) {
           pinW: pin.clientWidth,
         }
         M.region = R
+        if (hint)
+          M.cap = {
+            top: hint.offsetTop,
+            left: hint.offsetLeft,
+            w: hint.offsetWidth,
+            stageTop: stage.offsetTop,
+            stageLeft: stage.offsetLeft,
+            pinW: pin.clientWidth,
+            side: sideX,
+            gap: num(pcs, "--cam-gap", 12),
+          }
         // P3-B8: the pinned heading (when CSS shows it) — its text's right
         // edge and its foot, plus a gap each, in stage px. Layout boxes only
         // (offset*, and a Range for the lines' width relative to the head's
@@ -1344,7 +1380,38 @@ export function RetainStory({ header }: { header: ReactNode }) {
           `translate(${(rx - cs * cx).toFixed(1)}px, ${(ry - cs * cy).toFixed(1)}px) scale(${cs.toFixed(4)})`,
           "camT",
         )
-      } else set(camRef.current, "transform", "none", "camT")
+
+        // ---- the caption (b-14): under the piece it describes ------------
+        // Its resting spot is the pin's foot (the camera's floor, so nothing
+        // framed ever reaches it). Here it is lifted to just under the framed
+        // box's foot and centred on it — never lower than its resting spot,
+        // never off the pin's sides, and never onto the pinned heading. Pure
+        // arithmetic on this frame's camera and measured boxes: no reads.
+        const C = M.cap
+        if (C) {
+          const hBox = (a0.h ?? 0) + ((b0.h ?? 0) - (a0.h ?? 0)) * t0
+          const foot = C.stageTop + ry + (cs * hBox) / 2 + C.gap
+          let dy = Math.min(0, foot - C.top)
+          const lo = C.side - C.left
+          const hi = C.pinW - C.side - (C.left + C.w)
+          let dx = Math.min(hi, Math.max(lo, C.stageLeft + rx - (C.left + C.w / 2)))
+          const hc = M.headGeo ? (p < HEAD_END ? headAt(p) : M.head) : null
+          if (hc) {
+            const headR = C.stageLeft + hc.r
+            const headB = C.stageTop + hc.b
+            if (C.top + dy < headB && C.left + dx < headR) {
+              // beside the heading: slide right of it if the pin has room,
+              // else stay below it
+              if (headR - C.left <= hi) dx = Math.max(dx, headR - C.left)
+              else dy = Math.max(dy, headB - C.top)
+            }
+          }
+          set(hintRef.current, "transform", `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)`, "hintT")
+        }
+      } else {
+        set(camRef.current, "transform", "none", "camT")
+        set(hintRef.current, "transform", "none", "hintT")
+      }
 
       op(
         groupRef.current,
@@ -1722,7 +1789,10 @@ export function RetainStory({ header }: { header: ReactNode }) {
           </div>
         </div>
 
-        <p className={s.hint} ref={hintRef} aria-hidden="true">
+        {/* b-14: the caption is read out too — a polite live region, so a
+            screen reader hears each beat as the scroll reaches it (the <ol>
+            above keeps the whole story readable without scrolling). */}
+        <p className={s.hint} ref={hintRef} aria-live="polite" aria-atomic="true">
           {HINT[phase]}
         </p>
 

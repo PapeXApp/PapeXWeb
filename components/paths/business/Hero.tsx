@@ -89,8 +89,11 @@ export function Hero() {
           <div className="mt-[var(--gap-body)] flex flex-wrap items-center gap-3.5">
             {/* Jumps to the on-page demo form (section 3.7). */}
             <Ripple as="div" variant="navy" className="inline-block overflow-hidden rounded-full">
+              {/* data-hero-cta (s-02): the nav hides its own "Request a demo"
+                  while this one is on screen (components/brand/site-nav). */}
               <a
                 href="#demo"
+                data-hero-cta=""
                 className="block rounded-full px-[30px] py-[15px] text-base font-semibold transition-shadow duration-300 hover:shadow-[0_12px_34px_rgba(235,113,0,.5)]"
                 style={{
                   background: "var(--orange)",
@@ -124,7 +127,7 @@ export function Hero() {
               </span>
               <span className="flex flex-col leading-[1.15]">
                 <span
-                  className="text-[11px] font-semibold uppercase tracking-[.14em]"
+                  className="text-[13px] font-semibold uppercase tracking-[.12em]"
                   style={{ color: "var(--flow-fg-3)" }}
                 >
                   {hero.phoneLabel}
@@ -140,7 +143,7 @@ export function Hero() {
               "What your customers see" section's id. */}
           <a
             href={hero.secondaryHref}
-            className="mt-[calc(var(--gap-body)*.6)] flex w-fit items-center gap-2 text-[15px] font-semibold underline-offset-4 transition-colors duration-200 hover:underline"
+            className={`${styles.hit} mt-[calc(var(--gap-body)*.6)] flex w-fit items-center gap-2 text-[15px] font-semibold underline-offset-4 transition-colors duration-200 hover:underline`}
             style={{ color: "var(--flow-fg-2)" }}
           >
             {hero.secondaryLabel}
