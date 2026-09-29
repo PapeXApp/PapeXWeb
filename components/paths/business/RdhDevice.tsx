@@ -23,7 +23,7 @@ import styles from "./business.module.css"
 // bullets (--fs-lead) all grew.
 // Web 2.1 claims pass: the old heading/bullets/spec strip claimed a
 // certification, wired ports and a second install mode — none true (see the
-// CLAIM RULES in content.ts). It now says what is: Wi-Fi network printer, paper keeps
+// CLAIM RULES in content.ts). It now says what is: Wi-Fi, works like a printer, paper keeps
 // printing, no card data (-> /pci, which certifies nothing, so we don't
 // either), status light + help (-> /support). Spec strip: Wi-Fi · Network
 // printer · Status light.
@@ -78,7 +78,7 @@ export function RdhDevice() {
                     {"link" in point ? (
                       <>
                         {" "}
-                        <Link href={point.link.href} className="cursor-pointer whitespace-nowrap" style={{ color: "var(--orange)" }}>
+                        <Link href={point.link.href} className={`${styles.hitInline} cursor-pointer whitespace-nowrap`} style={{ color: "var(--orange)" }}>
                           {point.link.label} →
                         </Link>
                       </>

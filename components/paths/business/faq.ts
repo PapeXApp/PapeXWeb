@@ -30,7 +30,7 @@ export const businessFaq: FaqItem[] = [
   },
   {
     q: "What changes for my staff at checkout?",
-    a: "Almost nothing. Staff ring up sales exactly as before. After each sale, customers can tap their phone on the PapeX device for 90 seconds to get their receipt, so staff just let them know they can tap.\n\nYour paper printer keeps printing. Go paper-free: switch off the printer whenever you're ready.",
+    a: "Almost nothing. Staff ring up sales exactly as before. Instead of handing over a receipt, staff invite the customer to tap. The receipt is ready to tap for 90 seconds after each sale.\n\nYour paper printer keeps printing. Go paper-free: switch off the printer whenever you're ready.",
   },
   {
     q: "What happens if the Wi-Fi or the PapeX device goes down?",
@@ -64,7 +64,7 @@ export const businessFaq: FaqItem[] = [
   },
   {
     q: "Which phones can my customers tap with?",
-    a: "iPhone and Android. Customers tap and the receipt opens: on iPhone in an App Clip in about 2 seconds, with no app, and on Android in the browser.",
+    a: "iPhone and Android. Customers tap and the receipt opens, no app to download.",
   },
   {
     q: "Where is PapeX available?",
@@ -72,6 +72,6 @@ export const businessFaq: FaqItem[] = [
   },
   {
     q: "Will my store get a page in the PapeX app?",
-    a: "It can have one. Stores can have a profile in the PapeX app, where shoppers find their receipts from you. [Ask about it in your demo](#demo).",
+    a: "It can. Stores can have a profile in the PapeX app, where shoppers find their receipts from you, your coupons, and anything else you want them to know. [Ask about it in your demo](#demo).",
   },
 ]
