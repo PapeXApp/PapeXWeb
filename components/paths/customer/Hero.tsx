@@ -52,7 +52,7 @@ function scrollToHash(event: MouseEvent<HTMLAnchorElement>) {
  * visitors can't tap a PapeX device yet (select Bay Area stores only). The
  * headline is the old privacy section's, picked by Nico; its picture is now
  * the app itself (hero/HeroApp.tsx): a paper receipt is scanned and filed at
- * the top of the Receipts list, and three privacy chips land beside it.
+ * the top of the Receipts list, and three chips land beside it.
  *
  * Light because the fork's light bottom half leads here: the page must open
  * on the same flat #F5F5F5 (FlowGround `initial="light"` in index.tsx). Text

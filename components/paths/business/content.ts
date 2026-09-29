@@ -49,13 +49,14 @@ const DEMO_EMAIL = "nico@papex.app"
 // safe? (device) · 05 How do I get it? (setup -> demo) · 06 FAQ.
 
 export const hero = {
-  // H1 (P3-B1, 2026-09-25; kept by Nico in Phase 4, q-01): the hero visual
-  // tells the "close the loop" story (tap -> receipt -> coupon for next time
-  // -> they come back), so the H1 names it. It says nothing about collecting
-  // shopper data (a shopper may read it). "Tap to Retain" is the eyebrow
-  // (q-02); the offer ("free") is carried by the lead.
+  // H1 (round 2, d-01, Nico 2026-09-29): the hero visual tells the return-
+  // visit story (tap -> receipt -> coupon for next time -> they come back),
+  // so the H1 names it. It says nothing about collecting shopper data (a
+  // shopper may read it). "Tap to Retain" is the eyebrow (q-02); the offer
+  // ("free") is carried by the lead. The same words head the business share
+  // image (scripts/og/og.html, public/og-business.png).
   eyebrow: "Tap to Retain",
-  heading: "Close the loop on every sale.",
+  heading: "Every sale is the first step to bringing them back.",
   lead: "A free PapeX device sits at your counter and works like a printer. Customers tap their phone for a digital receipt. You get a dashboard of every sale.",
   // Nico's approved paper wording (§6a round 2). No longer a required pair
   // (the H1 no longer says "Zero paper"), kept as the hero's sub-line. If
@@ -93,7 +94,7 @@ export const tapToRetain = {
     {
       key: "coupons",
       title: "Coupons",
-      body: "Shoppers already save and scan coupons in the PapeX app. Set up a coupon in your dashboard, and a tap can send one with the receipt for their next visit.",
+      body: "Shoppers already save and scan coupons in the PapeX app. Make one in your dashboard, and a tap can deliver it with the receipt on their next visit.",
     },
   ],
   /** Shown on the scene: the receipt and coupon are sample data. */
@@ -114,7 +115,7 @@ export const tapToRetain = {
   /** Reduced motion: the static composition's image labels. */
   staticLabels: {
     paperReceipt: "A paper receipt from a demo store",
-    phoneReceipt: "The same receipt and coupon on your customer's phone, opened with a tap",
+    phoneReceipt: "The receipt and a personalized coupon, on your customer's phone in just one tap.",
     paperCoupon: "A paper coupon from a demo store: $2 off your next visit",
     phoneCoupon: "The same coupon in the Coupons tab of the PapeX app",
   },
@@ -155,7 +156,7 @@ export const howItWorks = {
     {
       number: "03",
       title: "Connect it to your POS",
-      body: "We add it as one more printer.",
+      body: "We add it as a second printer.",
     },
     {
       number: "04",
@@ -177,7 +178,7 @@ export const rdhDevice = {
   eyebrow: "Is it safe?",
   heading: "Small device. Never touches card data.",
   deviceAlt:
-    "The PapeX device: a small black box by the register that works like a receipt printer. Checkout stays the same, except the receipt goes to the customer's phone instead of paper.",
+    "The RDH: a small black box that sits by the register and works like a secondary printer. Checkout stays the same, except the receipt goes to the customer's phone instead of on a piece of paper.",
   // A point with a `link` renders the label after the text, in orange.
   points: [
     { text: "Connects over your Wi-Fi, like a printer." },

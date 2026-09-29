@@ -72,6 +72,6 @@ export const businessFaq: FaqItem[] = [
   },
   {
     q: "Will my store get a page in the PapeX app?",
-    a: "It can. Stores can have a profile in the PapeX app, where shoppers find their receipts from you, your coupons, and anything else you want them to know. [Ask about it in your demo](#demo).",
+    a: "It can. Stores can have a profile in the PapeX app (customizable on your dashboard), where shoppers find their receipt, coupons, and anything else you want them to know about your store. [Ask about it in your demo](#demo).",
   },
 ]

@@ -31,7 +31,7 @@ const OG_IMAGE = {
   url: 'https://papex.app/og-business.png',
   width: 1200,
   height: 630,
-  alt: 'The PapeX logo and the words Close the loop on every sale, beside an iPhone showing a PapeX receipt and a coupon',
+  alt: 'The PapeX logo and the words Every sale is the first step to bringing them back, beside an iPhone showing a PapeX receipt and a coupon',
   type: 'image/png',
 }
 

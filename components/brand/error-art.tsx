@@ -7,7 +7,8 @@
 //   <WashedReceipt />  — 404: a receipt after a laundry cycle. Torn top and
 //                        bottom, a bite missing from one side, yellowed, the
 //                        print smeared to ghosts, two water stains, a few
-//                        soap bubbles.
+//                        soap bubbles. On the 404 it sways, its stains
+//                        breathe and drops fall from the bottom edge.
 //   <JammedReceipt />  — error.tsx / global-error.tsx: a receipt printer with
 //                        its paper crumpled into an accordion at the slot and
 //                        an orange status light.
@@ -21,7 +22,16 @@
 type ArtProps = {
   className?: string
   /** Class names for the optional idle motion (see error-page.module.css). */
-  motion?: { sway?: string; bubble?: string; led?: string; shudder?: string }
+  motion?: {
+    sway?: string
+    bubble?: string
+    /** 404: the water stains darken and fade, as if still wet. */
+    stain?: string
+    /** 404: drops that gather at the torn bottom edge and fall. */
+    drip?: string
+    led?: string
+    shudder?: string
+  }
 }
 
 const NAVY = '#00121D'
@@ -41,6 +51,16 @@ const WASHED_ROWS: [number, number, number, number][] = [
   [212, 232, 30, 0.08],
   [58, 252, 60, 0.16],
   [196, 252, 46, 0.12],
+]
+
+/** Drops under the torn bottom edge: [x, y (the tip), delay in s]. The
+ *  slip is drawn rotated -6deg, so in the SVG's own frame its bottom edge
+ *  runs from about (56, 362) down-right to (294, 325); each tip sits just
+ *  inside it. They are outside the rotation so they fall straight down. */
+const DRIPS: [number, number, number][] = [
+  [104, 352, 0],
+  [178, 341, -1.5],
+  [236, 332, -3],
 ]
 
 export function WashedReceipt({ className, motion }: ArtProps) {
@@ -104,10 +124,28 @@ export function WashedReceipt({ className, motion }: ArtProps) {
             <path d="M42 280 L170 262 L278 300" fill="none" stroke={NAVY} strokeOpacity="0.06" strokeWidth="1.2" />
             <path d="M210 48 L196 200 L232 348" fill="none" stroke="#fff" strokeOpacity="0.7" strokeWidth="1" />
 
-            {/* Water stains */}
-            <ellipse cx="206" cy="112" rx="52" ry="40" fill="url(#pxw-stain)" />
-            <ellipse cx="96" cy="286" rx="44" ry="36" fill="url(#pxw-stain)" />
-            <ellipse cx="222" cy="300" rx="22" ry="18" fill="url(#pxw-stain)" />
+            {/* Water stains. With `motion.stain` each one slowly darkens and
+                fades on its own beat (opacity only), so the slip reads as
+                still wet. */}
+            <ellipse className={motion?.stain} cx="206" cy="112" rx="52" ry="40" fill="url(#pxw-stain)" />
+            <ellipse
+              className={motion?.stain}
+              style={motion?.stain ? { animationDelay: '-2.6s' } : undefined}
+              cx="96"
+              cy="286"
+              rx="44"
+              ry="36"
+              fill="url(#pxw-stain)"
+            />
+            <ellipse
+              className={motion?.stain}
+              style={motion?.stain ? { animationDelay: '-4.8s' } : undefined}
+              cx="222"
+              cy="300"
+              rx="22"
+              ry="18"
+              fill="url(#pxw-stain)"
+            />
           </g>
 
           {/* The print, mostly washed away. */}
@@ -159,6 +197,24 @@ export function WashedReceipt({ className, motion }: ArtProps) {
         <path d="M284 206 L300 200 L306 214 L296 226 L286 220 Z" fill="#F3EEE1" stroke={NAVY} strokeOpacity="0.08" />
         <path d="M22 318 L36 312 L40 326 L28 332 Z" fill="#EFE9DA" stroke={NAVY} strokeOpacity="0.08" />
       </g>
+
+      {/* Drips: only drawn when `motion.drip` is set (a still picture has no
+          use for them). Each drop sits at the torn bottom edge, then falls
+          and fades (transform + opacity only), staggered so one is always
+          on its way down. */}
+      {motion?.drip ? (
+        <g fill="#7FC4EC">
+          {DRIPS.map(([x, y, delay]) => (
+            <path
+              key={x}
+              className={motion.drip}
+              style={{ animationDelay: `${delay}s` }}
+              d={`M${x} ${y} c-3.4 5.4 -5.2 8.6 -5.2 11.2 a5.2 5.2 0 0 0 10.4 0 c0 -2.6 -1.8 -5.8 -5.2 -11.2 Z`}
+              fillOpacity="0.75"
+            />
+          ))}
+        </g>
+      ) : null}
 
       {/* Soap bubbles */}
       <g className={motion?.bubble}>

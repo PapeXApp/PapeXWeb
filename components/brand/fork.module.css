@@ -240,10 +240,22 @@
 .headlineTop {
   max-width: 16ch;
 }
-/* The f-05 copy ("Every receipt and coupon, beautifully kept.") sets its
-   own three line breaks in fork.tsx; 17ch is its longest line. */
+/* The f-05 copy ("Connecting your last dollar to your next dollar.") sets
+   its own three line breaks in fork.tsx; 19ch is its longest line. */
 .headlineBottom {
-  max-width: 17ch;
+  max-width: 19ch;
+}
+/* f-05's second line ("The way back to any purchase."): body type under the
+   display headline. Sized off --fork-h so it shrinks with the headline on
+   short screens; the bottom half has no nav to clear, so its extra ~40px
+   fits in the space the top half spends on --fork-nav-clear. */
+.subline {
+  margin: calc(var(--fork-eyebrow-gap) * 0.9) auto 0;
+  max-width: 30ch;
+  font-size: clamp(16px, calc(var(--fork-h) * 0.34), 24px);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0.005em;
 }
 /* Two classes to beat .rd-fork-cue / .rd-fork-content (one class each, and
    module order vs papex-brand.css is not guaranteed). */

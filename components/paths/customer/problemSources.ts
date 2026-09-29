@@ -10,8 +10,8 @@ import type { ProblemCardId } from "./content";
  *             annually." Footnote 2: "Grand View Research, Thermal Paper Market
  *             Forecast, 2025."
  *  - forest → Green America, Skip the Slip report (published 2022-09-07):
- *             "Receipts use 3,680,000 trees and 10 billion gallons of water
- *             every year in the US."
+ *             "Receipts use 3,680,000 trees […] every year in the US." (The
+ *             card quotes only the tree figure since round 2, c-13.)
  *  - proof  → same Epson post: "U.S. businesses are projected to spend
  *             $540+ million¹ on receipt paper this year." Footnote 1: Grand View
  *             Research, Thermal Paper Market Forecast, 2025.

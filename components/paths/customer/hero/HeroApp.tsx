@@ -13,7 +13,7 @@ import h from "./hero.module.css";
 /**
  * The /customers hero visual (Web 2.1 P4, 2026-09-28): the PapeX app on an
  * iPhone. A paper receipt is scanned beside the phone, flies in and is filed
- * at the top of the Receipts list, then three privacy chips land around it.
+ * at the top of the Receipts list, then three chips land around it.
  *
  * Beats (seconds from first paint; hero.module.css owns the numbers):
  *   0.10-0.80  the phone rises in (Receipts tab, 1 unreviewed)
@@ -123,7 +123,17 @@ function Overlays() {
           <span className={h.chipIcon}>
             <ChipGlyph kind={chip.key} />
           </span>
-          <span className={h.chipLabel}>{chip.label}</span>
+          <span className={h.chipLabel}>
+            {"breakAfter" in chip && chip.label.startsWith(chip.breakAfter) ? (
+              <>
+                {chip.breakAfter}
+                <br />
+                {chip.label.slice(chip.breakAfter.length).trim()}
+              </>
+            ) : (
+              chip.label
+            )}
+          </span>
         </div>
       ))}
     </>
@@ -140,29 +150,32 @@ function ChipGlyph({ kind }: { kind: (typeof heroCopy.chips)[number]["key"] }) {
     strokeLinejoin: "round" as const,
     className: h.chipSvg,
   };
-  if (kind === "card") {
+  // Round 2 (p-01..p-03): one glyph per chip, same stroke set as before.
+  if (kind === "back") {
+    // A receipt with a "go back" arrow on it: the way back to a purchase.
     return (
       <svg {...common}>
-        <rect x="3" y="6" width="18" height="12" rx="2.4" />
-        <path d="M3 10h18" />
-        <path d="M4 20 20 4" />
+        <path d="M6 3.5h12v17l-2-1.3-2 1.3-2-1.3-2 1.3-2-1.3-2 1.3z" />
+        <path d="M14.6 14.6v-1.4a2.6 2.6 0 0 0-2.6-2.6H9" />
+        <path d="M10.8 8.6 8.8 10.6l2 2" />
       </svg>
     );
   }
-  if (kind === "name") {
+  if (kind === "share") {
+    // The share mark (box + up arrow), as in the app's share sheet.
     return (
       <svg {...common}>
-        <circle cx="12" cy="8.6" r="3.4" />
-        <path d="M5.4 19.4a6.6 6.6 0 0 1 13.2 0" />
-        <path d="M4 20 20 4" />
+        <path d="M12 3.6v10.2" />
+        <path d="M8.4 7.2 12 3.6l3.6 3.6" />
+        <path d="M8.4 10.4H7a2 2 0 0 0-2 2v6.1a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6.1a2 2 0 0 0-2-2h-1.4" />
       </svg>
     );
   }
+  // "ready": a check in a circle.
   return (
     <svg {...common}>
-      <path d="M4.5 7h15" />
-      <path d="M9.5 7V5.2c0-.7.5-1.2 1.2-1.2h2.6c.7 0 1.2.5 1.2 1.2V7" />
-      <path d="M6.5 7l.9 11.6c.1 1 .9 1.9 2 1.9h5.2c1.1 0 1.9-.9 2-1.9L17.5 7" />
+      <circle cx="12" cy="12" r="8.6" />
+      <path d="m8.2 12.3 2.6 2.6 5-5.3" />
     </svg>
   );
 }

@@ -61,6 +61,8 @@ export function Vision() {
             lineHeight: 1.55,
             color: "var(--flow-fg-2)",
             maxWidth: "52ch",
+            // Round 2 (c-29): the longer body never ends on a lone word.
+            textWrap: "pretty",
             marginLeft: "auto",
             marginRight: "auto",
           }}
