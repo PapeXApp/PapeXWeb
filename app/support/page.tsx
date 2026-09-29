@@ -269,7 +269,7 @@ function ContactBlock() {
         href="mailto:support@papex.app"
         className="group rounded-2xl border border-[#00121D]/15 bg-white p-6 shadow-sm transition hover:border-[#EB7100] hover:shadow-md"
       >
-        <p className="text-xs font-semibold uppercase tracking-wide text-[#00121D]/50">Email us</p>
+        <p className="text-[13px] leading-[18px] font-semibold uppercase tracking-wide text-[#00121D]/50">Email us</p>
         <p className="mt-2 text-2xl font-bold text-[#00121D] group-hover:text-[#EB7100] transition">
           support@papex.app
         </p>
@@ -278,7 +278,7 @@ function ContactBlock() {
         href={SALES_PHONE_HREF}
         className="group rounded-2xl border border-[#00121D]/15 bg-white p-6 shadow-sm transition hover:border-[#EB7100] hover:shadow-md"
       >
-        <p className="text-xs font-semibold uppercase tracking-wide text-[#00121D]/50">Call us</p>
+        <p className="text-[13px] leading-[18px] font-semibold uppercase tracking-wide text-[#00121D]/50">Call us</p>
         <p className="mt-2 text-2xl font-bold text-[#00121D] group-hover:text-[#EB7100] transition">
           {SALES_PHONE}
         </p>
@@ -294,7 +294,7 @@ export default function SupportPage() {
         <div className="mx-auto max-w-4xl space-y-12">
           {/* Header */}
           <header className="space-y-3 text-center md:text-left">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#EB7100]">
+            <p className="text-[13px] leading-[18px] font-semibold uppercase tracking-[0.16em] text-[#EB7100]">
               For businesses
             </p>
             <h1 className="text-3xl md:text-4xl font-bold text-[#00121D] leading-tight">

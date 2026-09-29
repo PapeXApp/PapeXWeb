@@ -106,7 +106,7 @@ export default function PciCompliancePage() {
         <article className="mx-auto max-w-4xl bg-white border border-[#00121D]/10 rounded-2xl shadow-sm p-8 md:p-12 space-y-10">
           {/* Header */}
           <header className="space-y-4 border-b border-[#00121D]/10 pb-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#EB7100]">
+            <p className="text-[13px] leading-[18px] font-semibold uppercase tracking-[0.16em] text-[#EB7100]">
               PapeX, Inc. — Card-data scope
             </p>
             <h1 className="text-3xl md:text-4xl font-bold text-[#00121D] leading-tight">
@@ -346,7 +346,7 @@ export default function PciCompliancePage() {
               (FramerPageShell) is the page's real <footer>, so this stays a
               <section> to keep exactly one footer landmark. */}
           <section className="border-t border-[#00121D]/10 pt-6">
-            <p className="text-xs text-[#00121D]/50 uppercase tracking-wide">
+            <p className="text-[13px] leading-[18px] text-[#00121D]/50 uppercase tracking-wide">
               PapeX, Inc. — Provided to merchants for their PCI DSS review.
             </p>
           </section>

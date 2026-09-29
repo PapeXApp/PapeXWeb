@@ -6,11 +6,10 @@
 // uses the site chrome, invisible until a keyboard user tabs onto it
 // (.rd-skip in styles/papex-brand.css). Both shells render it before the nav.
 //
-// Target: the page's one <main>. The shells that render <main> themselves
-// give it id="main"; FlowGround pages (/customers, /business, /about, /blog)
-// render their own <main> without an id, so the click handler finds the
-// landmark directly and makes it focusable. With JS off the plain #main link
-// still works wherever the id exists.
+// Target: the page's one <main>. Every <main> the site renders carries
+// id="main" (SiteShell's fork, FramerPageShell, and FlowGround for /customers,
+// /business, /about, /blog), so the plain #main link works with JS off. The
+// click handler still falls back to the first <main> and makes it focusable.
 
 import type { MouseEvent } from 'react'
 import { MAIN_ID } from './links'

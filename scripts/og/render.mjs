@@ -3,9 +3,8 @@
 //   node scripts/og/render.mjs              # every variant
 //   node scripts/og/render.mjs business     # only the named variant(s)
 //
-// Writes public/og-image-v3.png (default), public/og-image-v3-alt.png
-// (receipts + coupons copy) and public/og-business.png (the /business share
-// card, its H1), all 1200x630, from scripts/og/og.html. Name a variant to
+// Writes public/og-image-v3.png (default) and public/og-business.png (the
+// /business share card, its H1), both 1200x630, from scripts/og/og.html. Name a variant to
 // re-render just that one, so the others' files stay byte-identical.
 //
 // Built only from real brand assets:
@@ -35,7 +34,6 @@ const MAX_BYTES = 400 * 1024
 
 const ALL_VARIANTS = [
   { key: 'default', out: 'public/og-image-v3.png' },
-  { key: 'alt', out: 'public/og-image-v3-alt.png' },
   { key: 'business', out: 'public/og-business.png' },
 ]
 const picked = process.argv.slice(2)

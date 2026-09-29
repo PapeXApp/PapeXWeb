@@ -47,7 +47,7 @@
 .groupTitle {
   margin: 0 0 clamp(16px, 1.8vw, 22px);
   font-family: var(--font-label);
-  font-size: 12.5px;
+  font-size: 13px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--orange);

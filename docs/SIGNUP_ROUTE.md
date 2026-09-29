@@ -56,9 +56,10 @@ Responses (always JSON, always `Cache-Control: no-store`):
 Client helper (safe in `"use client"` code; never throws):
 
 ```ts
-import { submitSignup, requestDemo, subscribeToBlog, type SignupResult } from "@/lib/signup/client"
+import { submitSignup, requestDemo, type SignupResult } from "@/lib/signup/client"
 
-subscribeToBlog({ email, source: "footer", path: location.pathname, hp }): Promise<SignupResult>
+// (The blog email sign-up and its subscribeToBlog helper were removed; the
+// route still accepts kind "blog", but the site no longer posts it.)
 requestDemo({ fullName, businessName, email, phone, posSystem, hp }): Promise<SignupResult>
 // SignupResult = { ok: true } | { ok: false, error: SignupErrorCode | "network", fields?, retryAfterSeconds? }
 ```

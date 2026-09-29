@@ -401,7 +401,9 @@ export function HowItWorks() {
             style={{
               maxWidth: 1150,
               margin: "0 auto",
-              gridTemplateColumns: "repeat(auto-fit,minmax(310px,1fr))",
+              // min(310px, 100%): on a 320px phone the stage's content box is
+              // 280px, and a bare 310px track pushed the page 10px wide.
+              gridTemplateColumns: "repeat(auto-fit,minmax(min(310px,100%),1fr))",
               gap: "clamp(34px,6vw,80px)",
             }}
           >
