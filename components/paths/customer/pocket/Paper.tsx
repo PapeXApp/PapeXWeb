@@ -133,3 +133,111 @@ export const PaperCoupon = forwardRef<HTMLDivElement, PaperProps>(function Paper
     </div>
   )
 })
+
+type EmailRefs = {
+  /** The Forward button's active (orange) look, faded in by the scene. */
+  forwardOnRef?: Ref<HTMLSpanElement>
+  /** The compose strip ("To  yourname@…  ⬆"), faded + risen in. */
+  composeRef?: Ref<HTMLDivElement>
+  /** The address, typed out by a clip-path wipe. */
+  addressRef?: Ref<HTMLSpanElement>
+  /** The Send button's pressed look. */
+  sendOnRef?: Ref<HTMLSpanElement>
+}
+
+function ForwardGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" className={s.eGlyph} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 6l6 6-6 6" />
+      <path d="M20 12H9a5 5 0 0 0-5 5v1" />
+    </svg>
+  )
+}
+
+function ReplyGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" className={s.eGlyph} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 6l-6 6 6 6" />
+      <path d="M4 12h11a5 5 0 0 1 5 5v1" />
+    </svg>
+  )
+}
+
+function SendGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" className={s.eSendGlyph} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 19V5" />
+      <path d="m6 11 6-6 6 6" />
+    </svg>
+  )
+}
+
+/**
+ * The email receipt of the §02 headline beat: a small mail-client card (From
+ * Quillbrook Market, Subject "Your receipt", the receipt in the body, Reply /
+ * Forward), then a compose strip forwarding it to the app's address format,
+ * `yourname@receipts.papex.app`. The scene lights Forward, brings in the
+ * strip, types the address, presses Send, and flies the card into the phone.
+ * `still` draws the forwarded state (static version).
+ */
+export const EmailReceipt = forwardRef<HTMLDivElement, EmailRefs & { className?: string; still?: boolean }>(function EmailReceipt(
+  { className, still = false, forwardOnRef, composeRef, addressRef, sendOnRef },
+  ref,
+) {
+  const e = pocketCopy.email
+  return (
+    <div ref={ref} className={cn(s.flyer, className)}>
+      <div className={cn(s.email, still && s.emailStill)}>
+        <div className={s.eBar}>
+          <span className={s.eBox}>{e.mailbox}</span>
+        </div>
+        <div className={s.eHead}>
+          <span className={s.eAvatar}>Q</span>
+          <span className={s.eMeta}>
+            <span className={s.eLine}>
+              <span className={s.eLabel}>{e.fromLabel}</span> <strong>{e.from}</strong>
+            </span>
+            <span className={s.eLine}>
+              <span className={s.eLabel}>{e.subjectLabel}</span> {e.subject}
+            </span>
+          </span>
+        </div>
+        <div className={s.eBody}>
+          <div className={s.eGreeting}>{e.greeting}</div>
+          {e.items.map((item) => (
+            <div key={item.name} className={s.eRow}>
+              <span>{item.name}</span>
+              <span>${money(item.amount)}</span>
+            </div>
+          ))}
+          <div className={cn(s.eRow, s.eTotal)}>
+            <span>Total</span>
+            <span>${money(e.total)}</span>
+          </div>
+          <div className={s.eCard}>{pocketCopy.cardLine}</div>
+        </div>
+        <div className={s.eActions}>
+          <span className={s.eBtn}>
+            <ReplyGlyph />
+            {e.reply}
+          </span>
+          <span className={cn(s.eBtn, s.eBtnFwd)}>
+            <span ref={forwardOnRef} className={s.eBtnOn} aria-hidden="true" />
+            <ForwardGlyph />
+            {e.forward}
+          </span>
+        </div>
+        <div ref={composeRef} className={s.eCompose}>
+          <span className={s.eLabel}>{e.toLabel}</span>
+          <span ref={addressRef} className={s.eAddress}>
+            {e.address}
+          </span>
+          <span className={s.eSend}>
+            <span ref={sendOnRef} className={s.eSendOn} aria-hidden="true" />
+            <SendGlyph />
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+})
