@@ -24,8 +24,9 @@ import styles from "./privacy.module.css"
  * promise "no name, no email, no sign-up".
  *
  * The interaction: a small receipt whose card number redacts itself as it
- * comes into view — the first twelve digits turn into navy redaction blocks,
- * the last four stay, and a "Receipt only" stamp lands. It's reversible: the
+ * comes into view — one left-to-right sweep turns the first twelve digits into
+ * dots in the same navy ink and weight as the last four (no dark boxes, Nico
+ * 2026-09-28), the last four stay, and a "Receipt only" stamp lands. It's reversible: the
  * card re-arms once it has left the screen entirely, so scrolling back plays
  * it again. transform / opacity / clip-path only.
  *
