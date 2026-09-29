@@ -226,7 +226,7 @@ const DONTS: string[] = [
 const CUSTOMER_QA: { q: string; a: React.ReactNode }[] = [
   {
     q: '“What’s that thing?”',
-    a: 'That’s PapeX. Tap your phone on it and your receipt pops up. No paper, no app needed.',
+    a: 'That’s PapeX. Tap your phone, and your receipt pops up. No paper, no email, no clutter.',
   },
   {
     q: '“How does it work?”',
@@ -234,11 +234,11 @@ const CUSTOMER_QA: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: '“Do I need to download an app?”',
-    a: 'Nope, your receipt pops up right away. The app is optional. It keeps all your receipts and coupons in one place, easy to find.',
+    a: 'Nope, your receipt pops up right away. No app needed. The app simply keeps every receipt and coupon together, connecting your last dollar to your next one.',
   },
   {
     q: '“Is there an app?”',
-    a: 'It’s a free app that keeps all your receipts and coupons in one place, so finding one for a return takes seconds. It’s free on the App Store.',
+    a: 'It’s an app that keeps all your receipts and coupons in one place, so finding them takes seconds rather than minutes. It’s available on Apple and Android today!',
   },
   {
     q: '“Is it free?”',

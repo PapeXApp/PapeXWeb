@@ -1,7 +1,9 @@
 // app/not-found.tsx
 //
 // The 404 (Phase 4, f-07/f-08/f-09, Nico: "a picture of a receipt that has
-// been through the wash, all torn and tarnished"). Inside the normal site
+// been through the wash, all torn and tarnished"; round 2: it moves, gently —
+// sway, stains that breathe, drops falling off the torn edge; still under
+// reduced motion). Inside the normal site
 // look: SiteShell's nav + skip link, one light <main>, the flat navy footer.
 // One <title> (from `metadata`, no hand-written <head>), kept out of search.
 // The jammed-printer sibling for real errors is app/error.tsx.
@@ -29,10 +31,10 @@ export default function NotFound() {
         <div className={styles.inner}>
           <WashedReceipt
             className={styles.art}
-            motion={{ sway: styles.sway, bubble: styles.bubble }}
+            motion={{ sway: styles.sway, bubble: styles.bubble, stain: styles.stain, drip: styles.drip }}
           />
-          <h1 className={`rd-display ${styles.title}`}>This receipt went through the wash.</h1>
-          <p className={styles.lead}>We couldn&rsquo;t find that page. The link may be old or mistyped.</p>
+          <h1 className={`rd-display ${styles.title}`}>This receipt went through the wash!</h1>
+          <p className={styles.lead}>Next time, just PapeX it!</p>
           <div className={styles.actions}>
             <Link href="/" className="rd-btn rd-btn-primary">
               Go to the home page

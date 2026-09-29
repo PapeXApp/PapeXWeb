@@ -70,7 +70,9 @@ export const problemContent = {
       question: "What does that cost the forest?",
       hint: "Tap to reveal",
       value: "3.7M",
-      caption: "trees cut down every year for US receipts, and 10 billion gallons of water to make them.",
+      // Round 2 c-13 (Nico): the tree figure only; the water figure is off
+      // the card.
+      caption: "trees cut down every year for US receipt consumption.",
       source: "Green America, Skip the Slip (2022)",
     },
     {
@@ -78,7 +80,7 @@ export const problemContent = {
       question: "What do businesses pay for it?",
       hint: "Tap to reveal",
       value: "$540M+",
-      caption: "spent by US businesses on receipt paper in a single year (2025 forecast).",
+      caption: "spent by US businesses on receipt paper in a single year (2025).",
       source: "Epson, citing Grand View Research (2025)",
     },
   ] satisfies ProblemCard[],
@@ -293,14 +295,15 @@ export const howItWorksContent = {
       number: "02",
       title: "It opens",
       // Spec §6a (Android): Android taps too. P5 c-05 (Nico): both open
-      // instantly, so the copy never makes them sound different.
-      body: "Your receipt opens instantly, on iPhone and Android.",
+      // instantly, so the copy never makes them sound different (round 2:
+      // no platform list at all).
+      body: "Your receipt opens instantly!",
     },
     {
       number: "03",
       title: "Save it to PapeX",
       // Saving is a step the SHOPPER takes (the tap alone saves nothing).
-      body: "Save it to the free PapeX app: always searchable, next to your saved coupons and the store's profile.",
+      body: "Save it to PapeX. Every dollar you spend makes the next one go further. Your way back to any purchase.",
     },
   ],
 };
@@ -329,17 +332,17 @@ export const proofContent = {
   counters: [
     { value: 1, label: "tap to get it" },
     { value: 0, label: "apps needed to receive it" },
-    // P5 c-30 (Nico: "this is also unclear"): one plain fact — both phone
-    // kinds open the tapped receipt.
-    { value: 2, label: "phones it works on: iPhone and Android" },
+    // Round 2 c-30 (Nico): "2" stays the figure so the strip keeps its
+    // figure-over-label rhythm; the label is Nico's sentence.
+    { value: 2, label: "Works on both iPhone & Android." },
   ],
 };
 
 export const visionContent = {
   eyebrow: "The vision",
-  headline: "Every receipt useful. None wasted.",
-  // Web 2.1 (Nico, 2026-09-24): ties receipts to coupons, no numbers, no
-  // "every store" implication — "select stores" per the approved facts.
-  body: "We're modernizing the most ignored moment of every purchase. Less paper, less waste, and receipts worth keeping, with coupons at select stores.",
+  // Round 2 c-28 / c-29 (Nico, 2026-09-29): no numbers, no "every store"
+  // coupon claim.
+  headline: "Your Checkout Channel, there when you need it.",
+  body: "Every purchase leaves something behind. A receipt, a coupon, a warranty. Today, most of it ends up lost, crumpled, or in the trash. We're modernizing that moment, connecting your last dollar to your next. Less paper, less waste, and the easiest way back to every purchase.",
   primaryCta: "Download the app",
 };

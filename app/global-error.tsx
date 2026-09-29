@@ -24,7 +24,7 @@ export default function GlobalError({
   return (
     <html lang="en">
       <head>
-        <title>This receipt got jammed | PapeX</title>
+        <title>The printer&apos;s jammed | PapeX</title>
         <meta name="robots" content="noindex" />
       </head>
       <body style={{ margin: 0, background: '#F5F5F5', color: '#00121D' }}>
@@ -52,10 +52,10 @@ export default function GlobalError({
               fontWeight: 700,
             }}
           >
-            This receipt got jammed in the printer.
+            The printer&rsquo;s jammed!
           </h1>
           <p style={{ margin: 0, fontSize: '18px', lineHeight: 1.55, color: 'rgba(0,18,29,.72)', maxWidth: '44ch' }}>
-            Something broke on our end. Try again in a moment.
+            Something broke&hellip;
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center', marginTop: '8px' }}>
             <button

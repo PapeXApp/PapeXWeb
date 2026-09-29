@@ -43,13 +43,37 @@
   max-width: 540px;
 }
 
+/* Round 6b (Nico, 2026-09-29): two lines, "Your receipt," / "not your
+   identity." ("identity can be on the 2nd line"), with a little more air
+   between them (1.08, was 0.98 — the same loosening as the /business H1).
+   WordReveal renders one inline-block <span> per word, so the break is made
+   here: the h1 is a wrapping flex row, an empty full-width ::before sits
+   between word 2 and word 3 (order), and everything after "receipt," follows
+   it. Tied to heroCopy.headline's words — if the headline changes, revisit
+   the nth-child. Where "not your identity." can't fit (narrow phones) it
+   still wraps naturally. The font-size is the same token, capped at 69px
+   (was 72 at >= ~1385px wide): the second line measures 7.68em, and at 72px
+   (553px) it would not fit the 540px copy column and "identity." would drop
+   to a third line. Below the cap the token (5.2vw) always fits: the column
+   is ~46vw wide there. */
 .title {
+  display: flex;
+  flex-wrap: wrap;
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: var(--fs-h1-customer);
-  line-height: 0.98;
+  font-size: min(var(--fs-h1-customer), 69px);
+  line-height: 1.08;
   letter-spacing: -0.025em;
   color: var(--flow-fg);
+}
+.title::before {
+  content: "";
+  order: 1;
+  flex-basis: 100%;
+  height: 0;
+}
+.title > :nth-child(n + 3) {
+  order: 2;
 }
 .lead {
   margin-top: var(--gap-title);
@@ -372,7 +396,7 @@
   border-bottom-right-radius: 6px;
 }
 
-/* --- the privacy chips ---------------------------------------------------
+/* --- the chips ------------------------------------------------------------
  * Callouts that float over the phone's lower half — under the row they talk
  * about, never on it (the row ends at ~34% of the device's height). */
 .chip {
@@ -381,7 +405,10 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  max-width: min(15.5em, calc(var(--side) + var(--fw) * 0.66));
+  /* Round 2: 17.5em (was 15.5) so "You choose what to share" holds one
+     line on desktop; "Your way back to any purchase." sets its own break
+     (heroCopy `breakAfter`). The side term still caps it on phones. */
+  max-width: min(17.5em, calc(var(--side) + var(--fw) * 0.66));
   padding: 9px 16px 9px 9px;
   border-radius: 18px;
   background: #fff;
@@ -402,6 +429,9 @@
   border-radius: 999px;
   background: rgba(235, 113, 0, 0.14);
   color: #a04e00;
+}
+.chipLabel {
+  text-wrap: balance;
 }
 .chipSvg {
   width: 17px;

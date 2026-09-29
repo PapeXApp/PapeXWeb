@@ -13,9 +13,9 @@ import type { ListRow } from "../appui";
  * paper receipt prints it: "Card ************4242".
  */
 export const heroCopy = {
-  eyebrow: "The free receipts and coupons app",
+  eyebrow: "Connecting your last dollar to your next dollar.",
   headline: "Your receipt, not your identity.",
-  lead: "The free PapeX app keeps every receipt and coupon in one place. Scan a paper receipt or forward an email one. PapeX never touches card data.",
+  lead: "The PapeX app keeps every receipt and coupon in one place. Scan a paper receipt or forward an email one. PapeX never touches card data.",
   ctaLabel: "Download the app",
   // True of both store listings (lib/storeLinks.ts).
   ctaSubtext: "Free · iPhone & Android",
@@ -24,12 +24,15 @@ export const heroCopy = {
   faqCue: "Questions?",
   /** The visual is a picture (nothing to click): its accessible name. */
   visualLabel:
-    "The PapeX app on an iPhone. A scanned paper receipt from Tidewick Cafe is filed at the top of the Receipts list. Beside it: no card number, no name or email on the receipt.",
-  /** The three privacy chips, in the order they appear. */
+    "The PapeX app on an iPhone. A scanned paper receipt from Tidewick Cafe is filed at the top of the Receipts list. Beside it, three notes: your way back to any purchase, you choose what to share, and ready for you.",
+  /** The three chips, in the order they appear (round 2, p-01..p-03:
+   *  Nico's words; the icons in HeroApp's ChipGlyph match them). */
   chips: [
-    { key: "card", label: "No card number" },
-    { key: "name", label: "Private unless you share it" },
-    { key: "delete", label: "Delete anytime" },
+    // `breakAfter`: where the chip's two lines split, so the chip hugs its
+    // words (a wrapped line would leave the box at full max-width).
+    { key: "back", label: "Your way back to any purchase.", breakAfter: "Your way back" },
+    { key: "share", label: "You choose what to share" },
+    { key: "ready", label: "Ready for you" },
   ],
 } as const;
 

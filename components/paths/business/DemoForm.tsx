@@ -82,7 +82,7 @@ function validate(fields: DemoFormState): Errors {
 
   // b-32 (Nico): the POS system is needed. Client-side only: the sign-up
   // route still accepts a blank one, so an old tab can't start failing.
-  if (!fields.posSystem.trim()) errors.posSystem = "POS system is required."
+  if (!fields.posSystem.trim()) errors.posSystem = "Required."
 
   return errors
 }
@@ -410,7 +410,7 @@ export function DemoForm() {
                 </ScrollReveal>
                 <ScrollReveal order={2} className="grid gap-2">
                   <Label htmlFor="demo-posSystem" className={labelClass} style={labelStyle}>
-                    POS system (required)
+                    POS System
                   </Label>
                   <Input
                     id="demo-posSystem"
@@ -424,6 +424,7 @@ export function DemoForm() {
                     aria-invalid={Boolean(errors.posSystem)}
                     aria-describedby={errors.posSystem ? "demo-posSystem-error" : undefined}
                     required
+                    aria-required="true"
                     className="h-auto"
                     style={inputStyle}
                   />

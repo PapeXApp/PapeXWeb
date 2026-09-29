@@ -66,9 +66,13 @@ export function Hero() {
       <div className="relative mx-auto grid w-full max-w-[1150px] grid-cols-1 items-center gap-[clamp(30px,5vw,70px)] min-[900px]:grid-cols-[1.14fr_.86fr]">
         <ChildStagger className="max-w-[620px]">
           <SectionLabel index="01">{hero.eyebrow}</SectionLabel>
+          {/* Round 6b (Nico, 2026-09-29: "use a little more space for the
+              lines"): leading 1.02 -> 1.1, same size; balanced, so the two
+              lines read "Close the loop / on every sale." instead of
+              stranding "on" at the end of line one. */}
           <WordReveal
             as="h1"
-            className="text-[length:var(--fs-h1-merchant)] font-bold leading-[1.02] tracking-[-.025em] [font-family:var(--font-display)]"
+            className="text-balance text-[length:var(--fs-h1-merchant)] font-bold leading-[1.1] tracking-[-.025em] [font-family:var(--font-display)]"
           >
             {hero.heading}
           </WordReveal>

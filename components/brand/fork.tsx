@@ -617,12 +617,18 @@ export function Fork() {
             className={`rd-display ${styles.headline} ${styles.headlineBottom}`}
             style={{ color: 'var(--navy)' }}
           >
-            {/* Set breaks: three even lines at every width, instead of a
-                lone "kept." (the spaces keep the heading's text intact). */}
-            Every receipt <br />
-            and coupon, <br />
-            beautifully kept.
+            {/* Set breaks (round 2, f-05): the two halves of the promise,
+                "your last dollar" / "to your next dollar.", each get a line
+                at every width (the spaces keep the heading's text intact). */}
+            Connecting <br />
+            your last dollar <br />
+            to your next dollar.
           </h2>
+          {/* f-05's second line: a quieter sub-line under the headline, so the
+              half keeps one display-size statement. */}
+          <p className={styles.subline} style={{ color: 'rgba(0,18,29,.78)' }}>
+            The way back to any purchase.
+          </p>
           <span
             className={`rd-fork-cue ${styles.cue}`}
             style={{ color: 'rgba(0,18,29,.62)' }}
@@ -636,7 +642,7 @@ export function Fork() {
           type="button"
           className={styles.hit}
           onClick={() => commit(BOTTOM_PATH)}
-          aria-label="For customers: every receipt kept in one place"
+          aria-label="For customers: connecting your last dollar to your next dollar"
         />
       </div>
     </div>

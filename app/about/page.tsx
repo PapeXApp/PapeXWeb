@@ -59,8 +59,8 @@ export default function AboutPage() {
               <SectionLabel>Our team</SectionLabel>
               <h1 className={`rd-display ${styles.title}`}>About PapeX</h1>
               <p className={styles.lead}>
-                Receipts should be useful, not trash. So we&rsquo;re building the tap that
-                sends yours to your phone, and the app that keeps it.
+                Receipts should be a tool, not trash. So we&rsquo;re making them easy to
+                save, useful to keep, and simple to find.
               </p>
             </header>
 
