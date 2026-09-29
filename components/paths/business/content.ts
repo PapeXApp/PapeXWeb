@@ -57,7 +57,7 @@ export const hero = {
   // image (scripts/og/og.html, public/og-business.png).
   eyebrow: "Tap to Retain",
   heading: "Every sale is the first step to bringing them back.",
-  lead: "A free PapeX device sits at your counter and works like a printer. Customers tap their phone for a digital receipt. You get a dashboard of every sale.",
+  lead: "A free PapeX device, our Receipt Delivery Hardware, sits at your counter and works like a printer. Customers tap their phone for a digital receipt. You get a dashboard of every sale.",
   // Nico's approved paper wording (§6a round 2). No longer a required pair
   // (the H1 no longer says "Zero paper"), kept as the hero's sub-line. If
   // "Zero paper" ever returns to the hero, it must ship with this line.
@@ -115,7 +115,7 @@ export const tapToRetain = {
   /** Reduced motion: the static composition's image labels. */
   staticLabels: {
     paperReceipt: "A paper receipt from a demo store",
-    phoneReceipt: "The receipt and a personalized coupon, on your customer's phone in just one tap.",
+    phoneReceipt: "The receipt and a personalized coupon from partnered stores, on your customer's phone in just one tap.",
     paperCoupon: "A paper coupon from a demo store: $2 off your next visit",
     phoneCoupon: "The same coupon in the Coupons tab of the PapeX app",
   },
@@ -178,7 +178,7 @@ export const rdhDevice = {
   eyebrow: "Is it safe?",
   heading: "Small device. Never touches card data.",
   deviceAlt:
-    "The RDH: a small black box that sits by the register and works like a secondary printer. Checkout stays the same, except the receipt goes to the customer's phone instead of on a piece of paper.",
+    "The RDH (Receipt Delivery Hardware): a small black box that sits by the register and works like a secondary printer. Checkout stays the same, except the receipt goes to the customer's phone instead of on a piece of paper.",
   // A point with a `link` renders the label after the text, in orange.
   points: [
     { text: "Connects over your Wi-Fi, like a printer." },
