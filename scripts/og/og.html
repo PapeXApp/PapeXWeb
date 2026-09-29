@@ -1,8 +1,9 @@
 <!doctype html>
 <!--
   scripts/og/og.html — source of the social share images (1200x630).
-  Rendered by `node scripts/og/render.mjs` into public/og-image-v3.png (?v=default)
-  and public/og-image-v3-alt.png (?v=alt). Open it directly in Chrome to preview
+  Rendered by `node scripts/og/render.mjs` into public/og-image-v3.png (?v=default),
+  public/og-image-v3-alt.png (?v=alt) and public/og-business.png (?v=business, the
+  /business share card: same composition, the business H1, receipt + coupon). Open it directly in Chrome to preview
   (run the script once first so logo.generated.js exists).
 
   Built only from brand assets: the PapeX lockup + plane mark (path data from
@@ -160,7 +161,8 @@
 
   /* ---- alt: a coupon riding over the phone's edge ------------------------ */
   .coupon { display: none; }
-  .alt .coupon {
+  .alt .coupon,
+  .business .coupon {
     display: flex; position: absolute; right: 44px; top: 392px; width: 262px; height: 104px;
     transform: rotate(-5deg); filter: drop-shadow(0 18px 26px rgba(0,18,29,.30)) drop-shadow(0 2px 3px rgba(0,18,29,.22));
   }
@@ -181,7 +183,7 @@
   <div class="logo" id="logo"></div>
 
   <h1 class="headline"><span id="headline"></span></h1>
-  <div class="url">papex.app</div>
+  <div class="url" id="url">papex.app</div>
 
   <div class="phone">
     <div class="tap" aria-hidden="true">
@@ -264,10 +266,15 @@
     const COPY = {
       default: 'Your receipt,<br><em>one tap</em> away.',
       alt: 'Receipts and coupons,<br><em>one tap</em> away.',
+      // /business: its H1 (Nico, q-01), for owners who get a shared link.
+      business: 'Close the loop<br>on <em>every sale</em>.',
     };
-    const v = new URLSearchParams(location.search).get('v') === 'alt' ? 'alt' : 'default';
+    const URLS = { business: 'papex.app/business' };
+    const q = new URLSearchParams(location.search).get('v');
+    const v = q in COPY ? q : 'default';
     document.body.classList.add(v);
     document.getElementById('headline').innerHTML = COPY[v];
+    if (URLS[v]) document.getElementById('url').textContent = URLS[v];
 
     const NS = 'http://www.w3.org/2000/svg';
     function draw(spec, colors) {

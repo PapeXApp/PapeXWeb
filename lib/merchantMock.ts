@@ -106,11 +106,15 @@ const MENU: { name: string; price: number }[] = [
 ];
 
 type PaymentFixture = { text: string; last4?: string };
+// Card lines follow the site's mockup rule (Nico, Phase 4): no card brand,
+// the word "CARD", then 12 stars + the last 4, as a paper receipt prints it.
+// With no brand in the text detectPaymentMethod() finds no network, so these
+// rows show the dashboard's neutral "—" payment chip in mock mode.
 const PAYMENT_FIXTURES: PaymentFixture[] = [
-  { text: "VISA  ****4729   APPROVED", last4: "4729" },
-  { text: "MASTERCARD  ****8843   APPROVED", last4: "8843" },
-  { text: "AMEX  ****1006   APPROVED", last4: "1006" },
-  { text: "DISCOVER  ****5521   APPROVED", last4: "5521" },
+  { text: "CARD  ************4729   APPROVED", last4: "4729" },
+  { text: "CARD  ************8843   APPROVED", last4: "8843" },
+  { text: "CARD  ************1006   APPROVED", last4: "1006" },
+  { text: "CARD  ************5521   APPROVED", last4: "5521" },
   { text: "APPLE PAY   APPROVED" },
   { text: "GOOGLE PAY   APPROVED" },
   { text: "CASH" },
@@ -506,18 +510,19 @@ export async function mockCountTransactions(params: Pick<ListTransactionsParams,
   return rows.filter((r) => matchesRecordFilter(r, filter)).length;
 }
 
-// Mirrors Papex_RDH/lambdas/indexer/lib/summarize.js's
-// PAYMENT_TYPE_TO_CARD_BRAND — maps a detected card network onto the
-// display card-brand string; wallet/ACH types (apple_pay, cash, venmo, ...)
-// intentionally have no brand.
+// Shaped like Papex_RDH/lambdas/indexer/lib/summarize.js's
+// PAYMENT_TYPE_TO_CARD_BRAND (which card networks carry a brand; wallet/ACH
+// types such as apple_pay, cash, venmo have none), but the mock never shows a
+// real brand name (Nico's mockup rule, Phase 4): every card network displays
+// as "Card". The live dashboard reads the real brand from the backend.
 const NETWORK_TO_CARD_BRAND: Partial<Record<PaymentNetwork, string>> = {
-  visa: "Visa",
-  mastercard: "Mastercard",
-  amex: "Amex",
-  discover: "Discover",
-  diners_club: "Diners",
-  jcb: "JCB",
-  unionpay: "UnionPay",
+  visa: "Card",
+  mastercard: "Card",
+  amex: "Card",
+  discover: "Card",
+  diners_club: "Card",
+  jcb: "Card",
+  unionpay: "Card",
 };
 
 function toLineItems(summary: ReceiptSummary): MerchantLineItem[] {
