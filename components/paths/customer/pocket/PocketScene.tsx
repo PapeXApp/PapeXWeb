@@ -18,12 +18,12 @@ import s from "./pocket.module.css"
  * advertising the email THEN the scan. but the email is big here"):
  *
  *   EMAIL (0.00-0.425, the biggest share)
- *   0.02-0.10   an email receipt (From Quillbrook Market, "Your receipt")
- *               grows beside the phone (Receipts tab, list whole)
- *   0.11-0.14   Forward lights up
- *   0.135-0.17  the compose strip opens under it
- *   0.165-0.25  "yourname@receipts.papex.app" types out (the app's own
- *               address format: PapeXV2 app/papexEmailSetup.tsx)
+ *   0.02-0.10   a mail window with the receipt email (From Quillbrook
+ *               Market, "Your Quillbrook Market receipt") grows beside the
+ *               phone (Receipts tab, list whole)
+ *   0.11-0.14   Forward is pressed in the toolbar
+ *   0.135-0.17  the "Fwd:" compose sheet slides up over the message
+ *   0.165-0.25  "yourname@papexmail.com" types out in its To field
  *   0.255-0.285 Send is pressed
  *   0.29-0.38   the email shrinks into the phone and squashes into the top
  *               row; a "Today" section opens and the row ("Email by you",
@@ -323,7 +323,7 @@ export function PocketScene({ header }: { header: ReactNode }) {
       op(fwdOnRef.current, ease(seg(p, E.fwdA, E.fwdB)), "fwd")
       const comp = ease(seg(p, E.composeA, E.composeB))
       op(composeRef.current, comp, "cmpO")
-      set(composeRef.current, "transform", `translateY(${(-0.6 * (1 - comp)).toFixed(3)}em)`, "cmpT")
+      set(composeRef.current, "transform", `translateY(${((1 - comp) * 104).toFixed(2)}%)`, "cmpT")
       set(addressRef.current, "clip-path", `inset(0 ${((1 - seg(p, E.typeA, E.typeB)) * 100).toFixed(1)}% 0 0)`, "addr")
       const press = bump(p, E.sendA, (E.sendA + E.sendB) / 2, E.sendB)
       op(sendOnRef.current, press, "sndO")
