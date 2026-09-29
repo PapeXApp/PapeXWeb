@@ -24,7 +24,9 @@ const CAFE_HEADER = "PAPEX CAFE"
 export function papexCafeReceiptBytes(): Uint8Array {
   const src = demoReceiptBytes()
   const text = Array.from(src, (b) => String.fromCharCode(b)).join("")
-  const out = text.replace("TIDEWICK CAFE", CAFE_HEADER)
+  // Same-length swaps keep the ticket's columns aligned. No real card brand on
+  // a demo receipt (Nico, 2026-09-29: "make sure those are not real receipts").
+  const out = text.replace("TIDEWICK CAFE", CAFE_HEADER).replace("VISA  ****4729", "CARD  ****4242")
   return Uint8Array.from(out, (c) => c.charCodeAt(0) & 0xff)
 }
 

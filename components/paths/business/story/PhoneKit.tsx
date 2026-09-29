@@ -2,7 +2,8 @@
 
 import type { CSSProperties } from "react"
 import { AppKitRoot, ClipReceipt, type ClipReceiptData } from "@/components/app-kit"
-import { PAYMENT_METHOD_STYLES, detectPaymentMethod, extractLastFour, type ReceiptSummary } from "@/lib/receiptSummary"
+import { extractLastFour, type ReceiptSummary } from "@/lib/receiptSummary"
+import { card } from "./phone/data"
 import s from "../story.module.css"
 
 /**
@@ -10,7 +11,7 @@ import s from "../story.module.css"
  * app kit (components/app-kit, synced from PapeXV2 + Papex_AppClip):
  *   - `ClipScreen`  the App Clip's receipt (Papex_AppClip ReceiptView.swift)
  *   - once the story has settled the phone is usable: PhoneApp.tsx (Save to
- *     PapeX -> the app's Receipts / Coupons tabs and their details).
+ *     PapeX -> the app's five tabs, the store profile and the details).
  * The lock screen, the App Clip card and "Reading your receipt" are iOS
  * system chrome, not app code, so they stay the /customers drawings
  * (customer/appui ClipLockScreen / ClipReading) — the kit has none.
@@ -25,12 +26,14 @@ const PT: CSSProperties = { ["--pt" as string]: "calc(var(--wp-w) / 393)" }
 const titleCase = (t: string) =>
   t.toLowerCase().replace(/\b[a-z]/g, (m) => m.toUpperCase()).replace(/\bPapex\b/g, "PapeX")
 
+/**
+ * The Payment line: "Card •••• 4242" — the ticket's last four, never its card
+ * brand (every receipt on the phone is invented, and a real network's name
+ * doesn't belong on it). Same wording as the app screens (phone/data.ts).
+ */
 function paymentLabel(summary: ReceiptSummary): string | undefined {
-  const net = summary.paymentLine ? detectPaymentMethod(summary.paymentLine) : null
   const last = summary.paymentLine ? extractLastFour(summary.paymentLine) : null
-  if (!net) return undefined
-  const label = titleCase(PAYMENT_METHOD_STYLES[net]?.label ?? net)
-  return last ? `${label} •••• ${last}` : label
+  return last ? card(last) : undefined
 }
 
 export function clipData(summary: ReceiptSummary): ClipReceiptData {
