@@ -209,6 +209,16 @@
 .cardOn::before {
   opacity: 1;
 }
+/* The email card is the headline: first, and a size up (order and size only). */
+.cardLead {
+  padding: clamp(20px, 2.3vw, 28px) clamp(20px, 2.4vw, 28px);
+}
+.cardLead .cardTitle {
+  font-size: clamp(24px, 2.3vw, 30px);
+}
+.cardLead .cardBody {
+  font-size: 17.5px;
+}
 .card:hover {
   transform: translateY(-2px);
 }
@@ -511,6 +521,23 @@
   grid-column: 1 / -1;
   justify-self: start;
 }
+/* the email figure: full width, art beside its caption, a size up */
+.staticLead {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+  align-items: center;
+  gap: clamp(24px, 4vw, 56px);
+}
+.staticLead .staticPaper .flyer {
+  --pf: 14px;
+}
+.staticLead .staticPhone {
+  --wp-size: 480px;
+}
+.staticTitleLead {
+  font-size: clamp(24px, 2.3vw, 30px);
+}
 .staticTitle {
   display: block;
   font-family: var(--font-display);
@@ -559,16 +586,24 @@
     position: static;
   }
   .cards {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px;
   }
-  .card {
-    padding: 11px 14px;
+  .card,
+  .cardLead {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 8px;
     border-radius: 14px;
     text-align: center;
   }
-  .cardTitle {
-    font-size: 17px;
+  .cardTitle,
+  .cardLead .cardTitle {
+    font-size: 15px;
+  }
+  .cardLead .cardTitle {
+    font-size: 16px;
   }
   /* the button keeps its body for assistive tech, visually hidden */
   .cardBody {
@@ -600,6 +635,11 @@
 
   .static {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .staticLead {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
   }
   .staticArt {
     flex-direction: column;
@@ -654,4 +694,177 @@
   .phone {
     --wp-size: min(560px, calc(100cqh / 1.05));
   }
+}
+
+/* --- the email receipt (Paper.tsx EmailReceipt) -----------------------------
+   A light mail-client card, sized in em off the flyer's --pf like the paper.
+   No text under 1em (>= 13px). Orange TEXT on this light card is #A04E00;
+   #EB7100 is used only for fills, rims and glyph strokes. Four parts start at
+   their p = 0 state and are driven by the frame: the Forward button's active
+   look, the compose strip, the address wipe, the Send press. `.emailStill`
+   pins them to the forwarded state (static version). */
+.email {
+  width: 22em;
+  /* a mail client: the system face, not the page's */
+  font-family: -apple-system, "SF Pro Text", system-ui, "Helvetica Neue", sans-serif;
+  font-size: 1em;
+  line-height: 1.4;
+  color: #1b242e;
+  background: #ffffff;
+  border-radius: 1em;
+  overflow: hidden;
+  box-shadow:
+    0 1px 1px rgba(0, 18, 29, 0.08),
+    0 22px 48px -10px rgba(0, 18, 29, 0.34);
+}
+.eBar {
+  padding: 0.55em 1.1em;
+  background: #eef1f4;
+  border-bottom: 1px solid #dde2e7;
+}
+.eBox {
+  font-weight: 600;
+  color: #4a5561;
+}
+.eHead {
+  display: flex;
+  align-items: center;
+  gap: 0.75em;
+  padding: 0.9em 1.1em 0.7em;
+  border-bottom: 1px solid #e6e9ed;
+}
+.eAvatar {
+  flex: none;
+  width: 2.4em;
+  height: 2.4em;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: #2f6b3f;
+  color: #ffffff;
+  font-weight: 700;
+  font-family: Georgia, serif;
+  font-size: 1.05em;
+}
+.eMeta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.eLine {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.eLabel {
+  color: #5b6672;
+}
+.eBody {
+  padding: 0.8em 1.1em 0.6em;
+}
+.eGreeting {
+  margin-bottom: 0.45em;
+  color: #4a5561;
+}
+.eRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 1em;
+  white-space: nowrap;
+}
+.eTotal {
+  margin-top: 0.35em;
+  padding-top: 0.35em;
+  border-top: 1px solid #e6e9ed;
+  font-weight: 700;
+}
+.eCard {
+  margin-top: 0.25em;
+  color: #5b6672;
+}
+.eActions {
+  display: flex;
+  gap: 0.6em;
+  padding: 0.5em 1.1em 0.9em;
+}
+.eBtn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  padding: 0.35em 0.9em;
+  border: 1px solid #d3d9df;
+  border-radius: 999px;
+  font-weight: 600;
+  color: #33404c;
+  isolation: isolate;
+}
+.eBtnFwd {
+  color: #a04e00;
+}
+/* the active look: orange rim + tint, faded in by the frame */
+.eBtnOn {
+  position: absolute;
+  z-index: -1;
+  inset: -1px;
+  border: 1.5px solid #eb7100;
+  border-radius: inherit;
+  background: rgba(235, 113, 0, 0.12);
+  opacity: 0;
+  will-change: opacity;
+}
+.eGlyph {
+  width: 1.05em;
+  height: 1.05em;
+}
+.eCompose {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  padding: 0.7em 0.8em 0.7em 1.1em;
+  background: #fff6ee;
+  border-top: 1px solid #f3dcc6;
+  opacity: 0;
+  transform: translateY(-0.6em);
+  will-change: transform, opacity;
+}
+.eAddress {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 600;
+  white-space: nowrap;
+  clip-path: inset(0 100% 0 0);
+  will-change: clip-path;
+}
+.eSend {
+  position: relative;
+  flex: none;
+  width: 2em;
+  height: 2em;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: #eb7100;
+  color: #ffffff;
+}
+.eSendOn {
+  position: absolute;
+  inset: -0.3em;
+  border-radius: 999px;
+  border: 2px solid rgba(235, 113, 0, 0.55);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+.eSendGlyph {
+  position: relative;
+  width: 1.1em;
+  height: 1.1em;
+}
+.emailStill .eBtnOn,
+.emailStill .eCompose {
+  opacity: 1;
+  transform: none;
+}
+.emailStill .eAddress {
+  clip-path: none;
 }

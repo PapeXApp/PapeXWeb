@@ -12,11 +12,12 @@ import cstyles from "./customer.module.css";
 //
 // Most visitors can't tap a PapeX device yet (tapping is live only at select
 // Bay Area stores), so the page leads with the free app and this scene shows
-// the everyday action: SCANNING. A paper receipt grows, the scanner locks on
-// and reads it, and it shrinks into the phone as the new row of the Receipts
-// tab; then a paper coupon does the same and lands in the Coupons tab. Two
-// caption cards (Receipts / Coupons) highlight in turn. The scene, its
-// screens and the reduced-motion static version live in ./pocket.
+// the everyday actions, email first and biggest (Nico, 2026-09-28): an email
+// receipt is forwarded to your PapeX address and lands in the Receipts tab;
+// a paper receipt is scanned and lands above it; a paper coupon is scanned
+// into the Coupons tab. Three caption cards (Email receipts / Paper receipts
+// / Coupons) highlight in turn. The scene, its screens and the reduced-motion
+// static version live in ./pocket.
 //
 // As on /business, the heading rides INSIDE the pin on tall-enough desktops
 // and sits in flow above everywhere else (PocketScene picks by CSS, so

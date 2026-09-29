@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils"
 import { receiptMoment } from "../appui/Clip"
 import { PhoneChrome } from "../WalkPhone"
-import { PaperCoupon, PaperReceipt } from "./Paper"
+import { EmailReceipt, PaperCoupon, PaperReceipt } from "./Paper"
 import { pocketCopy } from "./pocketCopy"
 import { pocketCoupons, pocketReceipts, useDemoReceipt } from "./pocketData"
 import { PocketCouponsScreen, PocketReceiptsScreen } from "./PocketScreens"
@@ -20,11 +20,11 @@ function Arrow() {
 
 /**
  * §02 with no motion: what the server renders, what a no-JS visitor keeps,
- * and what `prefers-reduced-motion` gets instead of the pinned scene. The same
- * two moments side by side — a scanned paper receipt -> the new row in the
- * Receipts tab, a scanned paper coupon -> the new row in the Coupons tab —
- * each captioned with its card's words, so nothing the scene says is lost for
- * search or assistive tech.
+ * and what `prefers-reduced-motion` gets instead of the pinned scene. The
+ * same three moments — the email forwarded to your PapeX address (first and
+ * full width: the headline), the paper receipt scanned, the coupon scanned —
+ * each with the phone after it lands and captioned with its card's words, so
+ * nothing the scene says is lost for search or assistive tech.
  */
 export function PocketStatic() {
   const t = pocketCopy
@@ -32,29 +32,31 @@ export function PocketStatic() {
   const moment = receiptMoment(summary.dateline)
   const receipts = pocketReceipts(summary)
   const coupons = pocketCoupons
-  const [receiptsHalf, couponsHalf] = t.halves
+  const [emailHalf, paperHalf, couponsHalf] = t.halves
   const L = t.staticLabels
+  const before = receipts.earlier.filter((r) => !r.reviewed).length
 
   return (
     <div className={s.static}>
       <span className={cn(s.demoTag, s.staticDemo)}>{t.demoTag}</span>
-      <figure className={s.staticFig}>
+      <figure className={cn(s.staticFig, s.staticLead)}>
         <div className={s.staticArt}>
-          <div className={s.staticPaper} role="img" aria-label={L.paperReceipt}>
-            <PaperReceipt summary={summary} still />
+          <div className={s.staticPaper} role="img" aria-label={L.email}>
+            <EmailReceipt still />
           </div>
           <Arrow />
-          <div className={s.staticPhone} role="img" aria-label={L.phoneReceipt}>
+          <div className={s.staticPhone} role="img" aria-label={L.phoneEmail}>
             {/* inert: a picture of the screen; nothing in it takes focus */}
             <div inert>
               <PhoneChrome>
                 <div className={cn(s.layer, s.layerBase)}>
                   <PocketReceiptsScreen
+                    emailed={receipts.emailed}
                     scanned={receipts.scanned}
                     earlier={receipts.earlier}
-                    unreviewed={receipts.earlier.filter((r) => !r.reviewed).length + 1}
+                    unreviewed={before + 1}
                     time={moment.time}
-                    landed
+                    landed="email"
                   />
                 </div>
               </PhoneChrome>
@@ -62,8 +64,37 @@ export function PocketStatic() {
           </div>
         </div>
         <figcaption>
-          <strong className={s.staticTitle}>{receiptsHalf.title}</strong>
-          <span className={s.staticBody}>{receiptsHalf.body}</span>
+          <strong className={cn(s.staticTitle, s.staticTitleLead)}>{emailHalf.title}</strong>
+          <span className={s.staticBody}>{emailHalf.body}</span>
+        </figcaption>
+      </figure>
+
+      <figure className={s.staticFig}>
+        <div className={s.staticArt}>
+          <div className={s.staticPaper} role="img" aria-label={L.paperReceipt}>
+            <PaperReceipt summary={summary} still />
+          </div>
+          <Arrow />
+          <div className={s.staticPhone} role="img" aria-label={L.phoneReceipt}>
+            <div inert>
+              <PhoneChrome>
+                <div className={cn(s.layer, s.layerBase)}>
+                  <PocketReceiptsScreen
+                    emailed={receipts.emailed}
+                    scanned={receipts.scanned}
+                    earlier={receipts.earlier}
+                    unreviewed={before + 2}
+                    time={moment.time}
+                    landed="both"
+                  />
+                </div>
+              </PhoneChrome>
+            </div>
+          </div>
+        </div>
+        <figcaption>
+          <strong className={s.staticTitle}>{paperHalf.title}</strong>
+          <span className={s.staticBody}>{paperHalf.body}</span>
         </figcaption>
       </figure>
 

@@ -27,21 +27,20 @@ import { demoStore } from "./pocketData"
 import s from "./pocket.module.css"
 
 /**
- * The two PapeX app tabs the §02 scene lands in, each with ONE slot for the
- * item the paper turns into. Composed from the app kit's own parts
+ * The two PapeX app tabs the §02 scene lands in, with slots for the items
+ * the email and the paper turn into. Composed from the app kit's own parts
  * (components/app-kit — ports of PapeXV2's receipts.tsx / coupons.tsx) in the
  * order and geometry the kit's ReceiptsScreen / CouponsScreen use; the only
  * difference is that the new item and the list under it are wrapped in two
  * boxes the scene can move:
  *
- *   `newRef`   the new item's block (a "Today" header + row, or a coupon row).
- *              Starts transparent; fades in as the paper sinks into it.
- *   `restRef`  everything below it. Starts lifted by the new block's height
- *              (measured) so the list looks whole before the scan, then slides
- *              down to make room.
- *   `slotRef`  the row itself — what the paper flies at.
+ *   Coupons: `newRef` (the new coupon's block, starts transparent),
+ *   `slotRef` (the row the paper flies at), `restRef` (the list below, lifted
+ *   by the new block's measured height until it arrives).
+ *   Receipts: see `ReceiptSlots` — the Today header, the scan row, the email
+ *   row and the rest, moved the same way.
  *
- * With `landed` (the static version) both boxes simply sit at rest.
+ * With `landed` (the static version) everything simply sits at rest.
  *
  * Positions are iPhone points on a 393 x 852 screen (`--pt`, set by
  * AppKitRoot from the phone's --wp-w). All data is invented.
@@ -73,22 +72,44 @@ function groupBySection(receipts: KitReceipt[]) {
   return sections
 }
 
+/** The Receipts tab's movable parts (see PocketScene's `drawReceipts`). */
+export type ReceiptSlots = {
+  headRef?: Ref<HTMLDivElement>
+  scanRef?: Ref<HTMLDivElement>
+  emailRef?: Ref<HTMLDivElement>
+  restRef?: Ref<HTMLDivElement>
+}
+
 /**
  * Receipts tab (app/(tabs)/receipts.tsx): title row with "N unreviewed", the
  * search field, the list grouped by date, the orange FAB, the tab bar.
- * `unreviewed` is passed in so the scene can flip it the moment the scan
- * lands (the kit derives it from the list).
+ *
+ * The "Today" section holds the two arrivals, in their final order: the
+ * scanned paper receipt on top, the forwarded email receipt under it. The
+ * scene draws them in (the header and email row first, then the scan row)
+ * and lifts what's below until they arrive. `landed` is for the static
+ * version: "email" draws the list after the email only, "both" after both.
+ * `unreviewed` is passed in so the scene can step it as each one lands.
  */
 export function PocketReceiptsScreen({
+  emailed,
   scanned,
   earlier,
   unreviewed,
   time,
-  newRef,
+  headRef,
+  scanRef,
+  emailRef,
   restRef,
-  slotRef,
-  landed = false,
-}: SlotRefs & { scanned: KitReceipt; earlier: KitReceipt[]; unreviewed: number; time: string }) {
+  landed,
+}: ReceiptSlots & {
+  emailed: KitReceipt
+  scanned: KitReceipt
+  earlier: KitReceipt[]
+  unreviewed: number
+  time: string
+  landed?: "email" | "both"
+}) {
   const mode = "dark" as const
   const { colors } = appTheme(mode)
   const RS = R.receiptsScreen
@@ -98,16 +119,22 @@ export function PocketReceiptsScreen({
   const searchTop = headerTop() + bubbleH + S.header.paddingBottom + S.searchRow.paddingTop
   const listTop = searchTop + RS.consts.SEARCH_BAR_HEIGHT + RS.consts.HEADER_CONTENT_GAP_BOTTOM
   const header = (title: string) => <T style={rn(S.sectionHeader, { color: colors.textSecondary })}>{title}</T>
+  const hidden = landed ? undefined : s.newBlock
 
   return (
     <AppKitRoot mode={mode} width="var(--wp-w)" className={s.kitRoot}>
       <Screen mode={mode}>
         <Scroll top={listTop}>
-          <div ref={newRef} className={cn(s.col, s.newBlock, landed && s.newLanded)}>
-            {header(scanned.section)}
-            <div ref={slotRef} className={s.col}>
+          <div ref={headRef} className={cn(s.col, hidden)}>
+            {header(emailed.section)}
+          </div>
+          {landed === "email" ? null : (
+            <div ref={scanRef} className={cn(s.col, hidden)}>
               <ReceiptRow receipt={scanned} mode={mode} />
             </div>
+          )}
+          <div ref={emailRef} className={cn(s.col, hidden)}>
+            <ReceiptRow receipt={emailed} mode={mode} />
           </div>
           <div ref={restRef} className={cn(s.col, s.restBlock)}>
             {groupBySection(earlier).map(([title, rows]) => (
