@@ -9,7 +9,7 @@
 //
 // Nico, 2026-09-24 (spec §8c): "there needs to be a value add to each; it's
 // not IF but HOW we share the story, as there is benefit to all." So every
-// persona sees ALL FIVE rows; the result sets their ORDER, the benefit line
+// persona sees ALL SIX rows; the result sets their ORDER, the benefit line
 // each row shows, and (for Find, on the Non-Keeper) the row title.
 //
 // Lines marked NICO are his, verbatim (2026-09-24) — change them only with his
@@ -32,9 +32,9 @@ export const DEFAULT_PERSONA: PersonaId = "casual";
  * Casual: balanced — getting receipts in, finding them, coupons.
  */
 export const personaFeatureOrder: Record<PersonaId, FeatureKey[]> = {
-  keeper: ["find", "export", "add", "share", "deals"],
-  casual: ["add", "find", "deals", "share", "export"],
-  non: ["deals", "find", "share", "add", "export"],
+  keeper: ["find", "export", "add", "share", "profiles", "coupons"],
+  casual: ["add", "find", "profiles", "coupons", "share", "export"],
+  non: ["profiles", "coupons", "find", "share", "add", "export"],
 };
 
 export const personaFeatureLines: Record<PersonaId, Record<FeatureKey, string>> = {
@@ -45,24 +45,30 @@ export const personaFeatureLines: Record<PersonaId, Record<FeatureKey, string>> 
     // NICO
     add: "Bring the whole folder: snap your paper receipts and forward email ones to your PapeX address.",
     // NICO
-    share: "Send proof of purchase or share a bill in a tap, with a group or one person.",
-    // NICO
-    deals: "Keep the coupons you earn or scan, and favorite the ones you'll use.",
+    share: "Share a receipt, and coupon, with a group or a friend.",
+    // NICO (2026-09-29, all personas)
+    profiles: "See everything you need from all of your favorite stores.",
+    // NICO (2026-09-29, all personas)
+    coupons: "Keep the coupons you earn and scan, and swipe to favorite the ones you'll use.",
   },
   casual: {
     // NICO
     add: "No more digging through your bag and inbox: snap it or forward it, and it's in one place.",
     // NICO
     find: "Find any receipt in seconds, already sorted by store and category.",
-    // NICO
-    deals: "Coupons you've earned or scanned, saved right next to your receipts.",
+    // NICO (2026-09-29, all personas)
+    profiles: "See everything you need from all of your favorite stores.",
+    // NICO (2026-09-29, all personas)
+    coupons: "Keep the coupons you earn and scan, and swipe to favorite the ones you'll use.",
     // NICO
     share: "A receipt a friend or roommate needs? Send it in a tap.",
     export: "Need a few for an expense report? Select them and share one PDF.",
   },
   non: {
-    // NICO
-    deals: "Something back for your trouble: coupons you earn or scan, saved and favorited.",
+    // NICO (2026-09-29, all personas)
+    profiles: "See everything you need from all of your favorite stores.",
+    // NICO (2026-09-29, all personas)
+    coupons: "Keep the coupons you earn and scan, and swipe to favorite the ones you'll use.",
     find: "Returning something? Search the store's name and the receipt is right there.",
     // NICO
     share: "Sharing a bill or proving a purchase? Send it in a tap, no digging.",

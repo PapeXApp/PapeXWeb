@@ -33,22 +33,21 @@ import { cn } from "@/lib/utils";
 import { featuresContent, type FeatureKey, type PersonaId } from "./content";
 import {
   ADD_RECEIPTS,
-  DEAL_COUPONS,
-  DEAL_FAVORITE_STORES,
-  DEAL_FAVORITES,
-  DEAL_STORES,
+  COUPON_FAVORITES,
+  COUPON_LIST,
   EXPORT_BY_PERSONA,
   FIND_BY_PERSONA,
+  PROFILE_FAVORITE_STORES,
+  PROFILE_STORES,
   SHARE_RECEIPT,
-  dealsTab,
 } from "./featureData";
 import { PhoneChrome } from "./WalkPhone";
 import x from "./appui/appScreens.module.css";
 import styles from "./quizFeatures.module.css";
 
 /**
- * The five feature phones (section 05 Features, the quiz's outcome): Find, Export, Add,
- * Share, Deals.
+ * The six feature phones (section 05 Features, the quiz's outcome): Find, Export, Add,
+ * Share, Merchant profiles, Coupons.
  *
  * CROPPED PHONES (P3-C2, Nico 2026-09-25 — back from the whole phones of
  * 78d243a, to cut blank space and tighten the section). A crop is a REAL,
@@ -70,8 +69,8 @@ import styles from "./quizFeatures.module.css";
  * from the generated StyleSheets), laid out at their real 393 x 852pt.
  *
  * DEMO DATA: featureData.ts, invented names only, and each shot carries the
- * "Demo data" caption. The quiz result (persona) picks the Find query, the
- * Export selection and the Deals tab; before the quiz, and on the server, it
+ * "Demo data" caption. The quiz result (persona) picks the Find query and the
+ * Export selection; before the quiz, and on the server, it
  * is `casual`. Sizes are pure CSS (container units), so there is no layout
  * read and no hydration jump.
  */
@@ -87,7 +86,8 @@ export const FEATURE_CROP: Record<FeatureKey, Crop> = {
   export: "top",
   add: "top",
   share: "bottom",
-  deals: "bottom",
+  profiles: "bottom",
+  coupons: "bottom",
 };
 
 function Shot({ children, crop }: { children: React.ReactNode; crop: Crop }) {
@@ -314,11 +314,12 @@ function ShareShot() {
 }
 
 /**
- * DEALS, Stores tab (app/(tabs)/stores.tsx, app-reference.md "Stores"): the
+ * MERCHANT PROFILES, Stores tab (app/(tabs)/stores.tsx, app-reference.md "Stores"): the
  * pinned title row [Select] [Stores] [glass heart], the pinned "Search" field
  * 12pt under the bubble (HEADER_CONTENT_GAP), then the 2-column StoreTile
- * grid 16pt under the field (16pt edges, STORE_TILE_GAP gutter). Each tile
- * counts the shopper's own coupons for that store. No FAB on this tab.
+ * grid 16pt under the field (16pt edges, STORE_TILE_GAP gutter). Each tile is
+ * the door to that store's profile (app/store/[id].tsx) and counts the
+ * shopper's own coupons there. No FAB on this tab.
  */
 function StoresScreen() {
   const searchTop = headerContentTop();
@@ -337,8 +338,8 @@ function StoresScreen() {
           gap: pt(ST.STORE_TILE_GAP),
         }}
       >
-        {DEAL_STORES.map((store) => {
-          const held = DEAL_COUPONS.filter((c) => c.storeId === store.id);
+        {PROFILE_STORES.map((store) => {
+          const held = COUPON_LIST.filter((c) => c.storeId === store.id);
           const lead = held[0];
           const expiry = lead ? describeCouponExpiry(lead.expiresAt, DEMO_NOW) : null;
           return (
@@ -348,7 +349,7 @@ function StoresScreen() {
               mode="dark"
               couponCount={held.length}
               lead={lead ? { title: lead.title, expiry: expiry?.text } : undefined}
-              isFavorite={DEAL_FAVORITE_STORES.includes(store.id)}
+              isFavorite={PROFILE_FAVORITE_STORES.includes(store.id)}
             />
           );
         })}
@@ -372,15 +373,33 @@ function StoresScreen() {
   );
 }
 
-/** DEALS, Coupons tab: the coupon list, the partner-tap Tidewick coupon on top. */
-function DealsShot({ persona }: { persona: PersonaId }) {
+/** MERCHANT PROFILES: always the Stores tab, for every persona. */
+function ProfilesShot() {
   return (
-    <Shot crop={FEATURE_CROP.deals}>
-      {dealsTab[persona] === "stores" ? (
-        <StoresScreen />
-      ) : (
-        <CouponsScreen coupons={DEAL_COUPONS} favorites={DEAL_FAVORITES} />
-      )}
+    <Shot crop={FEATURE_CROP.profiles}>
+      <StoresScreen />
+    </Shot>
+  );
+}
+
+/**
+ * COUPONS — the Coupons tab as it ships (PapeXV2 app/(tabs)/coupons.tsx @
+ * 585e439a; the kit's CouponsScreen, components/app-kit/Screens.tsx): title
+ * row [Select] [Coupons] [glass heart] [glass bell] (coupons.tsx ~977-1090),
+ * the controls row — "Search" field + filter circle (ControlsRow, ~2734), then
+ * the shopper's own coupon rows (components/coupons/CouponRow.tsx: ticket
+ * stub, store name + kind tag, title, expiry, then the heart + chevron trail).
+ * The PromoCarousel is absent because production has no promo slots
+ * (getPromoSlots → catalog gated on COUPONS_SAMPLE_ENABLED, off in Release;
+ * PromoCarousel returns null at 0 slots). Favoriting a coupon is the HEART in
+ * the row — the real CouponRow has no swipe action (swipe-to-favorite lives on
+ * the store tiles, HomeStoreTileSwipe) — so the favorited rows show the
+ * orange heart. No FAB on this tab.
+ */
+function CouponsShot() {
+  return (
+    <Shot crop={FEATURE_CROP.coupons}>
+      <CouponsScreen coupons={COUPON_LIST} favorites={COUPON_FAVORITES} />
     </Shot>
   );
 }
@@ -396,7 +415,9 @@ export function FeatureShot({ feature, persona }: { feature: FeatureKey; persona
       return <AddShot />;
     case "share":
       return <ShareShot />;
-    case "deals":
-      return <DealsShot persona={persona} />;
+    case "profiles":
+      return <ProfilesShot />;
+    case "coupons":
+      return <CouponsShot />;
   }
 }
