@@ -77,15 +77,11 @@ export function SetupTimeline({
   steps,
   axisStart,
   axisEnd,
-  nextLabel,
-  nextHref,
 }: {
   header: ReactNode
   steps: readonly SetupStep[]
   axisStart: string
   axisEnd: string
-  nextLabel: string
-  nextHref: string
 }) {
   // "ssr": the server render and first client frame carry BOTH versions and
   // CSS shows one (setup.module.css: the runway unless prefers-reduced-motion,
@@ -342,18 +338,10 @@ export function SetupTimeline({
     </ol>
   )
 
-  const next = (
-    <a href={nextHref} className={s.next}>
-      {nextLabel}
-      <span aria-hidden="true">↓</span>
-    </a>
-  )
-
   const staticVersion = (
     <div className={cn(s.static, s.wrap, mode === "ssr" && s.staticSlot)} data-nojs="static">
       <div className={s.head}>{header}</div>
       <div className={s.stage}>{renderList(false)}</div>
-      {next}
     </div>
   )
   if (mode === "static") return staticVersion
@@ -374,7 +362,6 @@ export function SetupTimeline({
               {renderList(true)}
             </div>
           </div>
-          <div className={s.wrap}>{next}</div>
         </div>
       </div>
       {mode === "ssr" ? staticVersion : null}

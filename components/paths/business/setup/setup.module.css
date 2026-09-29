@@ -290,30 +290,6 @@
   transform: scaleX(0);
 }
 
-/* ---- the closing link ----------------------------------------------------- */
-.next {
-  display: flex;
-  width: fit-content;
-  align-items: center;
-  gap: 8px;
-  font-size: var(--fs-lead);
-  font-weight: 600;
-  color: var(--flow-fg);
-  text-underline-offset: 4px;
-}
-.next:hover {
-  text-decoration: underline;
-}
-.next span {
-  color: var(--orange);
-}
-.static .next {
-  margin-top: var(--gap-body, 40px);
-}
-.pin .next {
-  margin-top: clamp(10px, 2svh, 24px);
-}
-
 /* ---- phones and tablets: a stacked list on a vertical rail --------------
    Not pinned: the runway is its content's height and the pin is plain flow,
    so the list scrolls normally and each step lights as it reaches the

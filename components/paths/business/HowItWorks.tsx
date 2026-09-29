@@ -44,8 +44,6 @@ export function HowItWorks() {
         steps={howItWorks.steps}
         axisStart={howItWorks.axisStart}
         axisEnd={howItWorks.axisEnd}
-        nextLabel={howItWorks.nextLabel}
-        nextHref={howItWorks.nextHref}
       />
     </FlowSection>
   )
