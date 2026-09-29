@@ -3,7 +3,6 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { ScrollReveal, ScrollWords } from "@/components/motion";
-import { useSafeReducedMotion } from "@/components/motion/useSafeReducedMotion";
 import { FlowSection } from "../shared/FlowSection";
 import { NextSection } from "../shared/NextSection";
 import { PointerLitGroup } from "../shared/PointerLit";
@@ -24,12 +23,6 @@ import styles from "./quizFeatures.module.css";
 
 /** How long a row takes to glide to its new place after the quiz re-sorts. */
 const REORDER_MS = 700;
-
-/** How much of an app shot must be on screen (in the top 85% of it) before it
- *  wipes open: late on purpose, so the whole wipe plays in front of the reader
- *  (the shot's top is then ~65% down at 1440×900, ~68% at 390×844). */
-const SHOT_OPEN_RATIO = 0.4;
-const SHOT_OPEN_MARGIN = "0px 0px -15% 0px";
 
 /** After the result, the header's button restarts the quiz rather than just
  *  pointing at it. */
@@ -62,26 +55,18 @@ const CHANGE_ANSWERS_LABEL = "Change my answers";
  * ("Play"). No per-frame layout reads. Reduced motion: the rows just land in
  * their new order.
  *
- * THE SHOT WIPE (P4-CV, Nico 2026-09-28: the scroll-linked P3-C5 wipe came in
- * "too early, we had one before that was AMAZING"). This restores that one —
- * the pre-R1 `<Reveal variant="mask">` (d0e91b7 → 78d243a): a TIMED clip-path
- * wipe, 1.1s cubic-bezier(.7,0,.15,1), no slide — with the direction by side
- * Nico asked for on 9/26 (right → left for a shot on the right, left → right
- * on a mirrored row; `--wipe-dir` in quizFeatures.module.css). It plays only
- * once SHOT_OPEN_RATIO of a shot is in the top 85% of the viewport, then runs
- * on its own clock. It re-arms when the shot is fully out BELOW the viewport
- * (scrolled back up past it), so coming back down replays it; leaving through
- * the top keeps it open, so scrolling up never shows an empty cell.
- *
- * The state is two data attributes written straight to the DOM, never React
- * state (no re-render, and they survive the FLIP, which moves the same keyed
- * nodes): `data-wipe="armed"` on the list — set only after mount when motion
- * is allowed, so SSR, no-JS and reduced motion never see a hidden shot — and
- * `data-wipe-open` on each observed cell. The observer watches the UNCLIPPED
- * cell and the clip sits on its child: Chrome's IntersectionObserver clips a
- * target by its own clip-path, so a fully wiped-out target would never report
- * an intersection. No layout reads per frame; two observers are the only input.
- * The clip is on a child of the cell, the FLIP on .row: never the same element.
+ * THE SHOT WIPE (P4-CV2, Nico 2026-09-28: the timed P4-CV wipe was "much
+ * better but they should open as i scroll"). Scroll-driven again, in pure CSS
+ * (quizFeatures.module.css): the pre-R1 mask look — a clip-path edge, no slide,
+ * cubic-bezier(.7,0,.15,1) — mapped over the shot's own view timeline, with
+ * the direction by side Nico asked for on 9/26 (right → left for a shot on the
+ * right, left → right on a mirrored row; `--wipe-dir`). The window is LATE, the
+ * part Nico liked about the timed one: closed until the shot's top is 70% down
+ * the viewport, fully open by 38%, so it plays in front of the reader and runs
+ * backwards on scroll-up. No JS, no observers, no per-frame reads; the hidden
+ * state only exists under @supports + no-preference, and data-reveal="mask"
+ * lets the root <noscript> rule force it open. The clip is on .shotWipe, the
+ * FLIP on .row: never the same element.
  */
 export function Features() {
   const persona = usePersona();
@@ -93,53 +78,6 @@ export function Features() {
 
   const rowEls = useRef(new Map<FeatureKey, HTMLDivElement>());
   const firstTops = useRef<Map<FeatureKey, number> | null>(null);
-  const listRef = useRef<HTMLDivElement>(null);
-  const reduced = useSafeReducedMotion();
-
-  // THE SHOT WIPE — arm, then open each shot once it is well into view.
-  useEffect(() => {
-    const list = listRef.current;
-    if (!list) return;
-    // The hook reads false until hydration, so ask the media query too: a
-    // reduced-motion visitor must never see an armed (hidden) shot.
-    const reduceNow = reduced || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduceNow || typeof IntersectionObserver === "undefined") {
-      delete list.dataset.wipe;
-      return;
-    }
-    const cells = Array.from(list.querySelectorAll<HTMLElement>("[data-shot]"));
-    // OPEN: SHOT_OPEN_RATIO of the shot inside the top 85% of the viewport,
-    // so the wipe starts with the shot's top ~65-70% down on any screen.
-    const opener = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting && entry.intersectionRatio >= SHOT_OPEN_RATIO) {
-            (entry.target as HTMLElement).dataset.wipeOpen = "";
-          }
-        }
-      },
-      { threshold: SHOT_OPEN_RATIO, rootMargin: SHOT_OPEN_MARGIN },
-    );
-    // RE-ARM: against the real viewport, once the shot is wholly below it.
-    const rearmer = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.isIntersecting) continue;
-        const floor = entry.rootBounds?.bottom ?? window.innerHeight;
-        if (entry.boundingClientRect.top >= floor) delete (entry.target as HTMLElement).dataset.wipeOpen;
-      }
-    });
-    cells.forEach((cell) => {
-      opener.observe(cell);
-      rearmer.observe(cell);
-    });
-    list.dataset.wipe = "armed";
-    return () => {
-      opener.disconnect();
-      rearmer.disconnect();
-      delete list.dataset.wipe;
-      cells.forEach((cell) => delete cell.dataset.wipeOpen);
-    };
-  }, [reduced]);
 
   // FIRST — while the DOM still holds the old order.
   useEffect(
@@ -219,8 +157,8 @@ export function Features() {
           screen's column flexbox would otherwise shrink to its content. */}
       <div className="w-full" style={{ maxWidth: 1150, margin: "0 auto" }}>
         {/* P3-R1: scroll-linked — label, title word by word, the "Showing"
-            header, then each row: its words rise; its phone wipes open on a
-            timer once it is well in view (THE SHOT WIPE above). The reveal sits
+            header, then each row: its words rise; its phone wipes open as
+            it crosses the middle third of the screen (THE SHOT WIPE above). The reveal sits
             INSIDE each row, so the re-sort FLIP (a transform on .row) and the
             reveal never write the same element. */}
         <ScrollReveal>
@@ -233,7 +171,7 @@ export function Features() {
           {featuresContent.headline}
         </ScrollWords>
 
-        <div ref={listRef} className={styles.list}>
+        <div className={styles.list}>
           {/* The header over the rows: who the list is picked for, and why it is
               in this order. Announced politely when a result arrives. */}
           <ScrollReveal className={styles.picked}>
@@ -295,10 +233,10 @@ export function Features() {
                         left → right on a mirrored row. The side is
                         `--wipe-dir`, set by the same container query that
                         mirrors the row (quizFeatures.module.css), so a stacked
-                        row on a phone always opens from the right. The cell is
-                        observed; its child carries the clip. */}
-                    <div className={styles.shotCell} data-shot="">
-                      <div className={styles.shotWipe}>
+                        row on a phone always opens from the right. The cell
+                        sets the side; its child carries the clip. */}
+                    <div className={styles.shotCell}>
+                      <div className={styles.shotWipe} data-reveal="mask">
                         <FeatureShot feature={key} persona={active} />
                       </div>
                     </div>
