@@ -173,6 +173,24 @@
     "sid": {
       "title": "Your PapeX Receipt",
       "description": "View your digital receipt from PapeX.",
+      "alternates": {
+        "canonical": "https://papex.app/r?sid=a1b2c3d4e5f60718"
+      },
+      "openGraph": {
+        "type": "website",
+        "siteName": "PapeX",
+        "url": "https://papex.app/r?sid=a1b2c3d4e5f60718",
+        "title": "Your PapeX Receipt",
+        "description": "View your digital receipt from PapeX.",
+        "images": [
+          {
+            "url": "https://papex.app/og-image-v2.png",
+            "width": 1200,
+            "height": 630,
+            "alt": "PapeX"
+          }
+        ]
+      },
       "robots": {
         "index": false,
         "follow": false
@@ -184,6 +202,24 @@
     "sid-demo-sid": {
       "title": "Your PapeX Receipt",
       "description": "View your digital receipt from PapeX.",
+      "alternates": {
+        "canonical": "https://papex.app/r?sid=5ca1e00000000001"
+      },
+      "openGraph": {
+        "type": "website",
+        "siteName": "PapeX",
+        "url": "https://papex.app/r?sid=5ca1e00000000001",
+        "title": "Your PapeX Receipt",
+        "description": "View your digital receipt from PapeX.",
+        "images": [
+          {
+            "url": "https://papex.app/og-image-v2.png",
+            "width": 1200,
+            "height": 630,
+            "alt": "PapeX"
+          }
+        ]
+      },
       "robots": {
         "index": false,
         "follow": false
@@ -195,6 +231,24 @@
     "sid-malformed": {
       "title": "Your PapeX Receipt",
       "description": "View your digital receipt from PapeX.",
+      "alternates": {
+        "canonical": "https://papex.app/r?sid=NOT-A-SID"
+      },
+      "openGraph": {
+        "type": "website",
+        "siteName": "PapeX",
+        "url": "https://papex.app/r?sid=NOT-A-SID",
+        "title": "Your PapeX Receipt",
+        "description": "View your digital receipt from PapeX.",
+        "images": [
+          {
+            "url": "https://papex.app/og-image-v2.png",
+            "width": 1200,
+            "height": 630,
+            "alt": "PapeX"
+          }
+        ]
+      },
       "robots": {
         "index": false,
         "follow": false
@@ -206,6 +260,24 @@
     "rid-flag-off": {
       "title": "Your PapeX Receipt",
       "description": "View your digital receipt from PapeX.",
+      "alternates": {
+        "canonical": "https://papex.app/r?rid=receipt_1776344585632_4mrd9txmk"
+      },
+      "openGraph": {
+        "type": "website",
+        "siteName": "PapeX",
+        "url": "https://papex.app/r?rid=receipt_1776344585632_4mrd9txmk",
+        "title": "Your PapeX Receipt",
+        "description": "View your digital receipt from PapeX.",
+        "images": [
+          {
+            "url": "https://papex.app/og-image-v2.png",
+            "width": 1200,
+            "height": 630,
+            "alt": "PapeX"
+          }
+        ]
+      },
       "robots": {
         "index": false,
         "follow": false
@@ -214,6 +286,24 @@
     "rid-flag-on": {
       "title": "Your PapeX Receipt",
       "description": "View your digital receipt from PapeX.",
+      "alternates": {
+        "canonical": "https://papex.app/r?rid=receipt_1776344585632_4mrd9txmk"
+      },
+      "openGraph": {
+        "type": "website",
+        "siteName": "PapeX",
+        "url": "https://papex.app/r?rid=receipt_1776344585632_4mrd9txmk",
+        "title": "Your PapeX Receipt",
+        "description": "View your digital receipt from PapeX.",
+        "images": [
+          {
+            "url": "https://papex.app/og-image-v2.png",
+            "width": 1200,
+            "height": 630,
+            "alt": "PapeX"
+          }
+        ]
+      },
       "robots": {
         "index": false,
         "follow": false
@@ -225,6 +315,24 @@
     "sid-and-rid": {
       "title": "Your PapeX Receipt",
       "description": "View your digital receipt from PapeX.",
+      "alternates": {
+        "canonical": "https://papex.app/r?sid=a1b2c3d4e5f60718"
+      },
+      "openGraph": {
+        "type": "website",
+        "siteName": "PapeX",
+        "url": "https://papex.app/r?sid=a1b2c3d4e5f60718",
+        "title": "Your PapeX Receipt",
+        "description": "View your digital receipt from PapeX.",
+        "images": [
+          {
+            "url": "https://papex.app/og-image-v2.png",
+            "width": 1200,
+            "height": 630,
+            "alt": "PapeX"
+          }
+        ]
+      },
       "robots": {
         "index": false,
         "follow": false
@@ -236,6 +344,24 @@
     "bare": {
       "title": "Your PapeX Receipt",
       "description": "View your digital receipt from PapeX.",
+      "alternates": {
+        "canonical": "https://papex.app/r"
+      },
+      "openGraph": {
+        "type": "website",
+        "siteName": "PapeX",
+        "url": "https://papex.app/r",
+        "title": "Your PapeX Receipt",
+        "description": "View your digital receipt from PapeX.",
+        "images": [
+          {
+            "url": "https://papex.app/og-image-v2.png",
+            "width": 1200,
+            "height": 630,
+            "alt": "PapeX"
+          }
+        ]
+      },
       "robots": {
         "index": false,
         "follow": false
@@ -244,6 +370,24 @@
     "demo-flag": {
       "title": "Your PapeX Receipt",
       "description": "View your digital receipt from PapeX.",
+      "alternates": {
+        "canonical": "https://papex.app/r?demo=1"
+      },
+      "openGraph": {
+        "type": "website",
+        "siteName": "PapeX",
+        "url": "https://papex.app/r?demo=1",
+        "title": "Your PapeX Receipt",
+        "description": "View your digital receipt from PapeX.",
+        "images": [
+          {
+            "url": "https://papex.app/og-image-v2.png",
+            "width": 1200,
+            "height": 630,
+            "alt": "PapeX"
+          }
+        ]
+      },
       "robots": {
         "index": false,
         "follow": false
