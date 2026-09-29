@@ -14,7 +14,7 @@ export const pocketCopy = {
   id: "pocket",
   eyebrow: "How does it work?",
   heading: "Every receipt, in your pocket.",
-  lead: "Forward it or scan it, and it's in PapeX. Same for coupons.",
+  lead: "Forward it, scan it, or tap it. PapeX will collect them all.",
   halves: [
     {
       key: "email",

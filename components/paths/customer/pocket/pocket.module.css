@@ -768,6 +768,59 @@
   }
 }
 
+/* Clear air between the art and the phone. Round 6b (Nico, 2026-09-29: the
+   email "jammed against" the bezel; "the paper and coupons can use more
+   space on the left"; reference: /business §02, whose coupon rests ~50-100px
+   clear of its phone). The paper's home is a size container, so each piece
+   is capped to fit its width: the email window (23em + its 1px border) and
+   the scanned paper / coupon (18.5em + the scanner brackets' 0.75em each
+   side = 20em). Never under 11px (paper) / 10px (email window): the scene
+   is decorative and inert, the cards carry the words. The frame measures
+   layout (offsetLeft/Width) on resize, so the flights still land on their
+   rows. */
+.paperHome {
+  container-type: inline-size;
+}
+.paperHome > .flyer {
+  font-size: clamp(11px, 100cqw / 20, var(--pf));
+}
+.paperHome > .flyer:has(> .email) {
+  font-size: clamp(10px, 100cqw / 23.2, var(--pf));
+}
+/* Desktop (>= 821px, the scene beside the phone): the home keeps `--air`
+   free on its phone side, so every piece is centred in the space LEFT of
+   that band — it moves left, the phone stays put. At 1440-1920 that is the
+   email at ~13.5px instead of ~16px and the paper unchanged; below ~1100px
+   wide both shrink a little. */
+@media (min-width: 821px) {
+  .scene {
+    --air: clamp(16px, 2.4vw, 32px);
+  }
+  .paperHome {
+    padding-right: var(--air);
+  }
+}
+/* Phones: the scene spans the column (the phone stays centred in it), so
+   the art grows centred over the column instead of from the phone's left
+   edge — at 320px wide the email used to run off the right of the screen.
+   The home is also capped by HEIGHT (email ~28.8em tall, paper + brackets
+   ~25em), so on short phones (320x568) the art stays inside the scene and
+   doesn't cover the caption buttons under it. */
+@media (max-width: 820px) {
+  .sceneWrap {
+    align-self: stretch;
+  }
+  .paperHome {
+    container-type: size;
+  }
+  .paperHome > .flyer {
+    font-size: clamp(10px, min(100cqw / 20, 100cqh / 25.2), var(--pf));
+  }
+  .paperHome > .flyer:has(> .email) {
+    font-size: clamp(10px, min(100cqw / 23.2, 100cqh / 29), var(--pf));
+  }
+}
+
 /* --- the email receipt (Paper.tsx EmailReceipt) -----------------------------
    A mail window (Apple Mail / Gmail cues, hand-built), sized in em off the
    flyer's --pf like the paper. No text under 1em (>= 13px); grey text is
