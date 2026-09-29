@@ -11,12 +11,32 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { FramerPageShell } from '@/components/framer/framer-page-shell'
+import { DEFAULT_OG_IMAGE } from '@/components/blog/image'
+
+const OG_ALT =
+  'The PapeX logo and the words Your receipt, one tap away, beside an iPhone showing a PapeX receipt'
 
 export const metadata: Metadata = {
-  title: 'PapeX App Support',
-  description: 'Support for the PapeX iOS app. Email support@papex.app for help with your account, receipts, or the app.',
+  title: 'App help | PapeX',
+  description:
+    'Help with the PapeX app on iPhone or Android. Email support@papex.app about your account or receipts.',
   robots: { index: true, follow: true },
   alternates: { canonical: 'https://papex.app/app-support' },
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://papex.app/app-support',
+    siteName: 'PapeX',
+    title: 'App help | PapeX',
+    description: 'Help with the PapeX app on iPhone or Android. Email support@papex.app about your account or receipts.',
+    images: [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630, alt: OG_ALT }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'App help | PapeX',
+    description: 'Help with the PapeX app on iPhone or Android. Email support@papex.app about your account or receipts.',
+    images: [DEFAULT_OG_IMAGE],
+  },
 }
 
 const FAQS: { q: string; a: React.ReactNode }[] = [
@@ -52,10 +72,10 @@ export default function AppSupportPage() {
         <div className="mx-auto max-w-2xl space-y-10">
           <header className="space-y-3 text-center md:text-left">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#ff9933]">
-              PapeX App
+              Shopper support
             </p>
             <h1 className="text-3xl md:text-4xl font-bold text-[#0a3d62] leading-tight">
-              PapeX App Support
+              App assistance
             </h1>
             <p className="text-lg text-[#0a3d62]/70 leading-relaxed">
               Need help with the PapeX app? Email us at{' '}

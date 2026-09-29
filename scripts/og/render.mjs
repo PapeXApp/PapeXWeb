@@ -1,9 +1,12 @@
 // scripts/og/render.mjs — regenerates the social share images.
 //
-//   node scripts/og/render.mjs
+//   node scripts/og/render.mjs              # every variant
+//   node scripts/og/render.mjs business     # only the named variant(s)
 //
-// Writes public/og-image-v3.png (default) and public/og-image-v3-alt.png
-// (receipts + coupons copy), both 1200x630, from scripts/og/og.html.
+// Writes public/og-image-v3.png (default), public/og-image-v3-alt.png
+// (receipts + coupons copy) and public/og-business.png (the /business share
+// card, its H1), all 1200x630, from scripts/og/og.html. Name a variant to
+// re-render just that one, so the others' files stay byte-identical.
 //
 // Built only from real brand assets:
 //   - the PapeX lockup and plane mark: path data read straight out of
@@ -30,10 +33,15 @@ const W = 1200
 const H = 630
 const MAX_BYTES = 400 * 1024
 
-const VARIANTS = [
+const ALL_VARIANTS = [
   { key: 'default', out: 'public/og-image-v3.png' },
   { key: 'alt', out: 'public/og-image-v3-alt.png' },
+  { key: 'business', out: 'public/og-business.png' },
 ]
+const picked = process.argv.slice(2)
+const unknown = picked.filter((k) => !ALL_VARIANTS.some((v) => v.key === k))
+if (unknown.length) throw new Error(`unknown variant(s): ${unknown.join(', ')}`)
+const VARIANTS = picked.length ? ALL_VARIANTS.filter((v) => picked.includes(v.key)) : ALL_VARIANTS
 
 // ---- 1. Logo paths from the site's components -----------------------------
 

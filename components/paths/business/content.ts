@@ -1,9 +1,9 @@
 // Marketing copy for the "For Business" (merchant) homepage path.
 //
-// Copy here is polished-but-provisional (per the design spec's Fidelity
-// section) — it communicates intent and tone but is not final marketing
-// copy. Do not invent specifications, pricing, certifications or customer
-// names beyond what's written here.
+// Copy here is Nico's approved wording (Phase 4, 2026-09-29: decisions in
+// .claude/plans/2026-09-28-p4-audit/decisions-merged.md). Do not invent
+// specifications, pricing, certifications or customer names beyond what's
+// written here.
 //
 // NOTE on illustrative content: the design spec's "Fidelity" section flags
 // stats, merchant/press logos and testimonials as illustrative placeholders
@@ -19,10 +19,11 @@
 // are listed there under "Cut"). Read before editing:
 //  - Cost: "Free device. Free install." Merchants aren't charged today; no
 //    promise about how long, no eligibility condition.
-//  - Card data: "Never touches card data" / "doesn't store, process or
+//  - Card data: "PapeX never touches card data" (a bare "Never touches card
+//    data." only as a ribbon/heading fragment) / "doesn't store, process or
 //    transmit card data", linked to /pci. No certification claim: the /pci
 //    page deliberately certifies nothing.
-//  - Connection: Wi-Fi, added as a network printer. No other interface, and
+//  - Connection: Wi-Fi, added as a printer ("works like a printer"). No other interface, and
 //    only the parallel mode (the paper printer stays) exists.
 //  - Paper (Nico, round 2): "Zero paper" only when paired with "Go
 //    paper-free: switch off the printer whenever you're ready." The paper
@@ -31,10 +32,15 @@
 //  - POS: "Works with most point of sale systems". Don't name a POS.
 //  - Contracts: say nothing until Nico confirms.
 //  - Proof: "Live in the Bay Area." only; no store type, no dates, no names.
-//  - Device name: "the PapeX device (RDH, Receipt Data Hub)" on first
-//    mention on the page, "PapeX device" after that.
+//  - Device name: "the PapeX device" in visible copy. RDH stands for
+//    "Receipt Delivery Hardware" (Nico, 2026-09-29, q-24; never "Receipt
+//    Data Hub"); don't add RDH to visible copy.
 
 import { SALES_PHONE, SALES_PHONE_HREF } from "@/components/brand/links"
+
+// Demo requests go to Nico (approved public fact). Kept here, not in
+// components/brand/links.ts (the shell's file), until it's needed elsewhere.
+const DEMO_EMAIL = "nico@papex.app"
 
 
 // Page order (Nico, 2026-09-24): each section answers the merchant's next
@@ -43,15 +49,14 @@ import { SALES_PHONE, SALES_PHONE_HREF } from "@/components/brand/links"
 // safe? (device) · 05 How do I get it? (setup -> demo) · 06 FAQ.
 
 export const hero = {
-  // H1 (P3-B1, 2026-09-25, provisional — Phase 4 finalises the words): the
-  // hero visual now tells the "close the loop" story (tap -> receipt ->
-  // coupon for next time -> they come back), so the H1 names it. It says
-  // nothing about collecting shopper data (a shopper may read it). "Tap to
-  // Retain" stays as the eyebrow, next to the brand; the offer ("free") is
-  // carried by the lead.
-  eyebrow: "Tap to Retain, by PapeX",
+  // H1 (P3-B1, 2026-09-25; kept by Nico in Phase 4, q-01): the hero visual
+  // tells the "close the loop" story (tap -> receipt -> coupon for next time
+  // -> they come back), so the H1 names it. It says nothing about collecting
+  // shopper data (a shopper may read it). "Tap to Retain" is the eyebrow
+  // (q-02); the offer ("free") is carried by the lead.
+  eyebrow: "Tap to Retain",
   heading: "Close the loop on every sale.",
-  lead: "A free PapeX device (RDH, Receipt Data Hub) joins your POS as a printer. Customers tap their phone for a digital receipt; you get a dashboard of every sale.",
+  lead: "A free PapeX device sits at your counter and works like a printer. Customers tap their phone for a digital receipt. You get a dashboard of every sale.",
   // Nico's approved paper wording (§6a round 2). No longer a required pair
   // (the H1 no longer says "Zero paper"), kept as the hero's sub-line. If
   // "Zero paper" ever returns to the hero, it must ship with this line.
@@ -64,11 +69,11 @@ export const hero = {
   phoneHref: SALES_PHONE_HREF,
   secondaryLabel: "See how it works",
   secondaryHref: "#how",
-  deviceAlt: "The PapeX device: a small matte-black box with a green status light and a PapeX label on top.",
 } as const
 
 // 02 "What is Tap to Retain?" (TapToRetain.tsx + intro/). Both halves are
-// live: receipts, and coupons the merchant sets up in their dashboard. There
+// live: receipts, and coupons the merchant sets up in their dashboard (Nico,
+// q-17: merchant coupon setup is live). There
 // is no "Coming soon" anywhere in this section any more (Web 2.1 W3). No
 // retention figures anywhere — we have none to show. Everything drawn in the
 // scene is DEMO data for the invented "PapeX Cafe" (the /customers demo
@@ -78,17 +83,17 @@ export const tapToRetain = {
   id: "tap-to-retain",
   eyebrow: "What is Tap to Retain?",
   heading: "Your store, in their pocket.",
-  lead: "Tap to Retain turns the paper receipt into a reason to come back. Scroll to watch both halves.",
+  lead: "Tap to Retain turns the paper receipt into a reason to come back. Scroll to see receipts, then coupons.",
   halves: [
     {
       key: "receipts",
       title: "Receipts",
-      body: "A customer taps their phone at checkout and gets a digital receipt, no app needed. They keep it in the free PapeX app, so your store stays in their pocket.",
+      body: "A customer taps their phone at checkout and gets a digital receipt, no app needed. They can keep it in the free PapeX app, so your store stays in their pocket.",
     },
     {
       key: "coupons",
       title: "Coupons",
-      body: "Shoppers already save and scan coupons in the PapeX app today. Set up coupons in your dashboard, and a tap sends your customer one for their next visit.",
+      body: "Shoppers already save and scan coupons in the PapeX app. Set up a coupon in your dashboard, and a tap can send one with the receipt for their next visit.",
     },
   ],
   /** Shown on the scene: the receipt and coupon are sample data. */
@@ -109,7 +114,7 @@ export const tapToRetain = {
   /** Reduced motion: the static composition's image labels. */
   staticLabels: {
     paperReceipt: "A paper receipt from a demo store",
-    phoneReceipt: "The same receipt on a phone, as the PapeX App Clip shows it",
+    phoneReceipt: "The same receipt and coupon on your customer's phone, opened with a tap",
     paperCoupon: "A paper coupon from a demo store: $2 off your next visit",
     phoneCoupon: "The same coupon in the Coupons tab of the PapeX app",
   },
@@ -120,7 +125,7 @@ export const marquee = {
   phrases: [
     "Free device.",
     "Free install.",
-    "Adds as a printer.",
+    "Works like a printer.",
     "Paper is optional.",
     "Never touches card data.",
     "Dashboard included.",
@@ -130,10 +135,10 @@ export const marquee = {
 export const howItWorks = {
   id: "setup",
   eyebrow: "How do I get it?",
-  heading: "Free in 15 minutes.",
+  heading: "Installed free in about 15 minutes.",
   // The one duration claim: a start and an end on the timeline's axis, and
-  // this line. No per-step minutes (we have no measured split to show).
-  lead: "We install it, free, in about 15 minutes.",
+  // the heading. No per-step minutes (we have no measured split to show).
+  lead: "One short visit, and you're live.",
   axisStart: "0 min",
   axisEnd: "about 15 min",
   steps: [
@@ -145,12 +150,12 @@ export const howItWorks = {
     {
       number: "02",
       title: "Join your Wi-Fi",
-      body: "It joins your store's 2.4 GHz Wi-Fi.",
+      body: "It joins your store's Wi-Fi.",
     },
     {
       number: "03",
-      title: "Add it as a printer in your POS",
-      body: "Your POS sees it as one more network printer.",
+      title: "Connect it to your POS",
+      body: "We add it as one more printer.",
     },
     {
       number: "04",
@@ -171,10 +176,11 @@ export const howItWorks = {
 export const rdhDevice = {
   eyebrow: "Is it safe?",
   heading: "Small device. Never touches card data.",
-  deviceAlt: "The PapeX device: a small matte-black box with a green status light and a PapeX label on top.",
+  deviceAlt:
+    "The PapeX device: a small black box by the register that works like a receipt printer. Checkout stays the same, except the receipt goes to the customer's phone instead of paper.",
   // A point with a `link` renders the label after the text, in orange.
   points: [
-    { text: "Connects over Wi-Fi as a network printer." },
+    { text: "Connects over your Wi-Fi, like a printer." },
     { text: "Your paper printer keeps printing until you choose to switch it off." },
     {
       text: "Doesn't store, process or transmit card data.",
@@ -198,8 +204,12 @@ export const demo = {
   phonePrefix: "Or call us:",
   phone: SALES_PHONE,
   phoneHref: SALES_PHONE_HREF,
+  // q-25 (Nico): the demo email sits next to the number.
+  emailPrefix: "or email",
+  email: DEMO_EMAIL,
+  emailHref: `mailto:${DEMO_EMAIL}`,
   submitLabel: "Request a demo",
   submitLabelPending: "Sending…",
   successMessage: "Thanks, we've got your request. We'll be in touch shortly to set up your demo.",
-  errorMessage: "Something went wrong sending your request. Please try again, or call us directly.",
+  errorMessage: `Something went wrong sending your request. Please try again, or call us at ${SALES_PHONE}.`,
 } as const

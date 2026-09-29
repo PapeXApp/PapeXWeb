@@ -18,7 +18,7 @@
 // "PapeX Cafe" used across every /business demo, and the visual carries a
 // "Demo data" tag. No figures, no retention metric, no real merchants, and
 // nothing that reads as collecting the shopper's data (a shopper may read it).
-// Wording is provisional: Phase 4 finalises the words.
+// Wording: Nico's Phase 4 decisions (b-05, b-06).
 
 export const loop = {
   /** The five steps, in order. `label` is the step's name (the numbered row
@@ -26,8 +26,8 @@ export const loop = {
    *  the step that is playing. Short on purpose: each must read at a glance. */
   steps: [
     { label: "Tap", sub: "their phone on the PapeX device" },
-    { label: "Receipt", sub: "opens, with a coupon on top" },
-    { label: "Save", sub: "it to their PapeX app" },
+    { label: "Receipt", sub: "opens, with a coupon at partner stores" },
+    { label: "Save", sub: "it to the free PapeX app" },
     { label: "Coupon", sub: "ready for their next visit" },
     { label: "Scan", sub: "it at the counter: coupon used" },
   ],
@@ -47,5 +47,5 @@ export const loop = {
   /** Screen-reader description of the whole visual (the drawing itself is
    *  aria-hidden: the numbered steps under it carry the words). */
   description:
-    "Demo with an invented store, PapeX Cafe: at checkout a customer taps their phone on the PapeX device and the App Clip card pops up. They tap View and the receipt opens, with a coupon for $2 off their next visit on top and the items below. They save it to the PapeX app and open the coupon. At the counter they turn the phone to the person behind it, who scans the coupon's barcode, and the coupon is used.",
+    "Demo with an invented store, PapeX Cafe: a customer taps their phone on the PapeX device and the receipt opens with a coupon for next time. They save it to the PapeX app, then use the coupon at the counter.",
 } as const
