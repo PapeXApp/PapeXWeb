@@ -22,9 +22,6 @@ import {
   V,
   GlassIcon,
   demoCoupons,
-  demoReceipts,
-  demoStore,
-  demoStores,
   appTheme,
   headerTop,
   type KitCoupon,
@@ -32,6 +29,7 @@ import {
 } from "@/components/app-kit"
 import { pt, rn } from "@/components/app-kit/rnStyle"
 import { PAYMENT_METHOD_STYLES, detectPaymentMethod, extractLastFour, type ReceiptSummary } from "@/lib/receiptSummary"
+import { CAFE_NAME, cafeDemoReceipts, cafeStore, cafeStoreFor } from "../papexCafe"
 import s from "../story.module.css"
 
 /**
@@ -78,8 +76,8 @@ function paymentLabel(summary: ReceiptSummary): string | undefined {
 export function kitReceipts(summary: ReceiptSummary): KitReceipt[] {
   const mine: KitReceipt = {
     id: "story-receipt",
-    merchantName: titleCase(summary.merchantName ?? "PapeX Cafe"),
-    logoUrl: demoStores[0].logoUrl ?? null,
+    merchantName: titleCase(summary.merchantName ?? CAFE_NAME),
+    logoUrl: cafeStore.logoUrl ?? null,
     amount: summary.total ?? null,
     dateLabel: "Jun 8",
     category: "Dining",
@@ -97,7 +95,7 @@ export function kitReceipts(summary: ReceiptSummary): KitReceipt[] {
     payment: paymentLabel(summary),
     sharedWith: [],
   }
-  const others = demoReceipts.slice(1)
+  const others = cafeDemoReceipts.slice(1)
   // two receipts per day, so each re-dated set spans two days
   const dated = (days: { label: string; section: string }[], suffix: string) =>
     others.map((r, i) => {
@@ -341,7 +339,7 @@ function CouponsTab({ coupons, onOpen, onTab }: { coupons: KitCoupon[]; onOpen: 
       <DragList top={listTop} label="Your coupons">
         <V style={{ paddingLeft: pt(16), paddingRight: pt(16), gap: pt(R.couponRow.consts.COUPON_ROW_GAP) }}>
           {coupons.map((c) => {
-            const store = demoStore(c.storeId)
+            const store = cafeStoreFor(c.storeId)
             return (
               <Row key={c.id} label={`Open the ${store.name} coupon: ${c.title}`} onOpen={() => onOpen(c.id)}>
                 <CouponRow coupon={c} store={store} mode="dark" />
@@ -416,7 +414,7 @@ export function PhoneApp({ summary, live, reset }: { summary: ReceiptSummary; li
     else if (openCoupon)
       screen = (
         <>
-          <CouponDetail coupon={openCoupon} store={demoStore(openCoupon.storeId)} mode="dark" />
+          <CouponDetail coupon={openCoupon} store={cafeStoreFor(openCoupon.storeId)} mode="dark" />
           {live ? <Back label="Back to coupons" onBack={() => go(() => setOpen(null))} /> : null}
         </>
       )

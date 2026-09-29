@@ -7,7 +7,7 @@ import {
   type PaymentNetwork,
   type ReceiptSummary,
 } from "@/lib/receiptSummary"
-import { demoReceiptBytes } from "../../customer/demoReceipt"
+import { papexCafeReceiptBytes } from "../papexCafe"
 
 /**
  * DEMO DATA for the interactive dashboard at the end of the "Tap to Retain"
@@ -296,7 +296,7 @@ let cache: DemoSale[] | null = null
 /** Newest first: the delivered sale, then the invented history. */
 export function demoSales(): DemoSale[] {
   if (cache) return cache
-  const first = decode(demoReceiptBytes())
+  const first = decode(papexCafeReceiptBytes())
   // the delivered receipt's own header lines (address, phone), reused verbatim
   const header = first.addressLines
   cache = [
