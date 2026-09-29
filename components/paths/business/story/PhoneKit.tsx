@@ -27,7 +27,7 @@ const titleCase = (t: string) =>
   t.toLowerCase().replace(/\b[a-z]/g, (m) => m.toUpperCase()).replace(/\bPapex\b/g, "PapeX")
 
 /**
- * The Payment line: "Card •••• 4242" — the ticket's last four, never its card
+ * The Payment line: "Card ************4242" — the ticket's last four, never its card
  * brand (every receipt on the phone is invented, and a real network's name
  * doesn't belong on it). Same wording as the app screens (phone/data.ts).
  */

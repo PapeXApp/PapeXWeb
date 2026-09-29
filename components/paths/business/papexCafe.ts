@@ -24,9 +24,10 @@ const CAFE_HEADER = "PAPEX CAFE"
 export function papexCafeReceiptBytes(): Uint8Array {
   const src = demoReceiptBytes()
   const text = Array.from(src, (b) => String.fromCharCode(b)).join("")
-  // Same-length swaps keep the ticket's columns aligned. No real card brand on
+  // The header swap is same-length; the card line is the paper-receipt form
+  // "Card ************4242" (still inside the 32-column ticket). No real card brand on
   // a demo receipt (Nico, 2026-09-29: "make sure those are not real receipts").
-  const out = text.replace("TIDEWICK CAFE", CAFE_HEADER).replace("VISA  ****4729", "CARD  ****4242")
+  const out = text.replace("TIDEWICK CAFE", CAFE_HEADER).replace("VISA  ****4729", "Card ************4242")
   return Uint8Array.from(out, (c) => c.charCodeAt(0) & 0xff)
 }
 

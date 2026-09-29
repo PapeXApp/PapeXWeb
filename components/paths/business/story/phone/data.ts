@@ -10,7 +10,7 @@ import type { CafeCoupon } from "../cafeCouponStore"
  *   - three invented stores only: PapeX Cafe (the demo merchant) plus the
  *     kit's Quillbrook Market and Copperpeg Hardware;
  *   - invented items at invented prices, each receipt adding up;
- *   - a card is only ever "Card •••• 1234" — never a card brand;
+ *   - a card is only ever "Card ************1234" — never a card brand;
  *   - addresses are "Demo" streets; the only people are the shopper
  *     ("Jordan", jordan@example.com) and a first name in a shared group.
  * The phone's own copy of this data, so /customers' shared demo data
@@ -19,8 +19,8 @@ import type { CafeCoupon } from "../cafeCouponStore"
 
 export const SHOPPER = { name: "Jordan", email: "jordan@example.com" } as const
 
-/** "Card •••• 4242": a last-4, never a brand. */
-export const card = (last4: string) => `Card •••• ${last4}`
+/** "Card ************4242": 12 stars and a last-4, as a paper receipt prints it; never a brand. */
+export const card = (last4: string) => `Card ************${last4}`
 
 // ---------------------------------------------------------------------------
 // Stores

@@ -16,7 +16,7 @@ import { papexCafeReceiptBytes } from "../papexCafe"
  * sales from its own invented menu, at the volume of a busy neighbourhood cafe
  * (Nico 2026-09-29: ~$6k a week, ~$25k a month, 70-100 sales a day, ~$11-12
  * a ticket). No real merchant, no real customer, no real card: every
- * generated receipt pays with "CARD ****" and an obvious test last-4
+ * generated receipt prints "Card ************" (12 stars, like a paper receipt) and an obvious test last-4
  * (4242 / 0005 / 4444).
  *
  * The sale the scene follows (#1042, Jun 8, 10:24 AM) is the /customers demo
@@ -151,7 +151,7 @@ const FOOD_AFTERNOON: Weighted[] = [
 ]
 const SERVERS = ["Maya", "Jo", "Theo", "Sam"]
 /** Invented cards: the well-known TEST last-4s, never a real card or brand. */
-const CARDS = ["CARD ****4242", "CARD ****4242", "CARD ****0005", "CARD ****4444"]
+const CARDS = ["Card ************4242", "Card ************4242", "Card ************0005", "Card ************4444"]
 
 /** Sales per open hour: a morning rush, a lunch bump, a quiet close. */
 const WEEKDAY_HOURS: [hour: number, weight: number][] = [
