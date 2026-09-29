@@ -31,9 +31,9 @@ function InfoCard({ icon: Icon, title, children }: { icon: typeof Info; title: s
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full" style={{ background: T.orangeDim }}>
           <Icon className="h-4 w-4" style={{ color: T.orange }} strokeWidth={2} />
         </span>
-        <h2 className="truncate font-barlow text-base font-medium" style={{ color: T.text }}>
+        <div className="truncate font-barlow text-base font-medium" style={{ color: T.text }}>
           {title}
-        </h2>
+        </div>
       </div>
       {children}
     </Card>
@@ -100,9 +100,9 @@ export function CafeProfile({ desk, demoPill }: { desk: boolean; demoPill: React
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full" style={{ background: T.orangeDim }}>
               <Ticket className="h-4 w-4" style={{ color: T.orange }} strokeWidth={2} />
             </span>
-            <h2 className="truncate font-barlow text-base font-medium" style={{ color: T.text }}>
+            <div className="truncate font-barlow text-base font-medium" style={{ color: T.text }}>
               {c.coupons.title}
-            </h2>
+            </div>
           </div>
           {demoPill}
         </div>

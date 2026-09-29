@@ -32,7 +32,7 @@ export const merchantCopy = {
   // Demo only: the button never downloads anything here (Nico 2026-09-29).
   exported: "Exported",
   exportedNote: "In your dashboard this downloads every sale as a CSV.",
-  searchPlaceholder: "Search receipt #, item, card, or merchant…",
+  searchPlaceholder: "Search receipt #, item or card…",
   min: "Min $",
   max: "Max $",
   from: "From",

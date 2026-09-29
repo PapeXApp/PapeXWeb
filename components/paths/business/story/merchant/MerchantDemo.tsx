@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { ArrowLeft, BarChart3, Check, ChevronRight, Download, Radio, Receipt, Search, Store } from "lucide-react"
 // The LIVE dashboard's own presentational pieces, imported read-only. Nothing
 // in app/merchant is edited for this demo, and nothing here can reach it: the
@@ -61,16 +61,48 @@ const PAGE = 50
 /** How long "Exported" stays on the button. */
 const EXPORTED_MS = 3500
 
-/** The payment cell: invented cards only ever show as "Card •••• 4242". */
+/** The payment cell: invented cards only ever show as "Card ************4242"
+ *  (12 stars + the last four, as a paper receipt prints it). The pieces are
+ *  inline, not flex items, so the text reads as one line to assistive tech. */
 function CardChip({ last4 }: { last4: string | null }) {
   return (
-    <span className="inline-flex items-center gap-1.5">
-      <span className="rounded px-[6px] py-[2px] text-[10px] font-bold uppercase tracking-[0.4px]" style={{ background: "#334155", color: "#FFFFFF" }}>
+    <span className="whitespace-nowrap">
+      <span className="inline-block rounded px-[6px] py-[2px] align-middle text-[10px] font-bold uppercase tracking-[0.4px]" style={{ background: "#334155", color: "#FFFFFF" }}>
         {c.card}
       </span>
-      {last4 ? <span style={{ color: T.textSecondary }}>{`•••• ${last4}`}</span> : null}
+      {last4 ? (
+        <span className="ml-1.5 align-middle text-[13px] tracking-[-0.2px]" style={{ color: T.textSecondary }}>{`************${last4}`}</span>
+      ) : null}
     </span>
   )
+}
+
+/**
+ * ReceiptView (app/r/ui.tsx, shared with the real /r page and not ours to
+ * edit) renders its own <h1>/<h2>s. Inside this demo they would become page
+ * headings, so once mounted they are swapped for <div>s with the same
+ * attributes and children, keeping the look. The demo's own titles are plain
+ * <div>s already (the page owns the one <h1> and the §03 heading).
+ */
+function DemoteHeadings({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const root = ref.current
+    if (!root) return
+    const demote = () => {
+      root.querySelectorAll("h1,h2,h3,h4,h5,h6").forEach((h) => {
+        const d = document.createElement("div")
+        for (const a of Array.from(h.attributes)) d.setAttribute(a.name, a.value)
+        while (h.firstChild) d.appendChild(h.firstChild)
+        h.replaceWith(d)
+      })
+    }
+    demote()
+    const mo = new MutationObserver(demote)
+    mo.observe(root, { childList: true, subtree: true })
+    return () => mo.disconnect()
+  }, [])
+  return <div ref={ref}>{children}</div>
 }
 
 function DemoPill() {
@@ -231,9 +263,9 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
   const title = (text: string, sub: string, right?: ReactNode) => (
     <div className="flex flex-wrap items-end justify-between gap-4">
       <div>
-        <h1 className="font-barlow text-2xl font-medium" style={{ color: T.text }}>
+        <div className="font-barlow text-2xl font-medium" style={{ color: T.text }}>
           {text}
-        </h1>
+        </div>
         <p className="mt-1 text-sm" style={{ color: T.textSecondary }}>
           {sub}
         </p>
@@ -241,6 +273,9 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
       {right}
     </div>
   )
+
+  // the phone-size dashboard packs its table columns a little tighter so the card column shows
+  const cellX = desk ? "px-5" : "px-3"
 
   const row = (t: DemoSale) => (
     <tr
@@ -251,22 +286,22 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
       className="cursor-pointer border-b transition hover:bg-white/[0.03]"
       style={{ borderColor: T.divider, ...(t.delivered ? show(deliveredShown) : undefined) }}
     >
-      <td className="whitespace-nowrap px-5 py-3.5">
+      <td className={`whitespace-nowrap ${cellX} py-3.5`}>
         <div style={{ color: T.text }}>{t.day}</div>
         <div className="text-xs" style={{ color: T.textMuted }}>
           {t.time}
         </div>
       </td>
-      <td className="whitespace-nowrap px-5 py-3.5 font-medium" style={{ color: T.text }}>
+      <td className={`whitespace-nowrap ${cellX} py-3.5 font-medium`} style={{ color: T.text }}>
         {formatMoney(t.total)}
       </td>
-      <td className="whitespace-nowrap px-5 py-3.5">
+      <td className={`whitespace-nowrap ${cellX} py-3.5`}>
         <CardChip last4={t.lastFour} />
       </td>
-      <td className="whitespace-nowrap px-5 py-3.5" style={{ color: T.textSecondary }}>
+      <td className={`whitespace-nowrap ${cellX} py-3.5`} style={{ color: T.textSecondary }}>
         {t.receiptNumber}
       </td>
-      <td className="whitespace-nowrap px-5 py-3.5 text-right">
+      <td className={`whitespace-nowrap ${cellX} py-3.5 text-right`}>
         <button
           type="button"
           onClick={(e) => {
@@ -367,9 +402,9 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
 
       {anyFilter && matched === 0 ? (
         <div className="flex flex-col items-center justify-center gap-2 rounded-[20px] border py-16 text-center" style={{ background: T.glassBg, borderColor: T.glassBorder }}>
-          <h3 className="font-barlow text-lg font-medium" style={{ color: T.text }}>
+          <div className="font-barlow text-lg font-medium" style={{ color: T.text }}>
             {c.noMatchTitle}
-          </h3>
+          </div>
           <p className="max-w-sm text-sm" style={{ color: T.textSecondary }}>
             {c.noMatchBody}
           </p>
@@ -382,11 +417,11 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
       <div style={show(!(anyFilter && matched === 0))}>
         <Card className="overflow-hidden !p-0">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] border-collapse text-sm">
+            <table className={`w-full ${desk ? "min-w-[640px]" : "min-w-[560px]"} border-collapse text-sm`}>
               <thead>
                 <tr className="border-b text-left" style={{ borderColor: T.divider }}>
                   {[...c.headers, ""].map((h) => (
-                    <th key={h} className="px-5 py-3 text-xs font-medium uppercase tracking-wide" style={{ color: T.textMuted }}>
+                    <th key={h} className={`${cellX} py-3 text-xs font-medium uppercase tracking-wide`} style={{ color: T.textMuted }}>
                       {h}
                     </th>
                   ))}
@@ -425,16 +460,18 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
       </button>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h1 className="font-barlow text-xl font-medium" style={{ color: T.text }}>
+          <div className="font-barlow text-xl font-medium" style={{ color: T.text }}>
             {c.receipt} {open.order}
-          </h1>
+          </div>
           <p className="text-sm" style={{ color: T.textSecondary }}>
             {`${DOW[open.dow]}, ${open.day}, ${open.iso.slice(0, 4)}, ${open.time}`}
           </p>
         </div>
         <CardChip last4={open.lastFour} />
       </div>
-      <ReceiptView summary={open.summary} hasStructure={open.hasStructure} />
+      <DemoteHeadings>
+        <ReceiptView summary={open.summary} hasStructure={open.hasStructure} />
+      </DemoteHeadings>
     </div>
   ) : null
 
@@ -443,9 +480,9 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
     <div className="flex flex-col gap-5" style={show(view === "insights")}>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="font-barlow text-2xl font-medium" style={{ color: T.text }}>
+          <div className="font-barlow text-2xl font-medium" style={{ color: T.text }}>
             {c.insightsTitle}
-          </h1>
+          </div>
           <p className="mt-1 text-sm" style={{ color: T.textSecondary }}>
             {c.insightsSub}
           </p>
@@ -483,9 +520,9 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
       </div>
       <div className={`grid gap-4 ${desk ? "grid-cols-2" : ""}`}>
         <Card>
-          <h2 className="mb-4 text-sm font-medium uppercase tracking-wide" style={{ color: T.textMuted }}>
+          <div className="mb-4 text-sm font-medium uppercase tracking-wide" style={{ color: T.textMuted }}>
             {c.byHour}
-          </h2>
+          </div>
           {ins.count === 0 ? (
             <p className="py-10 text-center text-sm" style={{ color: T.textMuted }}>
               {c.noneYet}
@@ -494,28 +531,28 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
             <BarChart
               data={ins.byHour.map((b) => ({ label: hourLabel(b.hour), value: b.count, sub: formatMoney(b.gross) }))}
               sparseLabels
-              formatValue={(v) => `${v} txn${v === 1 ? "" : "s"}`}
+              formatValue={(v) => `${v} transaction${v === 1 ? "" : "s"}`}
               chartLabel="Transactions by hour of day"
               onBarClick={(i) => drill({ hour: ins.byHour[i].hour })}
             />
           )}
         </Card>
         <Card>
-          <h2 className="mb-4 text-sm font-medium uppercase tracking-wide" style={{ color: T.textMuted }}>
+          <div className="mb-4 text-sm font-medium uppercase tracking-wide" style={{ color: T.textMuted }}>
             {c.byDay}
-          </h2>
+          </div>
           <BarChart
             data={ins.byDay.map((b) => ({ label: b.label, value: b.count, sub: formatMoney(b.gross) }))}
-            formatValue={(v) => `${v} txn${v === 1 ? "" : "s"}`}
+            formatValue={(v) => `${v} transaction${v === 1 ? "" : "s"}`}
             chartLabel="Transactions by day of week"
             onBarClick={(i) => drill({ dow: ins.byDay[i].day })}
           />
         </Card>
       </div>
       <Card>
-        <h2 className="mb-4 text-sm font-medium uppercase tracking-wide" style={{ color: T.textMuted }}>
+        <div className="mb-4 text-sm font-medium uppercase tracking-wide" style={{ color: T.textMuted }}>
           {c.topItems} <span style={{ fontWeight: 400, textTransform: "none" }}>{c.approximate}</span>
-        </h2>
+        </div>
         <div className="flex flex-col gap-1">
           {ins.topItems.map((item, i) => (
             <button
@@ -556,9 +593,9 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
-                <h2 className="truncate font-barlow text-base font-medium" style={{ color: T.text }}>
+                <div className="truncate font-barlow text-base font-medium" style={{ color: T.text }}>
                   {d.label}
-                </h2>
+                </div>
                 <DeviceStatusPill status={d.status} />
               </div>
               <p className="mt-0.5 text-xs" style={{ color: T.textMuted }}>
@@ -640,13 +677,13 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
         {content}
       </div>
       {/* Mobile top bar (below the phone's status bar area) */}
-      <header className="absolute inset-x-0 top-0 z-20 flex items-center justify-between border-b px-4 pb-3 pt-12" style={{ borderColor: T.glassBorder, background: "rgba(12,15,20,0.85)" }}>
+      <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between border-b px-4 pb-3 pt-12" style={{ borderColor: T.glassBorder, background: "rgba(12,15,20,0.85)" }}>
         <Brand small />
         <div className="flex items-center gap-2">
           <PapexCafeLogo size={24} />
           <DemoPill />
         </div>
-      </header>
+      </div>
       {/* Mobile bottom nav */}
       <nav className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-around border-t px-2 pb-5 pt-2" style={{ borderColor: T.glassBorder, background: "rgba(12,15,20,0.9)" }} aria-label="Dashboard">
         {NAV.map(({ id, label, icon: Icon }) => {
