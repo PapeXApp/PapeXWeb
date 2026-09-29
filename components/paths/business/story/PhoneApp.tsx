@@ -58,7 +58,9 @@ import s from "../story.module.css"
 
 const PT: CSSProperties = { ["--pt" as string]: "calc(var(--wp-w) / 393)" }
 
-const titleCase = (t: string) => t.toLowerCase().replace(/\b[a-z]/g, (m) => m.toUpperCase())
+// "PAPEX CAFE" must read "PapeX Cafe", not "Papex Cafe".
+const titleCase = (t: string) =>
+  t.toLowerCase().replace(/\b[a-z]/g, (m) => m.toUpperCase()).replace(/\bPapex\b/g, "PapeX")
 
 function paymentLabel(summary: ReceiptSummary): string | undefined {
   const net = summary.paymentLine ? detectPaymentMethod(summary.paymentLine) : null
@@ -76,7 +78,7 @@ function paymentLabel(summary: ReceiptSummary): string | undefined {
 export function kitReceipts(summary: ReceiptSummary): KitReceipt[] {
   const mine: KitReceipt = {
     id: "story-receipt",
-    merchantName: titleCase(summary.merchantName ?? "Tidewick Cafe"),
+    merchantName: titleCase(summary.merchantName ?? "PapeX Cafe"),
     logoUrl: demoStores[0].logoUrl ?? null,
     amount: summary.total ?? null,
     dateLabel: "Jun 8",

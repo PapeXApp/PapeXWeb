@@ -11,7 +11,8 @@ import { demoReceiptBytes } from "../../customer/demoReceipt"
 
 /**
  * DEMO DATA for the interactive dashboard at the end of the "Tap to Retain"
- * scene. One invented shop (Tidewick Cafe, the same invented shop as the
+ * scene. One invented shop (PapeX Cafe — Nico 2026-09-29: every demo dashboard
+ * uses "PapeX Cafe"; no real store by that name found — formerly the same invented shop as the
  * /customers demo) and a handful of invented sales from its own menu. No real
  * merchant, no real customer, no real card: the card numbers are made-up
  * last-4s on made-up receipts.
@@ -128,7 +129,7 @@ function saleBytes(spec: SaleSpec, header: string[]): Uint8Array {
   out.push(0x1b, 0x40)
   out.push(0x1b, 0x61, 0x01)
   out.push(0x1b, 0x21, 0x30)
-  line("TIDEWICK CAFE")
+  line("PAPEX CAFE")
   out.push(0x1b, 0x21, 0x00)
   for (const h of header) line(h)
   out.push(0x0a)
