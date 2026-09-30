@@ -94,7 +94,7 @@ export function SiteFooter({ inFlow = false }: { inFlow?: boolean }) {
               maxWidth: '30ch',
             }}
           >
-            Getting a receipt is now easier than saying no thank you.
+            Getting a receipt is easier than saying no thank you!
           </p>
           {/* Social chips are brand texture only — PapeX has no confirmed
               profile URLs in this repo yet, so each chip only renders once
