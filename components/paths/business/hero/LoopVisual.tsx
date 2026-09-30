@@ -285,7 +285,7 @@ export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock:
   const clipMounted = within(beat, "clip", "app")
 
   return (
-    <figure ref={figRef} className={s.visual} aria-label={loop.description}>
+    <figure ref={figRef} className={s.visual}>
       <div
         ref={stageRef}
         className={s.stage}
@@ -408,6 +408,10 @@ export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock:
       </div>
 
       <figcaption className={s.foot}>
+        {/* p8: what the (aria-hidden) drawing shows and why it matters, as
+            text in the server HTML, so assistive tech, search engines and AI
+            agents read it without running the loop. */}
+        <p className="sr-only">{loop.description}</p>
         <ol className={s.steps}>
           {loop.steps.map((st, i) => (
             <li

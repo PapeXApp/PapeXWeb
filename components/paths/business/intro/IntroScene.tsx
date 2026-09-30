@@ -327,10 +327,14 @@ export function IntroScene({ header }: { header: ReactNode }) {
         <IntroStatic />
       </div>
     )
+  // p8: what the (aria-hidden) scene shows and why it matters, in the server
+  // HTML in every mode, right under the heading.
+  const description = <p className="sr-only">{t.sceneDescription}</p>
   if (mode === "static")
     return (
       <>
         {flowHead}
+        {description}
         {staticVersion}
       </>
     )
@@ -338,6 +342,7 @@ export function IntroScene({ header }: { header: ReactNode }) {
   return (
     <>
     {flowHead}
+    {description}
     {staticVersion}
     <div ref={runwayRef} className={s.runway} data-nojs="runway" style={{ height: `${RUNWAY_VH}vh` }}>
       <div className={s.pin} ref={pinRef}>

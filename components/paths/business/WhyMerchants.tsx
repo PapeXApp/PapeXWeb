@@ -1,4 +1,4 @@
-import { Reveal, ScrollLit } from "@/components/motion"
+import { ScrollLit, ScrollReveal } from "@/components/motion"
 import { FlowSection } from "../shared/FlowSection"
 import { SectionLabel } from "../shared/SectionLabel"
 import { story } from "./story"
@@ -35,8 +35,10 @@ import s from "./story.module.css"
 export function WhyMerchants() {
   // One header element tree, placed twice by RetainStory (in flow / in the
   // pin); CSS shows exactly one of them.
+  // p8: scroll-linked rise (ScrollReveal) instead of the IO blur-in, so it
+  // is in on a phone as soon as it scrolls on (see TapToRetain.tsx).
   const header = (
-    <Reveal>
+    <ScrollReveal>
       <SectionLabel index="03">{story.eyebrow}</SectionLabel>
       <ScrollLit
         as="h2"
@@ -50,7 +52,7 @@ export function WhyMerchants() {
       >
         {story.lead}
       </p>
-    </Reveal>
+    </ScrollReveal>
   )
   return (
     <FlowSection ground="light" index="03" className={s.section}>
