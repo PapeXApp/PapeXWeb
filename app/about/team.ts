@@ -85,10 +85,10 @@ export const teamGroups: TeamGroup[] = [
       },
       {
         name: 'Yash Shah',
-        role: 'Full-Time Developer',
+        role: 'AI Engineer',
         photo: '/profiles/yash_shah.jpeg',
         linkedin: 'https://www.linkedin.com/in/yash-kamlesh-shah/',
-        bio: 'Full-time developer at PapeX, working across data science and AI engineering.',
+        bio: 'Builds the pipeline that turns paper receipts into structured data. M.S. in Data Science from NJIT and a contributor to Anthropic’s official MCP servers.',
       },
     ],
   },
