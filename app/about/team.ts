@@ -21,6 +21,9 @@
 // education) — nothing personal, nothing invented. ≤ ~220 chars so the back
 // of the card fits. Where nothing reliable was found, the line is built from
 // the member's PapeX role.
+// Nico (2026-09-29): Nico, Noah, Conor, Bruno, Magali and Bert use the bios
+// Nico approved for the old /contact page (last updated 2026-07-20); those
+// take precedence over anything sourced here.
 
 export type TeamMember = {
   name: string
@@ -50,7 +53,7 @@ export const teamGroups: TeamGroup[] = [
         photo: '/profiles/nico_courbage.jpeg',
         email: 'nico@papex.app',
         linkedin: 'https://www.linkedin.com/in/nicolas-courbage-051912123/',
-        bio: 'Founder and CEO of PapeX, which he started as a finance and entrepreneurship student at Syracuse University’s Whitman School of Management.',
+        bio: 'Leads the development and execution of PapeX, overseeing team management and driving the project from concept to market.',
       },
       {
         name: 'Noah Thompson',
@@ -58,7 +61,7 @@ export const teamGroups: TeamGroup[] = [
         photo: '/profiles/noah_thompson.jpeg',
         email: 'noah@papex.app',
         linkedin: 'https://www.linkedin.com/in/nthomp08/',
-        bio: 'Co-founder and CTO. Builds PapeX’s core product, backend systems and mobile app. Syracuse University iSchool and Whitman School of Management.',
+        bio: 'Builds and maintains PapeX’s core product, backend systems, and mobile experience.',
       },
       {
         name: 'Conor McKenna',
@@ -66,7 +69,7 @@ export const teamGroups: TeamGroup[] = [
         photo: '/profiles/connor_mckenna.jpeg',
         email: 'conor@papex.app',
         linkedin: 'https://www.linkedin.com/in/conor-l-mckenna/',
-        bio: 'Co-founder and CMO. Leads PapeX’s marketing, brand strategy and go-to-market across channels.',
+        bio: 'Leads PapeX marketing, brand strategy, and go-to-market across channels.',
       },
       {
         name: 'Will Alcorn',
@@ -97,14 +100,14 @@ export const teamGroups: TeamGroup[] = [
         role: 'Advisor & Board Member',
         photo: '/profiles/bruno_courbage.jpeg',
         linkedin: 'https://www.linkedin.com/in/brunocourbage/',
-        bio: 'Product executive: SVP of Product Management at BriteCore, previously VP of Product Management at FICO, with earlier roles at Experian.',
+        bio: 'Transformational product executive with proven success scaling product lines, driving innovation, and delivering P&L performance in SaaS platforms.',
       },
       {
         name: 'Magali Courbage',
         role: 'Advisor & Board Member',
         photo: '/profiles/magali_courbage.jpeg',
         linkedin: 'https://www.linkedin.com/in/magali-courbage-03b8968/',
-        bio: 'More than 20 years in product management and business operations in the credit and data analytics industries; currently at FICO.',
+        bio: 'Seasoned professional with over 20 years of experience in product management and business operations within the credit and data analytics industries.',
       },
       {
         name: 'Michael Khoury',
@@ -125,7 +128,7 @@ export const teamGroups: TeamGroup[] = [
         role: 'Advisor',
         photo: '/profiles/bert_friedman.jpeg',
         linkedin: 'https://www.linkedin.com/in/bert-friedman-cams-crcm-a5251962/',
-        bio: 'Fintech compliance leader. Has headed compliance at Payitoff and Nearside and was Chief Compliance Officer at Deserve; earlier, a CFPB field examiner.',
+        bio: 'Strategic compliance leader with a track record of advising fintechs on regulatory risk, building scalable compliance programs, forging bank partnerships, and aligning operations with evolving state and federal laws.',
       },
       {
         name: 'Jonathan Wess',
