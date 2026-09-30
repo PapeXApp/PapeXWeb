@@ -15,7 +15,7 @@ export const customerFaqHeading = "Questions, answered."
 export const customerFaq: FaqItem[] = [
   {
     q: "Do I need an app to get my receipt?",
-    a: "No. Tap your phone on the PapeX device at checkout and your receipt opens right away, with no app to download.\n\nWant to keep every receipt in one place, searchable? That's what the free PapeX app is for.",
+    a: "No. Tap your phone on the PapeX device at checkout and your receipt opens right away, with no app to download.\n\nWant to keep every receipt in one place, searchable? That's what the PapeX app is for.",
   },
   {
     q: "Is PapeX free?",

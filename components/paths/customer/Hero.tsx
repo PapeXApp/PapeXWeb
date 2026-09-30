@@ -48,7 +48,7 @@ function scrollToHash(event: MouseEvent<HTMLAnchorElement>) {
  * /customers 01 Hero — LIGHT. "Your receipt, not your identity." (Web 2.1 P4,
  * 2026-09-28.)
  *
- * The page now leads with the free PapeX APP, not the tap hardware: most
+ * The page now leads with the PapeX APP, not the tap hardware: most
  * visitors can't tap a PapeX device yet (select Bay Area stores only). The
  * headline is the old privacy section's, picked by Nico; its picture is now
  * the app itself (hero/HeroApp.tsx): a paper receipt is scanned and filed at

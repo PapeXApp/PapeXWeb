@@ -90,6 +90,6 @@ export const storyDashboard = {
   /** Read as the lead's second beat (DashboardCopy), not a line of its own. */
   customerLine: {
     lead: "And your customers?",
-    body: "They can keep every receipt in the free PapeX app.",
+    body: "They can keep every receipt in the PapeX app.",
   },
 } as const

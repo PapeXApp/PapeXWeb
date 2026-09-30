@@ -27,7 +27,7 @@ export const loop = {
   steps: [
     { label: "Tap", sub: "their phone on the PapeX device" },
     { label: "Receipt", sub: "opens, with a coupon at partner stores" },
-    { label: "Save", sub: "it to the free PapeX app" },
+    { label: "Save", sub: "it to the PapeX app" },
     { label: "Coupon", sub: "ready for their next visit" },
     { label: "Scan", sub: "it at the counter: coupon used" },
   ],

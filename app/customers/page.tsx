@@ -26,7 +26,7 @@ import { CustomerPath } from '@/components/paths/customer'
 // matches the search result. Title ≤60 chars, description ≤155.
 const TITLE = 'Digital Receipts App: Keep Every Receipt | PapeX'
 const DESCRIPTION =
-  'Tap your phone at checkout and your receipt opens, no app needed. The free PapeX app keeps every receipt searchable. Works on iPhone and Android.'
+  'Tap your phone at checkout and your receipt opens, no app needed. The PapeX app keeps every receipt searchable. Works on iPhone and Android.'
 const OG_IMAGE = {
   url: 'https://papex.app/og-image-v3.png',
   width: 1200,

@@ -23,7 +23,7 @@ import { FORK_SKIP_SCRIPT } from '@/lib/pathChoice'
 // matches the search result. Title ≤60 chars, description ≤155.
 const TITLE = 'Digital Receipts, One Tap at Checkout | PapeX'
 const DESCRIPTION =
-  'Tap your phone at checkout and your receipt opens. Shoppers keep every receipt in the free PapeX app. Stores get a free digital receipt device.'
+  'Tap your phone at checkout and your receipt opens. Shoppers keep every receipt in the PapeX app. Stores get a free digital receipt device.'
 const OG_IMAGE = {
   url: 'https://papex.app/og-image-v3.png',
   width: 1200,

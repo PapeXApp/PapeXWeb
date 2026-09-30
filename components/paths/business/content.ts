@@ -89,7 +89,7 @@ export const tapToRetain = {
     {
       key: "receipts",
       title: "Receipts",
-      body: "A customer taps their phone at checkout and gets a digital receipt, no app needed. They can keep it in the free PapeX app, so your store stays in their pocket.",
+      body: "A customer taps their phone at checkout and gets a digital receipt, no app needed. They can keep it in the PapeX app, so your store stays in their pocket.",
     },
     {
       key: "coupons",

@@ -141,7 +141,7 @@ const NO_JS_REVEAL_CSS = [
 // drawn from brand assets by scripts/og/render.mjs (source: scripts/og/og.html).
 const DEFAULT_TITLE = 'Your Receipt, One Tap Away | PapeX'
 const DEFAULT_DESCRIPTION =
-  'Tap your phone at checkout and your receipt opens, no app needed. Select stores add a coupon too. The free PapeX app keeps every receipt and coupon.'
+  'Tap your phone at checkout and your receipt opens, no app needed. Select stores add a coupon too. The PapeX app keeps every receipt and coupon.'
 const DEFAULT_OG_IMAGE = {
   url: 'https://papex.app/og-image-v3.png',
   width: 1200,
