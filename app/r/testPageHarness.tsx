@@ -29,7 +29,8 @@ export const IPHONE_UA =
 export const ANDROID_UA =
   "Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Mobile Safari/537.36";
 
-export const testRequest = { userAgent: IPHONE_UA };
+/** The request state the pages read. `cookie` (1.7.1 #27 grant cookie) is unset by default. */
+export const testRequest: { userAgent: string; cookie?: string } = { userAgent: IPHONE_UA };
 
 {
   const req = Module.createRequire(__filename);
@@ -38,7 +39,8 @@ export const testRequest = { userAgent: IPHONE_UA };
   stub.filename = id;
   stub.loaded = true;
   stub.exports = {
-    headers: async () => new Headers({ "user-agent": testRequest.userAgent }),
+    headers: async () =>
+      new Headers({ "user-agent": testRequest.userAgent, ...(testRequest.cookie ? { cookie: testRequest.cookie } : {}) }),
   };
   req.cache[id] = stub;
 }
@@ -70,7 +72,7 @@ export const SHARED = "https://us-central1-papexv2.cloudfunctions.net";
 
 /** One canned upstream answer. `hang` never answers; it rejects when the caller aborts. */
 export type Upstream =
-  | { status: number; body?: Uint8Array | string; contentType?: string; delayMs?: number }
+  | { status: number; body?: Uint8Array | string; contentType?: string; delayMs?: number; headers?: Record<string, string> }
   | { hang: true };
 
 export const json = (status: number, body: unknown, delayMs?: number): Upstream => ({
@@ -85,6 +87,8 @@ export const HANG: Upstream = { hang: true };
 
 export interface FetchCall {
   url: string;
+  /** The request headers, lower-cased names (1.7.1: the cards grant). */
+  headers: Record<string, string>;
   /** ms after the render started. */
   at: number;
 }
@@ -106,7 +110,7 @@ export function setUpstreams(next: Record<string, Upstream>) {
 
 globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
   const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
-  calls.push({ url, at: performance.now() - startedAt });
+  calls.push({ url, headers: Object.fromEntries(new Headers(init?.headers).entries()), at: performance.now() - startedAt });
   const up = routes.get(url) ?? status(404);
   const signal = init?.signal;
   if ("hang" in up) {
@@ -126,7 +130,7 @@ globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
   }
   return new Response(up.status === 204 ? null : (up.body ?? ""), {
     status: up.status,
-    headers: up.contentType ? { "Content-Type": up.contentType } : {},
+    headers: { ...(up.contentType ? { "Content-Type": up.contentType } : {}), ...(up.headers ?? {}) },
   });
 }) as typeof fetch;
 

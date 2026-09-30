@@ -115,6 +115,7 @@ import ReceiptUpgrade from "./ReceiptUpgrade";
 import { renderSharedReceipt } from "./sharedReceiptView";
 import { mayFetchWebCards, startWebCards } from "@/lib/cards/fetchCards";
 import { StreamedCards, WebCardStack } from "./cards/WebCards";
+import { readGrantCookie } from "@/lib/cards/grant";
 
 type ReceiptSearchParams = { sid?: string | string[]; demo?: string | string[]; rid?: string | string[] };
 
@@ -198,7 +199,8 @@ export default async function ReceiptPage({
   searchParams: Promise<ReceiptSearchParams>;
 }) {
   const params = await searchParams;
-  const uaHeader = (await headers()).get("user-agent") ?? "";
+  const requestHeaders = await headers();
+  const uaHeader = requestHeaders.get("user-agent") ?? "";
   // Only decides which store link leads and whether "Save to PapeX" is a
   // universal link or the in-page sign-in sheet — never what the page shows.
   const platform = platformFromUserAgent(uaHeader);
@@ -233,8 +235,17 @@ export default async function ReceiptPage({
   // part of the Promise.all below: nothing on this page awaits `cardsTask`
   // before the receipt's markup exists (header note, rule 1). Never for a
   // demo sid or `?demo=1`; a rid link returned above.
+  //
+  // 1.7.1 (#27): the cards service no longer answers on the sid alone once the
+  // receipt's tap window has closed. The TAPPER's stored tap grant (httpOnly
+  // /r cookie, lib/cards/grant.ts) is presented; someone who merely holds the
+  // sid has none, and gets the receipt with no offers.
   const cardsNow = new Date();
-  const cardsTask = !demoRequested && mayFetchWebCards(rawSid) ? startWebCards(rawSid, { now: cardsNow }) : null;
+  const cardsGrant = rawSid ? readGrantCookie(requestHeaders.get("cookie"), rawSid) : undefined;
+  const cardsTask =
+    !demoRequested && mayFetchWebCards(rawSid)
+      ? startWebCards(rawSid, cardsGrant ? { now: cardsNow, grant: cardsGrant } : { now: cardsNow })
+      : null;
 
   const [result, parsedResult] = sidIsValid && !demoRequested
     ? await Promise.all([fetchReceiptBytes(rawSid), fetchParsedReceipt(rawSid)])
@@ -368,7 +379,10 @@ export default async function ReceiptPage({
 
     // Cards finished first: place them inline, no Suspense, no layout shift.
     if (settledCards) {
-      const stack = <WebCardStack cards={settledCards.cards} now={cardsNow} saveLinkHref={offerSaveLinkHref} />;
+      const keepGrant = rawSid && settledCards.mintedGrant ? { sid: rawSid, grant: settledCards.mintedGrant } : undefined;
+      const stack = (
+        <WebCardStack cards={settledCards.cards} now={cardsNow} saveLinkHref={offerSaveLinkHref} keepGrant={keepGrant} />
+      );
       return settledCards.cards.layout.order === "cards-first" ? (
         <Shell>
           {stack}
@@ -393,11 +407,11 @@ export default async function ReceiptPage({
     return (
       <Shell>
         <Suspense fallback={null}>
-          <StreamedCards task={cardsTask} position="cards-first" now={cardsNow} saveLinkHref={offerSaveLinkHref} />
+          <StreamedCards task={cardsTask} position="cards-first" now={cardsNow} saveLinkHref={offerSaveLinkHref} sid={rawSid} />
         </Suspense>
         {receiptNode}
         <Suspense fallback={null}>
-          <StreamedCards task={cardsTask} position="receipt-first" now={cardsNow} saveLinkHref={offerSaveLinkHref} />
+          <StreamedCards task={cardsTask} position="receipt-first" now={cardsNow} saveLinkHref={offerSaveLinkHref} sid={rawSid} />
         </Suspense>
         {ctaRow}
       </Shell>

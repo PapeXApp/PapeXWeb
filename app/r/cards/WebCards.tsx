@@ -42,6 +42,7 @@ import type { LayoutOrder } from "@/lib/cards/types";
 import type { WebCardsTask } from "@/lib/cards/fetchCards";
 import { CardList } from "./CardList";
 import { SaveInAppLink } from "../ui";
+import { KeepCardsGrant } from "../KeepCardsGrant";
 import styles from "./cards.module.css";
 
 export function WebCardStack({
@@ -49,11 +50,14 @@ export function WebCardStack({
   now,
   entering = false,
   saveLinkHref,
+  keepGrant,
 }: {
   cards: NormalizedCards;
   now: Date;
   entering?: boolean;
   saveLinkHref?: string;
+  /** 1.7.1 #27: a freshly minted tap grant to store for this sid (KeepCardsGrant). */
+  keepGrant?: { sid: string; grant: string };
 }) {
   if (cards.cards.length === 0) return null;
   const showSaveLink = saveLinkHref != null && cards.cards.some((c) => c.type === "offer");
@@ -61,6 +65,7 @@ export function WebCardStack({
     <>
       <CardList cards={cards} now={now} className={entering ? styles.enter : undefined} />
       {showSaveLink ? <SaveInAppLink href={saveLinkHref!} label="Open in PapeX to save" /> : null}
+      {keepGrant ? <KeepCardsGrant sid={keepGrant.sid} grant={keepGrant.grant} /> : null}
     </>
   );
 }
@@ -75,13 +80,17 @@ export async function StreamedCards({
   position,
   now,
   saveLinkHref,
+  sid,
 }: {
   task: WebCardsTask;
   position: LayoutOrder;
   now: Date;
   saveLinkHref?: string;
+  /** The receipt's sid, so a minted tap grant can be stored for it. */
+  sid?: string;
 }) {
-  const { cards } = await task.promise;
+  const { cards, mintedGrant } = await task.promise;
   if (cards.cards.length === 0 || cards.layout.order !== position) return null;
-  return <WebCardStack cards={cards} now={now} entering saveLinkHref={saveLinkHref} />;
+  const keepGrant = sid && mintedGrant ? { sid, grant: mintedGrant } : undefined;
+  return <WebCardStack cards={cards} now={now} entering saveLinkHref={saveLinkHref} keepGrant={keepGrant} />;
 }

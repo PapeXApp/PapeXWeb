@@ -28,6 +28,12 @@
 //     "a clip/web client that receives one skips it"). The existing
 //     "Save to PapeX" receipt CTA is untouched.
 //
+//   - GRANTS (1.7.1, PapeX #27; lib/cards/grant.ts). Outside a receipt's tap
+//     window the service answers "none" to a bare sid. `opts.grant` (the
+//     tapper's stored tap grant, from the /r cookie) is sent as
+//     `x-papex-cards-grant`; a NEW tap grant the service returns inside the
+//     window comes back as `mintedGrant`, for app/r to store. Never logged.
+//
 // Why server-side at all: the RDH API has no CORS for browsers (see the header
 // of app/r/page.tsx), and a server fetch keeps the page free of client JS.
 
@@ -35,6 +41,7 @@ import { rdhApiBase, isValidSid } from "@/lib/rdh";
 import { isDemoSid } from "@/lib/demoReceipts";
 import { parseCardsResponse, type CardDrop, type NormalizedCards } from "./normalize";
 import { CAPS_1_7_0, MAX_RESPONSE_BYTES, parseCaps, type Card } from "./types";
+import { CARDS_GRANT_HEADER, isCardsGrant, isTapGrant } from "./grant";
 
 /** W0 §2: the web's hard budget for the whole cards call, body included. */
 export const WEB_CARDS_TIMEOUT_MS = 2_500;
@@ -61,6 +68,8 @@ export interface FetchWebCardsOptions {
   now: Date;
   timeoutMs?: number;
   fetchImpl?: typeof fetch;
+  /** A stored cards grant to present (lib/cards/grant.ts); malformed is ignored. */
+  grant?: string;
 }
 
 /** Decoded cards plus why there are none, for tests and logs. Never carries the merchant. */
@@ -68,6 +77,8 @@ export interface WebCardsResult {
   cards: NormalizedCards;
   /** `ok` when the service answered and the envelope was accepted (even with zero cards). */
   outcome: "ok" | "skipped" | "http" | "timeout" | "network" | "oversize" | "encoding" | "rejected";
+  /** A NEW tap grant the service minted for this sid (inside the tap window), to store. */
+  mintedGrant?: string;
 }
 
 const NONE: NormalizedCards = {
@@ -160,8 +171,12 @@ export async function fetchWebCards(sid: string, opts: FetchWebCardsOptions): Pr
     const res = await doFetch(webCardsUrl(sid), {
       cache: "no-store",
       signal: controller.signal,
-      headers: { Accept: "application/json" },
+      headers: isCardsGrant(opts.grant)
+        ? { Accept: "application/json", [CARDS_GRANT_HEADER]: opts.grant }
+        : { Accept: "application/json" },
     });
+    const minted = res.headers.get(CARDS_GRANT_HEADER);
+    const mintedGrant = isTapGrant(minted) && minted !== opts.grant ? minted : undefined;
     if (res.status !== 200) {
       await res.body?.cancel().catch(() => {});
       return none("http");
@@ -176,7 +191,7 @@ export async function fetchWebCards(sid: string, opts: FetchWebCardsOptions): Pr
     }
     const cards = restrictToWebCaps(parseCardsResponse(text, sid, { now: opts.now }));
     if (cards.rejected) return { cards, outcome: "rejected" };
-    return { cards, outcome: "ok" };
+    return mintedGrant ? { cards, outcome: "ok", mintedGrant } : { cards, outcome: "ok" };
   } catch {
     return none(timedOut ? "timeout" : "network");
   } finally {
