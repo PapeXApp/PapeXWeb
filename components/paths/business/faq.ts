@@ -60,7 +60,7 @@ export const businessFaq: FaqItem[] = [
   },
   {
     q: "Who installs PapeX, and how long does it take?",
-    a: "We do, for free, in about 15 minutes. We plug the PapeX device into power, connect it to your Wi-Fi (2.4 GHz), connect it to your POS, test a sale and hand it over. Your dashboard is live from the first receipt.",
+    a: "We do, for free, in about 15 minutes. We plug the PapeX device into power, connect it to your Wi-Fi, connect it to your POS, test a sale and hand it over. Your dashboard is live from the first receipt.",
   },
   {
     q: "Which phones can my customers tap with?",
