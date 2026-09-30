@@ -72,6 +72,6 @@ export const businessFaq: FaqItem[] = [
   },
   {
     q: "Will my store get a page in the PapeX app?",
-    a: "It can. Stores can have a profile in the PapeX app (customizable on your dashboard), where shoppers find their receipt, coupons, and anything else you want them to know about your store. [Ask about it in your demo](#demo).",
+    a: "Of course. Every PapeX partner gets a fully customizable page in the PapeX app, where shoppers find their receipts, coupons and anything else you want them to know. You manage it from your merchant dashboard, which starts the day we install your PapeX device. [Ask about it in your demo](#demo).",
   },
 ]
