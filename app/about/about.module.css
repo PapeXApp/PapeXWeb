@@ -70,42 +70,92 @@
 }
 
 /*
- * Team card = two faces in ONE grid cell (.stack), so the card is always as
- * tall as its taller face and never changes size when it turns. A real
- * <button> fills the card underneath the content (content is
- * pointer-events: none), so a tap anywhere toggles it; the chips row sits
- * above the button and outside it, so Email/LinkedIn never toggle the card.
- * The face swap keys off the button's aria-expanded (page.tsx sets it).
+ * Team card = a real 3D flip on the Y axis. .inner holds both faces in ONE
+ * grid cell, so the card is always as tall as its taller face and never
+ * changes size; .inner turns 180° when the card is open and each face hides
+ * its back (backface-visibility), so the bio side reads the right way round.
+ * A transparent full-bleed <button aria-expanded> sits ABOVE the faces, so a
+ * tap anywhere turns the card and Enter/Space work natively (there is no
+ * visible toggle glyph, Nico 2026-09-29; the focus ring shows keyboard focus).
+ * The Email/LinkedIn icons sit above the button and OUTSIDE the rotating
+ * .inner, so they stay put on both faces and never turn the card.
+ * Reduced motion: no rotation, the faces just swap.
  */
 .card {
-  --bio-dur: 320ms;
+  --flip-dur: 560ms;
+  --flip-ease: var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1));
   position: relative;
   display: flex;
+  border-radius: var(--r-card-sm);
+  perspective: 1400px;
+  transition: transform var(--dur-hover, 240ms) var(--ease-out-expo, ease);
+}
+.card:hover {
+  transform: translateY(-3px);
+}
+/* hover shadow lives on the faces, so it turns with the card */
+.card:hover .face {
+  box-shadow: var(--sh-card-hover);
+}
+
+.inner {
+  flex: 1 1 auto;
+  display: grid;
+  transform-style: preserve-3d;
+  transition: transform var(--flip-dur) var(--flip-ease);
+}
+.open .inner {
+  transform: rotateY(180deg);
+}
+
+.face {
+  grid-area: 1 / 1;
+  display: flex;
   flex-direction: column;
-  align-items: stretch;
-  text-align: center;
-  padding: clamp(20px, 2vw, 26px) clamp(14px, 1.6vw, 20px);
+  min-width: 0;
+  /* bottom pad keeps text clear of the corner icons */
+  padding: clamp(20px, 2vw, 26px) clamp(14px, 1.6vw, 20px) 48px;
   background: var(--white);
   color: var(--navy);
   border: 1px solid var(--on-light-border);
   border-radius: var(--r-card-sm);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   transition:
-    transform var(--dur-hover, 240ms) var(--ease-out-expo, ease),
-    box-shadow var(--dur-hover, 240ms) ease,
-    border-color var(--dur-hover, 240ms) ease;
+    border-color var(--dur-hover, 240ms) ease,
+    box-shadow var(--dur-hover, 240ms) ease;
 }
-.card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--sh-card-hover);
+.front {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
-.card:has(.toggle[aria-expanded='true']) {
+.back {
+  justify-content: flex-start;
+  text-align: left;
+  transform: rotateY(180deg);
   border-color: rgba(235, 113, 0, 0.35);
+}
+.backName {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.3;
+  color: var(--navy);
+}
+.bioText {
+  margin: 8px 0 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  text-wrap: pretty;
+  color: var(--navy);
 }
 
 .toggle {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: 1;
   width: 100%;
   height: 100%;
   margin: 0;
@@ -129,116 +179,51 @@
   border: 0;
 }
 
-.stack {
-  position: relative;
-  z-index: 1;
-  flex: 1 1 auto;
-  display: grid;
-  pointer-events: none;
-}
-.front,
-.back {
-  grid-area: 1 / 1;
-}
-.front {
+/* Email / LinkedIn: icon-only, pinned bottom-right on both faces. Each link
+   is a 44px tap target around a 20px stroke icon. */
+.links {
+  position: absolute;
+  right: 4px;
+  bottom: 2px;
+  z-index: 2;
   display: flex;
-  flex-direction: column;
+  gap: 0;
+}
+.iconLink {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition:
-    opacity var(--bio-dur) ease,
-    transform var(--bio-dur) var(--ease-out-expo, ease),
-    visibility 0s linear 0s;
-}
-.back {
-  align-self: center;
-  margin: 0;
-  /* top pad clears the corner "×" when the bio is the taller face */
-  padding: 18px 2px 0;
-  font-size: 13.5px;
-  line-height: 1.5;
-  text-align: left;
-  text-wrap: pretty;
-  color: var(--navy);
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(8px);
-  transition:
-    opacity var(--bio-dur) ease,
-    transform var(--bio-dur) var(--ease-out-expo, ease),
-    visibility 0s linear var(--bio-dur);
-}
-.toggle[aria-expanded='true'] ~ .stack .front {
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-8px) scale(0.97);
-  transition:
-    opacity var(--bio-dur) ease,
-    transform var(--bio-dur) var(--ease-out-expo, ease),
-    visibility 0s linear var(--bio-dur);
-}
-.toggle[aria-expanded='true'] ~ .stack .back {
-  opacity: 1;
-  visibility: visible;
-  transform: none;
-  transition:
-    opacity var(--bio-dur) ease,
-    transform var(--bio-dur) var(--ease-out-expo, ease),
-    visibility 0s linear 0s;
-}
-
-/* The "+" in the corner: says "there's more", turns into an "×" when open. */
-.hint {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 1;
-  width: 24px;
-  height: 24px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  border: 1px solid var(--on-light-border-strong);
-  color: rgba(0, 18, 29, 0.55);
-  pointer-events: none;
-  transition:
-    transform var(--bio-dur) var(--ease-out-expo, ease),
-    color var(--dur-hover, 240ms) ease,
-    border-color var(--dur-hover, 240ms) ease;
+  color: rgba(0, 18, 29, 0.62) !important;
+  transition: color var(--dur-hover, 240ms) ease;
 }
-.hint::before,
-.hint::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 10px;
-  height: 1.5px;
-  margin: -0.75px 0 0 -5px;
-  border-radius: 1px;
-  background: currentColor;
+.iconLink:hover,
+.iconLink:focus-visible {
+  color: var(--orange) !important;
 }
-.hint::after {
-  transform: rotate(90deg);
-}
-.card:hover .hint,
-.toggle[aria-expanded='true'] ~ .hint {
-  color: var(--orange);
-  border-color: rgba(235, 113, 0, 0.55);
-}
-.toggle[aria-expanded='true'] ~ .hint {
-  transform: rotate(45deg);
+.iconLink svg {
+  width: 20px;
+  height: 20px;
+  display: block;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .front,
-  .back,
-  .hint,
-  .toggle[aria-expanded='true'] ~ .stack .front,
-  .toggle[aria-expanded='true'] ~ .stack .back {
+  .inner,
+  .open .inner {
+    transform: none;
     transition: none;
   }
-  .back,
-  .toggle[aria-expanded='true'] ~ .stack .front {
+  .back {
     transform: none;
+    visibility: hidden;
+  }
+  .open .back {
+    visibility: visible;
+  }
+  .open .front {
+    visibility: hidden;
   }
 }
 
@@ -287,33 +272,6 @@
   line-height: 1.4;
   color: var(--on-light-text);
 }
-/* Chips: above the toggle button (z-index) and not inside it. The row
-   itself lets taps through to the button; only the links catch them. */
-.links {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 2px 14px;
-  margin-top: 10px;
-  pointer-events: none;
-}
-.chip {
-  pointer-events: auto;
-  display: inline-block;
-  padding: 4px 2px;
-  font-family: var(--font-label);
-  font-size: 13px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--orange) !important;
-}
-.chip:hover {
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
 /* --- Contact block --------------------------------------------------------- */
 .contactSection {
   padding-bottom: var(--section-pad-y);
