@@ -101,7 +101,7 @@ export const pickedHeader: Record<PersonaId | "default", { label: string; summar
   },
   casual: {
     label: "Picked for you: The Casual Keeper",
-    summary: "A bit of everything: getting receipts in, finding them, and coupons.",
+    summary: "A little of everything: receipts for returns, coupons to save, and time to save.",
   },
   non: {
     label: "Picked for you: The Non-Keeper",
