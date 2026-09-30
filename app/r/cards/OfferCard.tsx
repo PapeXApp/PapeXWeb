@@ -6,8 +6,11 @@
 //
 // THE COUNTDOWN CHIP is the only thing on a card the client computes: days
 // left from `validity.expiresAt` and the page's clock, by the rule in
-// lib/cards/countdown.ts. Once the window closes the chip is simply absent.
-// There is no "Expired" state.
+// lib/cards/countdown.ts. Once the window closes the chip is absent, AND the redemption (code /
+// barcode / QR) is not drawn: "Expired <date>" takes its place. This holds
+// whatever hideWhenExpired says, and is enforced three times: the normalizer
+// strips it, this view checks `now` again, and ../ExpiringRedemption (the one
+// client island) re-checks the clock while the page stays open.
 //
 // ACTIONS ARE INERT IN P0. "Save" renders as the voucher's printed action
 // line, not a button: it is not focusable and does nothing. A demo must
@@ -17,7 +20,9 @@
 import type { OfferCard, OfferRedemption } from "@/lib/cards/types";
 import { encodeBarcode, type BarcodeModules } from "@/lib/cards/barcode";
 import { encodeQr, type QrModules } from "@/lib/cards/qr";
-import { countdownDays, formatCountdown } from "@/lib/cards/countdown";
+import { countdownDays, formatCountdown, isExpired } from "@/lib/cards/countdown";
+import { ExpiringRedemption } from "../ExpiringRedemption";
+import { ExpiredNote } from "./ExpiredNote";
 import voucher from "../voucher.module.css";
 import styles from "./cards.module.css";
 import { Barcode } from "./Barcode";
@@ -69,15 +74,18 @@ function InertSaveAction({ label }: { label: string }) {
 }
 
 export function OfferCardView({ card, now }: { card: OfferCard; now: Date }) {
+  const expiresAt = card.validity?.expiresAt;
+  const expired = expiresAt != null && isExpired(expiresAt, now);
   const daysLeft = card.validity?.countdown ? countdownDays(card.validity.expiresAt, now) : null;
   // Encoded here, in the body CardList calls inside its guard: an encoder
   // throw drops this whole card instead of rendering a voucher minus its code.
+  const redemption = expired ? undefined : card.redemption;
   const barcode =
-    card.redemption?.type === "barcode" && card.redemption.symbology !== "qr"
-      ? encodeBarcode(card.redemption.symbology, card.redemption.value)
+    redemption?.type === "barcode" && redemption.symbology !== "qr"
+      ? encodeBarcode(redemption.symbology, redemption.value)
       : null;
   const qr =
-    card.redemption?.type === "barcode" && card.redemption.symbology === "qr" ? encodeQr(card.redemption.value) : null;
+    redemption?.type === "barcode" && redemption.symbology === "qr" ? encodeQr(redemption.value) : null;
   return (
     <WithHeading heading={card.heading}>
       <div className={voucher.ticket}>
@@ -129,7 +137,17 @@ export function OfferCardView({ card, now }: { card: OfferCard; now: Date }) {
               {card.compliance.licenseLine}
             </p>
           )}
-          {card.redemption && <Redemption redemption={card.redemption} barcode={barcode} qr={qr} />}
+          {expired && expiresAt ? (
+            <ExpiredNote expiresAt={expiresAt} />
+          ) : redemption ? (
+            expiresAt ? (
+              <ExpiringRedemption expiresAt={expiresAt}>
+                <Redemption redemption={redemption} barcode={barcode} qr={qr} />
+              </ExpiringRedemption>
+            ) : (
+              <Redemption redemption={redemption} barcode={barcode} qr={qr} />
+            )
+          ) : null}
           {(card.actions ?? []).map((action, i) =>
             action.type === "save" ? <InertSaveAction key={i} label={action.label} /> : null,
           )}

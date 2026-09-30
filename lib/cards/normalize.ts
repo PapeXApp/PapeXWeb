@@ -66,7 +66,7 @@ import {
   type OfferValidity,
 } from "./types";
 import { isValidEan13, isValidUpcA } from "./barcode";
-import { parseExpiresAt } from "./countdown";
+import { isExpired, parseExpiresAt } from "./countdown";
 import { safeHttpsUrl } from "./url";
 
 /** Why a card (or the whole envelope) did not make it to the page. For logs and tests. */
@@ -356,6 +356,12 @@ function offerCard(o: Obj, ctx: CardContext): Card {
     const expires = parseExpiresAt(card.validity.expiresAt);
     const nowSec = Math.floor(ctx.now.getTime() / 1000);
     if (expires != null && Number.isFinite(nowSec) && nowSec > expires) invalid("expired");
+  }
+  if (ctx.now && card.validity && card.redemption && isExpired(card.validity.expiresAt, ctx.now)) {
+    // An expired coupon never carries a usable code/barcode, hideWhenExpired or not.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { redemption, ...rest } = card;
+    return rest;
   }
   return card;
 }
