@@ -30,7 +30,7 @@ export const businessFaq: FaqItem[] = [
   },
   {
     q: "What changes for my staff at checkout?",
-    a: "Almost nothing. Staff ring up sales exactly as before. Instead of handing over a receipt, staff invite the customer to tap. The receipt is ready to tap for 90 seconds after each sale.\n\nYour paper printer keeps printing. Go paper-free: switch off the printer whenever you're ready.",
+    a: "Almost nothing. Staff ring up sales exactly as before. Instead of handing over a receipt, staff invite the customer to tap. The receipt is ready to tap for 90 seconds after each sale.\n\nYour store can keep printing or go completely paperless!",
   },
   {
     q: "What happens if the Wi-Fi or the PapeX device goes down?",
