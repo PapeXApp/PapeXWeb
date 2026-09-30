@@ -39,6 +39,10 @@ export interface ProblemCard {
   caption: string;
   /** Short citation shown on the card's back face. Required — no unsourced figures. */
   source: string;
+  /** What the front illustration shows (role="img" label, server-rendered). */
+  frontArt: string;
+  /** What the back's animation shows and means (visually hidden text on the back). */
+  sceneArt: string;
 }
 
 export const problemContent = {
@@ -64,6 +68,9 @@ export const problemContent = {
       value: "620M lbs",
       caption: "of receipt paper used in the US every year.",
       source: "Epson, citing Grand View Research (2025)",
+      frontArt: "Illustration: a receipt printer on a shop counter pushing out a paper slip, with two slips already lying on the counter.",
+      sceneArt:
+        "Animation: the printer pushes out receipts faster and faster until they pile up on the counter and the paper roll runs out, a picture of the 620M lbs of receipt paper used in the US every year.",
     },
     {
       id: "forest",
@@ -74,6 +81,9 @@ export const problemContent = {
       // the card.
       caption: "trees cut down every year for US receipt consumption.",
       source: "Green America, Skip the Slip (2022)",
+      frontArt: "Illustration: a stand of trees in a field, one already cut down to a stump, and an axe swinging toward the nearest tree.",
+      sceneArt:
+        "Animation: an axe fells the nearest tree, then the rest of the stand falls one by one until only stumps are left, a picture of the 3.7M trees cut down every year for US receipts.",
     },
     {
       id: "proof",
@@ -82,6 +92,9 @@ export const problemContent = {
       value: "$540M+",
       caption: "spent by US businesses on receipt paper in a single year (2025).",
       source: "Epson, citing Grand View Research (2025)",
+      frontArt: "Illustration: a roll of receipt paper unspooling on a counter next to a till whose display reads TOTAL $0.00.",
+      sceneArt:
+        "Animation: the paper roll keeps unspooling while the till’s total climbs past $540,000,000, what US businesses spent on receipt paper in 2025.",
     },
   ] satisfies ProblemCard[],
 };
@@ -213,6 +226,9 @@ export interface FeatureRow {
   title: string;
   /** The live features the row covers, as short tags under its line. */
   tags: string[];
+  /** What the row's app picture shows, for screen readers and crawlers
+   *  (role="img" label on the shot, server-rendered). */
+  shotLabel: string;
 }
 
 export const featuresContent = {
@@ -225,21 +241,29 @@ export const featuresContent = {
       eyebrow: "Find",
       title: "Find anything.",
       tags: ["Search", "Auto-categorization", "Account stats"],
+      shotLabel:
+        "A PapeX app screen with demo data: the Receipts tab after a search, showing only the receipts that match, grouped by date, each with its category.",
     },
     export: {
       eyebrow: "Export",
       title: "Export your receipts as a PDF.",
       tags: ["Select receipts", "Share as one PDF"],
+      shotLabel:
+        "A PapeX app screen with demo data: the Receipts tab in select mode, with several receipts ticked and the share button ready to send them as one PDF.",
     },
     add: {
       eyebrow: "Add",
       title: "Add the rest.",
       tags: ["Scan paper receipts", "Forward email receipts"],
+      shotLabel:
+        "A PapeX app screen with demo data: the Receipts tab with the add button open, offering to capture a receipt with the camera, pick a photo, or enter one by hand.",
     },
     share: {
       eyebrow: "Share",
       title: "Share it.",
       tags: ["Shared groups", "Person to person"],
+      shotLabel:
+        "A PapeX app screen with demo data: a receipt\u2019s detail page, shared with a group and with one person.",
     },
     profiles: {
       // Nico, 2026-09-29: the old "Coupons and store pages" row, renamed to
@@ -249,6 +273,8 @@ export const featuresContent = {
       eyebrow: "Merchant profiles",
       title: "Merchant profiles.",
       tags: ["Merchant profiles", "Favorites", "Receipts by store"],
+      shotLabel:
+        "A PapeX app screen with demo data: the Stores tab, a grid of merchant profiles for the stores you shop at, each with a heart to favorite it.",
     },
     coupons: {
       // "Coupons", not "Deals": in the app a Deal is a store promotion, and
@@ -256,6 +282,8 @@ export const featuresContent = {
       eyebrow: "Coupons",
       title: "Coupons.",
       tags: ["Coupons", "Swipe to favorite", "Earn or scan"],
+      shotLabel:
+        "A PapeX app screen with demo data: the Coupons tab, a list of saved coupons from different stores, each with its offer, its expiry and a heart to favorite it.",
     },
   } satisfies Record<FeatureKey, FeatureRow>,
   /** Small caption on every app shot: the rows in them are invented. */
@@ -274,6 +302,10 @@ export const howItWorksContent = {
   headline: "Tap your phone to get the receipt.",
   subtitle: "At select stores.",
   phoneAriaLabel: "Step through a tap on a PapeX tag",
+  /** What the walkthrough shows and means, server-rendered (visually hidden,
+   *  and the phone's aria-describedby). */
+  demoDescription:
+    "Animation: an iPhone on its lock screen is held to the PapeX tag by the register. The receipt opens on the phone right away, with no app needed. Tapping Save to PapeX then files it in the Receipts tab of the PapeX app, where it stays searchable.",
   /** Cue line under the phone, one per step — index 2's "Replay" is bold in the design. */
   cues: [
     "Tap the phone on the PapeX tag.",

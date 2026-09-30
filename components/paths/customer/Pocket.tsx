@@ -1,6 +1,6 @@
 "use client";
 
-import { Reveal, WordReveal } from "@/components/motion";
+import { ScrollReveal, ScrollWords } from "@/components/motion";
 import { FlowSection } from "../shared/FlowSection";
 import { SectionLabel } from "../shared/SectionLabel";
 import { PocketScene } from "./pocket/PocketScene";
@@ -42,14 +42,17 @@ export function Pocket() {
 function Header() {
   const t = pocketCopy;
   return (
-    <Reveal className="max-w-[820px]">
+    // Scroll-linked (P8): finished ~13vh into the screen instead of an
+    // IntersectionObserver + 700ms timer, so phones never wait on it. On
+    // desktop the pinned copy has risen in long before the pin holds it.
+    <ScrollReveal className="max-w-[820px]">
       <SectionLabel index="02">{t.eyebrow}</SectionLabel>
-      <WordReveal
+      <ScrollWords
         as="h2"
         className="text-[length:var(--fs-h2)] font-bold leading-[1.04] tracking-[-.02em] [font-family:var(--font-display)]"
       >
         {t.heading}
-      </WordReveal>
-    </Reveal>
+      </ScrollWords>
+    </ScrollReveal>
   );
 }

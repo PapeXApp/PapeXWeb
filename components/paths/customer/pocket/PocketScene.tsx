@@ -441,6 +441,9 @@ export function PocketScene({ header }: { header: ReactNode }) {
           <div className={s.layout}>
             <div className={s.sceneWrap}>
               <span className={s.demoTag}>{t.demoTag}</span>
+              {/* The scene itself is aria-hidden and inert; this is what it
+                  shows and means, in the server HTML. */}
+              <p className="sr-only">{t.sceneLabel}</p>
               {/* The picture is decorative (the cards carry the words) and inert. */}
               {/* data-flow-static: own palette, never the page ground (see
                   [data-flow-static] in shared/flow.module.css) */}

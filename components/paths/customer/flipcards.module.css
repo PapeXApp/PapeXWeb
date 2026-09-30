@@ -84,14 +84,37 @@
 .card:has(.flipBtn:active) {
   transform: scale(0.985);
 }
+/* iOS SAFARI FLIP FIX (P8, 2026-09-30 — Noah on an iPhone: tapping a card
+   showed the FRONT's text mirrored over an invisible background instead of
+   the back). WebKit only culls a backface reliably when every piece of the
+   3D chain is explicit, and it silently FLATTENS a preserve-3d subtree when
+   the element carrying preserve-3d also has overflow:hidden, opacity < 1,
+   filter, mask or clip-path — at which point both faces are painted in DOM
+   order and backface-visibility is ignored for any child that got its own
+   compositing layer (the front's text). So, belt and braces:
+     1. -webkit- and unprefixed transform-style: preserve-3d on .inner, which
+        carries nothing else (no overflow/opacity/filter/clip, ever);
+     2. both faces get their OWN 3D transform + a 1px z offset
+        (front rotateY(0) translateZ(1px), back rotateY(180deg) translateZ(1px)),
+        so even with culling off the facing card is nearer the viewer and
+        depth-sorts on top; both faces paint an OPAQUE background;
+     3. -webkit-backface-visibility on both faces (kept below);
+     4. once hydrated (.cardLive) the turned-away face is visibility:hidden,
+        switched at the flip's 90° point (~100ms into the 0.8s curve), so
+        even a fully flattened WebKit render can only ever show the face that
+        should be showing. Gated on .cardLive so the no-JS layout (both faces
+        stacked, app/layout.tsx) is untouched.
+   Reduced motion swaps the faces with no rotation at all (bottom of file). */
 .inner {
   position: relative;
   width: 100%;
   height: 100%;
+  -webkit-transform-style: preserve-3d;
   transform-style: preserve-3d;
   transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 .cardFlipped .inner {
+  -webkit-transform: rotateY(180deg);
   transform: rotateY(180deg);
 }
 
@@ -103,15 +126,27 @@
   padding: var(--fc-pad);
   border-radius: var(--fc-radius);
   border: 1px solid var(--fc-line);
-  background: linear-gradient(180deg, #ffffff 0%, #fcfcfb 60%, #fafaf9 100%);
+  /* opaque on both faces: a solid colour under an opaque gradient */
+  background: #fcfcfb linear-gradient(180deg, #ffffff 0%, #fcfcfb 60%, #fafaf9 100%);
   box-shadow: var(--fc-shadow), inset 0 1px 0 #ffffff, inset 0 -1px 0 rgba(0, 18, 29, 0.025);
   overflow: hidden;
-  backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  transition: box-shadow 0.45s ease, border-color 0.45s ease;
+  backface-visibility: hidden;
+  -webkit-transform: rotateY(0deg) translateZ(1px);
+  transform: rotateY(0deg) translateZ(1px);
+  transition: box-shadow 0.45s ease, border-color 0.45s ease, visibility 0s linear 0.1s;
 }
 .faceBack {
-  transform: rotateY(180deg);
+  -webkit-transform: rotateY(180deg) translateZ(1px);
+  transform: rotateY(180deg) translateZ(1px);
+}
+/* (4) above: the face turned away is not painted at all once JS runs. */
+.cardLive .faceBack,
+.cardLive.cardFlipped .face:not(.faceBack) {
+  visibility: hidden;
+}
+.cardLive.cardFlipped .faceBack {
+  visibility: visible;
 }
 
 /* warm light pooled under the cursor */
@@ -896,6 +931,24 @@
   .card:hover,
   .card:has(.flipBtn:active) {
     transform: none;
+  }
+  /* A swap, not a turn: no rotation anywhere, the faces just trade
+     visibility (the .cardLive rules above, instantly). Gated on .cardLive so
+     before hydration the front is the one showing. */
+  .cardLive .face,
+  .cardLive.cardFlipped .inner,
+  .cardLive .faceBack {
+    -webkit-transform: none;
+    transform: none;
+  }
+  .cardLive .face {
+    transition: none;
+  }
+  .cardLive .faceBack::before {
+    background: radial-gradient(380px circle at var(--mx) var(--my), rgba(235, 113, 0, 0.055), transparent 62%);
+  }
+  .cardLive .faceBack::after {
+    background: radial-gradient(200px circle at var(--mx) var(--my), rgba(235, 113, 0, 0.6), transparent 72%);
   }
   /* straight to the final layout: text in place, scene already docked (JS mounts it still) */
   .resultOn .resultTop > *,

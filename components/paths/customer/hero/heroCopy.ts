@@ -24,7 +24,7 @@ export const heroCopy = {
   faqCue: "Questions?",
   /** The visual is a picture (nothing to click): its accessible name. */
   visualLabel:
-    "The PapeX app on an iPhone. A scanned paper receipt from Tidewick Cafe is filed at the top of the Receipts list. Beside it, three notes: your way back to any purchase, you choose what to share, and ready for you.",
+    "Animation: the PapeX app on an iPhone scans a paper receipt from Tidewick Cafe and files it at the top of the Receipts list, marked Scanned by you. Three notes then appear beside it: your way back to any purchase, you choose what to share, and ready for you.",
   /** The three chips, in the order they appear (round 2, p-01..p-03:
    *  Nico's words; the icons in HeroApp's ChipGlyph match them). */
   chips: [
