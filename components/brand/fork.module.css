@@ -327,6 +327,34 @@
   }
 }
 
+/* Phone spacing (Web 2.1 P8). The seam's H1 capsule is ~28px tall and
+   straddles the seam, so on a phone it ate into the top of the customer
+   half (at 320x640 "For Customers" sat ~20px under it) while the business
+   block centred as if the capsule weren't there. Each block now keeps a
+   capsule's half-height clear on its seam side, so both centre in the space
+   they really have. Short phones (<=700px tall: 375x667, 320x640) tighten
+   the gaps a notch, and the narrowest (<=359px) take a 30px headline so the
+   customer promise keeps its three set lines instead of breaking to four. */
+@media (max-width: 820px) {
+  .fork .contentTop {
+    padding-bottom: 16px;
+  }
+  .fork .contentBottom {
+    padding-top: 20px;
+  }
+}
+@media (max-width: 820px) and (max-height: 700px) {
+  .fork {
+    --fork-eyebrow-gap: 12px;
+    --fork-cue-gap: 18px;
+  }
+}
+@media (max-width: 359px) {
+  .fork {
+    --fork-h: 30px;
+  }
+}
+
 /* Short viewports (landscape phones, squat browser windows). A 390px-tall
    landscape phone leaves each half 195px, ~124 below the nav, and the
    3-line block needs 186 even at the 34px floor. Here the headline runs on

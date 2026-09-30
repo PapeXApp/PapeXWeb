@@ -102,8 +102,8 @@ const ASSESSOR_POINTS: string[] = [
 export default function PciCompliancePage() {
   return (
     <FramerPageShell>
-      <div className="container mx-auto py-10 px-4">
-        <article className="mx-auto max-w-4xl bg-white border border-[#00121D]/10 rounded-2xl shadow-sm p-8 md:p-12 space-y-10">
+      <div className="container mx-auto py-10 px-5 sm:px-4">
+        <article className="mx-auto max-w-4xl bg-white border border-[#00121D]/10 rounded-2xl shadow-sm p-6 sm:p-8 md:p-12 space-y-10">
           {/* Header */}
           <header className="space-y-4 border-b border-[#00121D]/10 pb-8">
             <p className="text-[13px] leading-[18px] font-semibold uppercase tracking-[0.16em] text-[#EB7100]">
@@ -183,11 +183,11 @@ export default function PciCompliancePage() {
                       key={row.label}
                       className={i % 2 === 0 ? 'bg-[#00121D]/[0.03]' : 'bg-white'}
                     >
-                      <th className="w-1/3 min-w-[10rem] text-left align-top px-4 py-3 font-semibold text-[#00121D] border-b border-[#00121D]/10">
+                      <th scope="row" className="w-1/3 min-w-[7.5rem] sm:min-w-[10rem] text-left align-top px-3 sm:px-4 py-3 font-semibold text-[#00121D] border-b border-[#00121D]/10">
                         {row.label}
                       </th>
                       <td
-                        className={`px-4 py-3 align-top border-b border-[#00121D]/10 ${
+                        className={`px-3 sm:px-4 py-3 align-top border-b border-[#00121D]/10 ${
                           row.emphasis
                             ? 'font-semibold text-[#00121D]'
                             : 'text-[#00121D]/80'

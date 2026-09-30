@@ -1,3 +1,5 @@
+"use client";
+
 // ClipReceipt — the App Clip's receipt screen.
 //
 // Mirrors Papex_AppClip Sources/AppClip/ReceiptView.swift (loaded state), with
@@ -24,7 +26,8 @@
 // ReceiptView.swift's view bodies, not in PapeXTheme, so they are ported by
 // hand here and cited; the TOKENS are generated.
 
-import type { CSSProperties, ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { CSSProperties, ReactNode, RefObject } from 'react';
 import { clip } from '@/lib/app-kit/tokens';
 import s from './appKit.module.css';
 import { StatusBar } from './primitives';
@@ -56,6 +59,50 @@ function ClipCard({ children, padding, edge = clip.color.orange, style }: { chil
   );
 }
 
+const SAVE_LABEL = 'Save to PapeX';
+const CLIP_DESCRIPTION =
+  'The PapeX App Clip receipt: what a shopper sees after tapping their phone on the PapeX device at checkout. The itemized receipt opens right away, with no app to install, and Save to PapeX keeps it in the PapeX app.';
+
+/**
+ * Whether the drawn "Save to PapeX" capsule is waiting for a tap.
+ *
+ * The kit draws the clip with no real buttons; a page that makes the phone
+ * usable lays its own <button> named "Save to PapeX" over the capsule (the
+ * /business story: PhoneApp's hotspot, present only while the phone is live
+ * and not yet saved). So "waiting" = such a button exists in the same phone.
+ * A MutationObserver on the phone re-checks when its screens change: the cue
+ * starts when the hotspot appears, stops the moment Save is tapped (the
+ * hotspot goes), and comes back if the demo is reset. Text match only, no
+ * layout reads. `force` overrides the check either way.
+ */
+function useSaveWaiting(ref: RefObject<HTMLElement | null>, force: boolean | undefined): boolean {
+  const [waiting, setWaiting] = useState(false);
+  useEffect(() => {
+    if (force !== undefined) return;
+    const el = ref.current;
+    if (!el || typeof MutationObserver === 'undefined') return;
+    // The phone screen: clip root -> AppKitRoot -> the page's layer -> screen.
+    let scope: HTMLElement = el;
+    for (let i = 0; i < 3 && scope.parentElement; i++) scope = scope.parentElement;
+    let frame = 0;
+    const check = () => {
+      frame = 0;
+      const found = Array.from(scope.querySelectorAll('button')).some((b) => b.textContent?.trim() === SAVE_LABEL);
+      setWaiting(found);
+    };
+    check();
+    const mo = new MutationObserver(() => {
+      if (!frame) frame = requestAnimationFrame(check);
+    });
+    mo.observe(scope, { childList: true, subtree: true });
+    return () => {
+      mo.disconnect();
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [ref, force]);
+  return force ?? waiting;
+}
+
 /** `.bubble(shape)` — iOS 26 `.glassEffect(.clear)`; web approximation. */
 function Bubble({ children, radius, style }: { children: ReactNode; radius: number | string; style?: CSSProperties }) {
   return (
@@ -65,7 +112,9 @@ function Bubble({ children, radius, style }: { children: ReactNode; radius: numb
   );
 }
 
-export function ClipReceipt({ data, statusBar = true, footer = true, lead, style }: { data: ClipReceiptData; statusBar?: boolean; footer?: boolean; /** Optional block drawn first in the content column, above the merchant card (the /business hero puts the next-visit coupon here). Omitted everywhere else. */ lead?: ReactNode; style?: CSSProperties }) {
+export function ClipReceipt({ data, statusBar = true, footer = true, lead, style, logo, saveCue }: { data: ClipReceiptData; statusBar?: boolean; footer?: boolean; /** Optional block drawn first in the content column, above the merchant card (the /business hero puts the next-visit coupon here). Omitted everywhere else. */ lead?: ReactNode; style?: CSSProperties; /** Optional merchant mark drawn inside the 56pt white disc of the merchant header, in place of the initial (which stays the fallback). */ logo?: ReactNode; /** Pulse the Save capsule to show it is the thing to tap. Default: automatic, while a real "Save to PapeX" button covers it (see useSaveWaiting). */ saveCue?: boolean }) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const cue = useSaveWaiting(rootRef, footer ? saveCue : false);
   const c = clip.color;
   const sp = clip.spacing;
   const insetTop = 59; // device safe area (iPhone 15/16)
@@ -73,7 +122,10 @@ export function ClipReceipt({ data, statusBar = true, footer = true, lead, style
   const taxLabel = data.tax && subtotal > 0 ? `Tax (${((data.tax / subtotal) * 100).toFixed(1)}%)` : 'Tax';
   const initial = data.merchantName.trim().charAt(0).toUpperCase() || 'P';
   return (
-    <div data-app-kit-clip="" className={s.screen} style={{ background: 'var(--akc-background)', color: c.textPrimary, ...style }}>
+    <div ref={rootRef} data-app-kit-clip="" className={s.screen} style={{ background: 'var(--akc-background)', color: c.textPrimary, ...style }}>
+      {/* What this mockup is, for screen readers and search agents (the
+          drawn chrome around it is aria-hidden). Server-rendered. */}
+      <p className="sr-only">{CLIP_DESCRIPTION}</p>
       {/* content */}
       <div style={{ position: 'absolute', left: 0, right: 0, top: pt(insetTop + 74), padding: `0 ${pt(sp.md)}`, display: 'flex', flexDirection: 'column', gap: pt(sp.md) }}>
         {lead}
@@ -81,7 +133,7 @@ export function ClipReceipt({ data, statusBar = true, footer = true, lead, style
           <div style={{ display: 'flex', flexDirection: 'column', gap: pt(17) }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: pt(sp.sm) }}>
               <div style={{ position: 'relative', width: pt(62), height: pt(62), borderRadius: '50%', background: c.orange, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ width: pt(56), height: pt(56), borderRadius: '50%', background: 'rgba(255,255,255,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.navy, ...f(26, 'bold') }}>{initial}</div>
+                <div style={{ width: pt(56), height: pt(56), borderRadius: '50%', background: 'rgba(255,255,255,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.navy, ...f(26, 'bold'), overflow: 'hidden' }}>{logo ?? initial}</div>
               </div>
               <div style={{ ...f(24, 'medium'), color: c.textPrimary }}>{data.merchantName}</div>
             </div>
@@ -137,8 +189,8 @@ export function ClipReceipt({ data, statusBar = true, footer = true, lead, style
         </ClipCard>
       </div>
 
-      {/* TopBar */}
-      <div style={{ position: 'absolute', left: pt(sp.sm), right: pt(sp.sm), top: pt(insetTop + sp.xs), display: 'flex', alignItems: 'center', gap: pt(sp.xs), zIndex: 5 }}>
+      {/* TopBar — drawn chrome, not controls */}
+      <div aria-hidden="true" style={{ position: 'absolute', left: pt(sp.sm), right: pt(sp.sm), top: pt(insetTop + sp.xs), display: 'flex', alignItems: 'center', gap: pt(sp.xs), zIndex: 5 }}>
         <Bubble radius="50%" style={{ width: pt(44), height: pt(44) }}>
           <Chevron />
         </Bubble>
@@ -160,8 +212,11 @@ export function ClipReceipt({ data, statusBar = true, footer = true, lead, style
       {footer ? (
         <div style={{ position: 'absolute', left: pt(sp.sm), right: pt(sp.sm), bottom: pt(34 + sp.xs), zIndex: 5 }}>
           <Bubble radius={34} style={{ flexDirection: 'column', gap: pt(10), padding: pt(14) }}>
-            <div style={{ display: 'flex', gap: pt(10), width: '100%' }}>
-              <div style={{ flex: 1, height: pt(52), borderRadius: pt(26), background: `linear-gradient(180deg, #F5851C, ${c.orange})`, boxShadow: `0 ${pt(5)} ${pt(10)} rgba(${hexRgb(c.orange)}, 0.35)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFFFFF', ...f(18, 'semibold') }}>Save to PapeX</div>
+            {/* The drawn capsule is not a control (a page that makes the
+                phone usable lays a real button over it), so it stays out of
+                the accessibility tree; the note below is still read. */}
+            <div aria-hidden="true" style={{ display: 'flex', gap: pt(10), width: '100%' }}>
+              <div className={cue ? s.saveCue : undefined} style={{ flex: 1, height: pt(52), borderRadius: pt(26), background: `linear-gradient(180deg, #F5851C, ${c.orange})`, boxShadow: `0 ${pt(5)} ${pt(10)} rgba(${hexRgb(c.orange)}, 0.35)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFFFFF', ...f(18, 'semibold') }}>{SAVE_LABEL}</div>
               <div style={{ width: pt(52), height: pt(52), borderRadius: '50%', background: 'rgba(255,255,255,0.10)', border: `max(1px, calc(1 * var(--pt))) solid rgba(255,255,255,0.14)`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
                 <ShareGlyph color={c.textPrimary} />
               </div>

@@ -25,7 +25,7 @@
 // hero button scrolls away, or straight away on a page that has none.
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
+import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { FullLogo } from './full-logo'
@@ -34,6 +34,7 @@ import { clearPathChoice, type PathChoice } from '@/lib/pathChoice'
 import { useFlowGround } from '@/components/paths/shared/flowSignal'
 import { platformFromUserAgent } from '@/lib/storeLinks'
 import { APP_STORE_URL, storeUrlFor } from './links'
+import m from './site-nav.module.css'
 
 // 'page' is a neutral fourth value for standalone subpages (contact, blog,
 // legal, etc.) that sit outside the fork/customer/business flow: no
@@ -140,6 +141,7 @@ export function SiteNav({ path }: { path: SitePath }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const burgerRef = useRef<HTMLButtonElement>(null)
   const sheetRef = useRef<HTMLDivElement>(null)
+  const backdropRef = useRef<HTMLDivElement>(null)
 
   /** Close the phone menu. Focus goes back to the burger that opened it,
    *  except when a link was followed (the page is changing under it). */
@@ -161,6 +163,10 @@ export function SiteNav({ path }: { path: SitePath }) {
       const target = event.target as Node | null
       if (!target) return
       if (sheetRef.current?.contains(target) || burgerRef.current?.contains(target)) return
+      // The backdrop closes on its own `click` instead: closing on pointerdown
+      // would drop it before the tap's click, which then lands on whatever
+      // page link sat underneath (a ghost tap on phones).
+      if (backdropRef.current?.contains(target)) return
       closeMenu(true)
     }
     const root = document.documentElement
@@ -174,6 +180,17 @@ export function SiteNav({ path }: { path: SitePath }) {
       document.removeEventListener('pointerdown', onPointerDown)
     }
   }, [menuOpen, closeMenu])
+
+  // Opening moves focus into the menu (its first link), so keyboard and
+  // screen-reader users land where the new content is. The sheet is always
+  // mounted (it animates out), and is `inert` until this frame.
+  useEffect(() => {
+    if (!menuOpen) return
+    const frame = requestAnimationFrame(() => {
+      sheetRef.current?.querySelector<HTMLElement>('a[href]')?.focus({ preventScroll: true })
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [menuOpen])
 
   // Keep Tab inside the open menu: the burger (which closes it) plus the
   // sheet's links, in a loop.
@@ -301,33 +318,50 @@ export function SiteNav({ path }: { path: SitePath }) {
         <button
           ref={burgerRef}
           type="button"
-          className="rd-glass rd-burger"
+          className={`rd-glass rd-burger ${m.burger}`}
           data-glass={glass}
           aria-label={menuOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={menuOpen}
           aria-controls={MENU_ID}
           onClick={() => (menuOpen ? closeMenu(true) : setMenuOpen(true))}
         >
-          <span />
-          <span />
-          <span />
+          <span className={m.bar} />
+          <span className={m.bar} />
+          <span className={m.bar} />
         </button>
       </div>
 
-      {menuOpen && (
-        <div id={MENU_ID} ref={sheetRef} className="rd-menu-sheet" onKeyDown={onMenuTab}>
-          {LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              aria-current={isCurrent(link) ? 'page' : undefined}
-              onClick={onLinkClick(link)}
-            >
-              {link.label}
-            </Link>
-          ))}
-        </div>
-      )}
+      {/* Phone menu (<=820px). Always mounted so it can animate both ways
+          (site-nav.module.css); closed it is invisible and inert. The
+          backdrop dims the page; tapping it closes the menu. */}
+      <div
+        ref={backdropRef}
+        className={m.backdrop}
+        data-open={menuOpen ? '' : undefined}
+        aria-hidden="true"
+        onClick={() => closeMenu(true)}
+      />
+      <div
+        id={MENU_ID}
+        ref={sheetRef}
+        className={`rd-menu-sheet ${m.sheet}`}
+        data-open={menuOpen ? '' : undefined}
+        inert={!menuOpen}
+        onKeyDown={onMenuTab}
+      >
+        {LINKS.map((link, i) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className={m.link}
+            style={{ '--i': i } as CSSProperties}
+            aria-current={isCurrent(link) ? 'page' : undefined}
+            onClick={onLinkClick(link)}
+          >
+            {link.label}
+          </Link>
+        ))}
+      </div>
     </nav>
   )
 }

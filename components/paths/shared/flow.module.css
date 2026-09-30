@@ -359,21 +359,46 @@
   border-bottom: 1px solid var(--flow-hair);
   padding: 17px 0;
 }
-.ribbonTrack {
+/* The edge fade sits on its own wrapper, NOT on the Marquee box that clips
+   and holds the moving track: WebKit could leave a transform-animated layer
+   frozen when the same element masks it and clips it. The wrapper is its own
+   (static) layer, so the mask is applied once to the composited result. */
+.ribbonMask {
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
   mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  transform: translate3d(0, 0, 0);
 }
 /* ALWAYS moving (Nico, P3-B5: "the ribbon is supposed to auto-scroll at all
-   times"). Marquee.tsx runs a finite loop count by default (the P4 polish's
-   2-loops-then-rest); the ribbon overrides it to infinite here, and pauses
-   the loop only while the ribbon is off screen (Ribbon.tsx sets data-off
-   from an IntersectionObserver). Reduced motion never gets the track at all:
-   Marquee renders one still run, and motion.css drops the animation. */
-.ribbonTrack :global(.papex-marquee-track) {
-  animation-iteration-count: infinite !important;
+   times"): Ribbon.tsx asks Marquee for an infinite loop, and Marquee pauses
+   it only while the band is off screen. Reduced motion gets the still line
+   below instead, with no edge fade (it shows whole phrases only). */
+.ribbonMask:has([data-marquee-static]) {
+  -webkit-mask-image: none;
+  mask-image: none;
+  transform: none;
 }
-.ribbon[data-off] .ribbonTrack :global(.papex-marquee-track) {
-  animation-play-state: paused !important;
+/* The reduced-motion line: phrases wrap, the band shows ONE line (24px) and
+   clips the rest, so what is visible is always whole phrases, centred, with
+   a separator only BETWEEN two of them. */
+.ribbonRun.ribbonStill {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  height: 24px;
+  line-height: 24px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.ribbonStillItem {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+}
+.ribbonStillItem > span {
+  padding: 0 20px;
+}
+.ribbonStillItem:first-child > .ribbonSep {
+  display: none;
 }
 .ribbonRun {
   display: inline-flex;
