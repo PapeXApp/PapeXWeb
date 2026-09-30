@@ -1569,10 +1569,15 @@ export function RetainStory({ header }: { header: ReactNode }) {
         <StaticStory />
       </div>
     )
+  // p8: what the whole scene shows and why it matters, in the server HTML in
+  // every mode (the beat list below lives in the runway, which reduced motion
+  // hides), right under the heading.
+  const description = <p className="sr-only">{story.sceneDescription}</p>
   if (mode === "static")
     return (
       <>
         {flowHead}
+        {description}
         {staticVersion}
         {after}
       </>
@@ -1581,6 +1586,7 @@ export function RetainStory({ header }: { header: ReactNode }) {
   return (
     <>
     {flowHead}
+    {description}
     {staticVersion}
     <div ref={runwayRef} className={s.runway} data-nojs="runway" style={{ height: `${RUNWAY_VH}vh` }}>
       {/* The story for assistive tech: the scene itself is decorative. */}

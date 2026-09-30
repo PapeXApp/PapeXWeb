@@ -112,6 +112,13 @@ export const tapToRetain = {
     title: "$2 off your next visit",
     expiry: "Expires in 30 days",
   },
+  /**
+   * What the §02 scene shows and why it matters, as text in the server HTML
+   * (visually hidden): the scene itself is aria-hidden and needs JS, so this
+   * is what screen readers, search engines and AI agents read (p8).
+   */
+  sceneDescription:
+    "What the animation shows, with an invented demo store, PapeX Cafe: a paper receipt grows until you can read it, then flies into a phone and becomes the digital receipt your customer gets with one tap on the PapeX device, no app needed. Then a paper coupon, $2 off the next visit, flies into the same phone and lands in the Coupons tab of the PapeX app. Why it matters: the receipt and the coupon stay on your customer's phone, so your store stays in their pocket and they have a reason to come back.",
   /** Reduced motion: the static composition's image labels. */
   staticLabels: {
     paperReceipt: "A paper receipt from a demo store",
@@ -142,6 +149,10 @@ export const howItWorks = {
   lead: "One short visit, and you're live.",
   axisStart: "0 min",
   axisEnd: "15 min",
+  /** What the timeline's illustration and lighting show, as visually hidden
+   *  text in the server HTML (p8): the steps below are the real list. */
+  timelineDescription:
+    "An illustrated timeline of the five setup steps, from 0 to about 15 minutes: power it up, join your Wi-Fi, connect it to your POS, test a receipt, then the hand-over, when your dashboard is live. As you scroll, the line runs to each step and it lights up in orange. Why it matters: setup is one short visit and we do the work, so your customers can tap from your next sale.",
   steps: [
     {
       number: "01",

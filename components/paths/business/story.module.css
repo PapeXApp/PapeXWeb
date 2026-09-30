@@ -151,6 +151,22 @@
 .flowHead {
   padding-top: var(--section-pad-y);
 }
+/* p8 (Noah: reveals "don't appear as quickly as they should on the phone"):
+   the in-flow heading's ScrollLit words (motion.css .papex-lit-word) sat at
+   half ink until the heading reached mid-screen. On phones they light over
+   the first ~quarter of its travel instead, so "Follow one receipt." reads
+   whole as soon as it is on screen. Same animation, earlier range; the
+   hidden/dim state still exists only under motion.css's @supports +
+   no-preference guard. */
+@supports (animation-timeline: view()) {
+  @media (max-width: 820px) and (prefers-reduced-motion: no-preference) {
+    .flowHead :global(.papex-lit-word) {
+      animation-range:
+        cover calc(2% + 14% * var(--i) / var(--n))
+        cover calc(6% + 14% * var(--i) / var(--n));
+    }
+  }
+}
 .pinHead {
   display: none;
 }
@@ -793,6 +809,52 @@
   margin-inline: auto;
   padding-top: var(--after-gap);
 }
+/* p8 (Noah: the ribbon "looks like a ribbon but broken, not moving"): under
+   prefers-reduced-motion the shared Ribbon is one still run cut by its edge
+   fade (two phrases, the rest off screen). /business shows every phrase
+   instead: MarqueeBand renders both, CSS shows one, so the server HTML is
+   right before JS and a screen reader meets the phrases once. */
+.ribbonStill {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .unit > .storyRibbon {
+    display: none;
+  }
+  .unit > .ribbonStill {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px 26px;
+    margin: var(--after-step) calc(-1 * var(--story-px)) 0;
+    padding: 17px var(--story-px);
+    list-style: none;
+    border-top: 1px solid var(--flow-hair);
+    border-bottom: 1px solid var(--flow-hair);
+    font-family: var(--font-label);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    line-height: 24px;
+    text-transform: uppercase;
+    color: var(--flow-fg-2);
+  }
+}
+.ribbonStill li {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  white-space: nowrap;
+}
+.ribbonStill li::before {
+  content: "";
+  flex: none;
+  width: 5px;
+  height: 5px;
+  background: var(--orange);
+  transform: rotate(45deg);
+}
+
 /* The ribbon closes the unit, edge to edge (the section's gutter cancelled;
    the ribbon brings its own). */
 .unit > .storyRibbon {
@@ -1266,6 +1328,16 @@
     width: 3.2cqw;
     height: 3.2cqw;
     margin: -1.6cqw 0 0 -1.6cqw;
+  }
+  /* p8 (Noah, phone pass): the dashboard block was centred over three
+     left-aligned columns, so the phone screen read in two alignments. On
+     phones it runs flush left like every other heading on the page. */
+  .afterCopy {
+    text-align: left;
+  }
+  .afterCopy h3,
+  .afterCopy p {
+    margin-inline: 0;
   }
   .cols {
     grid-template-columns: minmax(0, 1fr);

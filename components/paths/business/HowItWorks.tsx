@@ -1,4 +1,4 @@
-import { Reveal, WordReveal } from "@/components/motion"
+import { ScrollReveal, ScrollWords } from "@/components/motion"
 import { FlowSection } from "../shared/FlowSection"
 import { SectionLabel } from "../shared/SectionLabel"
 import { howItWorks } from "./content"
@@ -22,19 +22,24 @@ import styles from "./business.module.css"
 // real <ol>; the header rides inside the pin so the title and the row read as
 // one screen.
 export function HowItWorks() {
+  // p8: scroll-linked (ScrollReveal + ScrollWords) instead of the IO blur-in,
+  // so it is in on a phone as soon as it scrolls on (see TapToRetain.tsx).
+  // The h2 is --fs-h2 on phones like every other section title (the
+  // merchant-h1 size made it the page's biggest line at 320-390), and keeps
+  // --fs-h1-merchant from 821px.
   const header = (
-    <Reveal className="max-w-[820px]">
+    <ScrollReveal className="max-w-[820px]">
       <SectionLabel index="05">{howItWorks.eyebrow}</SectionLabel>
-      <WordReveal
+      <ScrollWords
         as="h2"
-        className="text-[length:var(--fs-h1-merchant)] font-bold leading-[1.03] tracking-[-.02em] [font-family:var(--font-display)]"
+        className="text-[length:var(--fs-h2)] font-bold leading-[1.03] tracking-[-.02em] [font-family:var(--font-display)] min-[821px]:text-[length:var(--fs-h1-merchant)]"
       >
         {howItWorks.heading}
-      </WordReveal>
+      </ScrollWords>
       <p className="mt-[clamp(12px,1.6vw,22px)] max-w-[44ch] text-[length:var(--fs-lead)] leading-[1.5]" style={{ color: "var(--flow-fg-2)" }}>
         {howItWorks.lead}
       </p>
-    </Reveal>
+    </ScrollReveal>
   )
 
   return (
@@ -45,6 +50,9 @@ export function HowItWorks() {
         axisStart={howItWorks.axisStart}
         axisEnd={howItWorks.axisEnd}
       />
+      {/* p8: what the timeline's (aria-hidden) art and lighting show, in the
+          server HTML for assistive tech, search engines and AI agents. */}
+      <p className="sr-only">{howItWorks.timelineDescription}</p>
     </FlowSection>
   )
 }

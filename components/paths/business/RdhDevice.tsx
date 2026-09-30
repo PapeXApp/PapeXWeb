@@ -61,7 +61,10 @@ export function RdhDevice() {
               // Width-led, but never so tall that heading + device overflow
               // a short desktop screen (~300px is the label, heading, gap and
               // the section's padding).
-              className="h-auto w-full max-w-[700px] object-contain min-[821px]:max-h-[calc(100svh-300px)]"
+              // p8: on phones it was the full column (~350x285 at 390),
+              // the biggest thing on the screen; capped so the heading,
+              // device and bullets read as one calm screen.
+              className="h-auto w-full max-w-[280px] object-contain min-[821px]:max-h-[calc(100svh-300px)] min-[821px]:max-w-[700px]"
               style={{ filter: "drop-shadow(0 26px 44px rgba(0,0,0,.45))" }}
             />
           </ScrollReveal>
@@ -92,13 +95,16 @@ export function RdhDevice() {
                 scannable row. Copy lives in content.ts (rdhDevice.specs). */}
             <ScrollReveal
               order={2}
-              className="mt-[var(--gap-body)] flex flex-wrap items-center gap-x-4 gap-y-2 border-t pt-[var(--gap-list)] text-[13px] font-semibold uppercase tracking-[.16em]"
+              // p8: on phones the row wraps, and the "·" (glued to the
+              // following spec) started the second line on its own. Phones
+              // drop the dots and let the specs wrap as separate words.
+              className="mt-[var(--gap-body)] flex flex-wrap items-center gap-x-6 gap-y-2 border-t pt-[var(--gap-list)] text-[13px] font-semibold uppercase tracking-[.16em] min-[821px]:gap-x-4"
               style={{ borderColor: "var(--flow-hair)", color: "var(--flow-fg-3)", fontFamily: "var(--font-label)" }}
             >
               {rdhDevice.specs.map((spec, i) => (
                 <span key={spec} className="flex items-center gap-x-4">
                   {i > 0 ? (
-                    <span aria-hidden="true" style={{ color: "var(--orange)" }}>
+                    <span aria-hidden="true" className="hidden min-[821px]:inline" style={{ color: "var(--orange)" }}>
                       ·
                     </span>
                   ) : null}
