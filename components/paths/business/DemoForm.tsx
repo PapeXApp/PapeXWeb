@@ -232,9 +232,11 @@ export function DemoForm() {
           >
             {demo.eyebrow}
           </SectionLabel>
+          {/* p8: --fs-h2 on phones like the other section titles; the
+              merchant-h1 size from 821px, as before. */}
           <ScrollWords
             as="h2"
-            className="text-[length:var(--fs-h1-merchant)] font-bold leading-[1.03] tracking-[-.02em]"
+            className="text-[length:var(--fs-h2)] font-bold leading-[1.03] tracking-[-.02em] min-[821px]:text-[length:var(--fs-h1-merchant)]"
             style={{ fontFamily: "var(--font-display)" }}
           >
             {demo.heading}

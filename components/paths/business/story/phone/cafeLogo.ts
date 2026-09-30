@@ -1,9 +1,10 @@
 "use client"
 
-import { createElement, useEffect, useState } from "react"
+import { createElement, useEffect, useMemo, useState } from "react"
 import { flushSync } from "react-dom"
 import { createRoot } from "react-dom/client"
-import { cafeStore } from "../../papexCafe"
+import type { KitReceipt, KitStore } from "@/components/app-kit"
+import { CAFE_NAME, cafeStore, cafeStoreFor } from "../../papexCafe"
 import { PapexCafeLogo } from "../../PapexCafeLogo"
 
 /**
@@ -47,4 +48,22 @@ export function usePapexCafeLogoUri(): string {
     return () => window.clearTimeout(t)
   }, [])
   return uri ?? cafeStore.logoUrl ?? ""
+}
+
+/**
+ * PapeX Cafe as the kit's full store record (its loyalty programme and all),
+ * wearing the real logo instead of the "P" monogram, plus a lookup that swaps
+ * it in for the shared shop's id and a receipt re-labeller that gives PapeX
+ * Cafe's receipts the same logo. For the phone screens outside the §03 story
+ * (the hero loop's app + coupon), so every phone on /business shows the
+ * dashboard's logo, not an initial (p8, Noah via Nico).
+ */
+export function useCafeStore() {
+  const logo = usePapexCafeLogoUri()
+  return useMemo(() => {
+    const cafe: KitStore = { ...cafeStore, logoUrl: logo }
+    const storeFor = (id: string): KitStore => (id === cafe.id ? cafe : cafeStoreFor(id))
+    const receipt = (r: KitReceipt): KitReceipt => (r.merchantName === CAFE_NAME ? { ...r, logoUrl: logo } : r)
+    return { cafe, storeFor, receipt }
+  }, [logo])
 }

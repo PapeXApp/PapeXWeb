@@ -21,7 +21,8 @@ import { cn } from "@/lib/utils"
 import { StatusBar } from "../../customer/appui/Chrome"
 import { walkReceipts } from "../../customer/appui"
 import x from "../../customer/appui/appScreens.module.css"
-import { cafeReceipt, cafeStoreFor } from "../papexCafe"
+import { cafeReceipt } from "../papexCafe"
+import { useCafeStore } from "../story/phone/cafeLogo"
 
 /**
  * The hero loop's PapeX app (Receipts tab, then Coupons tab) with the demo
@@ -36,6 +37,7 @@ const GB = R.glassBubble.consts
 const CS = R.couponsScreen
 
 function CafeCouponsScreen() {
+  const { storeFor } = useCafeStore()
   const S = CS.styles.styles
   const controlsTop = headerTop() + GB.HEADER_BUBBLE_HEIGHT + S.titleRow.paddingBottom
   const listTop = controlsTop + CS.consts.CONTROLS_ROW_HEIGHT
@@ -54,7 +56,7 @@ function CafeCouponsScreen() {
         }}
       >
         {demoCoupons.map((c) => (
-          <CouponRow key={c.id} coupon={c} store={cafeStoreFor(c.storeId)} mode={mode} isFavorite={false} />
+          <CouponRow key={c.id} coupon={c} store={storeFor(c.storeId)} mode={mode} isFavorite={false} />
         ))}
       </V>
       <TabTitleRow
@@ -82,8 +84,10 @@ function CafeCouponsScreen() {
 }
 
 export function CafeWalkAppScreen({ summary, coupons, time }: { summary: ReceiptSummary; coupons: boolean; time: string }) {
-  // Row 1 IS the decoded receipt, shown under the shop's PapeX Cafe name.
-  const receipts = walkReceipts(summary).map((r) => cafeReceipt(r))
+  // Row 1 IS the decoded receipt, shown under the shop's PapeX Cafe name
+  // and the dashboard's PapeX Cafe logo (not the kit's "P" monogram).
+  const { receipt } = useCafeStore()
+  const receipts = walkReceipts(summary).map((r) => receipt(cafeReceipt(r)))
   return (
     <AppKitRoot mode="dark" width="var(--wp-w)" className={x.root}>
       <div className={cn(x.layer, !coupons && x.on)} aria-hidden={coupons}>

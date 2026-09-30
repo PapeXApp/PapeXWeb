@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils"
 import { Chevron, StatusBar, TabBar } from "../../customer/appui"
 import a from "../../customer/appui/appui.module.css"
 import { tapToRetain } from "../content"
+import { PapexCafeLogo } from "../PapexCafeLogo"
 import s from "./intro.module.css"
 
 /**
@@ -19,7 +20,7 @@ import s from "./intro.module.css"
  *
  * The row follows PapeXV2 components/coupons/CouponRow.tsx +
  * CouponStoreThumb.tsx: receipt-row height (91.2pt), a full-bleed 76pt brand
- * stub with the store's monogram as a 52pt seal, notches + perforation at the
+ * stub with the store's logo (PapexCafeLogo) as a 52pt seal, notches + perforation at the
  * seam, store name (Barlow-Medium 17) with a neutral kind Tag, the offer
  * (Regular 15), the expiry (Medium 12, textSecondary when not urgent), then
  * the heart + left-pointing chevron in two 28pt slots.
@@ -90,7 +91,10 @@ export function CouponRow({ rowRef }: { rowRef?: React.Ref<HTMLDivElement> }) {
   return (
     <div ref={rowRef} className={s.cRow}>
       <span className={s.stub} style={{ background: CAFE_FIELD }}>
-        <span className={s.seal}>P</span>
+        {/* the dashboard's PapeX Cafe logo, not a "P" monogram (p8) */}
+        <span className={s.seal}>
+          <PapexCafeLogo size={52} className={s.sealLogo} />
+        </span>
       </span>
       <span className={s.perf} />
       <span className={s.cBody}>
