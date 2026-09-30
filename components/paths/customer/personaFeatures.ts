@@ -47,7 +47,7 @@ export const personaFeatureLines: Record<PersonaId, Record<FeatureKey, string>> 
     // NICO
     share: "Share a receipt, and coupon, with a group or a friend.",
     // NICO (2026-09-29, all personas)
-    profiles: "See everything you need from all of your favorite stores.",
+    profiles: "Everything you need from all of your favorite stores.",
     // NICO (2026-09-29, all personas)
     coupons: "Keep the coupons you earn and scan, and swipe to favorite the ones you'll use.",
   },
@@ -57,7 +57,7 @@ export const personaFeatureLines: Record<PersonaId, Record<FeatureKey, string>> 
     // NICO
     find: "Find any receipt or coupon in seconds, already sorted by store and category.",
     // NICO (2026-09-29, all personas)
-    profiles: "See everything you need from all of your favorite stores.",
+    profiles: "Everything you need from all of your favorite stores.",
     // NICO (2026-09-29, all personas)
     coupons: "Keep the coupons you earn and scan, and swipe to favorite the ones you'll use.",
     // NICO
@@ -66,7 +66,7 @@ export const personaFeatureLines: Record<PersonaId, Record<FeatureKey, string>> 
   },
   non: {
     // NICO (2026-09-29, all personas)
-    profiles: "See everything you need from all of your favorite stores.",
+    profiles: "Everything you need from all of your favorite stores.",
     // NICO (2026-09-29, all personas)
     coupons: "Keep the coupons you earn and scan, and swipe to favorite the ones you'll use.",
     find: "Returning something? Search the store's name and the receipt is right there.",
