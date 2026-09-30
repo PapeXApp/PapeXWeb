@@ -198,7 +198,7 @@ export const rdhDevice = {
 export const demo = {
   eyebrow: "Get started",
   heading: "Request a demo.",
-  body: "See the PapeX device in action. We install it, free, in about 15 minutes.",
+  body: "See the PapeX device in action. We install it for free, in about 15 minutes.",
   // Proof line above the form. Nico (2026-09-24): this exact line only; no
   // store type, no dates, no names.
   proof: "Live in the Bay Area.",

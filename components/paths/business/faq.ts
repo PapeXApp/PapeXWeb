@@ -26,7 +26,7 @@ export const businessFaqHeading = "What owners ask us."
 export const businessFaq: FaqItem[] = [
   {
     q: "Does PapeX work with my POS?",
-    a: "PapeX works with most point of sale systems. The PapeX device is added to your POS as a printer, so your checkout stays exactly the same.\n\nNot sure about yours? [Ask us in a demo](#demo).",
+    a: "PapeX works with most point of sale systems. The PapeX device is added to your POS as a second printer, so your checkout stays exactly the same.\n\nNot sure about yours? [Ask us in a demo](#demo).",
   },
   {
     q: "What changes for my staff at checkout?",
