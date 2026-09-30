@@ -3,6 +3,7 @@
 import type { CSSProperties } from "react"
 import { AppKitRoot, ClipReceipt, type ClipReceiptData } from "@/components/app-kit"
 import { extractLastFour, type ReceiptSummary } from "@/lib/receiptSummary"
+import { cafeBadgeLogo } from "../PapexCafeLogo"
 import { card } from "./phone/data"
 import s from "../story.module.css"
 
@@ -49,11 +50,15 @@ export function clipData(summary: ReceiptSummary): ClipReceiptData {
   }
 }
 
-/** The App Clip's receipt, filling the phone screen. */
-export function ClipScreen({ summary }: { summary: ReceiptSummary }) {
+/**
+ * The App Clip's receipt, filling the phone screen. `saveCue`: the Save
+ * capsule pulses while the phone is usable and waiting for that tap
+ * (PhoneApp's hotspot is up); off otherwise.
+ */
+export function ClipScreen({ summary, saveCue = false }: { summary: ReceiptSummary; saveCue?: boolean }) {
   return (
     <AppKitRoot style={PT} className={s.kitFill}>
-      <ClipReceipt data={clipData(summary)} />
+      <ClipReceipt data={clipData(summary)} logo={cafeBadgeLogo(summary.merchantName)} saveCue={saveCue} />
     </AppKitRoot>
   )
 }

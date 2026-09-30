@@ -235,7 +235,10 @@ export function PocketScene({ header }: { header: ReactNode }) {
       const runway = runwayRef.current
       if (runway) {
         M.runTop = runway.getBoundingClientRect().top + window.scrollY
-        M.runTotal = Math.max(0, runway.offsetHeight - window.innerHeight)
+        // The pin sticks for (runway - pin) px. The pin is 100svh, so this
+        // never changes when a phone's toolbar comes or goes (innerHeight
+        // does, ~80px on iOS, and re-mapped every beat mid-scroll: p8 jitter).
+        M.runTotal = Math.max(0, runway.offsetHeight - pin.offsetHeight)
         geo.current = { runTop: M.runTop, runTotal: M.runTotal }
       }
       const dim = parseFloat(getComputedStyle(scene).getPropertyValue("--dim"))

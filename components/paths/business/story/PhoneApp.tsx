@@ -55,7 +55,20 @@ type Push =
  * focusable until `live` (the story has settled) except what the visitor
  * already opened; `reset` changing sends it back to the clip receipt.
  */
-export function PhoneApp({ summary, live, reset }: { summary: ReceiptSummary; live: boolean; reset: number }) {
+export function PhoneApp({
+  summary,
+  live,
+  reset,
+  onSaveWaiting,
+}: {
+  summary: ReceiptSummary
+  live: boolean
+  reset: number
+  /** Told whether the clip receipt under this is waiting for its Save tap
+   *  (live, not yet saved), so the caller can cue the capsule (ClipScreen
+   *  `saveCue`). The hotspot below is up exactly while this is true. */
+  onSaveWaiting?: (waiting: boolean) => void
+}) {
   const [saved, setSaved] = useState(false)
   const [tab, setTab] = useState<TabName>("receipts")
   const [stack, setStack] = useState<Push[]>([])
@@ -70,6 +83,12 @@ export function PhoneApp({ summary, live, reset }: { summary: ReceiptSummary; li
     setStack([])
     setHomeKind("Receipts")
   }, [reset])
+
+  const waiting = live && !saved
+  useEffect(() => {
+    onSaveWaiting?.(waiting)
+  }, [waiting, onSaveWaiting])
+  useEffect(() => () => onSaveWaiting?.(false), [onSaveWaiting])
 
   const active = useActiveCafeCoupons()
   const logo = usePapexCafeLogoUri()
@@ -176,7 +195,7 @@ export function PhoneApp({ summary, live, reset }: { summary: ReceiptSummary; li
           </div>
         </AppKitRoot>
       ) : null}
-      {live && !saved ? (
+      {waiting ? (
         <div className={s.hotspots} style={PT}>
           <button
             type="button"

@@ -178,6 +178,9 @@ export function WalkPhone({
             saveLabel={demoContent.saveLabel}
             savedLabel={demoContent.savedLabel}
             originalLabel={demoContent.sectionTitles.original}
+            // The receipt waits for the tap that saves it (a tap anywhere on
+            // the phone, HowItWorks): Save pulses once the card beat is over.
+            saveCue={!cardBeat}
           />
         ) : null}
       </div>

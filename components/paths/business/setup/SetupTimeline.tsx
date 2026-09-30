@@ -156,7 +156,10 @@ export function SetupTimeline({
 
     /** Returns false when the screen can't hold the pinned row. */
     const measure = (): boolean => {
-      M.vh = window.innerHeight || 1
+      // The layout viewport's height (iOS: toolbars expanded), not
+      // innerHeight: that one changes ~80px as Safari's toolbar collapses
+      // mid-scroll, which moved the phone reading line (p8 jitter).
+      M.vh = document.documentElement.clientHeight || window.innerHeight || 1
       M.phone = parseFloat(getComputedStyle(stage).getPropertyValue("--t-phone")) > 0
       M.runTop = runway.getBoundingClientRect().top + window.scrollY
       M.runTotal = Math.max(0, runway.offsetHeight - M.vh)

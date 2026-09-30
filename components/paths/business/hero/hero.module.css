@@ -1021,6 +1021,17 @@
   }
   .sayLine {
     font-size: 15px;
+    /* p8 (Noah: "text on top of text"): the step sentences share one grid
+       cell and wrap to two lines here, so the plain 0.3s crossfade stacked
+       two sentences. Out first, then in. */
+    transition:
+      opacity 0.15s ease,
+      transform 0.15s ease;
+  }
+  .sayOn {
+    transition:
+      opacity 0.25s ease 0.15s,
+      transform 0.25s ease 0.15s;
   }
   /* No room beside the sentence: "Demo data" goes under it. */
   .sayRow {

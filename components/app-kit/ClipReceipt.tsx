@@ -26,8 +26,7 @@
 // ReceiptView.swift's view bodies, not in PapeXTheme, so they are ported by
 // hand here and cited; the TOKENS are generated.
 
-import { useEffect, useRef, useState } from 'react';
-import type { CSSProperties, ReactNode, RefObject } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { clip } from '@/lib/app-kit/tokens';
 import s from './appKit.module.css';
 import { StatusBar } from './primitives';
@@ -63,46 +62,6 @@ const SAVE_LABEL = 'Save to PapeX';
 const CLIP_DESCRIPTION =
   'The PapeX App Clip receipt: what a shopper sees after tapping their phone on the PapeX device at checkout. The itemized receipt opens right away, with no app to install, and Save to PapeX keeps it in the PapeX app.';
 
-/**
- * Whether the drawn "Save to PapeX" capsule is waiting for a tap.
- *
- * The kit draws the clip with no real buttons; a page that makes the phone
- * usable lays its own <button> named "Save to PapeX" over the capsule (the
- * /business story: PhoneApp's hotspot, present only while the phone is live
- * and not yet saved). So "waiting" = such a button exists in the same phone.
- * A MutationObserver on the phone re-checks when its screens change: the cue
- * starts when the hotspot appears, stops the moment Save is tapped (the
- * hotspot goes), and comes back if the demo is reset. Text match only, no
- * layout reads. `force` overrides the check either way.
- */
-function useSaveWaiting(ref: RefObject<HTMLElement | null>, force: boolean | undefined): boolean {
-  const [waiting, setWaiting] = useState(false);
-  useEffect(() => {
-    if (force !== undefined) return;
-    const el = ref.current;
-    if (!el || typeof MutationObserver === 'undefined') return;
-    // The phone screen: clip root -> AppKitRoot -> the page's layer -> screen.
-    let scope: HTMLElement = el;
-    for (let i = 0; i < 3 && scope.parentElement; i++) scope = scope.parentElement;
-    let frame = 0;
-    const check = () => {
-      frame = 0;
-      const found = Array.from(scope.querySelectorAll('button')).some((b) => b.textContent?.trim() === SAVE_LABEL);
-      setWaiting(found);
-    };
-    check();
-    const mo = new MutationObserver(() => {
-      if (!frame) frame = requestAnimationFrame(check);
-    });
-    mo.observe(scope, { childList: true, subtree: true });
-    return () => {
-      mo.disconnect();
-      if (frame) cancelAnimationFrame(frame);
-    };
-  }, [ref, force]);
-  return force ?? waiting;
-}
-
 /** `.bubble(shape)` — iOS 26 `.glassEffect(.clear)`; web approximation. */
 function Bubble({ children, radius, style }: { children: ReactNode; radius: number | string; style?: CSSProperties }) {
   return (
@@ -112,9 +71,8 @@ function Bubble({ children, radius, style }: { children: ReactNode; radius: numb
   );
 }
 
-export function ClipReceipt({ data, statusBar = true, footer = true, lead, style, logo, saveCue }: { data: ClipReceiptData; statusBar?: boolean; footer?: boolean; /** Optional block drawn first in the content column, above the merchant card (the /business hero puts the next-visit coupon here). Omitted everywhere else. */ lead?: ReactNode; style?: CSSProperties; /** Optional merchant mark drawn inside the 56pt white disc of the merchant header, in place of the initial (which stays the fallback). */ logo?: ReactNode; /** Pulse the Save capsule to show it is the thing to tap. Default: automatic, while a real "Save to PapeX" button covers it (see useSaveWaiting). */ saveCue?: boolean }) {
-  const rootRef = useRef<HTMLDivElement>(null);
-  const cue = useSaveWaiting(rootRef, footer ? saveCue : false);
+export function ClipReceipt({ data, statusBar = true, footer = true, lead, style, logo, saveCue = false }: { data: ClipReceiptData; statusBar?: boolean; footer?: boolean; /** Optional block drawn first in the content column, above the merchant card (the /business hero puts the next-visit coupon here). Omitted everywhere else. */ lead?: ReactNode; style?: CSSProperties; /** Optional merchant mark drawn inside the 56pt white disc of the merchant header, in place of the initial (which stays the fallback). */ logo?: ReactNode; /** Pulse the Save capsule (app-kit .saveCue; a still outline under reduced motion) to show it is the thing to tap. The kit draws no real buttons, so only the caller knows when a demo is waiting for that tap: set it exactly then (e.g. while a page's own Save button lies over the capsule), never on a static mockup. Default off. */ saveCue?: boolean }) {
+  const cue = footer && saveCue;
   const c = clip.color;
   const sp = clip.spacing;
   const insetTop = 59; // device safe area (iPhone 15/16)
@@ -122,10 +80,7 @@ export function ClipReceipt({ data, statusBar = true, footer = true, lead, style
   const taxLabel = data.tax && subtotal > 0 ? `Tax (${((data.tax / subtotal) * 100).toFixed(1)}%)` : 'Tax';
   const initial = data.merchantName.trim().charAt(0).toUpperCase() || 'P';
   return (
-    <div ref={rootRef} data-app-kit-clip="" className={s.screen} style={{ background: 'var(--akc-background)', color: c.textPrimary, ...style }}>
-      {/* What this mockup is, for screen readers and search agents (the
-          drawn chrome around it is aria-hidden). Server-rendered. */}
-      <p className="sr-only">{CLIP_DESCRIPTION}</p>
+    <div data-app-kit-clip="" className={s.screen} style={{ background: 'var(--akc-background)', color: c.textPrimary, ...style }}>
       {/* content */}
       <div style={{ position: 'absolute', left: 0, right: 0, top: pt(insetTop + 74), padding: `0 ${pt(sp.md)}`, display: 'flex', flexDirection: 'column', gap: pt(sp.md) }}>
         {lead}
@@ -226,6 +181,12 @@ export function ClipReceipt({ data, statusBar = true, footer = true, lead, style
         </div>
       ) : null}
       {statusBar ? <StatusBar color={c.textPrimary} /> : null}
+      {/* What this mockup is, for screen readers and search agents (the
+          drawn chrome around it is aria-hidden). Server-rendered. LAST child
+          on purpose: customer/appui clipApp.module.css re-flows this root by
+          position (content column = first div, kit TopBar = second); a first
+          <p> here hid the whole receipt in ClipApp (p8 regression). */}
+      <p className="sr-only">{CLIP_DESCRIPTION}</p>
     </div>
   );
 }

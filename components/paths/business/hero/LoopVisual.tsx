@@ -8,6 +8,7 @@ import { PhoneChrome } from "../../customer/WalkPhone"
 import { ClipApp, ClipLockScreen } from "../../customer/appui"
 import { receiptMoment } from "../../customer/appui/Clip"
 import { demoContent } from "../../customer/content"
+import { cafeBadgeLogo } from "../PapexCafeLogo"
 import { CafeWalkAppScreen } from "./CafeAppScreen"
 import { ClipCouponLead, CouponScreen, type CouponState } from "./CouponScreen"
 import { CashierBody, CashierHands, CheckGlyph, HandBack, HandFront, ScannerArm } from "./SceneArt"
@@ -364,6 +365,7 @@ export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock:
                   savedLabel={demoContent.savedLabel}
                   originalLabel={demoContent.sectionTitles.original}
                   lead={<ClipCouponLead />}
+                  logo={cafeBadgeLogo(summary.merchantName)}
                   contentStyle={
                     {
                       transform: `translateY(${from(beat, "scroll") ? -scrollPx : 0}px)`,

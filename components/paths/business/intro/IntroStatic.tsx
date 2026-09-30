@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils"
 import { ClipReceiptScreen } from "../../customer/ReceiptCard"
+import { cafeBadgeLogo } from "../PapexCafeLogo"
 import { PhoneChrome } from "../../customer/WalkPhone"
 import { tapToRetain } from "../content"
 import { useDemoReceipt } from "../story/receipt"
@@ -47,7 +48,7 @@ export function IntroStatic() {
             <div inert>
               <PhoneChrome>
                 <div className={cn(s.layer, s.layerClip)} style={{ opacity: 1 }}>
-                  <ClipReceiptScreen summary={summary} />
+                  <ClipReceiptScreen summary={summary} logo={cafeBadgeLogo(summary.merchantName)} />
                 </div>
               </PhoneChrome>
             </div>
