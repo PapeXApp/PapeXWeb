@@ -13,13 +13,17 @@
 // Missing key pair = no sender: the route still saves and logs
 // "email skipped (no SES config)".
 //
-// Header injection: the subject is a fixed string per kind, and the From/To
-// come from env only. No user input ever reaches a header; submitted values
-// appear only in the plain-text body (already stripped of control chars by
-// lib/signup/schema.ts).
+// Header injection: From/To come from env only. For demo/blog the subject is
+// a fixed string and no user input reaches a header. The support email is the
+// one exception, on purpose, so Nico can hit Reply: its Subject carries the
+// topic label (fixed list) and the sender's name, with CR/LF and every other
+// control character stripped here as well as by the schema; and its
+// Reply-To is the sender's address, set only when it passes ADDRESS_RE (a
+// bare address, no whitespace or header-breaking characters). SES v2 builds
+// the MIME headers itself from these structured fields.
 
 import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
-import type { SignupInput } from "../../signup/schema";
+import { cleanText, SUPPORT_TOPICS, type SignupInput } from "../../signup/schema";
 
 export const DEFAULT_NOTIFY_FROM = "notifications@papexmail.com";
 export const DEFAULT_NOTIFY_TO = "nico@papex.app";
@@ -37,6 +41,8 @@ export interface SesConfig {
 export interface NotificationEmail {
   subject: string;
   text: string;
+  /** Reply-To address (support requests only: the sender). Omitted otherwise. */
+  replyTo?: string;
 }
 
 export type SendNotification = (email: NotificationEmail) => Promise<void>;
@@ -63,8 +69,34 @@ export function readSesConfig(env: Env = process.env): SesConfig | null {
   return { accessKeyId, secretAccessKey, region: env.AWS_SES_REGION?.trim() || DEFAULT_SES_REGION, from, to };
 }
 
+/** One header-safe line: no CR/LF or other control characters, capped. */
+function headerText(value: string, max = 150): string {
+  return cleanText(value).slice(0, max);
+}
+
 export function buildNotificationEmail(input: SignupInput, at: Date): NotificationEmail {
   const when = at.toISOString();
+  if (input.kind === "support") {
+    const topic = SUPPORT_TOPICS[input.topic];
+    const email: NotificationEmail = {
+      subject: headerText(`PapeX support: ${topic} \u2014 ${input.fullName}`, 200),
+      text: [
+        "New support request from papex.app (saved to the Firestore `support_requests` collection).",
+        "Reply to this email to answer the sender directly.",
+        "",
+        `Name:          ${input.fullName}`,
+        `Email:         ${input.email}`,
+        `Topic:         ${topic}`,
+        `Page:          ${input.path ?? "(not given)"}`,
+        `Received at:   ${when}`,
+        "",
+        "Message:",
+        input.message,
+      ].join("\n"),
+    };
+    if (ADDRESS_RE.test(input.email)) email.replyTo = input.email;
+    return email;
+  }
   if (input.kind === "demo") {
     return {
       subject: "PapeX: new demo request",
@@ -98,11 +130,13 @@ export function createSesSender(config: SesConfig): SendNotification {
     region: config.region,
     credentials: { accessKeyId: config.accessKeyId, secretAccessKey: config.secretAccessKey },
   });
-  return async ({ subject, text }) => {
+  return async ({ subject, text, replyTo }) => {
     await client.send(
       new SendEmailCommand({
         FromEmailAddress: config.from,
         Destination: { ToAddresses: config.to },
+        // Support requests only; demo/blog send no Reply-To (unchanged).
+        ...(replyTo && ADDRESS_RE.test(replyTo) ? { ReplyToAddresses: [replyTo] } : {}),
         Content: {
           Simple: {
             Subject: { Data: subject, Charset: "UTF-8" },

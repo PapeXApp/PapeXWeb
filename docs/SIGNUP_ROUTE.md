@@ -6,9 +6,12 @@ One server route for public sign-ups (Web 2.1, B3):
 |--------|--------------------------------------------|------------------------------------------------|
 | `demo` | `/business` DemoForm (`components/paths/business/DemoForm.tsx`) | `waitlist/{auto-id}`, same document the form used to write itself |
 | `blog` | footer box, `/blog`, blog posts (to be wired) | `blog_subscribers/{sha256(lower-cased email)}` |
+| `support` | `/support` "Send us a message" (`app/support/SupportForm.tsx`) | `support_requests/{auto-id}` |
 
 After a successful save it emails the team through AWS SES (plain text: kind,
-submitted fields, timestamp). The email runs after the response and can never
+submitted fields, timestamp). The **support** email is the one Nico answers
+directly: its `Reply-To` is the sender's (validated) address, so hitting Reply
+in Outlook writes back to them. Demo and blog emails have no Reply-To. The email runs after the response and can never
 change it; with no SES config the save still happens and the log says
 `email skipped (no SES config)`.
 
@@ -20,7 +23,9 @@ Contract and validation: `lib/signup/schema.ts`. Browser helper:
 
 ## Contract
 
-Request: `POST /api/signup`, `Content-Type: application/json`, body ≤ 4 KB.
+Request: `POST /api/signup`, `Content-Type: application/json`, body ≤ 4 KB
+(≤ 16 KB for kind `support`, whose message alone can be 4,000 characters; the
+route reads at most 16 KB and a demo/blog body over 4 KB is still a 413).
 
 ```jsonc
 // demo request
@@ -29,7 +34,19 @@ Request: `POST /api/signup`, `Content-Type: application/json`, body ≤ 4 KB.
 // blog sign-up
 { "kind": "blog", "email": "…", "source": "footer" | "blog-index" | "blog-post",
   "path": "/blog/some-post"?, "hp": ""? }
+// support request
+{ "kind": "support", "fullName": "…", "email": "…",
+  "topic": "app" | "device" | "other", "message": "…", "path": "/support"?, "hp": ""? }
 ```
+
+- Support topics (fixed; label = what the form shows and the email says):
+  `app` "The PapeX app", `device` "My PapeX device (business)", `other`
+  "Something else". Source of truth: `SUPPORT_TOPICS` in `lib/signup/schema.ts`.
+- Support `message`: 10–4,000 characters after cleaning. Unlike every other
+  field it keeps its line breaks (`cleanMultilineText`: CRLF/CR → LF, other
+  control/invisible characters stripped, at most one blank line in a row).
+- Support `email` must also be header-safe (no `<>,;"()[]\`), because it
+  becomes the notification's Reply-To.
 
 - Any other key → 400 `invalid_request`. Every value must be a string.
 - Values are NFC-normalised, control/zero-width/bidi characters stripped,
@@ -47,7 +64,7 @@ Responses (always JSON, always `Cache-Control: no-store`):
 | 400 | `{ "ok": false, "error": "invalid_json" \| "invalid_request" }` | unparseable body, unknown field, non-string value, unknown `kind` |
 | 400 | `{ "ok": false, "error": "invalid_fields", "fields": { "email": "Enter a valid email address.", … } }` | field validation (messages match the DemoForm's own) |
 | 405 | (Next default) | any method other than POST |
-| 413 | `{ "ok": false, "error": "too_large" }` | body over 4 KB |
+| 413 | `{ "ok": false, "error": "too_large" }` | body over 4 KB (16 KB for `support`) |
 | 415 | `{ "ok": false, "error": "unsupported_media_type" }` | not `application/json` |
 | 429 | `{ "ok": false, "error": "rate_limited" }` + `Retry-After` | > 6 requests per IP per 10 min (per instance, see below) |
 | 503 | prod: `{ "ok": false, "error": "unavailable" }`; dev: `{ …, "error": "not_configured", "message": "…set PAPEXWEB_SERVICE_ACCOUNT…" }` | Firestore credentials missing or unusable |
@@ -61,6 +78,7 @@ import { submitSignup, requestDemo, type SignupResult } from "@/lib/signup/clien
 // (The blog email sign-up and its subscribeToBlog helper were removed; the
 // route still accepts kind "blog", but the site no longer posts it.)
 requestDemo({ fullName, businessName, email, phone, posSystem, hp }): Promise<SignupResult>
+requestSupport({ fullName, email, topic, message, path, hp }): Promise<SignupResult>
 // SignupResult = { ok: true } | { ok: false, error: SignupErrorCode | "network", fields?, retryAfterSeconds? }
 ```
 
@@ -88,6 +106,38 @@ path?: string, createdAt: server timestamp
 
 Written with `create()`, so the first sign-up wins; repeats write nothing and
 send no email.
+
+`support_requests/{auto-id}`:
+
+```
+fullName: string, email: string (trimmed, case kept), topic: "app"|"device"|"other",
+message: string (line breaks kept), type: "support-request",
+createdAt: server timestamp, path?: string
+```
+
+### The support email
+
+- To: `SIGNUP_NOTIFY_TO` (default `nico@papex.app`), From: `SIGNUP_NOTIFY_FROM`.
+- **Reply-To: the sender's address** (SES v2 `ReplyToAddresses`), set only when
+  it passes the bare-address check (`ADDRESS_RE` in `email.ts`); otherwise
+  omitted. Demo/blog never set it.
+- Subject: `PapeX support: <topic label> — <name>`, run through `cleanText`
+  (no CR/LF or other control characters) and capped at 200 characters.
+- Plain-text body: name, email, topic, page path, received-at timestamp, then
+  the message.
+
+## Support form fallback: open the visitor's email app
+
+While the route answers 503 (no `PAPEXWEB_SERVICE_ACCOUNT`), or on a network
+failure, 500 or 429, `/support`'s form keeps what was typed and shows "We
+couldn't send that from here. Email it to us instead:" with an **Open email**
+button: a `mailto:nico@papex.app` link, subject and body percent-encoded
+(RFC 6068, CRLF line breaks), carrying the visitor's message and details
+(`buildSupportMailto` / `shouldOfferEmailFallback` in
+`lib/signup/supportMailto.ts`, tested). There is deliberately **no**
+client-side Firestore write for support requests. Nothing to remove later:
+once the credential is live the route answers 200 and the fallback simply
+never shows.
 
 ## Temporary go-live fallback (DemoForm only)
 
@@ -132,13 +182,20 @@ Suggested least-privilege IAM policy for the SES key:
 ## Firestore rules (console-managed; not in this repo)
 
 The route uses firebase-admin, which bypasses rules. Clients must never touch
-`blog_subscribers`, so add:
+`blog_subscribers` or `support_requests` (the latter holds people's names,
+emails and messages), so add:
 
 ```
 match /blog_subscribers/{id} {
   allow read, write: if false;   // server (Admin SDK) only
 }
+match /support_requests/{id} {
+  allow read, write: if false;   // server (Admin SDK) only
+}
 ```
+
+(Firestore denies by default, so this documents intent more than it changes
+anything, unless a broader wildcard rule exists. Not deployed from this repo.)
 
 `waitlist`: once `PAPEXWEB_SERVICE_ACCOUNT` is live the browser only writes
 it through the temporary fallback (which then never triggers). After the new
@@ -196,10 +253,13 @@ demo requests fail both ways.
    `AWS_SES_SECRET_ACCESS_KEY` (and `AWS_SES_REGION` only if not us-east-1)
    to Vercel. Confirm `nico@papex.app` is a verified identity if the SES
    account is still in the sandbox.
-4. **Firestore rules**: add the `blog_subscribers` deny-all block above.
+4. **Firestore rules**: add the `blog_subscribers` and `support_requests`
+   deny-all blocks above.
 5. Merge the branch; Vercel builds the Preview. On the Preview, submit the
    /business demo form once: check a new `waitlist` doc with
-   `type: "business-demo-request"` and the email arriving. Delete the test doc.
+   `type: "business-demo-request"` and the email arriving. Then send the
+   /support form once: check a `support_requests` doc and that hitting Reply
+   on the email addresses the sender. Delete the test docs.
 6. Promote/merge to `main` (= production deploy).
 7. A day later (only after step 2 is live): remove client write access to
    `waitlist` in the rules, then remove the DemoForm fallback (see

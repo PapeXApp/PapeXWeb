@@ -7,8 +7,9 @@
 //   const res = await requestDemo({ ...formFields, hp })
 //   if (res.ok) showThanks() else if (res.fields?.email) showFieldError(res.fields.email)
 //
-// The only caller today is the /business demo form (the blog email sign-up was
-// removed; /api/signup still accepts kind "blog", but nothing posts it).
+// Callers: the /business demo form (requestDemo) and the /support message
+// form (requestSupport). The blog email sign-up was removed; /api/signup
+// still accepts kind "blog", but nothing posts it.
 //
 // Pass the form's honeypot input value as `hp` (see HONEYPOT_FIELD in
 // ./schema): leave it undefined when the form has no honeypot input.
@@ -18,6 +19,7 @@ import type {
   SignupErrorCode,
   SignupFieldErrors,
   SignupPayload,
+  SupportRequestPayload,
 } from "./schema";
 
 export const SIGNUP_ENDPOINT = "/api/signup";
@@ -75,4 +77,8 @@ export async function submitSignup(payload: SignupPayload, opts: SignupRequestOp
 
 export function requestDemo(fields: Omit<DemoRequestPayload, "kind">, opts?: SignupRequestOptions): Promise<SignupResult> {
   return submitSignup({ kind: "demo", ...fields }, opts);
+}
+
+export function requestSupport(fields: Omit<SupportRequestPayload, "kind">, opts?: SignupRequestOptions): Promise<SignupResult> {
+  return submitSignup({ kind: "support", ...fields }, opts);
 }

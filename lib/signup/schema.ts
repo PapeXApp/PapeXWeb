@@ -4,21 +4,32 @@
 // and its server-side validation. Pure TypeScript, no server imports, so the
 // browser helper (lib/signup/client.ts) can share the types.
 //
-// Two kinds of submission share the route:
+// Three kinds of submission share the route:
 //   - "demo": the /business DemoForm. Saved to the existing `waitlist`
 //     collection with exactly the fields the form used to write itself.
 //   - "blog": a blog sign-up from the footer box, /blog or a post. Saved to
 //     `blog_subscribers`, one document per email address.
+//   - "support": the /support "Send us a message" form. Saved to
+//     `support_requests`; the team email carries Reply-To = the sender.
 //
 // The validator is strict: unknown keys are rejected, every value must be a
 // string, control/invisible characters are stripped, lengths are capped.
 // Error messages are fixed strings; nothing from the input is echoed back.
 
-export const SIGNUP_KINDS = ["demo", "blog"] as const;
+export const SIGNUP_KINDS = ["demo", "blog", "support"] as const;
 export type SignupKind = (typeof SIGNUP_KINDS)[number];
 
 export const BLOG_SOURCES = ["footer", "blog-index", "blog-post"] as const;
 export type BlogSource = (typeof BLOG_SOURCES)[number];
+
+/** The support form's fixed topics (value -> the label shown and emailed). */
+export const SUPPORT_TOPICS = {
+  app: "The PapeX app",
+  device: "My PapeX device (business)",
+  other: "Something else",
+} as const;
+export type SupportTopic = keyof typeof SUPPORT_TOPICS;
+export const SUPPORT_TOPIC_VALUES = Object.keys(SUPPORT_TOPICS) as SupportTopic[];
 
 /**
  * Honeypot key. Real forms render it as an off-screen, unlabelled input that
@@ -37,6 +48,8 @@ export const SIGNUP_LIMITS = {
   posSystem: 120,
   path: 300,
   honeypot: 500,
+  messageMin: 10,
+  messageMax: 4000,
 } as const;
 
 // ---- request payloads -------------------------------------------------------
@@ -60,7 +73,18 @@ export interface BlogSignupPayload {
   hp?: string;
 }
 
-export type SignupPayload = DemoRequestPayload | BlogSignupPayload;
+export interface SupportRequestPayload {
+  kind: "support";
+  fullName: string;
+  email: string;
+  topic: SupportTopic;
+  message: string;
+  /** Site path the form was sent from, e.g. "/support". */
+  path?: string;
+  hp?: string;
+}
+
+export type SignupPayload = DemoRequestPayload | BlogSignupPayload | SupportRequestPayload;
 
 // ---- normalised values (what the server stores) -----------------------------
 
@@ -84,7 +108,18 @@ export interface BlogSignup {
   path?: string;
 }
 
-export type SignupInput = DemoRequest | BlogSignup;
+export interface SupportRequest {
+  kind: "support";
+  fullName: string;
+  /** Trimmed, case preserved; header-safe (it becomes the email's Reply-To). */
+  email: string;
+  topic: SupportTopic;
+  /** Line breaks kept (\n), other control/invisible characters stripped. */
+  message: string;
+  path?: string;
+}
+
+export type SignupInput = DemoRequest | BlogSignup | SupportRequest;
 
 // ---- response ---------------------------------------------------------------
 
@@ -99,7 +134,9 @@ export type SignupErrorCode =
   | "unavailable"
   | "server_error";
 
-export type SignupFieldErrors = Partial<Record<"fullName" | "businessName" | "email" | "phone" | "posSystem" | "source" | "path", string>>;
+export type SignupFieldErrors = Partial<
+  Record<"fullName" | "businessName" | "email" | "phone" | "posSystem" | "source" | "path" | "topic" | "message", string>
+>;
 
 export type SignupResponse =
   | { ok: true }
@@ -117,7 +154,14 @@ const PATH_RE = /^\/(?!\/)[A-Za-z0-9\-._~/%]*$/;
 const ALLOWED_KEYS: Record<SignupKind, ReadonlySet<string>> = {
   demo: new Set(["kind", "fullName", "businessName", "email", "phone", "posSystem", HONEYPOT_FIELD]),
   blog: new Set(["kind", "email", "source", "path", HONEYPOT_FIELD]),
+  support: new Set(["kind", "fullName", "email", "topic", "message", "path", HONEYPOT_FIELD]),
 };
+
+// Characters that must never reach an email header. The support email puts
+// the sender's address in Reply-To, so on top of EMAIL_RE it may not contain
+// any of these (same class as email.ts's ADDRESS_RE, plus parentheses and
+// brackets, which some mailers treat as comments / domain literals).
+const HEADER_UNSAFE_RE = /[<>,;"()[\]\\]/;
 
 // C0/C1 controls (incl. CR/LF/TAB), zero-width and bidi-override characters.
 const STRIP_RE = /[\u0000-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u2069\uFEFF]/g;
@@ -125,6 +169,27 @@ const STRIP_RE = /[\u0000-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2060-\u
 /** NFC, control/invisible characters to spaces, whitespace collapsed, trimmed. */
 export function cleanText(value: string): string {
   return value.normalize("NFC").replace(STRIP_RE, " ").replace(/\s+/g, " ").trim();
+}
+
+// Everything STRIP_RE removes except LF, which a message keeps.
+const STRIP_MULTILINE_RE = /[\u0000-\u0009\u000B-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u2069\uFEFF]/g;
+
+/**
+ * For free text that keeps its line breaks (the support message): NFC,
+ * CRLF/CR to LF, other control/invisible characters to spaces, runs of spaces
+ * collapsed, trailing spaces per line dropped, at most one blank line in a
+ * row, trimmed.
+ */
+export function cleanMultilineText(value: string): string {
+  return value
+    .normalize("NFC")
+    .replace(/\r\n?/g, "\n")
+    .replace(/[\u2028\u2029]/g, "\n")
+    .replace(STRIP_MULTILINE_RE, " ")
+    .replace(/[^\S\n]+/g, " ")
+    .replace(/ *\n */g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 export type ValidationResult =
@@ -152,10 +217,20 @@ function checkEmail(raw: string): { value: string } | { error: string } {
   return { value: email };
 }
 
+/** An optional site-relative path; records a field error when it is unsafe. */
+function checkPath(rawPath: string, fields: SignupFieldErrors): string | undefined {
+  if (!rawPath) return undefined;
+  if (rawPath.length > SIGNUP_LIMITS.path || !PATH_RE.test(rawPath)) {
+    fields.path = "Invalid page path.";
+    return undefined;
+  }
+  return rawPath;
+}
+
 export function validateSignupInput(raw: unknown): ValidationResult {
   if (!isPlainObject(raw)) return { ok: false, error: "invalid_request" };
   const kind = raw.kind;
-  if (kind !== "demo" && kind !== "blog") return { ok: false, error: "invalid_request" };
+  if (kind !== "demo" && kind !== "blog" && kind !== "support") return { ok: false, error: "invalid_request" };
 
   const allowed = ALLOWED_KEYS[kind];
   for (const key of Object.keys(raw)) {
@@ -188,14 +263,29 @@ export function validateSignupInput(raw: unknown): ValidationResult {
     return { ok: true, value: { kind: "demo", fullName, businessName, email: email.value, phone, posSystem } };
   }
 
+  if (kind === "support") {
+    const fullName = cleanText(str("fullName"));
+    const topic = str("topic");
+    const message = cleanMultilineText(str("message"));
+
+    if (!fullName) fields.fullName = "Your name is required.";
+    else if (fullName.length > SIGNUP_LIMITS.fullName) fields.fullName = "That name is too long.";
+    if ("value" in email && HEADER_UNSAFE_RE.test(email.value)) fields.email = "Enter a valid email address.";
+    if (!(SUPPORT_TOPIC_VALUES as string[]).includes(topic)) fields.topic = "Choose a topic.";
+    if (!message) fields.message = "Tell us what's going on.";
+    else if (message.length < SIGNUP_LIMITS.messageMin) fields.message = "Add a little more detail (at least 10 characters).";
+    else if (message.length > SIGNUP_LIMITS.messageMax) fields.message = "That message is too long (4,000 characters max).";
+    const path = checkPath(str("path"), fields);
+
+    if (Object.keys(fields).length > 0 || "error" in email) return { ok: false, error: "invalid_fields", fields };
+    const value: SupportRequest = { kind: "support", fullName, email: email.value, topic: topic as SupportTopic, message };
+    if (path) value.path = path;
+    return { ok: true, value };
+  }
+
   const source = str("source");
   if (!(BLOG_SOURCES as readonly string[]).includes(source)) fields.source = "Unknown sign-up source.";
-  const rawPath = str("path");
-  let path: string | undefined;
-  if (rawPath) {
-    if (rawPath.length > SIGNUP_LIMITS.path || !PATH_RE.test(rawPath)) fields.path = "Invalid page path.";
-    else path = rawPath;
-  }
+  const path = checkPath(str("path"), fields);
   if (Object.keys(fields).length > 0 || "error" in email) return { ok: false, error: "invalid_fields", fields };
   const value: BlogSignup = { kind: "blog", email: email.value.toLowerCase(), source: source as BlogSource };
   if (path) value.path = path;

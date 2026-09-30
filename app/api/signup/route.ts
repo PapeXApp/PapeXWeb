@@ -5,6 +5,8 @@
 //       -> Firestore `waitlist` (same doc shape the DemoForm always wrote)
 //   { kind: "blog", email, source: "footer"|"blog-index"|"blog-post", path?, hp? }
 //       -> Firestore `blog_subscribers/{sha256(email)}`
+//   { kind: "support", fullName, email, topic: "app"|"device"|"other", message, path?, hp? }
+//       -> Firestore `support_requests` (email has Reply-To = the sender)
 // then emails the team via SES (after the response; skipped if unconfigured).
 //
 // Contract + env + deploy steps: docs/SIGNUP_ROUTE.md. Logic lives in
@@ -15,7 +17,7 @@ import { after, NextResponse, type NextRequest } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { getPapexWebDb, hasPapexWebCredentials, PAPEXWEB_CREDENTIALS_ENV } from "@/lib/server/firebaseAdminWeb";
 import { createSesSender, readSesConfig, type SendNotification } from "@/lib/server/signup/email";
-import { handleSignup, MAX_SIGNUP_BODY_BYTES } from "@/lib/server/signup/handler";
+import { handleSignup, MAX_REQUEST_BODY_BYTES } from "@/lib/server/signup/handler";
 import { clientIpFromHeaders, createRateLimiter, SIGNUP_RATE_LIMIT } from "@/lib/server/signup/rateLimit";
 import { createFirestoreSignupStore, type SignupStore } from "@/lib/server/signup/store";
 
@@ -68,7 +70,7 @@ export async function POST(req: NextRequest) {
     const contentType = req.headers.get("content-type");
     // Don't read the body of a request we're going to refuse anyway.
     const bodyText = contentType?.toLowerCase().includes("application/json")
-      ? await readBoundedText(req, MAX_SIGNUP_BODY_BYTES)
+      ? await readBoundedText(req, MAX_REQUEST_BODY_BYTES)
       : "";
     const res = await handleSignup(
       { contentType, bodyText, ip: clientIpFromHeaders((n) => req.headers.get(n)) },
