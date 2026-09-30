@@ -5,13 +5,26 @@
 // It is intentionally separate from /support, which is the MERCHANT/RDH
 // hardware help hub — different audience, different content.
 //
-// Keep this minimal: an email contact and a few true, verified FAQ items.
-// Do not add features here that aren't confirmed in the app.
+// Keep this minimal: an email contact, a few true, verified FAQ items and the
+// support request form. Do not add features here that aren't confirmed in the app.
+//
+// Web 2.1 P7 (Nico, 2026-09-29): moved off FramerPageShell onto the same
+// redesign shell as /support (SiteShell + FlowGround + in-flow footer, plane
+// watermark, WordReveal/Reveal hero, ScrollWords/ScrollReveal below) and its
+// card styles (app/support/support.module.css), with the "Send us a message"
+// form (SupportForm -> /api/signup kind "support" -> nico@papex.app).
 
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { FramerPageShell } from '@/components/framer/framer-page-shell'
+import { SiteShell } from '@/components/brand/site-shell'
+import { SiteFooter } from '@/components/brand/site-footer'
+import { FlowGround } from '@/components/paths/shared/FlowGround'
+import { FlowSection } from '@/components/paths/shared/FlowSection'
+import { SectionLabel } from '@/components/paths/shared/SectionLabel'
+import { Reveal, ScrollReveal, ScrollWords, WordReveal } from '@/components/motion'
 import { DEFAULT_OG_IMAGE } from '@/components/blog/image'
+import { SupportForm } from '../support/SupportForm'
+import styles from '../support/support.module.css'
 
 const OG_ALT =
   'The PapeX logo and the words Your receipt, one tap away, beside an iPhone showing a PapeX receipt'
@@ -55,7 +68,7 @@ const FAQS: { q: string; a: React.ReactNode }[] = [
         See our{' '}
         <Link
           href="/privacy"
-          className="text-[#ff9933] underline decoration-transparent hover:decoration-[#ff9933] transition"
+          className={styles.inlineLink}
         >
           Privacy Policy
         </Link>
@@ -65,54 +78,81 @@ const FAQS: { q: string; a: React.ReactNode }[] = [
   },
 ]
 
+/** The disclosure icon (same as /support): the vertical bar lies flat on open. */
+function PlusIcon() {
+  return (
+    <span aria-hidden="true" className={styles.icon}>
+      <span className={styles.bar} />
+      <span className={`${styles.bar} ${styles.barV}`} />
+    </span>
+  )
+}
+
 export default function AppSupportPage() {
   return (
-    <FramerPageShell>
-      <div className="container mx-auto py-10 px-4">
-        <div className="mx-auto max-w-2xl space-y-10">
-          <header className="space-y-3 text-center md:text-left">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#ff9933]">
-              Shopper support
-            </p>
-            <h1 className="text-3xl md:text-4xl font-bold text-[#0a3d62] leading-tight">
-              App assistance
-            </h1>
-            <p className="text-lg text-[#0a3d62]/70 leading-relaxed">
-              Need help with the PapeX app? Email us at{' '}
-              <a
-                href="mailto:support@papex.app"
-                className="text-[#ff9933] underline decoration-transparent hover:decoration-[#ff9933] transition"
-              >
-                support@papex.app
-              </a>{' '}
-              and we&rsquo;ll get back to you.
-            </p>
-          </header>
+    <SiteShell path="page">
+      <FlowGround initial="light" footer={<SiteFooter inFlow />}>
+        <FlowSection ground="light" className={`${styles.section} ${styles.top}`}>
+          <div className={styles.wrap}>
+            <header className={styles.head}>
+              <Reveal>
+                <SectionLabel>Shopper support</SectionLabel>
+              </Reveal>
+              <WordReveal as="h1" className={`rd-display ${styles.title}`}>
+                App assistance
+              </WordReveal>
+              <Reveal as="p" delay={0.15} className={styles.lead}>
+                Need help with the PapeX app? Email us at{' '}
+                <a href="mailto:support@papex.app" className={styles.inlineLink}>
+                  support@papex.app
+                </a>{' '}
+                or send us a message below, and we&rsquo;ll get back to you.
+              </Reveal>
+            </header>
+          </div>
+        </FlowSection>
 
-          <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#0a3d62]">FAQ</h2>
-            <div className="space-y-3">
+        <FlowSection ground="light" id="faq" className={styles.section}>
+          <div className={styles.wrap}>
+            <div className={styles.head}>
+              <ScrollWords as="h2" className={styles.h2}>
+                FAQ
+              </ScrollWords>
+            </div>
+            <div className={`${styles.stack} ${styles.body}`}>
               {FAQS.map((item) => (
-                <details
-                  key={item.q}
-                  className="group rounded-2xl border border-[#0a3d62]/15 bg-white p-5 open:shadow-sm"
-                >
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold text-[#0a3d62]">
-                    <span>{item.q}</span>
-                    <span
-                      aria-hidden
-                      className="text-[#ff9933] transition-transform group-open:rotate-45 text-xl leading-none"
-                    >
-                      +
-                    </span>
-                  </summary>
-                  <p className="mt-3 text-[#0a3d62]/80 leading-relaxed">{item.a}</p>
-                </details>
+                <ScrollReveal key={item.q}>
+                  <details className={`${styles.card} ${styles.details}`}>
+                    <summary className={styles.summary}>
+                      <span>{item.q}</span>
+                      <PlusIcon />
+                    </summary>
+                    <div className={styles.answer}>
+                      <p>{item.a}</p>
+                    </div>
+                  </details>
+                </ScrollReveal>
               ))}
             </div>
-          </section>
-        </div>
-      </div>
-    </FramerPageShell>
+          </div>
+        </FlowSection>
+
+        <FlowSection ground="light" id="message" className={`${styles.section} ${styles.last}`}>
+          <div className={styles.wrap}>
+            <div className={styles.head}>
+              <ScrollWords as="h2" className={styles.h2}>
+                Send us a message
+              </ScrollWords>
+              <ScrollReveal as="p" className={styles.lead}>
+                Tell us what&rsquo;s going on and we&rsquo;ll reply by email.
+              </ScrollReveal>
+            </div>
+            <ScrollReveal className={styles.body}>
+              <SupportForm path="/app-support" />
+            </ScrollReveal>
+          </div>
+        </FlowSection>
+      </FlowGround>
+    </SiteShell>
   )
 }

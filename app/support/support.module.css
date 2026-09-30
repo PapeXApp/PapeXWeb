@@ -547,3 +547,24 @@
   height: 1px;
   overflow: hidden;
 }
+
+/* Inline text links (/app-support lead + FAQ answers): the ground's ink with
+   an orange underline, same as the path FAQs (orange text on the light ground
+   is under 3:1). */
+.inlineLink {
+  color: var(--flow-fg);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--orange);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  transition: text-decoration-color 200ms ease;
+}
+.inlineLink:hover {
+  text-decoration-color: currentColor;
+}
+.inlineLink:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
