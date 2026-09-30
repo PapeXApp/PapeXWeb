@@ -7,11 +7,15 @@
 // as one surface with the rest of the redesign rather than a bolted-on
 // legacy subpage.
 //
-// No city/address, no personal emails on cards (LinkedIn only, and only once
-// a URL exists), no invented quotes or numbers.
+// No city/address, no invented quotes or numbers. Contact chips: work email
+// for the three co-founders only (Nico, 2026-09-29) and LinkedIn only once a
+// URL exists — see team.ts.
+//
+// Tap a card to see a short bio: each card is the client component
+// `TeamCard` (./TeamCard.tsx); this page stays a Server Component because it
+// owns `metadata`.
 
 import type { Metadata } from 'next'
-import Image from 'next/image'
 import Link from 'next/link'
 import { SiteShell } from '@/components/brand/site-shell'
 import { FlowGround } from '@/components/paths/shared/FlowGround'
@@ -19,7 +23,8 @@ import { FlowSection } from '@/components/paths/shared/FlowSection'
 import { SectionLabel } from '@/components/paths/shared/SectionLabel'
 import { SiteFooter } from '@/components/brand/site-footer'
 import { DEFAULT_OG_IMAGE } from '@/components/blog/image'
-import { teamGroups, initialsFor } from './team'
+import { teamGroups } from './team'
+import { TeamCard } from './TeamCard'
 import styles from './about.module.css'
 
 const OG_ALT =
@@ -69,34 +74,7 @@ export default function AboutPage() {
                 <h2 className={styles.groupTitle}>{group.title}</h2>
                 <ul className={styles.grid}>
                   {group.members.map((member) => (
-                    <li key={member.name} className={styles.card}>
-                      {member.photo ? (
-                        <div className={styles.avatarPhoto}>
-                          <Image
-                            src={member.photo}
-                            alt={member.name}
-                            fill
-                            sizes="92px"
-                          />
-                        </div>
-                      ) : (
-                        <div className={styles.avatarInitials} aria-hidden="true">
-                          {initialsFor(member.name)}
-                        </div>
-                      )}
-                      <span className={styles.name}>{member.name}</span>
-                      <span className={styles.role}>{member.role}</span>
-                      {member.linkedin ? (
-                        <a
-                          href={member.linkedin}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={styles.linkedin}
-                        >
-                          LinkedIn
-                        </a>
-                      ) : null}
-                    </li>
+                    <TeamCard key={member.name} member={member} />
                   ))}
                 </ul>
               </div>
