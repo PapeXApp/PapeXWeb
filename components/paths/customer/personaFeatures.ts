@@ -53,7 +53,7 @@ export const personaFeatureLines: Record<PersonaId, Record<FeatureKey, string>> 
   },
   casual: {
     // NICO
-    add: "Keeping record has never been easier: take a photo, email it (yourname@papexmail.com), or tap it.",
+    add: "Keeping record has never been easier: take a photo, send it to your PapeX email, or tap it.",
     // NICO
     find: "Find any receipt in seconds, already sorted by store and category.",
     // NICO (2026-09-29, all personas)
