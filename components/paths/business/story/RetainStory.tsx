@@ -1607,7 +1607,9 @@ export function RetainStory({ header }: { header: ReactNode }) {
           <span className={s.ground} ref={groundRef} aria-hidden="true" />
 
           {/* ---- act 1: printer + slip travel together as the rig ---- */}
-          <div className={s.rig} ref={rigRef} aria-hidden="true" inert>
+          {/* data-flow-static on the rig, laptop lid, phone dashboard and
+              spark: mockups in their own colours (shared/flow.module.css). */}
+          <div className={s.rig} ref={rigRef} aria-hidden="true" inert data-flow-static="">
             <div className={s.feedClip}>
               <div className={s.paper} ref={paperRef}>
                 <span className={s.paperShadow} ref={shadowRef} />
@@ -1685,7 +1687,7 @@ export function RetainStory({ header }: { header: ReactNode }) {
             role={live ? "region" : undefined}
             aria-label={live ? story.laptopLabel : undefined}
           >
-            <div className={s.lid} ref={lidRef}>
+            <div className={s.lid} ref={lidRef} data-flow-static="">
               <div className={s.screen}>
                 <FitFrame width={DASH_W} height={DASH_H} fallback={0.58}>
                   <MerchantDemo layout="desktop" reset={reset} />
@@ -1761,7 +1763,7 @@ export function RetainStory({ header }: { header: ReactNode }) {
             role={live ? "region" : undefined}
             aria-label={live ? story.laptopLabel : undefined}
           >
-            <div className={s.pdPhone}>
+            <div className={s.pdPhone} data-flow-static="">
               <PhoneChrome>
                 <FitFrame width={393} height={852} fallback={0.68}>
                   <MerchantDemo layout="mobile" reset={reset} />
@@ -1772,7 +1774,7 @@ export function RetainStory({ header }: { header: ReactNode }) {
           </div>
 
           {/* ---- the spark ---- */}
-          <div className={s.spark} aria-hidden="true">
+          <div className={s.spark} aria-hidden="true" data-flow-static="">
             <span className={s.launch} ref={launchRef} />
             {Array.from({ length: SPARK_N }, (_, i) => (
               <span

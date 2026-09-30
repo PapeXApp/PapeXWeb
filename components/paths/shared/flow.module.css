@@ -37,9 +37,67 @@
   isolation: isolate;
   background-color: var(--flow-ground);
   color: var(--flow-fg);
+}
+
+/* --- Where the crossfade runs (scroll perf, 2026-09-29) ---------------------
+   The five tokens are inherited, so transitioning them ON .flow re-resolved
+   the style of every element on the page (~3,400 on /customers, ~4,100 on
+   /business) on every frame of the 700ms fade: ~20-35ms of style work per
+   frame on a laptop, several times that on a phone. That was the scroll
+   "glitch" each time a section took the middle of the screen. The fade itself
+   is unchanged (same tokens, 700ms, same curve); it just runs lower down:
+
+     .flow           SNAPS to the new ground (no transition here any more);
+     .flow::before   paints the ground and fades it — one leaf element;
+     .kit            fades for the watermark (it reads --flow-fg/--flow-ground);
+     [data-flow-block]  each top-level block (a section, the ribbon, the
+                     footer wrapper). FlowGround.tsx marks them and sets
+                     `data-flow-live` on the ones on or near the screen; only
+                     those fade. A block further away snaps, unseen.
+     [data-flow-static] a mockup (phone, laptop, card) that draws in its own
+                     colours: it keeps one fixed set of tokens, so a swap
+                     never re-styles its hundreds of elements. See the rule
+                     below before adding one.
+
+   A block re-declares `color: var(--flow-fg)` at zero specificity: exactly
+   what it inherited from .flow, but resolved from its own (fading) tokens, so
+   text that inherits its colour fades with the ground. Before hydration
+   nothing is marked and everything inherits from .flow, as it always did. */
+.flow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--flow-ground);
+}
+.flow::before,
+.kit,
+:where(.flow [data-flow-block][data-flow-live]) {
   transition-property: --flow-ground, --flow-fg, --flow-fg-2, --flow-fg-3, --flow-hair;
   transition-duration: 700ms;
   transition-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+:where(.flow [data-flow-block]) {
+  color: var(--flow-fg);
+}
+/* data-flow-static: ONLY on a subtree whose look does not depend on the
+   ground at all — a phone/laptop/card mockup that draws in its own palette.
+   Nothing inside may read --flow-* or rely on inheriting the page's text
+   colour. It pins the tokens to ONE fixed set (the light ground's, i.e. dark
+   ink — the right ink for these light, elevated surfaces) and stops the page
+   colour at its edge, so neither a ground swap nor the fade that follows
+   restyles its hundreds of elements. Verified 2026-09-29 by flipping the
+   ground with transitions off: no element inside any of them changed. */
+.flow [data-flow-static] {
+  --flow-ground: #f5f5f5;
+  --flow-fg: #00121d;
+  --flow-fg-2: rgba(0, 18, 29, 0.66);
+  --flow-fg-3: rgba(0, 18, 29, 0.6);
+  --flow-hair: rgba(0, 18, 29, 0.09);
+}
+:where(.flow [data-flow-static]) {
+  color: var(--flow-fg);
 }
 /* --flow-fg-3 is the faint tier (s-24): the least ink that still clears
    4.5:1 on its ground, with a little room for the aurora pools. Was .46 on

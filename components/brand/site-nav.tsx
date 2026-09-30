@@ -125,12 +125,14 @@ export function SiteNav({ path }: { path: SitePath }) {
   // Getting this right avoids a one-frame wrong-glass flash before the probe
   // in use-glass-theme runs.
   const initialGlass: GlassTheme = path === 'customer' || path === 'page' ? 'light' : 'dark'
-  const probed = useGlassTheme(initialGlass)
   // On the path homes the sections are transparent and the real backdrop is
   // FlowGround's page ground, which swaps at mid-viewport — follow it
   // directly (see components/paths/shared/flowSignal.ts). Everywhere else
-  // it's null and the probe decides.
+  // it's null and the probe decides. While the ground is known the probe is
+  // switched off: its per-scroll-frame elementFromPoint + style walk was
+  // pure cost there (scroll perf, 2026-09-29).
   const flowGround = useFlowGround()
+  const probed = useGlassTheme(initialGlass, !flowGround)
   const glass: GlassTheme = flowGround ? (flowGround === 'navy' ? 'dark' : 'light') : probed
   const pathname = usePathname()
   const storeUrl = useStoreUrl()

@@ -58,12 +58,16 @@ function probeTheme(fallback: GlassTheme): GlassTheme {
   return fallback
 }
 
-export function useGlassTheme(initial: GlassTheme): GlassTheme {
+/** `enabled: false` stops probing (and listening to scroll) while the
+ *  caller has a better source for the theme — the nav on a path home, which
+ *  follows FlowGround's ground instead. The last probed value is kept. */
+export function useGlassTheme(initial: GlassTheme, enabled = true): GlassTheme {
   const [theme, setTheme] = useState<GlassTheme>(initial)
   const pathname = usePathname()
   const rafRef = useRef<number | null>(null)
 
   useEffect(() => {
+    if (!enabled) return
     let cancelled = false
 
     const measure = () => {
@@ -91,7 +95,7 @@ export function useGlassTheme(initial: GlassTheme): GlassTheme {
       window.removeEventListener('scroll', schedule)
       window.removeEventListener('resize', schedule)
     }
-  }, [initial, pathname])
+  }, [initial, pathname, enabled])
 
   return theme
 }

@@ -11,6 +11,14 @@ import styles from "./flow.module.css"
  *  crossing it owns the ground. */
 const MIDDLE_BAND = "-49% 0px -49% 0px"
 
+/** The viewport plus a quarter screen above and below. A top-level block in
+ *  this band runs the ground crossfade itself (`data-flow-live`); anything
+ *  further away snaps to the new ground, unseen. The fade's curve is
+ *  front-loaded, so by the time a block from outside the band scrolls into
+ *  view the fade is all but done. See "Where the crossfade runs" in
+ *  flow.module.css. */
+const LIVE_BAND = "25% 0px 25% 0px"
+
 /**
  * The page-level ground for a path home, plus the one depth kit every section
  * shares. See flow.module.css for the full rationale.
@@ -85,8 +93,33 @@ export function FlowGround({
     )
     sections.forEach((el) => observer.observe(el))
     if (footer) observer.observe(footer)
+
+    // Scroll perf: only the top-level blocks near the screen run the fade, so
+    // a ground swap restyles those instead of the whole page. Blocks =
+    // <main>'s children (sections, the ribbon, wrappers) + the footer wrapper.
+    const main = root.querySelector<HTMLElement>(`#${MAIN_ID}`)
+    const blocks = main
+      ? [
+          ...Array.from(main.children),
+          ...Array.from(main.parentElement?.children ?? []).filter((el) => el !== main),
+        ]
+      : []
+    const live = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          entry.target.toggleAttribute("data-flow-live", entry.isIntersecting)
+        }
+      },
+      { rootMargin: LIVE_BAND, threshold: 0 },
+    )
+    blocks.forEach((el) => {
+      el.setAttribute("data-flow-block", "")
+      live.observe(el)
+    })
+
     return () => {
       observer.disconnect()
+      live.disconnect()
       publishFlowGround(null)
     }
   }, [])

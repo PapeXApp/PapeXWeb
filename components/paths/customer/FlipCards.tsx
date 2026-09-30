@@ -1223,6 +1223,9 @@ export function FlipCard({ card, index }: { card: Card; index: number }) {
     <div
       data-flipcard={id}
       data-nojs="flip-card"
+      // Own palette, never the page ground: kept out of the ground fade's
+      // per-frame restyle (see [data-flow-static] in shared/flow.module.css).
+      data-flow-static=""
       onPointerMove={onPointerMove}
       className={cn(styles.card, flipped && styles.cardFlipped)}
     >

@@ -89,6 +89,11 @@ export function HowItWorks() {
   const bowTimer = useRef<number | undefined>(undefined);
   const runwayRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
+  /** The step list: the only thing that reads --walk-s. Pinned mode writes the
+   *  per-frame value HERE, not on the stage — a custom property set on the
+   *  stage re-styled its whole subtree (the phone included, ~1,000 nodes) on
+   *  every scroll frame. */
+  const stepsRef = useRef<HTMLDivElement>(null);
   const phoneRef = useRef<HTMLDivElement>(null);
   /** The step most recently asked for. Equal to `step` except during a bow,
    *  which lands on whatever this is when it finishes. */
@@ -155,7 +160,7 @@ export function HowItWorks() {
    *  listener normally owns --walk-s, and hands it back on the next scroll. */
   const showBeat = useCallback(
     (next: number, animate: boolean) => {
-      if (pinnedRef.current) stageRef.current?.style.setProperty("--walk-s", String(next));
+      if (pinnedRef.current) stepsRef.current?.style.setProperty("--walk-s", String(next));
       land(next, animate);
     },
     [land],
@@ -218,8 +223,8 @@ export function HowItWorks() {
   useEffect(() => {
     if (!pinned) return;
     const runway = runwayRef.current;
-    const stage = stageRef.current;
-    if (!runway || !stage) return;
+    const steps = stepsRef.current;
+    if (!runway || !steps) return;
 
     let raf = 0;
     let listening = false;
@@ -229,7 +234,7 @@ export function HowItWorks() {
       const travel = rect.height - window.innerHeight;
       const progress = travel > 0 ? Math.min(1, Math.max(0, -rect.top / travel)) : 0;
       const s = progress * (stepCount - 1);
-      stage.style.setProperty("--walk-s", s.toFixed(4));
+      steps.style.setProperty("--walk-s", s.toFixed(4));
       land(Math.round(s), animate);
     };
     const onScroll = () => {
@@ -256,7 +261,7 @@ export function HowItWorks() {
       io.disconnect();
       listen(false);
       if (raf) cancelAnimationFrame(raf);
-      stage.style.removeProperty("--walk-s");
+      steps.style.removeProperty("--walk-s");
     };
   }, [pinned, stepCount, land, stopAuto]);
 
@@ -371,8 +376,9 @@ export function HowItWorks() {
   // A tap on the finished demo replays it in both modes now (P3-C1), so the
   // last cue offers "Replay" in pinned mode too.
 
-  // Pinned: the scroll listener writes --walk-s straight onto the stage every
-  // frame, so React must not own it. Tap-only: it is simply the step.
+  // Pinned: the scroll listener writes --walk-s straight onto the step list
+  // every frame (stepsRef), so React must not own it there. Tap-only: it is
+  // simply the step, set on the stage (it changes only when the step does).
   const stageStyle = pinned ? undefined : ({ ["--walk-s" as string]: step } as CSSProperties);
 
   return (
@@ -418,7 +424,7 @@ export function HowItWorks() {
               >
                 {howItWorksContent.headline}
               </WordReveal>
-              <div className={cn(styles.walkSteps, !pinned && styles.walkStepsEased)}>
+              <div ref={stepsRef} className={cn(styles.walkSteps, !pinned && styles.walkStepsEased)}>
                 {howItWorksContent.steps.map((s, index) => (
                   // The row is the click target; the <button> inside is what
                   // keyboard and screen-reader users reach (its click bubbles
@@ -459,7 +465,13 @@ export function HowItWorks() {
             </Reveal>
 
             <Reveal variant="up" className={styles.walkPhoneCol}>
-              <div className={cn("relative flex items-end justify-center", styles.walkTagSeat)} style={TAG_SEAT}>
+              {/* data-flow-static: tag + phone draw in their own colours
+                  (see shared/flow.module.css). */}
+              <div
+                className={cn("relative flex items-end justify-center", styles.walkTagSeat)}
+                style={TAG_SEAT}
+                data-flow-static=""
+              >
                 {/* The PapeX counter tag. It stands behind the phone; the bow
                     lifts the phone onto its tap glyph and the waves answer. */}
                 <div className={styles.walkTag}>
