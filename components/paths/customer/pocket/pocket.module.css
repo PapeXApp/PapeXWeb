@@ -180,6 +180,18 @@
   display: grid;
   gap: var(--gap-list, 20px);
 }
+/* The section's lead line, small, right above the email card (Nico). */
+.cardsLead {
+  grid-column: 1 / -1;
+  margin: 0 0 -6px;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--flow-fg-2);
+}
+/* Reduced motion / no JS: the same line above the email caption's title. */
+.staticFig .cardsLead {
+  margin-bottom: 10px;
+}
 .card {
   position: relative;
   display: block;

@@ -22,8 +22,9 @@
 }
 
 /* --- Listing header -------------------------------------------------------- */
+/* Nico (2026-09-29): the header spans the full width of the card row. */
 .head {
-  max-width: 720px;
+  max-width: none;
   margin-bottom: clamp(28px, 3.2vw, 48px);
 }
 .title {

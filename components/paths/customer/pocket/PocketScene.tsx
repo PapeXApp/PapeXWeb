@@ -491,6 +491,8 @@ export function PocketScene({ header }: { header: ReactNode }) {
             </div>
 
             <div className={s.cards} role="group" aria-label={t.eyebrow}>
+              {/* Nico: the section's lead line sits small, right above the email card. */}
+              <p className={s.cardsLead}>{t.lead}</p>
               {t.halves.map((h, i) => {
                 const active = half === h.key
                 return (

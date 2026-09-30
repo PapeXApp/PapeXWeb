@@ -50,12 +50,6 @@ function Header() {
       >
         {t.heading}
       </WordReveal>
-      <p
-        className="mt-[var(--gap-title)] max-w-[52ch] text-[length:var(--fs-lead)] leading-[1.55]"
-        style={{ color: "var(--flow-fg-2)" }}
-      >
-        {t.lead}
-      </p>
     </Reveal>
   );
 }

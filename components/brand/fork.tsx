@@ -543,7 +543,7 @@ export function Fork() {
             className={`rd-display ${styles.headline} ${styles.headlineTop}`}
             style={{ color: 'var(--offwhite)' }}
           >
-            Free digital receipts for your store.
+            Close the loop on every sale.
           </h2>
           <span
             className={`rd-fork-cue ${styles.cue}`}
@@ -558,7 +558,7 @@ export function Fork() {
           type="button"
           className={styles.hit}
           onClick={() => commit(TOP_PATH)}
-          aria-label="For businesses: free digital receipts for your store"
+          aria-label="For businesses: close the loop on every sale"
         />
       </div>
 

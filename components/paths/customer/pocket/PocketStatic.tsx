@@ -64,6 +64,7 @@ export function PocketStatic() {
           </div>
         </div>
         <figcaption>
+          <p className={s.cardsLead}>{t.lead}</p>
           <strong className={cn(s.staticTitle, s.staticTitleLead)}>{emailHalf.title}</strong>
           <span className={s.staticBody}>{emailHalf.body}</span>
         </figcaption>

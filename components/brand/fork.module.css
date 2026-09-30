@@ -237,8 +237,11 @@
   line-height: 1.02;
   margin: 0 auto;
 }
+/* "Close the loop / on every sale." (Nico, 2026-09-29): balance keeps "on"
+   off the end of line one, same as the /business H1. */
 .headlineTop {
   max-width: 16ch;
+  text-wrap: balance;
 }
 /* The f-05 copy ("Connecting your last dollar to your next dollar.") sets
    its own three line breaks in fork.tsx; 19ch is its longest line. */
