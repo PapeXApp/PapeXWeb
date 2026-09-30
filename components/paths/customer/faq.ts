@@ -41,7 +41,7 @@ export const customerFaq: FaqItem[] = [
   },
   {
     q: "Is my data safe with PapeX?",
-    a: "A tap sends only your receipt: no name, email or phone number. Like a paper receipt, it shows just the last 4 digits of your card. PapeX never touches card data.\n\nIn the app, your receipts are yours. Delete any receipt, or your whole account, any time. [Read our privacy policy](/privacy).",
+    a: "A tap sends only your receipt: no name, email or phone number. Like a paper receipt, it shows just the last 4 digits of your card. PapeX never touches card data.\n\nIn the app, your receipts are yours. Delete any receipt you scanned, or your whole account, any time. [Read our privacy policy](/privacy).",
   },
   {
     // Q8, answered by Nico in spec §6a round 2 (published on the lead's

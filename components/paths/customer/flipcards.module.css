@@ -72,7 +72,9 @@
   border: 0;
   background: none;
   font: inherit;
-  color: inherit;
+  /* The pinned ink (data-flow-static), not the page's: `inherit` here beat
+     the zero-specificity pin and restyled the card on every ground swap. */
+  color: var(--flow-fg);
   text-align: left;
   cursor: pointer;
   perspective: 1600px;
