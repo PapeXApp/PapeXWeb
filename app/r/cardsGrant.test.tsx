@@ -59,6 +59,7 @@ async function main() {
     assert.equal(readGrantCookie(`pxcg_ffffffffffffffff=${g}`, SID), undefined);
     assert.equal(readGrantCookie(`pxcg_${SID}=${ownerGrant()}`, SID), undefined);
     assert.equal(readGrantCookie(`pxcg_${SID}=junk`, SID), undefined);
+    assert.equal(readGrantCookie(`pxcg_${SID}=g1.t.0${nowS() + 60}.${MAC}`, SID), undefined, "canonical exp only");
     assert.equal(readGrantCookie(undefined, SID), undefined);
   });
 

@@ -22,9 +22,9 @@
 export const CARDS_GRANT_HEADER = "x-papex-cards-grant";
 
 /** Any grant (owner or tap), shape only. */
-export const CARDS_GRANT_RE = /^g1\.[to]\.\d{9,11}\.[A-Za-z0-9_-]{43}$/;
+export const CARDS_GRANT_RE = /^g1\.[to]\.[1-9]\d{8,10}\.[A-Za-z0-9_-]{43}$/;
 /** A tap grant: the only kind the web ever stores. */
-export const TAP_GRANT_RE = /^g1\.t\.\d{9,11}\.[A-Za-z0-9_-]{43}$/;
+export const TAP_GRANT_RE = /^g1\.t\.[1-9]\d{8,10}\.[A-Za-z0-9_-]{43}$/;
 
 /** A tap grant never lives longer than this in the cookie, whatever it claims. */
 export const MAX_GRANT_COOKIE_S = 48 * 60 * 60;
