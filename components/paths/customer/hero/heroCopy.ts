@@ -18,7 +18,7 @@ export const heroCopy = {
   lead: "The PapeX app keeps every receipt and coupon in one place. Scan a paper receipt or forward an email one. PapeX never touches card data.",
   ctaLabel: "Download the app",
   // True of both store listings (lib/storeLinks.ts).
-  ctaSubtext: "Free · iPhone & Android",
+  ctaSubtext: "iPhone & Android",
   /** The one down cue; targets POCKET_ANCHOR (section 02). */
   downCue: "See how it works",
   faqCue: "Questions?",

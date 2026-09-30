@@ -26,7 +26,7 @@ const OG_ALT =
   'The PapeX logo and the words Your receipt, one tap away, beside an iPhone showing a PapeX receipt'
 const TITLE = 'About PapeX | Digital Receipts, One Tap at Checkout'
 const DESCRIPTION =
-  'Meet the team building PapeX: the tap that gets your receipt to your phone, and the free app that keeps it. Get in touch anytime.'
+  'Meet the team building PapeX: the tap that gets your receipt to your phone, and the app that keeps it. Get in touch anytime.'
 
 export const metadata: Metadata = {
   title: TITLE,

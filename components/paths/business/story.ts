@@ -72,7 +72,7 @@ export const story = {
 export const storyDashboard = {
   eyebrow: "Your dashboard, included",
   heading: "See every sale, your busiest hours and top items.",
-  lead: "Each receipt the PapeX device captures shows up on your dashboard as soon as it prints.",
+  lead: "Each receipt the PapeX device captures shows up on your dashboard as soon as it “prints.”",
   columns: [
     {
       title: "Every receipt, searchable",
@@ -90,6 +90,6 @@ export const storyDashboard = {
   /** Read as the lead's second beat (DashboardCopy), not a line of its own. */
   customerLine: {
     lead: "And your customers?",
-    body: "They can keep every receipt in the PapeX app.",
+    body: "They leave with their receipt on their phone, and a reason to come back.",
   },
 } as const
