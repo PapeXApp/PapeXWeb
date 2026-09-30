@@ -43,7 +43,8 @@
     "test:merchantProfile": "tsx lib/changeRequests/validate.test.ts && tsx lib/server/merchantData/mock.test.ts && tsx lib/server/merchantAuth.test.ts",
     "test:signup": "tsx lib/server/signup/signup.test.ts",
     "test:offerSaveLink": "tsx lib/offerSaveLink.test.ts",
-    "test:offerSaveLinkRender": "tsx --tsconfig tsconfig.test.json app/r/offerSaveLink.test.tsx"
+    "test:offerSaveLinkRender": "tsx --tsconfig tsconfig.test.json app/r/offerSaveLink.test.tsx",
+    "test:rules": "firebase emulators:exec --only firestore --project papexweb-rules-test 'node --test --test-concurrency=1 firestore-tests/*.test.mjs'"
   },
   "dependencies": {
     "@aws-sdk/client-sesv2": "^3.1140.0",

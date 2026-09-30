@@ -179,32 +179,28 @@ Suggested least-privilege IAM policy for the SES key:
   "Condition": { "StringEquals": { "ses:FromAddress": "notifications@papexmail.com" } } }] }
 ```
 
-## Firestore rules (console-managed; not in this repo)
+## Firestore rules (`firestore.rules`, in this repo since 2026-09-29)
 
 The route uses firebase-admin, which bypasses rules. Clients must never touch
 `blog_subscribers` or `support_requests` (the latter holds people's names,
-emails and messages), so add:
+emails and messages), so `firestore.rules` denies both to every client, along
+with reads of `waitlist`. Deploy with
+`firebase deploy --only firestore:rules --project papexweb-aed97`; test with
+`npm run test:rules` (needs `firebase` + `@firebase/rules-unit-testing`
+resolvable and a JDK).
 
-```
-match /blog_subscribers/{id} {
-  allow read, write: if false;   // server (Admin SDK) only
-}
-match /support_requests/{id} {
-  allow read, write: if false;   // server (Admin SDK) only
-}
-```
+Until 2026-09-29 the live ruleset was `allow read, write: if true` on every
+document, so the 72 waitlist leads were world-readable and the blog was
+world-writable. The rules file's header lists every client path that still
+needs access and why.
 
-(Firestore denies by default, so this documents intent more than it changes
-anything, unless a broader wildcard rule exists. Not deployed from this repo.)
-
-`waitlist`: once `PAPEXWEB_SERVICE_ACCOUNT` is live the browser only writes
-it through the temporary fallback (which then never triggers). After the new
-build has been live for a day with the credential set (so no cached old page
-is still submitting),
-the client `create` permission on `waitlist` can be removed too
-(`allow read, write: if false;`). Nothing else in the workspace writes it
-(checked PapeXV2 and the RDH backend). Keep whatever read access the team's
-viewing tool needs.
+`waitlist`: the browser may still `create` in exactly two shapes (main's
+waitlist form and the temporary DemoForm fallback, both with a
+serverTimestamp `createdAt`); nothing else. Once `PAPEXWEB_SERVICE_ACCOUNT`
+has been live for a day (so no cached old page is still submitting), flip
+that `allow create` to `if false`, remove the DemoForm fallback, and update
+the tests. Nothing else in the workspace writes it (checked PapeXV2 and the
+RDH backend).
 
 ## Rate limiting: what it is and isn't
 
@@ -253,14 +249,14 @@ demo requests fail both ways.
    `AWS_SES_SECRET_ACCESS_KEY` (and `AWS_SES_REGION` only if not us-east-1)
    to Vercel. Confirm `nico@papex.app` is a verified identity if the SES
    account is still in the sandbox.
-4. **Firestore rules**: add the `blog_subscribers` and `support_requests`
-   deny-all blocks above.
+4. **Firestore rules**: deploy `firestore.rules` (see above) after
+   `npm run test:rules` passes.
 5. Merge the branch; Vercel builds the Preview. On the Preview, submit the
    /business demo form once: check a new `waitlist` doc with
    `type: "business-demo-request"` and the email arriving. Then send the
    /support form once: check a `support_requests` doc and that hitting Reply
    on the email addresses the sender. Delete the test docs.
 6. Promote/merge to `main` (= production deploy).
-7. A day later (only after step 2 is live): remove client write access to
-   `waitlist` in the rules, then remove the DemoForm fallback (see
-   "Temporary go-live fallback").
+7. A day later (only after step 2 is live): set `waitlist` `allow create` to
+   `if false` in `firestore.rules`, redeploy, then remove the DemoForm
+   fallback (see "Temporary go-live fallback").
