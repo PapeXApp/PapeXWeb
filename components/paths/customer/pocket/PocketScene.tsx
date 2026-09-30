@@ -442,7 +442,9 @@ export function PocketScene({ header }: { header: ReactNode }) {
             <div className={s.sceneWrap}>
               <span className={s.demoTag}>{t.demoTag}</span>
               {/* The picture is decorative (the cards carry the words) and inert. */}
-              <div className={s.scene} ref={sceneRef} aria-hidden="true" inert>
+              {/* data-flow-static: own palette, never the page ground (see
+                  [data-flow-static] in shared/flow.module.css) */}
+              <div className={s.scene} ref={sceneRef} aria-hidden="true" inert data-flow-static="">
                 <div className={s.paperHome}>
                   <EmailReceipt
                     ref={emailRef}
