@@ -64,7 +64,7 @@ export const businessFaq: FaqItem[] = [
   },
   {
     q: "Which phones can my customers tap with?",
-    a: "iPhone and Android. Customers tap and the receipt and coupons open, no app to download.",
+    a: "iPhone and Android. Customers tap and the receipt and coupon open, no app to download.",
   },
   {
     q: "Where is PapeX available?",
