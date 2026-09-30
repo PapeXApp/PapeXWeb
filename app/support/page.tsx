@@ -9,12 +9,29 @@
 // is the authoritative merchant-facing wording provided by PapeX. Light
 // behaviors also match the RDH firmware state machine
 // (Papex_RDH_Firmware/src/state_machine.c).
+//
+// Web 2.1 P7 (Nico, 2026-09-29): moved off the legacy FramerPageShell onto the
+// redesign shell /about and the path homes use (SiteShell path="page" +
+// FlowGround + in-flow footer), which brings back the plane watermark and the
+// shared motion vocabulary: WordReveal/Reveal in the hero (on screen at load,
+// like the path heroes), ScrollWords/ScrollReveal below (the scroll-linked
+// pair every static section on the path homes uses). Every coloured box is
+// now ONE card: translucent, hairline, tinted only toward its bottom edge
+// (support.module.css). Content is unchanged; the "Send us a message" form
+// (SupportForm.tsx -> /api/signup kind "support" -> nico@papex.app) is new.
 
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { FramerPageShell } from '@/components/framer/framer-page-shell'
+import { SiteShell } from '@/components/brand/site-shell'
+import { SiteFooter } from '@/components/brand/site-footer'
+import { FlowGround } from '@/components/paths/shared/FlowGround'
+import { FlowSection } from '@/components/paths/shared/FlowSection'
+import { SectionLabel } from '@/components/paths/shared/SectionLabel'
+import { Reveal, ScrollReveal, ScrollWords, WordReveal } from '@/components/motion'
 import { SALES_PHONE, SALES_PHONE_HREF } from '@/components/brand/links'
 import { DEFAULT_OG_IMAGE } from '@/components/blog/image'
+import { SupportForm } from './SupportForm'
+import styles from './support.module.css'
 
 const OG_ALT =
   'The PapeX logo and the words Your receipt, one tap away, beside an iPhone showing a PapeX receipt'
@@ -119,8 +136,8 @@ const LIGHT_ROWS: {
 ]
 
 const SIGNAL_STYLES: Record<Signal, { label: string; className: string }> = {
-  normal: { label: 'Normal', className: 'text-green-700' },
-  attention: { label: 'Attention', className: 'text-red-600' },
+  normal: { label: 'Normal', className: styles.signalNormal },
+  attention: { label: 'Attention', className: styles.signalAttention },
 }
 
 // The light plus its rhythm, drawn static (no looping animation anywhere on
@@ -264,264 +281,292 @@ const CUSTOMER_QA: { q: string; a: React.ReactNode }[] = [
 
 function ContactBlock() {
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      <a
-        href="mailto:support@papex.app"
-        className="group rounded-2xl border border-[#00121D]/15 bg-white p-6 shadow-sm transition hover:border-[#EB7100] hover:shadow-md"
-      >
-        <p className="text-[13px] leading-[18px] font-semibold uppercase tracking-wide text-[#00121D]/50">Email us</p>
-        <p className="mt-2 text-2xl font-bold text-[#00121D] group-hover:text-[#EB7100] transition">
-          support@papex.app
-        </p>
+    <div className={styles.contactGrid}>
+      <a href="mailto:support@papex.app" className={`${styles.card} ${styles.cardPad} ${styles.contact}`}>
+        <span className={styles.cap}>Email us</span>
+        <span className={styles.contactValue}>support@papex.app</span>
       </a>
-      <a
-        href={SALES_PHONE_HREF}
-        className="group rounded-2xl border border-[#00121D]/15 bg-white p-6 shadow-sm transition hover:border-[#EB7100] hover:shadow-md"
-      >
-        <p className="text-[13px] leading-[18px] font-semibold uppercase tracking-wide text-[#00121D]/50">Call us</p>
-        <p className="mt-2 text-2xl font-bold text-[#00121D] group-hover:text-[#EB7100] transition">
-          {SALES_PHONE}
-        </p>
+      <a href={SALES_PHONE_HREF} className={`${styles.card} ${styles.cardPad} ${styles.contact}`}>
+        <span className={styles.cap}>Call us</span>
+        <span className={styles.contactValue}>{SALES_PHONE}</span>
       </a>
+    </div>
+  )
+}
+
+/** The disclosure icon: two bars, the vertical one lies flat on open. */
+function PlusIcon() {
+  return (
+    <span aria-hidden="true" className={styles.icon}>
+      <span className={styles.bar} />
+      <span className={`${styles.bar} ${styles.barV}`} />
+    </span>
+  )
+}
+
+/** Section heading + optional lead. No eyebrow: like /about, only the hero
+ *  carries a SectionLabel, so no new label copy was invented. */
+function SectionHead({ title, lead }: { title: string; lead?: string }) {
+  return (
+    <div className={styles.head}>
+      <ScrollWords as="h2" className={styles.h2}>
+        {title}
+      </ScrollWords>
+      {lead ? (
+        <ScrollReveal as="p" className={styles.lead}>
+          {lead}
+        </ScrollReveal>
+      ) : null}
     </div>
   )
 }
 
 export default function SupportPage() {
   return (
-    <FramerPageShell>
-      <div className="container mx-auto py-10 px-4">
-        <div className="mx-auto max-w-4xl space-y-12">
-          {/* Header */}
-          <header className="space-y-3 text-center md:text-left">
-            <p className="text-[13px] leading-[18px] font-semibold uppercase tracking-[0.16em] text-[#EB7100]">
-              For businesses
-            </p>
-            <h1 className="text-3xl md:text-4xl font-bold text-[#00121D] leading-tight">
-              Help with your PapeX device
-            </h1>
-            <p className="text-lg text-[#00121D]/70 leading-relaxed">
-              Status lights, quick fixes, and how to reach us.
-            </p>
-          </header>
+    <SiteShell path="page">
+      <FlowGround initial="light" footer={<SiteFooter inFlow />}>
+          {/* Hero: on screen at load, so the timed reveals (as on the path
+              heroes); the contact cards stay at the top of the page. */}
+          <FlowSection ground="light" className={`${styles.section} ${styles.top}`}>
+            <div className={styles.wrap}>
+              <header className={styles.head}>
+                <Reveal>
+                  <SectionLabel>For businesses</SectionLabel>
+                </Reveal>
+                <WordReveal as="h1" className={`rd-display ${styles.title}`}>
+                  Help with your PapeX device
+                </WordReveal>
+                <Reveal as="p" delay={0.15} className={styles.lead}>
+                  Status lights, quick fixes, and how to reach us.
+                </Reveal>
+              </header>
+              <Reveal delay={0.25} className={styles.body}>
+                <ContactBlock />
+              </Reveal>
+            </div>
+          </FlowSection>
 
-          {/* Contact — prominent, top of page */}
-          <ContactBlock />
-
-          {/* Status Light */}
-          <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#00121D]">Status light</h2>
-            <p className="text-[#00121D]/70 leading-relaxed">
-              Your PapeX device has one status light. Here&rsquo;s what each state means:
-            </p>
-            <div className="overflow-x-auto rounded-2xl border border-[#00121D]/15">
-              <table className="w-full min-w-[38rem] text-sm">
-                <thead>
-                  <tr className="bg-[#00121D] text-white">
-                    <th className="px-4 py-3 text-left font-semibold">Light</th>
-                    <th className="px-4 py-3 text-left font-semibold">Means</th>
-                    <th className="px-4 py-3 text-left font-semibold">What to do</th>
-                    <th className="px-4 py-3 text-left font-semibold">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {LIGHT_ROWS.map((row, i) => {
-                    const sig = SIGNAL_STYLES[row.signal]
-                    return (
-                      <tr
-                        key={`${row.light}-${row.meaning}`}
-                        className={i % 2 === 0 ? 'bg-white' : 'bg-[#00121D]/[0.03]'}
-                      >
-                        <td className="px-4 py-3 border-b border-[#00121D]/10">
-                          <span className="flex items-center gap-2 font-medium text-[#00121D]">
-                            <LightDot color={row.color} blink={row.blink} />
-                            {row.light}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 border-b border-[#00121D]/10 text-[#00121D]/80">
-                          {row.meaning}
-                        </td>
-                        <td className="px-4 py-3 border-b border-[#00121D]/10 text-[#00121D]/80">
-                          {row.detail}
-                        </td>
-                        <td className="px-4 py-3 border-b border-[#00121D]/10">
-                          <span className={`font-semibold ${sig.className}`}>{sig.label}</span>
-                        </td>
+          <FlowSection ground="light" id="status-light" className={styles.section}>
+            <div className={styles.wrap}>
+              <SectionHead
+                title="Status light"
+                lead="Your PapeX device has one status light. Here’s what each state means:"
+              />
+              <ScrollReveal className={`${styles.card} ${styles.body}`}>
+                {/* Scrolls sideways inside the card on phones; the page never does. */}
+                <div className={styles.tableScroll} data-scroll-x="">
+                  <table className={styles.table}>
+                    <thead>
+                      <tr>
+                        <th scope="col" className={styles.cap}>Light</th>
+                        <th scope="col" className={styles.cap}>Means</th>
+                        <th scope="col" className={styles.cap}>What to do</th>
+                        <th scope="col" className={styles.cap}>Status</th>
                       </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+                    </thead>
+                    <tbody>
+                      {LIGHT_ROWS.map((row) => {
+                        const sig = SIGNAL_STYLES[row.signal]
+                        return (
+                          <tr key={`${row.light}-${row.meaning}`}>
+                            <td className={styles.lightCell}>
+                              <span className={styles.lightName}>
+                                <LightDot color={row.color} blink={row.blink} />
+                                {row.light}
+                              </span>
+                            </td>
+                            <td>{row.meaning}</td>
+                            <td>{row.detail}</td>
+                            <td>
+                              <span className={`${styles.signal} ${sig.className}`}>{sig.label}</span>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </ScrollReveal>
+              <ScrollReveal className={`${styles.card} ${styles.cardPad} ${styles.rule}`}>
+                <p className={styles.cap}>Quick rule</p>
+                <p className={styles.ruleText}>
+                  Solid green = ready. Slow green = working. Fast green = tap now. Any red = check the
+                  table.
+                </p>
+              </ScrollReveal>
             </div>
-            <div className="rounded-xl border-l-4 border-[#EB7100] bg-[#EB7100]/[0.06] px-5 py-3">
-              <p className="text-[#00121D] font-medium">
-                <span className="font-semibold">Quick rule:</span> Solid green = ready. Slow green
-                = working. Fast green = tap now. Any red = check the table.
-              </p>
-            </div>
-          </section>
+          </FlowSection>
 
-          {/* Troubleshooting */}
-          <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#00121D]">Troubleshooting</h2>
-            <div className="space-y-3">
-              {TROUBLESHOOTING.map((item) => (
-                <details
-                  key={item.title}
-                  className="group rounded-2xl border border-[#00121D]/15 bg-white p-5 open:shadow-sm"
-                >
-                  <summary className="-my-2.5 flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-3 font-semibold text-[#00121D]">
-                    <span>{item.title}</span>
-                    <span
-                      aria-hidden
-                      className="text-[#EB7100] transition-transform group-open:rotate-45 text-xl leading-none"
-                    >
-                      +
-                    </span>
-                  </summary>
-                  <ul className="mt-4 space-y-2 pl-1">
-                    {item.steps.map((step, i) => (
-                      <li key={i} className="flex gap-3 text-[#00121D]/80 leading-relaxed">
-                        <span
-                          aria-hidden
-                          className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#EB7100]"
-                        />
-                        <span>{step}</span>
+          <FlowSection ground="light" id="troubleshooting" className={styles.section}>
+            <div className={styles.wrap}>
+              <SectionHead title="Troubleshooting" />
+              <div className={`${styles.stack} ${styles.body}`}>
+                {TROUBLESHOOTING.map((item) => (
+                  <ScrollReveal key={item.title}>
+                    <details className={`${styles.card} ${styles.details}`}>
+                      <summary className={styles.summary}>
+                        <span>{item.title}</span>
+                        <PlusIcon />
+                      </summary>
+                      <div className={styles.answer}>
+                        <ul className={styles.steps}>
+                          {item.steps.map((step, i) => (
+                            <li key={i}>
+                              <span aria-hidden="true" className={styles.dot} />
+                              <span>{step}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </details>
+                  </ScrollReveal>
+                ))}
+              </div>
+            </div>
+          </FlowSection>
+
+          <FlowSection ground="light" id="dos-and-donts" className={styles.section}>
+            <div className={styles.wrap}>
+              <SectionHead title="Do’s and don’ts" />
+              <div className={`${styles.doGrid} ${styles.body}`}>
+                <ScrollReveal className={`${styles.card} ${styles.cardPad}`}>
+                  <h3 className={styles.doTitle}>
+                    <span aria-hidden="true" className={`${styles.mark} ${styles.markDo}`}>✓</span>
+                    Do
+                  </h3>
+                  <ul className={styles.doList}>
+                    {DOS.map((item) => (
+                      <li key={item}>
+                        <span aria-hidden="true" className={`${styles.mark} ${styles.markDo}`}>✓</span>
+                        <span>{item}</span>
                       </li>
                     ))}
                   </ul>
-                </details>
-              ))}
-            </div>
-          </section>
-
-          {/* Do's and Don'ts */}
-          <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#00121D]">Do&rsquo;s and don&rsquo;ts</h2>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-2xl border border-green-200 bg-green-50/50 p-6">
-                <h3 className="text-lg font-semibold text-green-700">Do</h3>
-                <ul className="mt-4 space-y-3">
-                  {DOS.map((item) => (
-                    <li key={item} className="flex gap-3 text-[#00121D]/85 leading-relaxed">
-                      <span aria-hidden className="mt-0.5 font-bold text-green-600">
-                        ✓
-                      </span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="rounded-2xl border border-red-200 bg-red-50/50 p-6">
-                <h3 className="text-lg font-semibold text-red-600">Don&rsquo;t</h3>
-                <ul className="mt-4 space-y-3">
-                  {DONTS.map((item) => (
-                    <li key={item} className="flex gap-3 text-[#00121D]/85 leading-relaxed">
-                      <span aria-hidden className="mt-0.5 font-bold text-red-500">
-                        ✕
-                      </span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
+                </ScrollReveal>
+                <ScrollReveal order={1} className={`${styles.card} ${styles.cardPad}`}>
+                  <h3 className={styles.doTitle}>
+                    <span aria-hidden="true" className={`${styles.mark} ${styles.markDont}`}>✕</span>
+                    Don’t
+                  </h3>
+                  <ul className={styles.doList}>
+                    {DONTS.map((item) => (
+                      <li key={item}>
+                        <span aria-hidden="true" className={`${styles.mark} ${styles.markDont}`}>✕</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </ScrollReveal>
               </div>
             </div>
-          </section>
+          </FlowSection>
 
-          {/* What to tell customers — compact dropdown boxes laid out in a 2-column grid.
-              items-start so a collapsed box next to an expanded one keeps its
-              own height instead of stretching to match its row neighbour. */}
-          <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#00121D]">What to tell customers</h2>
-            <p className="text-[#00121D]/70 leading-relaxed">
-              Quick answers you can give at the counter.
-            </p>
-            <div className="grid items-start gap-3 sm:grid-cols-2">
-              {CUSTOMER_QA.map((item) => (
-                <details
-                  key={item.q}
-                  className="group rounded-xl border border-[#00121D]/15 bg-white p-4 open:shadow-sm"
-                >
-                  <summary className="-my-3 flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-2 text-base font-semibold text-[#00121D] sm:text-sm">
-                    <span>{item.q}</span>
-                    <span
-                      aria-hidden
-                      className="flex-shrink-0 text-[#EB7100] transition-transform group-open:rotate-45 text-lg leading-none"
-                    >
-                      +
-                    </span>
-                  </summary>
-                  <div className="mt-3 text-base text-[#00121D]/85 leading-relaxed sm:text-sm">{item.a}</div>
-                </details>
-              ))}
-            </div>
-          </section>
-
-          {/* Never touches card data — navy gradient callout matching the site's subpage CTA.
-              NOTE: framer-site.css sets `.framer-site a { color: inherit }`, which
-              outranks Tailwind's text colour on links (class+element > class). The
-              `!text-[#00121D]` important modifier is required so the button label is
-              navy on the orange (o-18) rather than inheriting the body color. */}
-          <section className="overflow-hidden rounded-2xl border-t-4 border-[#EB7100] bg-gradient-to-b from-[#00121D] to-[#0a2431] p-8 shadow-md">
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-white/10 text-[#EB7100]">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden
-                >
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
-                  <path d="m9 12 2 2 4-4" />
-                </svg>
+          <FlowSection ground="light" id="what-to-tell-customers" className={styles.section}>
+            <div className={styles.wrap}>
+              <SectionHead
+                title="What to tell customers"
+                lead="Quick answers you can give at the counter."
+              />
+              {/* items-start: a closed card next to an open one keeps its own height. */}
+              <div className={`${styles.qaGrid} ${styles.body}`}>
+                {CUSTOMER_QA.map((item, i) => (
+                  <ScrollReveal key={item.q} order={i % 2}>
+                    <details className={`${styles.card} ${styles.details}`}>
+                      <summary className={styles.summary}>
+                        <span>{item.q}</span>
+                        <PlusIcon />
+                      </summary>
+                      <div className={styles.answer}>
+                        <p>{item.a}</p>
+                      </div>
+                    </details>
+                  </ScrollReveal>
+                ))}
               </div>
-              <div className="flex-1">
-                <h2 className="text-xl font-semibold text-white">Never touches card data</h2>
-                <p className="mt-2 leading-relaxed text-white/75">
-                  Your PapeX device only sees the receipt. It never touches card data: nothing
-                  stored, processed or sent.
-                </p>
-                <Link
-                  href="/pci"
-                  className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#EB7100] px-6 py-3 text-sm font-semibold !text-[#00121D] shadow-sm transition hover:bg-[#cc6300]"
-                >
-                  How we handle card data
+            </div>
+          </FlowSection>
+
+          {/* The support request form, under the FAQ. Serves shoppers and
+              store owners alike (the topic select says which). */}
+          <FlowSection ground="light" id="message" className={styles.section}>
+            <div className={styles.wrap}>
+              <SectionHead
+                title="Send us a message"
+                lead="Tell us what's going on and we'll reply by email."
+              />
+              <ScrollReveal className={styles.body}>
+                <SupportForm path="/support" />
+              </ScrollReveal>
+            </div>
+          </FlowSection>
+
+          {/* Navy from here: the ground itself turns (the old navy callout
+              box is gone), then runs straight into the footer. */}
+          <FlowSection ground="navy" id="card-data" className={styles.section}>
+            <div className={styles.wrap}>
+              <div className={styles.cardData}>
+                <ScrollReveal className={styles.shield}>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
+                    width="24"
+                    height="24"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth="2.5"
+                    strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     aria-hidden
                   >
-                    <path d="M5 12h14" />
-                    <path d="m12 5 7 7-7 7" />
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
+                    <path d="m9 12 2 2 4-4" />
                   </svg>
-                </Link>
+                </ScrollReveal>
+                <div>
+                  <ScrollWords as="h2" className={styles.h2}>
+                    Never touches card data
+                  </ScrollWords>
+                  <ScrollReveal as="p" className={styles.lead}>
+                    Your PapeX device only sees the receipt. It never touches card data: nothing stored,
+                    processed or sent.
+                  </ScrollReveal>
+                  <ScrollReveal className={styles.cta}>
+                    <Link href="/pci" className="rd-btn rd-btn-primary">
+                      How we handle card data
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden
+                      >
+                        <path d="M5 12h14" />
+                        <path d="m12 5 7 7-7 7" />
+                      </svg>
+                    </Link>
+                  </ScrollReveal>
+                </div>
               </div>
             </div>
-          </section>
+          </FlowSection>
 
-          {/* Contact block repeated. This is page content inside <main>, not a
-              document landmark — SiteFooter (FramerPageShell) is the page's
-              real <footer>, so this stays a <section> to keep exactly one
-              footer landmark. */}
-          <section className="border-t border-[#00121D]/10 pt-8 space-y-4">
-            <h2 className="text-lg font-semibold text-[#00121D]">Contact PapeX</h2>
-            <ContactBlock />
-          </section>
-        </div>
-      </div>
-    </FramerPageShell>
+          {/* Contact block repeated. Page content inside <main>, not a
+              landmark: SiteFooter (in the FlowGround footer slot) is the
+              page's one real <footer>. */}
+          <FlowSection ground="navy" id="contact" className={`${styles.section} ${styles.last}`}>
+            <div className={styles.wrap}>
+              <SectionHead title="Contact PapeX" />
+              <ScrollReveal className={styles.body}>
+                <ContactBlock />
+              </ScrollReveal>
+            </div>
+          </FlowSection>
+      </FlowGround>
+    </SiteShell>
   )
 }

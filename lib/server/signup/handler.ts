@@ -6,7 +6,8 @@
 // Next, Firestore or SES. app/api/signup/route.ts is only the adapter.
 //
 // Order of checks (cheapest first, and nothing is written before all pass):
-//   415 not JSON -> 413 too big -> 429 rate limited -> 400 bad JSON ->
+//   415 not JSON -> 413 too big (16 KB) -> 429 rate limited -> 400 bad JSON ->
+//   413 too big for its kind (4 KB unless kind "support") ->
 //   honeypot (fake 200, nothing saved/sent) -> 400 invalid ->
 //   503 storage not configured -> save (500 on failure) -> 200.
 // The notification email is scheduled AFTER the save and can never change
@@ -17,8 +18,15 @@ import { buildNotificationEmail, type SendNotification } from "./email";
 import type { RateLimiter } from "./rateLimit";
 import type { SignupStore } from "./store";
 
-/** Generous for a form (a real submission is well under 1 KB). */
+/** Demo/blog body cap: generous for a form (a real one is well under 1 KB). */
 export const MAX_SIGNUP_BODY_BYTES = 4 * 1024;
+/**
+ * The most the route reads at all. Only a support request may use more than
+ * MAX_SIGNUP_BODY_BYTES: its message alone can be 4,000 characters, which is
+ * up to ~12 KB of UTF-8 (plus JSON escaping). The per-kind cap is checked
+ * right after parsing, so demo/blog still answer 413 above 4 KB.
+ */
+export const MAX_REQUEST_BODY_BYTES = 16 * 1024;
 
 export interface SignupLogger {
   info(msg: string): void;
@@ -43,7 +51,7 @@ export interface SignupDeps {
 
 export interface SignupHttpRequest {
   contentType: string | null;
-  /** The raw body, or null when it exceeded MAX_SIGNUP_BODY_BYTES while reading. */
+  /** The raw body, or null when it exceeded MAX_REQUEST_BODY_BYTES while reading. */
   bodyText: string | null;
   ip: string;
 }
@@ -66,14 +74,16 @@ function isJsonContentType(ct: string | null): boolean {
 }
 
 function describe(input: SignupInput): string {
-  return input.kind === "demo" ? "demo request" : `blog sign-up (${input.source})`;
+  if (input.kind === "demo") return "demo request";
+  if (input.kind === "support") return `support request (${input.topic})`;
+  return `blog sign-up (${input.source})`;
 }
 
 export async function handleSignup(req: SignupHttpRequest, deps: SignupDeps): Promise<SignupHttpResponse> {
   if (!isJsonContentType(req.contentType)) return fail(415, { ok: false, error: "unsupported_media_type" });
-  if (req.bodyText === null || Buffer.byteLength(req.bodyText, "utf8") > MAX_SIGNUP_BODY_BYTES) {
-    return fail(413, { ok: false, error: "too_large" });
-  }
+  if (req.bodyText === null) return fail(413, { ok: false, error: "too_large" });
+  const bodyBytes = Buffer.byteLength(req.bodyText, "utf8");
+  if (bodyBytes > MAX_REQUEST_BODY_BYTES) return fail(413, { ok: false, error: "too_large" });
 
   const limit = deps.rateLimiter.check(req.ip);
   if (!limit.allowed) {
@@ -84,8 +94,14 @@ export async function handleSignup(req: SignupHttpRequest, deps: SignupDeps): Pr
   try {
     raw = JSON.parse(req.bodyText);
   } catch {
+    // Over the demo/blog cap and not even JSON: the same 413 as before the
+    // support kind raised the read limit.
+    if (bodyBytes > MAX_SIGNUP_BODY_BYTES) return fail(413, { ok: false, error: "too_large" });
     return fail(400, { ok: false, error: "invalid_json" });
   }
+
+  const isSupport = typeof raw === "object" && raw !== null && (raw as { kind?: unknown }).kind === "support";
+  if (!isSupport && bodyBytes > MAX_SIGNUP_BODY_BYTES) return fail(413, { ok: false, error: "too_large" });
 
   // A bot filled the invisible field: look successful, keep nothing.
   if (isHoneypotTripped(raw)) {
@@ -122,6 +138,8 @@ export async function handleSignup(req: SignupHttpRequest, deps: SignupDeps): Pr
   try {
     if (input.kind === "demo") {
       await store.saveDemoRequest(input);
+    } else if (input.kind === "support") {
+      await store.saveSupportRequest(input);
     } else {
       // Already subscribed: same answer as a new sign-up (no address
       // enumeration), and no second email to the team.

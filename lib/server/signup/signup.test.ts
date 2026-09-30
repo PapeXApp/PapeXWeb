@@ -7,11 +7,12 @@
 
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { cleanText, validateSignupInput, type DemoRequest } from "../../signup/schema";
-import { submitSignup, type SignupResult } from "../../signup/client";
+import { cleanMultilineText, cleanText, validateSignupInput, type DemoRequest } from "../../signup/schema";
+import { requestSupport, submitSignup, type SignupResult } from "../../signup/client";
 import { shouldFallBackToClientWrite } from "../../signup/fallback";
+import { buildSupportMailto, shouldOfferEmailFallback } from "../../signup/supportMailto";
 import { buildNotificationEmail, readSesConfig, type NotificationEmail } from "./email";
-import { handleSignup, MAX_SIGNUP_BODY_BYTES, type SignupDeps, type SignupHttpRequest } from "./handler";
+import { handleSignup, MAX_REQUEST_BODY_BYTES, MAX_SIGNUP_BODY_BYTES, type SignupDeps, type SignupHttpRequest } from "./handler";
 import { clientIpFromHeaders, createRateLimiter } from "./rateLimit";
 import {
   blogSubscriberId,
@@ -140,6 +141,15 @@ const DEMO = {
 };
 
 const BLOG = { kind: "blog", email: "Reader@Example.com", source: "footer", path: "/blog/hello-world" };
+
+const SUPPORT = {
+  kind: "support",
+  fullName: "Grace Hopper",
+  email: "Grace@Example.com",
+  topic: "device",
+  message: "The light is blinking red.\r\nWhat should I do?",
+  path: "/support",
+};
 
 async function main() {
   console.log("signup: validation");
@@ -459,6 +469,7 @@ async function main() {
         throw new Error("7 PERMISSION_DENIED: secret internal detail");
       },
       saveBlogSubscriber: async () => ({ created: true }),
+      saveSupportRequest: async () => {},
     });
     const res = await handleSignup(req(DEMO), h.deps);
     assert.deepEqual(res.body, { ok: false, error: "server_error" });
@@ -542,6 +553,183 @@ async function main() {
       }) as typeof fetch,
     });
     assert.equal(shouldFallBackToClientWrite(offline, false), true);
+  });
+
+  console.log("signup: support requests");
+
+  await test("a valid support request keeps line breaks and email case", () => {
+    const r = validateSignupInput({ ...SUPPORT, message: "  Line one\u0007 \r\n\r\n\r\n\r\nLine\ttwo\u202E  " });
+    assert.deepEqual(r, {
+      ok: true,
+      value: {
+        kind: "support",
+        fullName: "Grace Hopper",
+        email: "Grace@Example.com",
+        topic: "device",
+        message: "Line one\n\nLine two",
+        path: "/support",
+      },
+    });
+    assert.equal(cleanMultilineText("a\rb\u2028c"), "a\nb\nc");
+  });
+
+  await test("support: missing fields, bad email, bad topic, short/long message are field errors", () => {
+    const r = validateSignupInput({ kind: "support", fullName: " ", email: "", topic: "", message: "" });
+    assert.equal(r.ok, false);
+    if (!r.ok) {
+      assert.equal(r.error, "invalid_fields");
+      assert.deepEqual(Object.keys(r.fields ?? {}).sort(), ["email", "fullName", "message", "topic"]);
+    }
+    const bad = (over: Record<string, unknown>, field: string) => {
+      const res = validateSignupInput({ ...SUPPORT, ...over });
+      assert.equal(res.ok, false, JSON.stringify(over));
+      if (!res.ok) assert.ok(res.fields && field in res.fields, `${field} in ${JSON.stringify(res.fields)}`);
+    };
+    bad({ email: "not-an-email" }, "email");
+    // Passes EMAIL_RE but would be unsafe in a Reply-To header.
+    bad({ email: "a,b@example.com" }, "email");
+    bad({ email: '"x"<a@example.com>' }, "email");
+    bad({ topic: "billing" }, "topic");
+    bad({ message: "too short" }, "message"); // 9 characters
+    bad({ message: "x".repeat(4001) }, "message");
+    bad({ path: "https://evil.example" }, "path");
+    assert.equal(validateSignupInput({ ...SUPPORT, message: "x".repeat(4000) }).ok, true);
+    assert.equal(validateSignupInput({ ...SUPPORT, message: "ten chars!" }).ok, true);
+  });
+
+  await test("support: unknown keys and demo-only keys are rejected", () => {
+    for (const bad of [{ ...SUPPORT, businessName: "x" }, { ...SUPPORT, cc: "x@y.z" }, { ...SUPPORT, message: ["hi there friend"] }]) {
+      const r = validateSignupInput(bad);
+      assert.equal(r.ok, false, JSON.stringify(bad));
+      if (!r.ok) assert.equal(r.error, "invalid_request");
+    }
+  });
+
+  await test("support -> 200, support_requests doc saved, email with Reply-To = sender", async () => {
+    const h = harness();
+    const res = await handleSignup(req(SUPPORT), h.deps);
+    assert.deepEqual(res, { status: 200, body: { ok: true } });
+    assert.equal(h.db.adds.length, 1);
+    assert.equal(h.db.adds[0].collection, "support_requests");
+    assert.deepEqual(h.db.adds[0].data, {
+      fullName: "Grace Hopper",
+      email: "Grace@Example.com",
+      topic: "device",
+      message: "The light is blinking red.\nWhat should I do?",
+      type: "support-request",
+      createdAt: SERVER_TS,
+      path: "/support",
+    });
+    await h.runScheduled();
+    assert.equal(h.sent.length, 1);
+    const email = h.sent[0];
+    assert.equal(email.replyTo, "Grace@Example.com");
+    assert.equal(email.subject, "PapeX support: My PapeX device (business) \u2014 Grace Hopper");
+    assert.match(email.text, /Topic:\s+My PapeX device \(business\)/);
+    assert.match(email.text, /Page:\s+\/support/);
+    assert.match(email.text, /2026-09-24T12:00:00.000Z/);
+    assert.match(email.text, /The light is blinking red\.\nWhat should I do\?$/);
+  });
+
+  await test("demo and blog emails carry no Reply-To", () => {
+    const at = new Date("2026-09-24T00:00:00Z");
+    const demo = buildNotificationEmail({ kind: "demo", fullName: "A", businessName: "B", email: "a@b.co", phone: "", posSystem: "" }, at);
+    const blog = buildNotificationEmail({ kind: "blog", email: "a@b.co", source: "footer" }, at);
+    assert.equal(demo.replyTo, undefined);
+    assert.equal(blog.replyTo, undefined);
+    assert.equal("replyTo" in demo || "replyTo" in blog, false);
+  });
+
+  await test("support subject never contains CR/LF, even from a hand-built input", () => {
+    const e = buildNotificationEmail(
+      {
+        kind: "support",
+        fullName: "Eve\r\nBcc: victim@example.com\nX-Evil: 1",
+        email: "eve@example.com\r\nBcc: x@y.z",
+        topic: "other",
+        message: "hello there",
+      },
+      new Date("2026-09-24T00:00:00Z")
+    );
+    assert.ok(!/[\r\n]/.test(e.subject), JSON.stringify(e.subject));
+    assert.ok(e.subject.startsWith("PapeX support: Something else \u2014 Eve "));
+    // An address that is not a bare, header-safe address is never a Reply-To.
+    assert.equal(e.replyTo, undefined);
+  });
+
+  await test("support honeypot -> fake 200, nothing saved or sent", async () => {
+    const h = harness();
+    const res = await handleSignup(req({ ...SUPPORT, hp: "https://spam.example" }), h.deps);
+    assert.deepEqual(res, { status: 200, body: { ok: true } });
+    assert.equal(h.db.adds.length, 0);
+    assert.equal(h.scheduled.length, 0);
+  });
+
+  await test("body caps: support may exceed 4 KB up to 16 KB; demo/blog still 413 above 4 KB", async () => {
+    const h = harness();
+    const big = { ...SUPPORT, message: "\u00e9".repeat(4000) }; // ~8 KB of UTF-8
+    assert.ok(Buffer.byteLength(JSON.stringify(big)) > MAX_SIGNUP_BODY_BYTES);
+    assert.equal((await handleSignup(req(big), h.deps)).status, 200);
+    const fatDemo = { ...DEMO, fullName: "x".repeat(MAX_SIGNUP_BODY_BYTES) };
+    assert.equal((await handleSignup(req(fatDemo), h.deps)).status, 413);
+    assert.equal((await handleSignup(req("x".repeat(MAX_REQUEST_BODY_BYTES + 1)), h.deps)).status, 413);
+  });
+
+  await test("support storage not configured -> 503 (the form's email fallback case)", async () => {
+    const h = harness({ store: "missing" });
+    const res = await handleSignup(req(SUPPORT), h.deps);
+    assert.deepEqual(res.body, { ok: false, error: "unavailable" });
+    assert.equal(res.status, 503);
+  });
+
+  await test("requestSupport posts kind support", async () => {
+    let sent: unknown;
+    const r = await requestSupport(
+      { fullName: "G", email: "g@h.io", topic: "app", message: "hello there", path: "/support" },
+      {
+        fetchImpl: (async (_u: string | URL | Request, init?: RequestInit) => {
+          sent = JSON.parse(String(init?.body));
+          return new Response(JSON.stringify({ ok: true }), { status: 200 });
+        }) as typeof fetch,
+      }
+    );
+    assert.deepEqual(r, { ok: true });
+    assert.deepEqual(sent, { kind: "support", fullName: "G", email: "g@h.io", topic: "app", message: "hello there", path: "/support" });
+  });
+
+  await test("email fallback: offered on 503/network/500/429, not on field errors, success or honeypot", () => {
+    const yes: SignupResult[] = [
+      { ok: false, error: "unavailable" },
+      { ok: false, error: "not_configured" },
+      { ok: false, error: "network" },
+      { ok: false, error: "server_error" },
+      { ok: false, error: "rate_limited", retryAfterSeconds: 60 },
+    ];
+    for (const r of yes) assert.equal(shouldOfferEmailFallback(r, false), true, JSON.stringify(r));
+    assert.equal(shouldOfferEmailFallback({ ok: false, error: "invalid_fields", fields: {} }, false), false);
+    assert.equal(shouldOfferEmailFallback({ ok: true }, false), false);
+    assert.equal(shouldOfferEmailFallback({ ok: false, error: "unavailable" }, true), false);
+  });
+
+  await test("mailto fallback is fully encoded and carries the message", () => {
+    const href = buildSupportMailto({
+      fullName: "Ada & Co",
+      email: "ada@example.com",
+      topic: "device",
+      message: "Red light?\nTried 100% & #2",
+      path: "/support",
+    });
+    assert.ok(href.startsWith("mailto:nico@papex.app?subject="));
+    const query = href.slice(href.indexOf("?") + 1);
+    // Exactly two params: nothing in the user's text could add a third.
+    const pairs = query.split("&");
+    assert.equal(pairs.length, 2);
+    assert.ok(!/[\s#]/.test(href), href);
+    const params = Object.fromEntries(pairs.map((kv) => kv.split("=").map(decodeURIComponent)));
+    assert.equal(params.subject, "PapeX support: My PapeX device (business) \u2014 Ada & Co");
+    assert.ok(params.body.startsWith("Red light?\r\nTried 100% & #2\r\n\r\n---\r\n"));
+    assert.match(params.body, /Email: ada@example\.com/);
+    assert.match(params.body, /Page: \/support$/);
   });
 
   console.log(`\nsignup: ${passed} passed, ${failed} failed`);

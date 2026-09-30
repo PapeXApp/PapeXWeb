@@ -12,15 +12,20 @@
 //                                The id is sha256(email), so a repeat sign-up
 //                                can't create a duplicate; the FIRST sign-up
 //                                wins (its source/path/createdAt are kept).
+//   support_requests/{auto-id}   /support "Send us a message" submissions.
+//                                See buildSupportRequestDoc.
 //
 // The Firestore handle and the server-timestamp sentinel are injected, so
 // tests run against a fake and never touch a real project.
 
 import { createHash } from "node:crypto";
-import type { BlogSignup, BlogSource, DemoRequest } from "../../signup/schema";
+import type { BlogSignup, BlogSource, DemoRequest, SupportRequest, SupportTopic } from "../../signup/schema";
 
 export const WAITLIST_COLLECTION = "waitlist";
 export const BLOG_SUBSCRIBERS_COLLECTION = "blog_subscribers";
+export const SUPPORT_REQUESTS_COLLECTION = "support_requests";
+/** Type marker on support_requests docs (mirrors the waitlist's). */
+export const SUPPORT_REQUEST_TYPE = "support-request";
 /** The marker the DemoForm always stamped on its waitlist docs. */
 export const DEMO_REQUEST_TYPE = "business-demo-request";
 
@@ -39,6 +44,29 @@ export interface BlogSubscriberDoc<TS> {
   source: BlogSource;
   path?: string;
   createdAt: TS;
+}
+
+export interface SupportRequestDoc<TS> {
+  fullName: string;
+  email: string;
+  topic: SupportTopic;
+  message: string;
+  path?: string;
+  type: typeof SUPPORT_REQUEST_TYPE;
+  createdAt: TS;
+}
+
+export function buildSupportRequestDoc<TS>(req: SupportRequest, createdAt: TS): SupportRequestDoc<TS> {
+  const doc: SupportRequestDoc<TS> = {
+    fullName: req.fullName,
+    email: req.email,
+    topic: req.topic,
+    message: req.message,
+    type: SUPPORT_REQUEST_TYPE,
+    createdAt,
+  };
+  if (req.path) doc.path = req.path;
+  return doc;
 }
 
 /** Exactly the fields (and key order) the old client-side addDoc wrote. */
@@ -69,6 +97,7 @@ export interface SignupStore {
   saveDemoRequest(demo: DemoRequest): Promise<void>;
   /** created=false when this email was already subscribed (nothing written). */
   saveBlogSubscriber(blog: BlogSignup): Promise<{ created: boolean }>;
+  saveSupportRequest(req: SupportRequest): Promise<void>;
 }
 
 /** The slice of firebase-admin's Firestore this store uses (lets tests pass a fake). */
@@ -101,6 +130,9 @@ export function createFirestoreSignupStore(db: MinimalFirestore, serverTimestamp
         if (isAlreadyExists(err)) return { created: false };
         throw err;
       }
+    },
+    async saveSupportRequest(req) {
+      await db.collection(SUPPORT_REQUESTS_COLLECTION).add(buildSupportRequestDoc(req, serverTimestamp()));
     },
   };
 }
