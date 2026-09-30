@@ -154,3 +154,76 @@
     linear-gradient(#000 0 0) content-box exclude,
     linear-gradient(#000 0 0);
 }
+
+/* ---------------------------------------------------------------------------
+ * "Save to PapeX" attention cue (Web 2.1 P8, Noah). On the interactive phone
+ * mockups Save is the ONE thing you can tap, so while it waits for that tap
+ * it gives a small bounce and a soft orange ring swells out of it, every
+ * 2.2s. It stops the moment Save is tapped (the class comes off). Transform
+ * and opacity only; the ring is a pseudo-element, so nothing shifts.
+ * Reduced motion: no movement, a still orange outline marks the button.
+ * ------------------------------------------------------------------------- */
+.saveCue {
+  position: relative;
+  animation: akSaveBounce 2.2s ease-in-out infinite;
+}
+.saveCue::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 0 max(1.5px, calc(2 * var(--pt, 1px))) rgba(235, 113, 0, 0.95),
+    0 0 calc(14 * var(--pt, 1px)) rgba(235, 113, 0, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  animation: akSaveRipple 2.2s cubic-bezier(0.2, 0.6, 0.35, 1) infinite;
+}
+/* Repeats by design, and only while Save waits (the class is present only
+   then). The /business story caps every animation inside its phones to one
+   run (`.phone * { animation-iteration-count: 1 !important }`, aimed at the
+   kit's forever-loops on hidden layers); this cue is the one loop meant to
+   repeat there, so it states its count with a stronger selector. */
+.saveCue.saveCue,
+.saveCue.saveCue::after {
+  animation-iteration-count: infinite !important;
+}
+.saveCue:active {
+  animation: none;
+}
+@keyframes akSaveBounce {
+  0%,
+  22%,
+  100% {
+    transform: none;
+  }
+  7% {
+    transform: scale(1.04);
+  }
+  14% {
+    transform: scale(0.985);
+  }
+}
+@keyframes akSaveRipple {
+  0% {
+    opacity: 0.95;
+    transform: none;
+  }
+  35% {
+    opacity: 0.55;
+  }
+  65%,
+  100% {
+    opacity: 0;
+    transform: scale(1.1, 1.5);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .saveCue,
+  .saveCue::after {
+    animation: none;
+  }
+  .saveCue {
+    outline: max(1.5px, calc(2 * var(--pt, 1px))) solid rgba(235, 113, 0, 0.95);
+    outline-offset: max(2px, calc(3 * var(--pt, 1px)));
+  }
+}

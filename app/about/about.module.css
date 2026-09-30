@@ -130,6 +130,17 @@
   justify-content: center;
   text-align: center;
 }
+/* Phones (two columns): a row is as tall as its tallest face (a long bio
+   on the back), and centring left photos and names at different heights
+   across the row. Top-aligned, every card in a row lines up. */
+@media (max-width: 619px) {
+  .front {
+    justify-content: flex-start;
+  }
+  .face {
+    padding-top: 18px;
+  }
+}
 .back {
   justify-content: flex-start;
   text-align: left;
@@ -276,6 +287,8 @@
 /* --- Contact block --------------------------------------------------------- */
 .contactSection {
   padding-bottom: var(--section-pad-y);
+  /* the same side gutter as .wrap: on a phone the card ran edge to edge */
+  padding-inline: clamp(20px, 5vw, 56px);
 }
 .contactCard {
   max-width: 720px;

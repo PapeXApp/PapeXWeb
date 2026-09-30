@@ -36,6 +36,7 @@ import Link from 'next/link'
 import { FullLogo } from './full-logo'
 import { AdminLogin } from '@/components/AdminLogin'
 import { SALES_PHONE, SALES_PHONE_HREF, SOCIAL_LINKS, SUPPORT_EMAIL } from './links'
+import f from './site-footer.module.css'
 
 const COLUMNS: { title: string; links: { href: string; label: string }[] }[] = [
   {
@@ -72,8 +73,8 @@ export function SiteFooter({ inFlow = false }: { inFlow?: boolean }) {
       className={inFlow ? 'rd-footer rd-footer-flow' : 'rd-footer'}
       data-nav-theme="dark"
     >
-      <div className="rd-footer-grid">
-        <div>
+      <div className={`rd-footer-grid ${f.grid}`}>
+        <div className={f.brand}>
           <Link
             href="/"
             aria-label="PapeX home"
@@ -135,7 +136,7 @@ export function SiteFooter({ inFlow = false }: { inFlow?: boolean }) {
           </div>
         ))}
 
-        <div>
+        <div className={f.contact}>
           <h3 className="rd-foot-heading">Get in touch</h3>
           <div
             style={{ fontSize: 14, color: 'var(--foot-ink-2)', lineHeight: 1.7 }}
