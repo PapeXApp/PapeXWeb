@@ -62,7 +62,7 @@ export const personaFeatureLines: Record<PersonaId, Record<FeatureKey, string>> 
     coupons: "Keep the coupons you earn and scan, swipe to favorite the ones you'll use.",
     // NICO
     share: "A friend or roommate need a receipt? Send it in a tap.",
-    export: "Need a few for an expense report? Select them and share one PDF.",
+    export: "Need a few for an expense report? Select them and export one PDF.",
   },
   non: {
     // NICO (2026-09-29, all personas)
