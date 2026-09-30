@@ -163,7 +163,10 @@ export function SupportForm({ path = "/support" }: { path?: string }) {
 
   return (
     <div className={`${styles.card} ${styles.cardPad}`}>
-      <form onSubmit={onSubmit} noValidate className={styles.form}>
+      {/* method="post": a submit before hydration (or with JS off) must never
+          fall back to a native GET that puts name/email/message in the URL
+          and server logs (verifier finding; same rule as app/r/cards). */}
+      <form method="post" onSubmit={onSubmit} noValidate className={styles.form}>
         <div aria-hidden="true" className={styles.honeypot}>
           <input ref={honeypotRef} type="text" name={HONEYPOT_FIELD} tabIndex={-1} autoComplete="off" defaultValue="" />
         </div>
