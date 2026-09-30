@@ -49,7 +49,7 @@ export const personaFeatureLines: Record<PersonaId, Record<FeatureKey, string>> 
     // NICO (2026-09-29, all personas)
     profiles: "Everything you need from all of your favorite stores.",
     // NICO (2026-09-29, all personas)
-    coupons: "Keep the coupons you earn and scan, and swipe to favorite the ones you'll use.",
+    coupons: "Keep the coupons you earn and scan, swipe to favorite the ones you'll use.",
   },
   casual: {
     // NICO
@@ -59,7 +59,7 @@ export const personaFeatureLines: Record<PersonaId, Record<FeatureKey, string>> 
     // NICO (2026-09-29, all personas)
     profiles: "Everything you need from all of your favorite stores.",
     // NICO (2026-09-29, all personas)
-    coupons: "Keep the coupons you earn and scan, and swipe to favorite the ones you'll use.",
+    coupons: "Keep the coupons you earn and scan, swipe to favorite the ones you'll use.",
     // NICO
     share: "A receipt a friend or roommate needs? Send it in a tap.",
     export: "Need a few for an expense report? Select them and share one PDF.",
@@ -68,7 +68,7 @@ export const personaFeatureLines: Record<PersonaId, Record<FeatureKey, string>> 
     // NICO (2026-09-29, all personas)
     profiles: "Everything you need from all of your favorite stores.",
     // NICO (2026-09-29, all personas)
-    coupons: "Keep the coupons you earn and scan, and swipe to favorite the ones you'll use.",
+    coupons: "Keep the coupons you earn and scan, swipe to favorite the ones you'll use.",
     find: "Returning something? Search the store's name and the receipt is right there.",
     // NICO
     share: "Sharing a bill or proving a purchase? Send it in a tap, no digging.",
