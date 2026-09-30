@@ -235,7 +235,9 @@ export function Features() {
                         mirrors the row (quizFeatures.module.css), so a stacked
                         row on a phone always opens from the right. The cell
                         sets the side; its child carries the clip. */}
-                    <div className={styles.shotCell}>
+                    {/* data-flow-static: the phone draws in its own colours
+                        (see shared/flow.module.css). */}
+                    <div className={styles.shotCell} data-flow-static="">
                       <div className={styles.shotWipe} data-reveal="mask">
                         <FeatureShot feature={key} persona={active} />
                       </div>

@@ -348,7 +348,9 @@ export function IntroScene({ header }: { header: ReactNode }) {
             {/* The picture is decorative (the cards carry the words) and
                 inert: the reused clip screen holds a button and a <summary>
                 that must never take focus. */}
-            <div className={s.scene} ref={sceneRef} aria-hidden="true" inert>
+            {/* data-flow-static: the picture has its own palette (see
+                shared/flow.module.css). */}
+            <div className={s.scene} ref={sceneRef} aria-hidden="true" inert data-flow-static="">
               <div className={s.paperHome}>
                 <PaperReceipt ref={paperRRef} summary={summary} className={s.flyer} />
                 <PaperCoupon ref={paperCRef} merchant={summary.merchantName} className={s.flyer} />

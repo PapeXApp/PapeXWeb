@@ -290,6 +290,9 @@ export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock:
         ref={stageRef}
         className={s.stage}
         data-hero-loop=""
+        // Own palette, never the page ground (see [data-flow-static] in
+        // shared/flow.module.css).
+        data-flow-static=""
         data-mode={mode}
         data-beat={beat}
         aria-hidden="true"

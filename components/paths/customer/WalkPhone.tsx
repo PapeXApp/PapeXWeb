@@ -74,7 +74,10 @@ export function PhoneChrome({
     </>
   );
   return (
-    <div className={ip.frame}>
+    // data-flow-static: the phone never follows the page ground — its screens
+    // draw in their own colours — so every phone on the path homes is kept
+    // out of the ground fade's per-frame restyle (shared/flow.module.css).
+    <div className={ip.frame} data-flow-static="">
       {/* Left: Action button, volume up, volume down. Right: side button and
           the flush Camera Control. Outside the silhouette, like the metal. */}
       <span className={cn(ip.btn, ip.btnL, ip.btnAction)} aria-hidden="true" />
