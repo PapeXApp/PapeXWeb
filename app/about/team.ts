@@ -72,7 +72,7 @@ export const teamGroups: TeamGroup[] = [
         name: 'Will Alcorn',
         role: 'UI/UX & Data Engineer',
         photo: '/profiles/will_alcorn.jpeg',
-        bio: 'UI/UX and data engineer at PapeX. Studies applied data analytics and international relations at Syracuse University.',
+        bio: 'UI/UX and data engineer at PapeX.',
       },
       {
         name: 'Ali Thompson',
@@ -142,7 +142,7 @@ export const teamGroups: TeamGroup[] = [
         name: 'Marvik Patel',
         role: 'Dev Intern',
         photo: '/profiles/marvik_patel.jpeg',
-        bio: 'Software engineering intern at PapeX; computer science student at The University of Texas at Austin.',
+        bio: 'Dev intern at PapeX.',
       },
       {
         name: 'Aditya Jha',
