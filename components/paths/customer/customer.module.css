@@ -821,6 +821,9 @@
   .walkStage .walkHeading {
     font-size: min(var(--fs-h2), calc(40px + 18 * var(--walk-t)));
   }
+  .walkStage .walkSub {
+    font-size: min(var(--fs-lead), calc(16px + 4 * var(--walk-t)));
+  }
   .walkStage .walkSteps {
     margin-top: min(var(--gap-body), calc(16px + 32 * var(--walk-t)));
     gap: clamp(3px, calc(3px + 5 * var(--walk-t)), 8px);

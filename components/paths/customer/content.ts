@@ -269,7 +269,10 @@ export const howItWorksContent = {
   // stores — never "coming soon". The thing you tap is the PapeX tag on the
   // counter (NfcTag.tsx), not the RDH box.
   eyebrow: "Now in the Bay Area",
-  headline: "At select stores, just tap your phone for your receipt.",
+  // Nico (2026-09-29): the headline is the action; "select stores" is the
+  // subtitle under it.
+  headline: "Tap your phone to get the receipt.",
+  subtitle: "At select stores.",
   phoneAriaLabel: "Step through a tap on a PapeX tag",
   /** Cue line under the phone, one per step — index 2's "Replay" is bold in the design. */
   cues: [
@@ -303,17 +306,19 @@ export const howItWorksContent = {
     },
     {
       number: "02",
-      title: "It opens",
+      title: "Your receipt opens instantly",
       // Spec §6a (Android): Android taps too. P5 c-05 (Nico): both open
       // instantly, so the copy never makes them sound different (round 2:
       // no platform list at all).
-      body: "Your receipt opens instantly!",
+      // Nico (2026-09-29): the title carries "opens instantly"; the body is
+      // what you can do with it.
+      body: "Take a screenshot, or download the app to keep it.",
     },
     {
       number: "03",
       title: "Save it to PapeX",
       // Saving is a step the SHOPPER takes (the tap alone saves nothing).
-      body: "Save it to PapeX. Every dollar you spend makes the next one go further. Your way back to any purchase.",
+      body: "Every dollar you spend makes the next one go further. Your way back to any purchase.",
     },
   ],
 };

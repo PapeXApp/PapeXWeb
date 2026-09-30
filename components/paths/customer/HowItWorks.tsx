@@ -424,6 +424,15 @@ export function HowItWorks() {
               >
                 {howItWorksContent.headline}
               </WordReveal>
+              <p
+                className={cn(
+                  "mt-[clamp(8px,1.2vw,14px)] text-[length:var(--fs-lead)] leading-[1.4]",
+                  styles.walkSub,
+                )}
+                style={{ color: "var(--flow-fg-2)" }}
+              >
+                {howItWorksContent.subtitle}
+              </p>
               <div ref={stepsRef} className={cn(styles.walkSteps, !pinned && styles.walkStepsEased)}>
                 {howItWorksContent.steps.map((s, index) => (
                   // The row is the click target; the <button> inside is what
