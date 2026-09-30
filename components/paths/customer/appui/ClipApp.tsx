@@ -139,6 +139,7 @@ export function ClipApp({
   savePressed = false,
   bannerDelayMs,
   logo,
+  saveCue = false,
 }: {
   summary: ReceiptSummary;
   /** Real buttons (hero). The walkthrough draws the same screen inert. */
@@ -165,6 +166,11 @@ export function ClipApp({
   /** Optional merchant mark for the receipt header's white disc (ClipReceipt
    *  `logo`); the merchant's initial when omitted. */
   logo?: ReactNode;
+  /** Pulse the drawn (non-interactive) Save capsule: the caller's demo is
+   *  waiting for a tap that its own wrapper handles (the /customers
+   *  walkthrough, where a tap anywhere on the phone saves). Never set it on a
+   *  scripted or static screen. The interactive capsule cues by itself. */
+  saveCue?: boolean;
 }) {
   const [menu, setMenu] = useState(false);
   const [sheet, setSheet] = useState(false);
@@ -256,7 +262,10 @@ export function ClipApp({
                   {saved ? savedLabel : saveLabel}
                 </button>
               ) : (
-                <span className={cn(x.save, saved && x.saveDone)} style={savePressed ? PRESSED : undefined}>
+                <span
+                  className={cn(x.save, saved && x.saveDone, saveCue && !saved && kitStyles.saveCue)}
+                  style={savePressed ? PRESSED : undefined}
+                >
                   {saved ? savedLabel : saveLabel}
                 </span>
               )}

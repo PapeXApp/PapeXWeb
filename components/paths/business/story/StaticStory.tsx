@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { PhoneChrome } from "../../customer/WalkPhone"
 import { story } from "../story"
@@ -26,6 +27,8 @@ import s from "../story.module.css"
 export function StaticStory() {
   const summary = useDemoReceipt()
   const [paper, tap, dash] = story.staticSteps
+  // Save pulses while the phone waits for it (PhoneApp says when)
+  const [saveWaiting, setSaveWaiting] = useState(false)
 
   return (
     <div className={s.static}>
@@ -50,9 +53,9 @@ export function StaticStory() {
             <div className={s.staticPhone} role="region" aria-label={story.phoneLabel}>
               <PhoneChrome>
                 <div className={cn(s.layer, s.layerClip)} style={{ opacity: 1 }}>
-                  <ClipScreen summary={summary} />
+                  <ClipScreen summary={summary} saveCue={saveWaiting} />
                 </div>
-                <PhoneApp summary={summary} live reset={0} />
+                <PhoneApp summary={summary} live reset={0} onSaveWaiting={setSaveWaiting} />
               </PhoneChrome>
             </div>
             <div className={s.staticDevice} role="img" aria-label={story.deviceLabel}>

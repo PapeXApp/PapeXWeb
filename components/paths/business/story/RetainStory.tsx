@@ -13,8 +13,10 @@ import { story } from "../story"
 import { Bin, DeviceArt, Printer } from "./Furniture"
 import { FitFrame } from "./merchant/FitFrame"
 import { MerchantDemo } from "./merchant/MerchantDemo"
+import { pt } from "@/components/app-kit/rnStyle"
 import { ClipScreen } from "./PhoneKit"
 import { PhoneApp } from "./PhoneApp"
+import { PT } from "./phone/parts"
 import {
   FOLD_VECS,
   HALF_REGION,
@@ -197,6 +199,27 @@ const T = {
   // the settle: the caption fades, the story latches open
   dockA: 0.86 + CLIP_P,
 } as const
+
+/**
+ * PHONES ONLY (<=820px, where the story ends on the dashboard phone and the
+ * customer's phone is never usable at rest). p8, Noah via Nico: the Save to
+ * PapeX cue must show on a phone too. So there the receipt HOLDS on the
+ * customer's phone for RCPT_HOLD of the story's scroll (~28vh), its Save
+ * capsule pulsing (ClipScreen `saveCue`), and a tap on Save scrolls on to
+ * the sale landing on the dashboard; scrolling on does the same. The other
+ * beats give up that scroll evenly (the runway is not longer). Desktop maps
+ * scroll straight to p, exactly as before.
+ */
+const RCPT_HOLD = 0.09
+/** Where the hold sits, in 0..1 of the story: the receipt fully in. */
+const RCPT_HOLD_AT = (T.rcptB + 0.005) / P_END
+const HOLD_FROM = RCPT_HOLD_AT * (1 - RCPT_HOLD)
+/** Scroll progress (0..1) -> story progress (0..1), with the flat hold. */
+const holdWarp = (u: number) =>
+  u <= HOLD_FROM ? u / (1 - RCPT_HOLD) : u <= HOLD_FROM + RCPT_HOLD ? RCPT_HOLD_AT : RCPT_HOLD_AT + (u - HOLD_FROM - RCPT_HOLD) / (1 - RCPT_HOLD)
+/** Its inverse (the hold's far end for the hold point itself). */
+const holdUnwarp = (v: number) =>
+  v < RCPT_HOLD_AT ? v * (1 - RCPT_HOLD) : HOLD_FROM + RCPT_HOLD + (v - RCPT_HOLD_AT) * (1 - RCPT_HOLD)
 
 /** Act 1's own clock (fractions of 0..T.act1), the old scene's beats, compressed. */
 const Q = {
@@ -426,6 +449,12 @@ export function RetainStory({ header }: { header: ReactNode }) {
   const [phoneDash, setPhoneDash] = useState(false)
   // bumped when the story runs back into the delivery: screens reset
   const [reset, setReset] = useState(0)
+  // the clip receipt is waiting for its Save tap: at rest (PhoneApp says,
+  // desktop) or in the phones' receipt hold (the frame says)
+  const [saveWaiting, setSaveWaiting] = useState(false)
+  const [rcptHold, setRcptHold] = useState(false)
+  /** Phones' receipt hold: Save scrolls on to the dashboard (set by the frame effect). */
+  const saveAdvanceRef = useRef<(() => void) | null>(null)
   const summary = useDemoReceipt()
   const moment = receiptMoment(summary.dateline)
 
@@ -722,7 +751,10 @@ export function RetainStory({ header }: { header: ReactNode }) {
       const runway = runwayRef.current
       if (runway) {
         M.runTop = runway.getBoundingClientRect().top + window.scrollY
-        M.runTotal = runway.offsetHeight - window.innerHeight
+        // The pin sticks for (runway - pin) px. The pin is 100svh, so this
+        // never changes when a phone's toolbar comes or goes (innerHeight
+        // does, ~80px on iOS, and re-mapped every beat mid-scroll: p8 jitter).
+        M.runTotal = runway.offsetHeight - pin.offsetHeight
       }
       const cq = stage.clientWidth / 100
       M.cq = cq
@@ -1468,6 +1500,18 @@ export function RetainStory({ header }: { header: ReactNode }) {
     let isLive = false
     let armed = false
     const runway = runwayRef.current
+    let holdNow = false
+    const setHoldOnce = (next: boolean) => {
+      if (holdNow === next) return
+      holdNow = next
+      setRcptHold(next)
+    }
+    // Phones' Save tap: on to where the sale has landed on the dashboard.
+    saveAdvanceRef.current = () => {
+      const u = holdUnwarp(T.fillB / P_END)
+      const raw = (u * SCROLL_VH) / (SCROLL_VH + DWELL_VH)
+      window.scrollTo({ top: Math.round(M.runTop + raw * M.runTotal), behavior: "smooth" })
+    }
     const setLiveOnce = (next: boolean) => {
       if (isLive === next) return
       isLive = next
@@ -1482,7 +1526,8 @@ export function RetainStory({ header }: { header: ReactNode }) {
       // No layout read here either: where the runway sits on the page and how
       // far it scrolls are measured; the frame only needs scrollY.
       const raw = M.runTotal > 0 ? clamp01((window.scrollY - M.runTop) / M.runTotal) : 0
-      const live = Math.min(1, (raw * (SCROLL_VH + DWELL_VH)) / SCROLL_VH)
+      const lin = Math.min(1, (raw * (SCROLL_VH + DWELL_VH)) / SCROLL_VH)
+      const live = M.phoneDash ? holdWarp(lin) : lin
       const wasLatched = latched
       if (!latched && live >= P_LATCH) latched = true
       else if (latched && live < P_RELEASE) latched = false
@@ -1501,6 +1546,7 @@ export function RetainStory({ header }: { header: ReactNode }) {
       // usable only at rest: from the end of the delivery on, or latched
       const hold = shown * P_END >= T.fillB
       setLiveOnce(!catching && (latched || hold))
+      setHoldOnce(M.phoneDash && !catching && !latched && shown === RCPT_HOLD_AT)
       // running back into the delivery: put both screens back to its frame
       if (shown * P_END >= T.fillB) armed = true
       else if (armed) {
@@ -1536,6 +1582,8 @@ export function RetainStory({ header }: { header: ReactNode }) {
       window.removeEventListener("resize", onResize)
       ro.disconnect()
       if (raf !== null) cancelAnimationFrame(raf)
+      saveAdvanceRef.current = null
+      setRcptHold(false)
     }
   }, [pinned])
 
@@ -1713,10 +1761,10 @@ export function RetainStory({ header }: { header: ReactNode }) {
           <div
             className={s.group}
             ref={groupRef}
-            aria-hidden={!(live && !phoneDash)}
-            inert={!(live && !phoneDash)}
-            role={live && !phoneDash ? "region" : undefined}
-            aria-label={live && !phoneDash ? story.phoneLabel : undefined}
+            aria-hidden={!(live && !phoneDash) && !rcptHold}
+            inert={!(live && !phoneDash) && !rcptHold}
+            role={(live && !phoneDash) || rcptHold ? "region" : undefined}
+            aria-label={(live && !phoneDash) || rcptHold ? story.phoneLabel : undefined}
           >
             <div className={s.device}>
               <span className={s.deviceGlow} ref={glowRef} />
@@ -1746,12 +1794,26 @@ export function RetainStory({ header }: { header: ReactNode }) {
                   <ClipReading time={moment.time} />
                 </div>
                 <div className={cn(s.layer, s.layerClip)} ref={rcptRef}>
-                  <ClipScreen summary={summary} />
+                  <ClipScreen summary={summary} saveCue={saveWaiting || rcptHold} />
                 </div>
                 {/* P4-BT: the fingertip on the card's View pill, and its ripple */}
                 <span className={s.clipRipple} ref={rippleRef} aria-hidden="true" />
                 <span className={s.clipTouch} ref={touchRef} aria-hidden="true" />
-                <PhoneApp summary={summary} live={live && !phoneDash} reset={reset} />
+                <PhoneApp summary={summary} live={live && !phoneDash} reset={reset} onSaveWaiting={setSaveWaiting} />
+                {/* Phones' receipt hold: the one control on the phone then,
+                    over the Save capsule (same box as PhoneApp's hotspot) */}
+                {rcptHold ? (
+                  <div className={s.hotspots} style={PT}>
+                    <button
+                      type="button"
+                      className={s.hot}
+                      style={{ left: pt(12), right: pt(12), bottom: pt(40), height: pt(112) }}
+                      onClick={() => saveAdvanceRef.current?.()}
+                    >
+                      <span className="sr-only">Save to PapeX</span>
+                    </button>
+                  </div>
+                ) : null}
               </PhoneChrome>
               <ScreenLabel on={live && !phoneDash} title={story.screenLabels.phone} className={s.scrPhone} />
             </div>

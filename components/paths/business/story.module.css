@@ -937,6 +937,10 @@
   position: absolute;
   /* over the kit's own layers (header 10, tab bar 20, status bar 50) */
   z-index: 60;
+  /* a hotspot is only rendered while it is meant to be tapped; on phones the
+     story's .group is pointer-events: none (it spans the stage), so the
+     receipt hold's Save must opt back in (p8) */
+  pointer-events: auto;
   padding: 0;
   border: 0;
   border-radius: calc(26 * var(--pt));

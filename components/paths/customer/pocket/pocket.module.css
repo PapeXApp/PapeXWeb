@@ -657,10 +657,14 @@
     line-height: 1.5;
     color: var(--flow-fg-2);
     opacity: 0;
-    transition: opacity 0.25s ease;
+    /* p8 (Noah: "text on top of text"): the two bodies share one cell, so a
+       plain crossfade showed both, overlapping, for its whole 0.25s. The
+       outgoing one now leaves first and the new one comes in after it. */
+    transition: opacity 0.14s ease;
   }
   .mBodyOn {
     opacity: 1;
+    transition: opacity 0.2s ease 0.14s;
   }
 
   .static {
