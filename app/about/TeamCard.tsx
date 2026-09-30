@@ -34,7 +34,7 @@ function MailIcon() {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.7"
+      strokeWidth="1.25"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
@@ -52,7 +52,7 @@ function LinkedInIcon() {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.7"
+      strokeWidth="1.25"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
@@ -60,7 +60,7 @@ function LinkedInIcon() {
     >
       <rect x="3" y="3" width="18" height="18" rx="4" />
       <path d="M8 10.5V16.5" />
-      <path d="M8 7.6v.01" strokeWidth="2.2" />
+      <path d="M8 7.6v.01" strokeWidth="1.8" />
       <path d="M12 16.5v-6" />
       <path d="M12 13.2c0-1.6 1.1-2.7 2.5-2.7s2.5 1 2.5 2.7v3.3" />
     </svg>

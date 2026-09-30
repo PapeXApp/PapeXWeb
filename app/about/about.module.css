@@ -180,10 +180,11 @@
 }
 
 /* Email / LinkedIn: icon-only, pinned bottom-right on both faces. Each link
-   is a 44px tap target around a 20px stroke icon. */
+   is 32 x 44px around a 20px thin-stroke icon, so the pair sits ~12px apart
+   (Nico, 2026-09-29: closer together, thinner lines). */
 .links {
   position: absolute;
-  right: 4px;
+  right: 10px;
   bottom: 2px;
   z-index: 2;
   display: flex;
@@ -193,9 +194,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
+  width: 32px;
   height: 44px;
-  border-radius: 50%;
+  border-radius: 10px;
   color: rgba(0, 18, 29, 0.62) !important;
   transition: color var(--dur-hover, 240ms) ease;
 }
