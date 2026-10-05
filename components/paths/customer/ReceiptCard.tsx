@@ -1,4 +1,4 @@
-import type { MouseEvent as ReactMouseEvent } from "react";
+import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import type { ReceiptSummary } from "@/lib/receiptSummary";
 import { ClipTopBar, StatusBar } from "./appui";
@@ -25,8 +25,12 @@ export function ClipReceiptScreen({
   saved,
   onSave,
   className,
+  logo,
 }: {
   summary: ReceiptSummary;
+  /** Optional merchant logo for the receipt's round badge (DemoReceiptView);
+   *  omitted = the monogram letter, as before. */
+  logo?: ReactNode;
   saved?: boolean;
   /** Omit to render the screen without a working button (the walkthrough). */
   onSave?: (event: ReactMouseEvent<HTMLButtonElement>) => void;
@@ -40,7 +44,7 @@ export function ClipReceiptScreen({
       <StatusBar time={receiptMoment(summary.dateline).time} />
       <ClipTopBar />
       <div className={cn(styles.acScroll, className)}>
-        <DemoReceiptView summary={summary} />
+        <DemoReceiptView summary={summary} logo={logo} />
       </div>
       <div className={styles.acFoot}>
         <button

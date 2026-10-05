@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import { AppKitRoot, ClipReceipt, type ClipReceiptData } from "@/components/app-kit";
 import { kitStyles } from "@/components/app-kit/primitives";
@@ -138,6 +138,8 @@ export function ClipApp({
   contentStyle,
   savePressed = false,
   bannerDelayMs,
+  logo,
+  saveCue = false,
 }: {
   summary: ReceiptSummary;
   /** Real buttons (hero). The walkthrough draws the same screen inert. */
@@ -161,17 +163,30 @@ export function ClipApp({
   /** When the launch banner starts sliding away, in ms after mount.
    *  /business hero only (its 12s loop). Default: the stylesheet's 2.4s. */
   bannerDelayMs?: number;
+  /** Optional merchant mark for the receipt header's white disc (ClipReceipt
+   *  `logo`); the merchant's initial when omitted. */
+  logo?: ReactNode;
+  /** Pulse the drawn (non-interactive) Save capsule: the caller's demo is
+   *  waiting for a tap that its own wrapper handles (the /customers
+   *  walkthrough, where a tap anywhere on the phone saves). Never set it on a
+   *  scripted or static screen. The interactive capsule cues by itself. */
+  saveCue?: boolean;
 }) {
   const [menu, setMenu] = useState(false);
   const [sheet, setSheet] = useState(false);
+  const hintId = useId();
   const data = toClipData(summary);
+  // Save is the only tappable thing on the phone: while it waits, it pulses
+  // (app-kit .saveCue; a still outline under reduced motion) and carries a
+  // spoken hint. Both go the moment it is tapped.
+  const waiting = interactive && Boolean(onSave) && !saved;
 
   const bubble = cn(kitStyles.liquid, x.bubble);
   return (
     <AppKitRoot mode="dark" width="var(--wp-w)" className={x.root}>
       <div data-app-kit-clip="" className={x.clip}>
         <div className={cn(x.flow, !interactive && x.flowStatic)}>
-          <ClipReceipt data={data} statusBar={false} footer={false} lead={lead} style={{ height: "auto", minHeight: "100%", ...contentStyle }} />
+          <ClipReceipt data={data} statusBar={false} footer={false} lead={lead} logo={logo} style={{ height: "auto", minHeight: "100%", ...contentStyle }} />
         </div>
 
         {/* Floating TopBar (Swift TopBar): 44pt back circle, PapeX lockup
@@ -237,11 +252,20 @@ export function ClipApp({
           <div className={cn(bubble, x.footBubble)}>
             <div className={x.footRow}>
               {interactive && onSave ? (
-                <button type="button" className={cn(x.save, x.btn, saved && x.saveDone)} onClick={onSave} aria-live="polite">
+                <button
+                  type="button"
+                  className={cn(x.save, x.btn, saved && x.saveDone, waiting && kitStyles.saveCue)}
+                  onClick={onSave}
+                  aria-live="polite"
+                  aria-describedby={waiting ? hintId : undefined}
+                >
                   {saved ? savedLabel : saveLabel}
                 </button>
               ) : (
-                <span className={cn(x.save, saved && x.saveDone)} style={savePressed ? PRESSED : undefined}>
+                <span
+                  className={cn(x.save, saved && x.saveDone, saveCue && !saved && kitStyles.saveCue)}
+                  style={savePressed ? PRESSED : undefined}
+                >
                   {saved ? savedLabel : saveLabel}
                 </span>
               )}
@@ -250,6 +274,11 @@ export function ClipApp({
               </span>
             </div>
             <div className={x.footNote}>Get the app to save and organize every receipt</div>
+            {waiting ? (
+              <span id={hintId} className="sr-only">
+                Tap {saveLabel} to keep this receipt in the app.
+              </span>
+            ) : null}
           </div>
         </div>
 

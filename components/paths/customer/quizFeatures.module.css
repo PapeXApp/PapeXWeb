@@ -293,11 +293,14 @@
 .shot {
   position: relative;
   width: 100%;
-  /* Stacked, a square cell up to 440px wide, centred under its text: bigger
-     than a 4:3 cell on a phone, without a 600px-tall slab on a tablet. */
-  max-width: 440px;
+  /* Stacked (phones), a 4:3 cell up to 360px wide, centred under its text.
+     It was a 440px SQUARE until P8 (2026-09-30): on a 390px phone that was a
+     ~350px-tall slab per row, six times over, and Noah read the section as
+     cluttered. The phone is still sized from the cell (132cqh), so it just
+     shows a little less of its lower screen. */
+  max-width: 360px;
   margin-inline: auto;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 4 / 3;
   container-type: size;
   display: flex;
   align-items: flex-start;
@@ -314,7 +317,6 @@
 @container (min-width: 720px) {
   .shot {
     max-width: none;
-    aspect-ratio: 4 / 3;
   }
 }
 /* Bottom edge crop (default): the device aligns to the cell's top, so every
@@ -375,6 +377,44 @@
     line-height: 1.2;
     letter-spacing: 0.02em;
     text-align: center;
+  }
+}
+
+/* --- Stacked rows (phones), P8 2026-09-30 -----------------------------------
+ * Calmer rows: slightly smaller body and pills, one gap inside a row (text ->
+ * phone, 22px) and a clearly bigger one between rows (48px), so each row
+ * reads as one unit. Only while the row is stacked, so two-column rows
+ * (desktop) are byte-for-byte unchanged. */
+@container (max-width: 719.98px) {
+  .grid {
+    gap: 22px;
+  }
+  .line {
+    margin-top: 10px;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  .tags {
+    gap: 7px;
+    margin-top: 14px;
+  }
+  .tag {
+    padding: 6px 13px;
+    font-size: 14px;
+  }
+}
+@media (max-width: 720px) {
+  .rows {
+    gap: 48px;
+  }
+  /* The wipe finishes sooner on a phone: fully open once the shot's top is
+     ~70% down the screen (cover 30vh) instead of halfway (cover 50vh). */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .shotWipe {
+        animation-range-end: cover 30vh;
+      }
+    }
   }
 }
 

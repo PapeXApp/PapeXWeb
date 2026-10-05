@@ -367,13 +367,19 @@
   width: calc(52 * var(--u));
   height: calc(52 * var(--u));
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.72);
+  /* the logo brings its own cream disc and navy rim */
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.72);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: calc(22 * var(--u));
   font-weight: 600;
   color: rgba(255, 255, 255, 0.94);
+}
+.sealLogo {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 .perf {
   position: absolute;
@@ -575,10 +581,14 @@
     line-height: 1.5;
     color: var(--flow-fg-2);
     opacity: 0;
-    transition: opacity 0.25s ease;
+    /* p8 (Noah: "text on top of text"): the two bodies share one cell, so a
+       plain crossfade showed both, overlapping, for its whole 0.25s. The
+       outgoing one now leaves first and the new one comes in after it. */
+    transition: opacity 0.14s ease;
   }
   .mBodyOn {
     opacity: 1;
+    transition: opacity 0.2s ease 0.14s;
   }
 
   .static {

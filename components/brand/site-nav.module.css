@@ -1,0 +1,140 @@
+/* components/brand/site-nav.module.css — the phone menu's motion (Web 2.1
+   P8, Noah: the hamburger should open/close with some polish).
+
+   Layered on top of the global nav rules in styles/papex-brand.css (.rd-burger,
+   .rd-menu-sheet: geometry, glass, colours). This file only adds the open and
+   closed STATES and the way between them:
+
+     burger     the three bars morph into an x (outer bars meet and turn 45deg,
+                the middle one collapses)
+     backdrop   the page behind dims and softly blurs, so the menu reads as a
+                layer; tapping it closes the menu (site-nav.tsx)
+     sheet      drops in from just under the nav with a slight spring
+     links      follow one after another, 35ms apart
+
+   The sheet stays mounted so it can animate out; closed, it is invisible,
+   `inert` and out of the tab order. Transform + opacity only.
+   Reduced motion: no movement at all, just a short fade (the global rule in
+   papex-brand.css zeroes every transition, so this file re-allows opacity). */
+
+/* --- burger -> x ----------------------------------------------------------- */
+/* .burger .bar, not .bar: must outrank `.rd-burger span` (papex-brand.css). */
+.burger .bar {
+  transform-origin: 50% 50%;
+  transition:
+    transform 0.42s cubic-bezier(0.34, 1.36, 0.64, 1),
+    opacity 0.2s ease,
+    background-color 0.35s ease;
+}
+/* Bars are 2px tall with 5px gaps: centre to centre is 7px. */
+.burger[aria-expanded="true"] .bar:nth-child(1) {
+  transform: translate3d(0, 7px, 0) rotate(45deg);
+}
+.burger[aria-expanded="true"] .bar:nth-child(2) {
+  transform: scaleX(0.2);
+  opacity: 0;
+}
+.burger[aria-expanded="true"] .bar:nth-child(3) {
+  transform: translate3d(0, -7px, 0) rotate(-45deg);
+}
+
+/* --- backdrop -------------------------------------------------------------- */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  /* under every nav bubble, over the page (the nav is the stacking context) */
+  z-index: -1;
+  background: rgba(0, 18, 29, 0.32);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.26s ease,
+    visibility 0s linear 0.26s;
+}
+.backdrop[data-open] {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    opacity 0.3s ease,
+    visibility 0s linear 0s;
+}
+
+/* --- sheet ----------------------------------------------------------------- */
+.sheet {
+  transform-origin: 100% 0;
+  opacity: 0;
+  visibility: hidden;
+  transform: translate3d(0, -12px, 0) scale(0.97);
+  /* closing: quick, no bounce */
+  transition:
+    opacity 0.18s ease,
+    transform 0.22s cubic-bezier(0.4, 0, 1, 1),
+    visibility 0s linear 0.22s;
+}
+.sheet[data-open] {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  /* opening: a slight spring past the resting place, then settle */
+  transition:
+    opacity 0.22s ease,
+    transform 0.5s cubic-bezier(0.34, 1.32, 0.64, 1),
+    visibility 0s linear 0s;
+}
+
+.link {
+  opacity: 0;
+  transform: translate3d(0, -8px, 0);
+  transition:
+    opacity 0.12s ease,
+    transform 0.12s ease;
+}
+.sheet[data-open] .link {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.3s ease calc(70ms + var(--i, 0) * 35ms),
+    transform 0.42s cubic-bezier(0.22, 1.2, 0.36, 1) calc(70ms + var(--i, 0) * 35ms);
+}
+
+@media (min-width: 821px) {
+  .backdrop {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .burger .bar,
+  .burger[aria-expanded="true"] .bar:nth-child(2),
+  .sheet,
+  .sheet[data-open],
+  .link,
+  .sheet[data-open] .link {
+    transform: none;
+  }
+  /* The x still shows (state, not motion): the outer bars cross in place. */
+  .burger[aria-expanded="true"] .bar:nth-child(1) {
+    transform: translate3d(0, 7px, 0) rotate(45deg);
+  }
+  .burger[aria-expanded="true"] .bar:nth-child(3) {
+    transform: translate3d(0, -7px, 0) rotate(-45deg);
+  }
+  /* Doubled class = beats the global `.rd *` reduced-motion override. */
+  :global(.rd) .sheet.sheet,
+  :global(.rd) .backdrop.backdrop {
+    transition-property: opacity, visibility !important;
+    transition-duration: 0.16s, 0s !important;
+    transition-delay: 0s !important;
+  }
+  :global(.rd) .sheet .link {
+    transition-delay: 0s !important;
+  }
+  :global(.rd) .sheet.sheet:not([data-open]),
+  :global(.rd) .backdrop.backdrop:not([data-open]) {
+    transition-delay: 0s, 0.16s !important;
+  }
+}

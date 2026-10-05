@@ -1,3 +1,5 @@
+"use client";
+
 // ClipReceipt — the App Clip's receipt screen.
 //
 // Mirrors Papex_AppClip Sources/AppClip/ReceiptView.swift (loaded state), with
@@ -56,6 +58,10 @@ function ClipCard({ children, padding, edge = clip.color.orange, style }: { chil
   );
 }
 
+const SAVE_LABEL = 'Save to PapeX';
+const CLIP_DESCRIPTION =
+  'The PapeX App Clip receipt: what a shopper sees after tapping their phone on the PapeX device at checkout. The itemized receipt opens right away, with no app to install, and Save to PapeX keeps it in the PapeX app.';
+
 /** `.bubble(shape)` — iOS 26 `.glassEffect(.clear)`; web approximation. */
 function Bubble({ children, radius, style }: { children: ReactNode; radius: number | string; style?: CSSProperties }) {
   return (
@@ -65,7 +71,8 @@ function Bubble({ children, radius, style }: { children: ReactNode; radius: numb
   );
 }
 
-export function ClipReceipt({ data, statusBar = true, footer = true, lead, style }: { data: ClipReceiptData; statusBar?: boolean; footer?: boolean; /** Optional block drawn first in the content column, above the merchant card (the /business hero puts the next-visit coupon here). Omitted everywhere else. */ lead?: ReactNode; style?: CSSProperties }) {
+export function ClipReceipt({ data, statusBar = true, footer = true, lead, style, logo, saveCue = false }: { data: ClipReceiptData; statusBar?: boolean; footer?: boolean; /** Optional block drawn first in the content column, above the merchant card (the /business hero puts the next-visit coupon here). Omitted everywhere else. */ lead?: ReactNode; style?: CSSProperties; /** Optional merchant mark drawn inside the 56pt white disc of the merchant header, in place of the initial (which stays the fallback). */ logo?: ReactNode; /** Pulse the Save capsule (app-kit .saveCue; a still outline under reduced motion) to show it is the thing to tap. The kit draws no real buttons, so only the caller knows when a demo is waiting for that tap: set it exactly then (e.g. while a page's own Save button lies over the capsule), never on a static mockup. Default off. */ saveCue?: boolean }) {
+  const cue = footer && saveCue;
   const c = clip.color;
   const sp = clip.spacing;
   const insetTop = 59; // device safe area (iPhone 15/16)
@@ -81,7 +88,7 @@ export function ClipReceipt({ data, statusBar = true, footer = true, lead, style
           <div style={{ display: 'flex', flexDirection: 'column', gap: pt(17) }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: pt(sp.sm) }}>
               <div style={{ position: 'relative', width: pt(62), height: pt(62), borderRadius: '50%', background: c.orange, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ width: pt(56), height: pt(56), borderRadius: '50%', background: 'rgba(255,255,255,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.navy, ...f(26, 'bold') }}>{initial}</div>
+                <div style={{ width: pt(56), height: pt(56), borderRadius: '50%', background: 'rgba(255,255,255,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.navy, ...f(26, 'bold'), overflow: 'hidden' }}>{logo ?? initial}</div>
               </div>
               <div style={{ ...f(24, 'medium'), color: c.textPrimary }}>{data.merchantName}</div>
             </div>
@@ -137,8 +144,8 @@ export function ClipReceipt({ data, statusBar = true, footer = true, lead, style
         </ClipCard>
       </div>
 
-      {/* TopBar */}
-      <div style={{ position: 'absolute', left: pt(sp.sm), right: pt(sp.sm), top: pt(insetTop + sp.xs), display: 'flex', alignItems: 'center', gap: pt(sp.xs), zIndex: 5 }}>
+      {/* TopBar — drawn chrome, not controls */}
+      <div aria-hidden="true" style={{ position: 'absolute', left: pt(sp.sm), right: pt(sp.sm), top: pt(insetTop + sp.xs), display: 'flex', alignItems: 'center', gap: pt(sp.xs), zIndex: 5 }}>
         <Bubble radius="50%" style={{ width: pt(44), height: pt(44) }}>
           <Chevron />
         </Bubble>
@@ -160,8 +167,11 @@ export function ClipReceipt({ data, statusBar = true, footer = true, lead, style
       {footer ? (
         <div style={{ position: 'absolute', left: pt(sp.sm), right: pt(sp.sm), bottom: pt(34 + sp.xs), zIndex: 5 }}>
           <Bubble radius={34} style={{ flexDirection: 'column', gap: pt(10), padding: pt(14) }}>
-            <div style={{ display: 'flex', gap: pt(10), width: '100%' }}>
-              <div style={{ flex: 1, height: pt(52), borderRadius: pt(26), background: `linear-gradient(180deg, #F5851C, ${c.orange})`, boxShadow: `0 ${pt(5)} ${pt(10)} rgba(${hexRgb(c.orange)}, 0.35)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFFFFF', ...f(18, 'semibold') }}>Save to PapeX</div>
+            {/* The drawn capsule is not a control (a page that makes the
+                phone usable lays a real button over it), so it stays out of
+                the accessibility tree; the note below is still read. */}
+            <div aria-hidden="true" style={{ display: 'flex', gap: pt(10), width: '100%' }}>
+              <div className={cue ? s.saveCue : undefined} style={{ flex: 1, height: pt(52), borderRadius: pt(26), background: `linear-gradient(180deg, #F5851C, ${c.orange})`, boxShadow: `0 ${pt(5)} ${pt(10)} rgba(${hexRgb(c.orange)}, 0.35)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFFFFF', ...f(18, 'semibold') }}>{SAVE_LABEL}</div>
               <div style={{ width: pt(52), height: pt(52), borderRadius: '50%', background: 'rgba(255,255,255,0.10)', border: `max(1px, calc(1 * var(--pt))) solid rgba(255,255,255,0.14)`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
                 <ShareGlyph color={c.textPrimary} />
               </div>
@@ -171,6 +181,12 @@ export function ClipReceipt({ data, statusBar = true, footer = true, lead, style
         </div>
       ) : null}
       {statusBar ? <StatusBar color={c.textPrimary} /> : null}
+      {/* What this mockup is, for screen readers and search agents (the
+          drawn chrome around it is aria-hidden). Server-rendered. LAST child
+          on purpose: customer/appui clipApp.module.css re-flows this root by
+          position (content column = first div, kit TopBar = second); a first
+          <p> here hid the whole receipt in ClipApp (p8 regression). */}
+      <p className="sr-only">{CLIP_DESCRIPTION}</p>
     </div>
   );
 }

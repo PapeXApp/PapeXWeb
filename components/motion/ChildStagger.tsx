@@ -3,6 +3,7 @@
 import { Children, cloneElement, isValidElement, useEffect, useRef, useState } from "react"
 import { useInView } from "motion/react"
 import { useSafeReducedMotion } from "./useSafeReducedMotion"
+import { PHONE_SCALE, PHONE_VIEWPORT, useIsPhone } from "./phoneTiming"
 import type { CSSProperties, ElementType, ReactElement, ReactNode } from "react"
 
 type StyleableProps = { style?: CSSProperties }
@@ -20,8 +21,8 @@ type ChildStaggerProps = {
 
 // Same entrance vocabulary as Reveal: opacity + blur + a small rise.
 const EASE = "cubic-bezier(.16,1,.3,1)"
-const DURATION = 0.7
-const STAGGER = 0.08
+const BASE_DURATION = 0.7
+const BASE_STAGGER = 0.08
 
 const VIEWPORT = { once: true, amount: 0.12, margin: "0px 0px -6% 0px" } as const
 
@@ -36,10 +37,16 @@ const VIEWPORT = { once: true, amount: 0.12, margin: "0px 0px -6% 0px" } as cons
  * Renders children in their final (visible) state immediately under
  * `prefers-reduced-motion: reduce`.
  */
-export function ChildStagger({ children, as = "div", className, style, delay = 0 }: ChildStaggerProps) {
+export function ChildStagger({ children, as = "div", className, style, delay: delayProp = 0 }: ChildStaggerProps) {
   const prefersReduced = useSafeReducedMotion()
+  const phone = useIsPhone()
   const ref = useRef<HTMLDivElement>(null)
-  const inView = useInView(ref, VIEWPORT)
+  // Phones start earlier and run shorter (phoneTiming.ts); desktop unchanged.
+  const inView = useInView(ref, phone ? PHONE_VIEWPORT : VIEWPORT)
+  const k = phone ? PHONE_SCALE : 1
+  const delay = delayProp * k
+  const DURATION = BASE_DURATION * k
+  const STAGGER = BASE_STAGGER * k
   const [settled, setSettled] = useState(false)
   const Tag = as as ElementType
   const items = Children.toArray(children)
@@ -49,7 +56,7 @@ export function ChildStagger({ children, as = "div", className, style, delay = 0
     const total = delay + Math.max(0, items.length - 1) * STAGGER + DURATION
     const timer = window.setTimeout(() => setSettled(true), total * 1000 + 60)
     return () => window.clearTimeout(timer)
-  }, [inView, prefersReduced, delay, items.length])
+  }, [inView, prefersReduced, delay, items.length, DURATION, STAGGER])
 
   if (prefersReduced) {
     return (
@@ -73,7 +80,7 @@ export function ChildStagger({ children, as = "div", className, style, delay = 0
           opacity: inView ? 1 : 0,
           transform: inView ? "none" : "translateY(14px)",
           // Dropped once settled — a lingering blur(0) still costs a layer.
-          filter: settled ? undefined : inView ? "blur(0px)" : "blur(8px)",
+          filter: settled ? undefined : inView ? "blur(0px)" : phone ? "blur(4px)" : "blur(8px)",
           transition: `opacity ${DURATION}s ${EASE} ${childDelay}s, transform ${DURATION}s ${EASE} ${childDelay}s, filter ${DURATION}s ${EASE} ${childDelay}s`,
           willChange: settled ? undefined : "opacity, transform, filter",
         }

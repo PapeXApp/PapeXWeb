@@ -44,8 +44,9 @@ export const loop = {
    *  the clip's own "Items Purchased"). */
   clipCouponHeading: "Your next-visit coupon",
   demoTag: "Demo data",
-  /** Screen-reader description of the whole visual (the drawing itself is
-   *  aria-hidden: the numbered steps under it carry the words). */
+  /** What the whole visual shows and why it matters, as visually hidden text
+   *  in the figure's caption (server HTML), for screen readers, search
+   *  engines and AI agents (p8). The drawing itself is aria-hidden. */
   description:
-    "Demo with an invented store, PapeX Cafe: a customer taps their phone on the PapeX device and the receipt opens with a coupon for next time. They save it to the PapeX app, then use the coupon at the counter.",
+    "What the animation shows, with an invented demo store, PapeX Cafe: a customer taps their phone on the PapeX device at the counter and the receipt opens on their phone, with a coupon for their next visit at partner stores. They save it to the PapeX app. Back at the counter, they show the coupon and it is scanned: coupon used. Why it matters: one tap turns a sale into a reason to come back, and you get a dashboard of every sale.",
 } as const

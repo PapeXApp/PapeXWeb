@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react"
 import { cn } from "@/lib/utils"
 import { AppKitRoot, CouponCard, CouponDetail, StatusBar, demoCoupons, type KitCoupon } from "@/components/app-kit"
-import { cafeStoreFor } from "../papexCafe"
+import { useCafeStore } from "../story/phone/cafeLogo"
 import { clip } from "@/lib/app-kit/tokens"
 import { CheckGlyph } from "./SceneArt"
 import { loop } from "./loop"
@@ -28,7 +28,6 @@ export type CouponState = "pending" | "landed" | "shown" | "scan" | "used"
 
 const TAP = demoCoupons.find((c) => c.via === "tap") ?? demoCoupons[0]
 const COUPON: KitCoupon = { ...TAP, barcode: loop.coupon.barcode }
-const STORE = cafeStoreFor(COUPON.storeId)
 
 /** One app point = the phone screen's width / 393 (same as story/PhoneApp). */
 const PT: CSSProperties = { ["--pt" as string]: "calc(var(--wp-w) / 393)" }
@@ -48,9 +47,11 @@ const box = (b: typeof CARD): CSSProperties => ({
 })
 
 export function CouponScreen({ state, time }: { state: CouponState; time?: string }) {
+  // PapeX Cafe with the dashboard's logo on the coupon's store mark
+  const store = useCafeStore().storeFor(COUPON.storeId)
   return (
     <AppKitRoot style={PT} className={s.kitFill}>
-      <CouponDetail coupon={COUPON} store={STORE} mode="dark" statusBar={false} showRemove={false} />
+      <CouponDetail coupon={COUPON} store={store} mode="dark" statusBar={false} showRemove={false} />
       <StatusBar time={time} />
       <span className={cn(s.cardGlow, state === "landed" && s.cardGlowPlay)} style={box(CARD)} aria-hidden="true" />
       <span className={s.stubBox} style={box(STUB)} aria-hidden="true">
@@ -88,13 +89,14 @@ const OFFER: CSSProperties = {
 }
 
 export function ClipCouponLead() {
+  const store = useCafeStore().storeFor(COUPON.storeId)
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "calc(12 * var(--pt))" }}>
       <div style={{ fontFamily: "var(--akc-font)", fontSize: "calc(20 * var(--pt))", fontWeight: 500, lineHeight: 1.2, color: clip.color.orange }}>
         {loop.clipCouponHeading}
       </div>
       <div className={s.clipCoupon}>
-        <CouponCard coupon={COUPON} store={STORE} mode="dark" seam={clip.color.navy} titleStyle={OFFER} />
+        <CouponCard coupon={COUPON} store={store} mode="dark" seam={clip.color.navy} titleStyle={OFFER} />
         <span className={s.clipCouponGlow} aria-hidden="true" />
       </div>
     </div>

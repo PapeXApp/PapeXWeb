@@ -28,7 +28,7 @@ import s from "./setup.module.css"
  *     line, then a hold), then a hold on the whole lit row and the pin
  *     releases into the demo form (#demo).
  *   phones (<= 820px): NOT pinned — the same stacked list scrolls normally
- *     and c follows a reading line (62% down the screen) from dot to dot, so
+ *     and c follows a reading line (80% down the screen) from dot to dot, so
  *     each step lights as it reaches it.
  *
  * Perf contract (RetainStory's): the frame WRITES only transform, opacity and
@@ -50,8 +50,12 @@ const LEGS_A = 0.03
 const LEGS_B = 0.84
 /** Each leg moves the line over this share of its span, then holds. */
 const LEG_MOVE = 0.62
-/** Where the phone reading line sits, as a share of the viewport height. */
-const READ_AT = 0.62
+/** Where the phone reading line sits, as a share of the viewport height.
+ *  p8 (Noah: steps "don't appear as quickly as they should on the phone"):
+ *  0.62 -> 0.8, so a step is lit once its dot is 80% down the screen, i.e.
+ *  as it comes into view, not when it has reached the middle. Phones only
+ *  (desktop is driven by the pinned runway, cDesk). */
+const READ_AT = 0.8
 /** How far below its spot a step's words start as they arrive (px). */
 const TEXT_RISE = 14
 /** A waiting step's art: a faint ghost of the finished drawing. */
@@ -152,7 +156,10 @@ export function SetupTimeline({
 
     /** Returns false when the screen can't hold the pinned row. */
     const measure = (): boolean => {
-      M.vh = window.innerHeight || 1
+      // The layout viewport's height (iOS: toolbars expanded), not
+      // innerHeight: that one changes ~80px as Safari's toolbar collapses
+      // mid-scroll, which moved the phone reading line (p8 jitter).
+      M.vh = document.documentElement.clientHeight || window.innerHeight || 1
       M.phone = parseFloat(getComputedStyle(stage).getPropertyValue("--t-phone")) > 0
       M.runTop = runway.getBoundingClientRect().top + window.scrollY
       M.runTotal = Math.max(0, runway.offsetHeight - M.vh)

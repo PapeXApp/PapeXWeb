@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils"
 import { ClipLockScreen } from "../../customer/appui"
 import { receiptMoment } from "../../customer/appui/Clip"
 import { ClipReceiptScreen } from "../../customer/ReceiptCard"
+import { cafeBadgeLogo } from "../PapexCafeLogo"
 import { PhoneChrome } from "../../customer/WalkPhone"
 import { tapToRetain } from "../content"
 import { clamp01, ease, seg } from "../story/fold"
@@ -166,7 +167,10 @@ export function IntroScene({ header }: { header: ReactNode }) {
       const runway = runwayRef.current
       if (runway) {
         M.runTop = runway.getBoundingClientRect().top + window.scrollY
-        M.runTotal = Math.max(0, runway.offsetHeight - window.innerHeight)
+        // The pin sticks for (runway - pin) px. The pin is 100svh, so this
+        // never changes when a phone's toolbar comes or goes (innerHeight
+        // does, ~80px on iOS, and re-mapped every beat mid-scroll: p8 jitter).
+        M.runTotal = Math.max(0, runway.offsetHeight - pin.offsetHeight)
         geo.current = { runTop: M.runTop, runTotal: M.runTotal }
       }
       const dim = parseFloat(getComputedStyle(scene).getPropertyValue("--dim"))
@@ -327,10 +331,14 @@ export function IntroScene({ header }: { header: ReactNode }) {
         <IntroStatic />
       </div>
     )
+  // p8: what the (aria-hidden) scene shows and why it matters, in the server
+  // HTML in every mode, right under the heading.
+  const description = <p className="sr-only">{t.sceneDescription}</p>
   if (mode === "static")
     return (
       <>
         {flowHead}
+        {description}
         {staticVersion}
       </>
     )
@@ -338,6 +346,7 @@ export function IntroScene({ header }: { header: ReactNode }) {
   return (
     <>
     {flowHead}
+    {description}
     {staticVersion}
     <div ref={runwayRef} className={s.runway} data-nojs="runway" style={{ height: `${RUNWAY_VH}vh` }}>
       <div className={s.pin} ref={pinRef}>
@@ -362,7 +371,7 @@ export function IntroScene({ header }: { header: ReactNode }) {
                       <ClipLockScreen card={false} moment={moment} />
                     </div>
                     <div className={cn(s.layer, s.layerClip)} ref={clipRef}>
-                      <ClipReceiptScreen summary={summary} />
+                      <ClipReceiptScreen summary={summary} logo={cafeBadgeLogo(summary.merchantName)} />
                     </div>
                     <div className={s.layer} ref={couponsRef}>
                       <CouponsScreen time={moment.time} rowRef={rowRef} rowWrapRef={rowWrapRef} />

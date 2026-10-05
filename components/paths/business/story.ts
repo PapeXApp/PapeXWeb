@@ -45,6 +45,15 @@ export const story = {
     { key: "dash", title: "And on your side", body: "The same receipt lands on your dashboard." },
   ],
 
+  /**
+   * What the whole §03 scene shows and why it matters, as visually hidden
+   * text in the server HTML (p8): the scene is aria-hidden and needs JS, so
+   * this is what screen readers, search engines and AI agents read. The beat
+   * list above still follows it, one line per beat.
+   */
+  sceneDescription:
+    "What the animation shows, with an invented demo store, PapeX Cafe: a sale prints a paper receipt, which is folded into a paper plane and tossed in the bin. With PapeX, the same receipt goes to the PapeX device at your counter. Your customer taps their phone on it, a receipt card slides up, they tap View and the receipt opens on their phone, no app needed. The same sale then lands on your dashboard, where it is searchable, counted and charted. Why it matters: your customer keeps the receipt instead of losing it, and you see every sale, your busiest hours and your top items.",
+
   /** Accessible names for the scene's art. */
   deviceLabel: "The PapeX device, a small black box at the counter.",
   phoneLabel: "An iPhone showing the digital receipt.",
