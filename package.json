@@ -44,6 +44,7 @@
     "test:signup": "tsx lib/server/signup/signup.test.ts",
     "test:offerSaveLink": "tsx lib/offerSaveLink.test.ts",
     "test:offerSaveLinkRender": "tsx --tsconfig tsconfig.test.json app/r/offerSaveLink.test.tsx",
+    "test:rules": "firebase emulators:exec --only firestore --project papexweb-rules-test 'node --test --test-concurrency=1 firestore-tests/*.test.mjs'",
     "test:storage-rules": "firebase emulators:exec --only storage --project papexweb-rules-test 'node --test --test-concurrency=1 storage-tests/*.test.mjs'"
   },
   "dependencies": {
