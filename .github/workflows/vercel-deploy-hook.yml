@@ -11,5 +11,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Vercel deploy hook
+        # The hook URL embeds a secret: anyone holding it can trigger production
+        # builds. Keep it in the repo secret, never in this file.
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
         run: |
-          curl --fail-with-body --request POST "https://api.vercel.com/v1/integrations/deploy/prj_vVevHC9AKzrNh6HK6hyv5TJWvJvv/xIT1HKPCnN"
+          if [ -z "$VERCEL_DEPLOY_HOOK_URL" ]; then
+            echo "::error title=Missing secret::VERCEL_DEPLOY_HOOK_URL is not set. Add it under Settings > Secrets and variables > Actions (value: the Vercel deploy hook URL for main). Production was NOT deployed."
+            exit 1
+          fi
+          case "$VERCEL_DEPLOY_HOOK_URL" in
+            https://api.vercel.com/v1/integrations/deploy/*) ;;
+            *)
+              echo "::error title=Malformed secret::VERCEL_DEPLOY_HOOK_URL does not look like a Vercel deploy hook URL (expected https://api.vercel.com/v1/integrations/deploy/...). Production was NOT deployed."
+              exit 1
+              ;;
+          esac
+          curl --silent --show-error --fail-with-body --request POST "$VERCEL_DEPLOY_HOOK_URL"
