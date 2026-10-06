@@ -4,13 +4,15 @@
    pin are copied from business/intro/intro.module.css (not imported: the two
    scenes evolve separately).
 
-   Same contract as the business scene: a tall runway, a 100svh sticky pin,
-   ONE scroll progress. The frame writes only transform / opacity; every
-   size it needs is measured on mount/resize. Nothing here loops: the only
-   CSS transitions are the caption cards' highlight (a state change, not a
-   clock), and the reused iPhone kit is held to one iteration below. */
+   Web 2.2 (Noah's note 5): the scene is an AUTO ANIMATION now, not
+   scroll-scrubbed. `.runway` is just the stage wrapper and `.pin` a normal
+   100svh block (no sticky, no scroll budget); the clock in PocketScene.tsx
+   drives ONE progress. The frame writes only transform / opacity; every
+   size it needs is measured on mount/resize. The only CSS transitions are
+   the caption cards' highlight (a state change, not a clock), and the
+   reused iPhone kit is held to one iteration below. */
 
-/* --- runway + pin ---------------------------------------------------------- */
+/* --- stage + pin ----------------------------------------------------------- */
 .runway {
   position: relative;
 }
@@ -28,8 +30,7 @@
   }
 }
 .pin {
-  position: sticky;
-  top: 0;
+  position: relative;
   height: 100svh;
   display: flex;
   align-items: center;

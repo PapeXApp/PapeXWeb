@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
+import { useAutoPlay } from "@/components/motion/useAutoPlay"
 import { receiptMoment } from "../appui/Clip"
 import { PhoneChrome } from "../WalkPhone"
 import { EmailReceipt, PaperCoupon, PaperReceipt } from "./Paper"
@@ -39,10 +40,14 @@ import s from "./pocket.module.css"
  *               coupon list the same way
  *   0.955-1.00  hold
  *
- * A tall runway, a `position: sticky` 100svh pin, ONE progress `p` (0..1 over
- * the runway's scroll), and every frame a pure function of `p` — scrolling up
- * plays it backwards, any `p` always draws the same picture, no timers, no
- * loops.
+ * AUTO ANIMATION (Web 2.2, Noah's note 5; was scroll-scrubbed): ONE progress
+ * `p` (0..1) driven by a clock, not the scroll bar. The stage is one screen
+ * tall (no runway, no sticky pin); useAutoPlay starts the clock when the
+ * stage is ~40% in view and restarts it when the stage has left the screen
+ * and comes back. The clock runs DURATION_MS end to end, slow enough to read
+ * every beat, then holds the last frame. Every frame is still a pure
+ * function of `p`, so the caption cards double as step buttons: a click
+ * jumps `p` to that beat's start and plays on from there.
  *
  * On phones (<=820px) the email / paper grows IN FRONT of the (dimmed)
  * phone, which stays whole and large; on desktop it grows beside it.
@@ -58,10 +63,12 @@ import s from "./pocket.module.css"
  * run on mount, resize, ResizeObserver and fonts.ready.
  */
 
-/** Scroll budget for the scene, in viewport heights. */
-const SCROLL_VH = 320
-/** The runway: the pinned viewport plus the scene's scroll. */
-const RUNWAY_VH = 100 + SCROLL_VH
+/** The whole scene, end to end, in ms. Email ~0.425 of it, paper ~0.275,
+ *  coupon ~0.3 (the beat tables below are fractions of this). */
+const DURATION_MS = 22000
+/** Longest step the clock may take in one frame (a backgrounded tab must
+ *  not leap to the end when it comes back). */
+const MAX_STEP_MS = 100
 
 /** A flyer's grow -> fly -> land clock. */
 type Flyer = { growA: number; growB: number; moveA: number; moveB: number; fadeA: number; fadeB: number; rowA: number; rowB: number }
@@ -114,8 +121,8 @@ const T = {
   tabB: 0.73,
 } as const
 
-/** Where a caption card's click lands: mid-forward, mid-scan, mid-scan. */
-const JUMP: Record<PocketHalf, number> = { email: 0.21, paper: 0.54, coupons: 0.81 }
+/** Where a caption card's click lands: the start of that beat. */
+const JUMP: Record<PocketHalf, number> = { email: 0, paper: 0.425, coupons: 0.7 }
 
 const clamp01 = (n: number) => (n < 0 ? 0 : n > 1 ? 1 : n)
 const seg = (p: number, a: number, b: number) => clamp01((p - a) / (b - a))
@@ -155,7 +162,9 @@ export function PocketScene({ header }: { header: ReactNode }) {
   const unreviewedBefore = receipts.earlier.filter((r) => !r.reviewed).length
   const t = pocketCopy
 
-  const runwayRef = useRef<HTMLDivElement>(null)
+  // The auto-animation trigger (components/motion/useAutoPlay): `started`
+  // once the stage is in view, `run` bumps to replay from the top.
+  const { ref: stageRef, started, run } = useAutoPlay<HTMLDivElement>({ start: "view", amount: 0.4 })
   const pinRef = useRef<HTMLDivElement>(null)
   const sceneRef = useRef<HTMLDivElement>(null)
   const phoneRef = useRef<HTMLDivElement>(null)
@@ -183,8 +192,8 @@ export function PocketScene({ header }: { header: ReactNode }) {
   const newCRef = useRef<HTMLDivElement>(null)
   const restCRef = useRef<HTMLDivElement>(null)
   const slotCRef = useRef<HTMLDivElement>(null)
-  // where the runway sits, for the cards' jump (written by measure())
-  const geo = useRef({ runTop: 0, runTotal: 0 })
+  // The clock, shared with the cards' jump: progress and whether it runs.
+  const clock = useRef({ p: 0, playing: false })
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)")
@@ -203,8 +212,6 @@ export function PocketScene({ header }: { header: ReactNode }) {
     const still: Flight = { dx: 0, dy: 0, sx: 0.5, sy: 0.2 }
     /** Everything the frame needs, in px. Rebuilt by measure() only. */
     const M = {
-      runTop: 0,
-      runTotal: 0,
       dim: 0,
       arc: 0,
       e: { ...still },
@@ -232,15 +239,6 @@ export function PocketScene({ header }: { header: ReactNode }) {
     }
 
     const measure = () => {
-      const runway = runwayRef.current
-      if (runway) {
-        M.runTop = runway.getBoundingClientRect().top + window.scrollY
-        // The pin sticks for (runway - pin) px. The pin is 100svh, so this
-        // never changes when a phone's toolbar comes or goes (innerHeight
-        // does, ~80px on iOS, and re-mapped every beat mid-scroll: p8 jitter).
-        M.runTotal = Math.max(0, runway.offsetHeight - pin.offsetHeight)
-        geo.current = { runTop: M.runTop, runTotal: M.runTotal }
-      }
       const dim = parseFloat(getComputedStyle(scene).getPropertyValue("--dim"))
       M.dim = Number.isFinite(dim) ? dim : 0
       const phone = phoneRef.current
@@ -375,42 +373,64 @@ export function PocketScene({ header }: { header: ReactNode }) {
       }
     }
 
+    // ---- the clock ---------------------------------------------------------
+    // p advances DURATION_MS end to end, then holds. `run` (a replay) remounts
+    // this effect, so the clock starts over from 0.
+    const c = clock.current
+    c.p = 0
+    c.playing = started
     let raf: number | null = null
-    const update = () => {
+    let prev = 0
+    const tick = (now: number) => {
       raf = null
-      const p = M.runTotal > 0 ? clamp01((window.scrollY - M.runTop) / M.runTotal) : 0
-      draw(p)
+      const dt = prev ? Math.min(now - prev, MAX_STEP_MS) : 0
+      prev = now
+      if (c.playing && !document.hidden) {
+        c.p = clamp01(c.p + dt / DURATION_MS)
+        if (c.p >= 1) c.playing = false
+      }
+      draw(c.p)
+      if (c.playing) raf = requestAnimationFrame(tick)
     }
-    const onScroll = () => {
-      if (raf === null) raf = requestAnimationFrame(update)
+    const play = () => {
+      if (raf === null) {
+        prev = 0
+        raf = requestAnimationFrame(tick)
+      }
     }
     const onResize = () => {
       measure()
       last.clear()
-      onScroll()
+      draw(c.p)
+    }
+    // the cards' jump (see `jump` below) goes through this so one effect owns
+    // the clock
+    const onJump = (e: Event) => {
+      c.p = (e as CustomEvent<number>).detail
+      c.playing = true
+      play()
     }
 
     measure()
-    update()
-    window.addEventListener("scroll", onScroll, { passive: true })
+    draw(c.p)
+    if (c.playing) play()
+    pin.addEventListener("pocket:jump", onJump)
     window.addEventListener("resize", onResize)
     const ro = new ResizeObserver(onResize)
     ro.observe(scene)
     ro.observe(pin)
-    // anything above the runway changing height moves where it starts
-    ro.observe(document.documentElement)
     document.fonts?.ready.then(onResize).catch(() => {})
     return () => {
-      window.removeEventListener("scroll", onScroll)
+      pin.removeEventListener("pocket:jump", onJump)
       window.removeEventListener("resize", onResize)
       ro.disconnect()
       if (raf !== null) cancelAnimationFrame(raf)
     }
-  }, [pinned])
+  }, [pinned, started, run])
 
+  /** A caption card: play from the start of that beat. */
   const jump = useCallback((key: PocketHalf) => {
-    const { runTop, runTotal } = geo.current
-    window.scrollTo({ top: Math.round(runTop + JUMP[key] * runTotal), behavior: "smooth" })
+    pinRef.current?.dispatchEvent(new CustomEvent("pocket:jump", { detail: JUMP[key] }))
   }, [])
 
   // In flow above the runway / static version; hidden by CSS on desktop while
@@ -438,7 +458,7 @@ export function PocketScene({ header }: { header: ReactNode }) {
     <>
       {flowHead}
       {staticVersion}
-      <div ref={runwayRef} className={s.runway} data-nojs="runway" style={{ height: `${RUNWAY_VH}vh` }}>
+      <div ref={stageRef} className={s.runway} data-nojs="runway">
         <div className={s.pin} ref={pinRef}>
           <div className={s.pinHead}>{header}</div>
           <div className={s.layout}>
