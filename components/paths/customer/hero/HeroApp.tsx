@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { useSafeReducedMotion } from "@/components/motion/useSafeReducedMotion";
+import { useAutoPlay } from "@/components/motion/useAutoPlay";
 import { Fab, ReceiptRow, StatusBar, TabBar } from "../appui";
 import type { ListRow } from "../appui";
 import s from "../appui/appui.module.css";
@@ -32,9 +31,11 @@ import h from "./hero.module.css";
  * server HTML is already the final layout (no hydration jump). Transform,
  * opacity and clip-path only; nothing loops.
  *
- * Replay: once the stage has fully left the screen and comes back, the
- * animated layers remount (React key) so the scene plays again. The phone
- * itself does not re-rise. Skipped under reduced motion.
+ * Trigger: useAutoPlay (components/motion) - the shared "auto animation"
+ * primitive. The hero starts on mount; once the stage has fully left the
+ * screen and comes back, the animated layers remount (React key = run) so
+ * the scene plays again. The phone itself does not re-rise. Skipped under
+ * reduced motion.
  *
  * The phone is PhoneChrome (the one iPhone on the page) and the screen is
  * built from the appui kit: its status bar, rows, FAB and tab bar, and its
@@ -42,29 +43,7 @@ import h from "./hero.module.css";
  * docs/design/app-reference.md, "Receipts").
  */
 export function HeroApp() {
-  const stageRef = useRef<HTMLDivElement>(null);
-  const reduced = useSafeReducedMotion();
-  const [run, setRun] = useState(0);
-
-  useEffect(() => {
-    const stage = stageRef.current;
-    if (reduced || !stage || typeof IntersectionObserver === "undefined") return;
-    let gone = false;
-    const io = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[entries.length - 1];
-        if (!entry) return;
-        if (!entry.isIntersecting) gone = true;
-        else if (gone) {
-          gone = false;
-          setRun((n) => n + 1);
-        }
-      },
-      { threshold: 0 },
-    );
-    io.observe(stage);
-    return () => io.disconnect();
-  }, [reduced]);
+  const { ref: stageRef, run, reduced } = useAutoPlay<HTMLDivElement>({ start: "mount" });
 
   return (
     <div

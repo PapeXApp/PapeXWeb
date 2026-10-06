@@ -23,3 +23,6 @@ export { ScrollLit } from "./ScrollLit"
 export { ScrollReveal } from "./ScrollReveal"
 export { ScrollWipe } from "./ScrollWipe"
 export { ScrollWords } from "./ScrollWords"
+
+export { useAutoPlay } from "./useAutoPlay"
+export type { AutoPlayOptions } from "./useAutoPlay"
