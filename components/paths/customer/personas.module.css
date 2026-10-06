@@ -34,6 +34,11 @@
   --q-track: rgba(245, 245, 245, 0.18);
   --q-track: color-mix(in srgb, var(--flow-fg) 18%, transparent);
 
+  /* Web 2.2 (Noah, note 3): the answer rectangles at 1.25x. One knob; the
+     option box, its letter badge and the quiz column all follow it, so the
+     two-column grid keeps its proportions. */
+  --quiz-scale: 1.25;
+
   padding: var(--section-pad-y) var(--section-pad-x);
 }
 
@@ -63,7 +68,7 @@
 }
 
 .quiz {
-  max-width: 780px;
+  max-width: calc(780px * var(--quiz-scale));
   /* Nico 9/25: the heading block sits closer to the progress bars, so on a
      laptop screen the whole quiz fits without the eyebrow hugging the nav
      (was --gap-body, ~48px, over the progress row's own 44px). */
@@ -177,7 +182,7 @@
   /* Tall enough for either the question or the result, so the centred
      screen doesn't shift up and down between steps. */
   .stage {
-    min-height: 420px;
+    min-height: calc(420px * var(--quiz-scale));
   }
 }
 
@@ -264,16 +269,16 @@
 .option {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: calc(14px * var(--quiz-scale));
   width: 100%;
-  min-height: 64px;
-  padding: 14px 16px;
+  min-height: calc(64px * var(--quiz-scale));
+  padding: calc(14px * var(--quiz-scale)) calc(16px * var(--quiz-scale));
   border: 1.5px solid var(--q-edge);
   border-radius: var(--r-16);
   background: var(--q-surface);
   color: var(--flow-fg);
   font: inherit;
-  font-size: 16px;
+  font-size: 17px;
   line-height: 1.4;
   text-align: left;
   cursor: pointer;
@@ -301,8 +306,8 @@
   display: inline-grid;
   place-items: center;
   flex: 0 0 auto;
-  width: 32px;
-  height: 32px;
+  width: calc(32px * var(--quiz-scale));
+  height: calc(32px * var(--quiz-scale));
   border: 1.5px solid var(--q-edge);
   border-radius: 10px;
   font-family: var(--font-label);
