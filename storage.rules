@@ -1,19 +1,74 @@
 rules_version = '2';
+
+// Cloud Storage security rules for `papexweb-aed97`, the marketing site's own
+// Firebase project (firebase/firebaseConfig.ts). Test with
+//
+//   npm run test:storage-rules     (see storage-tests/)
+//
+// and deploy with
+//
+//   firebase deploy --only storage --project papexweb-aed97
+//
+// Nothing in this site reads or writes Firebase Storage today: blog images go
+// to ImgBB (lib/storageConfig.ts) or Vercel Blob (/api/upload-image). These
+// rules keep the bucket closed to everyone but blog admins in case that
+// changes.
+//
+// The blog does not need public read here. A page embeds an object through
+// its download URL (getDownloadURL), and download-token URLs are served
+// without consulting these rules.
+//
+// Everything not matched below is denied.
+
 service firebase.storage {
   match /b/{bucket}/o {
-    // Allow authenticated users to upload to blog-images folder
-    match /blog-images/{allPaths=**} {
-      // Allow read if user is authenticated
-      allow read: if request.auth != null;
-      
-      // Allow write (create, update, delete) if user is authenticated
-      allow write: if request.auth != null;
+
+    // Blog/CMS admins: a pinned uid, or a VERIFIED email on the allowlist.
+    // An unverified email never counts on its own. Keep both lists in sync
+    // with BLOG_ADMIN_EMAILS in lib/adminEmails.ts and with isBlogAdmin() in
+    // the Firestore rules; remove a departed admin from every list.
+    function isBlogAdmin() {
+      return request.auth != null && (
+        request.auth.uid in [
+          '7r5IEt2BcgQDCt2J83FgFlnZ5zt1',
+          'DBApnDntfNMgqewogARMBtF4V6X2',
+          'ioM1RBk1tMWnxqruQcZlIRvZCzI2',
+          '7a7U3rgTD3O60VrQgUBvW8p0VYS2',
+          'iGekSOqm0LcyiOfYScRa2mkB1HP2',
+          'r3pQcDI2X5fbNya7671o4igkm863'
+        ]
+        || (
+          request.auth.token.email_verified == true
+          && request.auth.token.email in [
+            'admin@papex.app',
+            'nicolas@papex.app',
+            'michael@papex.app',
+            'nico@papex.app',
+            'raasinr@gmail.com',
+            'nico.courbage@gmail.com',
+            'mike@series-zero.com',
+            'michael_khoury@icloud.com',
+            'krutartha2002@gmail.com',
+            'test@papex.app'
+          ]
+        )
+      );
     }
-    
-    // Deny all other paths by default
+
+    // Same limits as /api/upload-image: at most 4 MB, and only the image
+    // types that route accepts.
+    function isBlogImage() {
+      return request.resource.size <= 4 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|gif|webp|avif)');
+    }
+
+    match /blog-images/{allPaths=**} {
+      allow read, delete: if isBlogAdmin();
+      allow create, update: if isBlogAdmin() && isBlogImage();
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }
   }
 }
-

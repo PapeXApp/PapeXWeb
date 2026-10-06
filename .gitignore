@@ -36,3 +36,6 @@ next-env.d.ts
 
 # Design session scratchpad (see .claude/commands/design-start.md)
 .claude/design-session.local.md
+
+# Firebase emulator logs (npm run test:storage-rules)
+firebase-debug.log

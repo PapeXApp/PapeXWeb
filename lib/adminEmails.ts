@@ -7,6 +7,11 @@
  * PapeX owns: anyone who owns those inboxes could sign up and verify, so they
  * only keep the (cosmetic) client UI gate as it was and are NEVER trusted by
  * the server.
+ *
+ * Adding an admin: client sign-up is disabled on papexweb-aed97, so create the
+ * account in the Firebase console (or with the Admin SDK), then add the email
+ * here AND to isBlogAdmin() in storage.rules. Until that email is verified, the
+ * rules only accept the account if its uid is pinned there too.
  */
 
 export const BLOG_ADMIN_EMAILS: readonly string[] = [
