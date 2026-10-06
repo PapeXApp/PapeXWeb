@@ -204,7 +204,7 @@ export function DemoForm() {
   return (
     <FlowSection
       id="demo"
-      ground="light"
+      ground="navy"
       /* A full screen since 2026-09-22 ("screens, not sections"): it measured
          454px at 1440x900, so the demo ask shared a viewport with the
          dashboard columns above it. `styles.screen` gives it >= 100svh with

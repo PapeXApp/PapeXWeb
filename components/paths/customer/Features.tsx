@@ -146,7 +146,7 @@ export function Features() {
 
   return (
     <FlowSection
-      ground="navy"
+      ground="light"
       index="05"
       id="features"
       className={`${page.screen} ${page.rhythm}`}

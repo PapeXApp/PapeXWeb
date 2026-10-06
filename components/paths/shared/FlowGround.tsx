@@ -37,13 +37,14 @@ const LIVE_BAND = "25% 0px 25% 0px"
  * crossfade) while staying OUTSIDE `<main>`:
  *
  *   .flow > .content > main   (the sections)
- *                    > div[data-ground="navy"] > footer.rd-footer
+ *                    > div[data-ground=initial] > footer.rd-footer
  *
  * Pass the footer through the `footer` prop. It is wrapped in a plain `div`,
  * not a FlowSection: a `<footer>` inside `<section>` (or `<main>`) is not a
  * contentinfo landmark, so the wrapper must not be sectioning content. The
- * wrapper still carries `data-ground="navy"`, so the observer below treats
- * it like any other section and the last light section crossfades into it.
+ * wrapper carries `data-ground={initial}` (Web 2.2, Noah's note 2: one
+ * ground per page - light on /customers, navy on /business), so the observer
+ * below treats it like any other section.
  *
  * Backward compatible: a page that still passes the footer as the last child
  * (inside a navy FlowSection) keeps working exactly as before; its footer is
@@ -152,7 +153,7 @@ export function FlowGround({
           {children}
         </main>
         {footer && (
-          <div data-ground="navy" data-nav-theme="dark" className={styles.section}>
+          <div data-ground={initial} data-nav-theme={initial === "navy" ? "dark" : "light"} className={styles.section}>
             {footer}
           </div>
         )}

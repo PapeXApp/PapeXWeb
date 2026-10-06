@@ -55,7 +55,7 @@ export function WhyMerchants() {
     </ScrollReveal>
   )
   return (
-    <FlowSection ground="light" index="03" className={s.section}>
+    <FlowSection ground="navy" index="03" className={s.section}>
       <RetainStory header={header} />
     </FlowSection>
   )

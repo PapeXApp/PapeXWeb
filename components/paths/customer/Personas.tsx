@@ -183,7 +183,7 @@ export function Personas() {
   return (
     // id="quiz": the target of Features' "Answer 3 questions" / "Change my
     // answers" link (a plain anchor without JS). An id only — nothing visual.
-    <FlowSection ground="navy" index="04" id="quiz" className={styles.section}>
+    <FlowSection ground="light" index="04" id="quiz" className={styles.section}>
       <div className={styles.inner}>
         {/* P3-R1: scroll-linked — label, title word by word, intro, then the
             quiz card. The quiz itself is untouched. */}

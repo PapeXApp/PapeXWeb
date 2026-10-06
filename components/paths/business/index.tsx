@@ -42,7 +42,7 @@ export function BusinessPath() {
       <RdhDevice />
       <HowItWorks />
       <DemoForm />
-      <Faq id="faq" eyebrowIndex="06" ground="light" heading={businessFaqHeading} items={businessFaq} />
+      <Faq id="faq" eyebrowIndex="06" ground="navy" heading={businessFaqHeading} items={businessFaq} />
     </FlowGround>
   )
 }

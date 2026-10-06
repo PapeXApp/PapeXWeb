@@ -34,7 +34,7 @@ export function Vision() {
   return (
     <FlowSection
       id="get-it"
-      ground="navy"
+      ground="light"
       index="07"
       className={`${styles.screen} ${styles.rhythm}`}
       style={{ padding: "var(--section-pad) clamp(20px,5vw,56px)" }}

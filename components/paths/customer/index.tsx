@@ -88,7 +88,7 @@ export function CustomerPath() {
         <Faq
           id="faq"
           eyebrowIndex="08"
-          ground="navy"
+          ground="light"
           heading={customerFaqHeading}
           items={customerFaq}
           footer={<DownloadCta />}

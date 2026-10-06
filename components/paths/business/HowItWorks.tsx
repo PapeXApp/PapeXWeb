@@ -43,7 +43,7 @@ export function HowItWorks() {
   )
 
   return (
-    <FlowSection id={howItWorks.id} ground="light" index="05" className={`${styles.rhythm} scroll-mt-[40px]`}>
+    <FlowSection id={howItWorks.id} ground="navy" index="05" className={`${styles.rhythm} scroll-mt-[40px]`}>
       <SetupTimeline
         header={header}
         steps={howItWorks.steps}
