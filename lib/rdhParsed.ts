@@ -20,6 +20,7 @@
 // answer rather than an error.
 
 import { rdhApiBase } from "./rdh";
+import { defaultStyle, type ReceiptLine } from "./escpos";
 import type { ReceiptSummary } from "./receiptSummary";
 
 
@@ -29,6 +30,8 @@ export interface ParsedLineItem {
   quantity: number;
   price: number;
   sku: string | null;
+  /** Per-line discount, NEGATIVE (RDH convention); null when none printed. */
+  discount: number | null;
 }
 
 /** The structured receipt, present only once there is something to show. */
@@ -46,6 +49,8 @@ export interface ParsedReceipt {
   receiptNumber: string | null;
   confidence: string | null;
   extractorEngine: string | null;
+  /** The receipt as text, redacted by the indexer before storage. */
+  rawText: string | null;
 }
 
 /**
@@ -145,6 +150,7 @@ function normalizeReceipt(raw: unknown): ParsedReceipt | null {
           quantity: num(li.quantity) ?? 1,
           price: num(li.price) ?? 0,
           sku: str(li.sku),
+          discount: num(li.discount),
         }))
       : [],
     paymentMethod: str(raw.paymentMethod),
@@ -153,6 +159,8 @@ function normalizeReceipt(raw: unknown): ParsedReceipt | null {
     receiptNumber: str(raw.receiptNumber),
     confidence: str(raw.confidence),
     extractorEngine: str(raw.extractorEngine),
+    // Not str(): leading blank lines and indentation are part of the layout.
+    rawText: typeof raw.rawText === "string" && raw.rawText.trim() !== "" ? raw.rawText : null,
   };
 }
 
@@ -191,6 +199,7 @@ export function shouldKeepPolling(payload: ParsedReceiptPayload | null | undefin
  * here, not a second UI.
  */
 export function parsedToSummary(receipt: ParsedReceipt): ReceiptSummary {
+  if (receipt.extractorEngine === DUTCHIE_ENGINE) return dutchieToSummary(receipt);
   return {
     merchantName: receipt.merchantName ?? undefined,
     // The backend already joins the printed address lines with ", " (the same
@@ -218,6 +227,71 @@ export function parsedToSummary(receipt: ParsedReceipt): ReceiptSummary {
     // Leaving this empty is what stops an empty monospace box rendering.
     bodyLines: [],
   };
+}
+
+// ---- Dutchie (text ESC/POS, read by the indexer's lib/dutchieReceipt.js) ----
+//
+// A Dutchie receipt is TEXT, so the page could parse it locally — but the
+// generic text parser names every item "@ 25.00 ea", books per-item discounts
+// as positive products and once read "Total Grams: 4.20" as the total. The
+// indexer's Dutchie extractor reads the labelled layout instead; this is how
+// its row reaches the page. Gated on the engine name: rows indexed before that
+// extractor existed keep their old engine and keep rendering locally.
+
+export const DUTCHIE_ENGINE = "rdh-dutchie-escpos";
+
+/** True when `/parsed` holds a usable row from the indexer's Dutchie extractor. */
+export function isDutchieParsed(payload: ParsedReceiptPayload | null | undefined): payload is ParsedReceiptPayload & { receipt: ParsedReceipt } {
+  return payload?.parseStatus === "ok" && payload.receipt?.extractorEngine === DUTCHIE_ENGINE && hasUsableReceipt(payload);
+}
+
+function dutchieToSummary(receipt: ParsedReceipt): ReceiptSummary {
+  // Item `price` is the printed GROSS line amount and `discount` is negative
+  // per line. The row's `subtotal` is NET (total - tax), so showing the
+  // discount means adding it back: Subtotal + Tax - Discount == Total still
+  // holds, and on a fully itemised receipt Subtotal is the printed figure.
+  const itemDiscounts = receipt.lineItems.reduce((s, li) => s + (li.discount ?? 0), 0);
+  const discount = itemDiscounts < -0.004 ? round2(-itemDiscounts) : undefined;
+  return {
+    merchantName: receipt.merchantName ?? undefined,
+    addressLines: receipt.merchantAddress ? [receipt.merchantAddress] : [],
+    dateline: receipt.date ?? undefined,
+    items: receipt.lineItems.map((li) => ({ label: li.name, name: li.name, qty: li.quantity, amount: li.price })),
+    subtotal: receipt.subtotal != null ? round2(receipt.subtotal + (discount ?? 0)) : undefined,
+    tax: receipt.tax ?? undefined,
+    tip: undefined,
+    discount,
+    total: receipt.total ?? undefined,
+    paymentLine: paymentLineOf(receipt),
+    bodyLines: receipt.rawText ? textToBodyLines(redactCustomerIds(receipt.rawText)) : [],
+  };
+}
+
+/**
+ * Mirror of the indexer's redactCustomerIds (Papex_RDH_Backend
+ * lambdas/indexer/lib/dutchieReceipt.js), same patterns and replacement.
+ * The indexer already redacts rawText before storing it; this is defence in
+ * depth, so a row written by any other path never shows `Customer:: <id>` or
+ * `Patient: <id>` on a public page. Line-anchored: "Due Customer: $10.00" is
+ * the change line and is never touched. Idempotent.
+ */
+const CUSTOMER_ID_RE = /^(\s*(?:Customer|Patient)(?:\s+(?:Name|ID|Id|No\.?|Number|#))?\s*:{1,2})[^\r\n]*/gm;
+const OTHER_ID_RE = /^(\s*(?:MMJ|Medical|Med|State|Rec|Loyalty|Member)\s*(?:ID|Id|#|Card|Number|No\.?)\s*:{1,2})[^\r\n]*/gm;
+
+export function redactCustomerIds(raw: string): string {
+  return raw.replace(CUSTOMER_ID_RE, "$1 [redacted]").replace(OTHER_ID_RE, "$1 [redacted]");
+}
+
+function textToBodyLines(text: string): ReceiptLine[] {
+  const lines = text.replace(/\r\n?/g, "\n").split("\n");
+  while (lines.length > 0 && lines[0].trim() === "") lines.shift();
+  while (lines.length > 0 && lines[lines.length - 1].trim() === "") lines.pop();
+  // Dutchie prints the whole receipt in Font B (`ESC ! 1`), no alignment.
+  return lines.map((t) => ({ text: t, align: "left", style: { ...defaultStyle(), fontB: true } }));
+}
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
 }
 
 function paymentLineOf(receipt: ParsedReceipt): string | undefined {
