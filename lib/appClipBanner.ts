@@ -12,6 +12,9 @@
 // (`U78Z2HWA5Q.com.app.papex.Clip`); Apple's meta-tag format takes the bundle
 // id alone. `app-clip-display=card` asks Safari for the card presentation
 // rather than the default banner strip.
+
+import type { Metadata } from "next";
+
 export const APP_CLIP_BANNER_CONTENT =
   "app-id=6754945242, app-clip-bundle-id=com.app.papex.Clip, app-clip-display=card";
 
@@ -42,4 +45,19 @@ export const APP_CLIP_BANNER_CONTENT =
  */
 export function ridAppClipBannerEnabled(): boolean {
   return process.env.RID_APP_CLIP_BANNER === "1";
+}
+
+/**
+ * `metadata` with every App Clip / Smart App Banner hint removed, for `/w`
+ * (app/w/page.tsx): the `apple-itunes-app` meta, and `itunes` / `appLinks`,
+ * which Next also renders as app metas. /r sets only the first today; /w must
+ * not inherit the others if it ever does. Everything else, canonical and
+ * og:url included, is kept as is.
+ */
+export function withoutAppClipBanner(metadata: Metadata): Metadata {
+  const { other, itunes: _itunes, appLinks: _appLinks, ...rest } = metadata;
+  void _itunes;
+  void _appLinks;
+  const kept = Object.fromEntries(Object.entries(other ?? {}).filter(([name]) => name !== "apple-itunes-app"));
+  return Object.keys(kept).length > 0 ? { ...rest, other: kept } : rest;
 }

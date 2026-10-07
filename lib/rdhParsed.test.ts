@@ -20,13 +20,16 @@ import assert from "node:assert/strict";
 import {
   hasUsableReceipt,
   isDutchieParsed,
+  looksLikeDutchie,
   normalizePayload,
   parsedToSummary,
   redactCustomerIds,
+  redactDutchieSummary,
   shouldKeepPolling,
   type ParsedReceiptPayload,
 } from "./rdhParsed";
-import { hasStructure } from "./receiptSummary";
+import { hasStructure, summarizeReceipt } from "./receiptSummary";
+import { defaultStyle } from "./escpos";
 import { DUTCHIE_PARSED_BUNDLE, DUTCHIE_PARSED_FEE } from "./__fixtures__/dutchieParsed";
 
 let passed = 0;
@@ -332,6 +335,30 @@ test("non-Dutchie rows are unchanged: no Discount, no text body", () => {
   assert.equal(s.discount, undefined);
   assert.equal(s.subtotal, 156.95);
   assert.deepEqual(s.bodyLines, []);
+});
+
+// ---- Local-parse redaction for anything that looks like Dutchie -------------
+
+const asLines = (text: string) =>
+  text.split("\n").map((t) => ({ text: t, align: "left" as const, style: defaultStyle() }));
+
+test("redactDutchieSummary: a Dutchie-looking local parse loses its ids", () => {
+  const raw = DUTCHIE_PARSED_BUNDLE.receipt.rawText.replace("Customer:: [redacted]", "Customer:: 12345678\nPatient: 7654321");
+  assert.equal(looksLikeDutchie(raw.split("\n")), true);
+  const s = redactDutchieSummary(summarizeReceipt(asLines(raw)));
+  const all = JSON.stringify(s);
+  assert.doesNotMatch(all, /12345678|7654321/);
+  assert.ok(s.bodyLines.some((l) => l.text === "Customer:: [redacted]"));
+  assert.ok(s.bodyLines.some((l) => l.text === "Patient: [redacted]"));
+  assert.ok(s.bodyLines.some((l) => l.text === "Due Customer: $10.00"));
+});
+
+test("redactDutchieSummary: a non-Dutchie receipt is returned untouched", () => {
+  // Has a Customer line and two of the five anchors: not enough.
+  const raw = "CORNER CAFE\nOrder: 77\nCustomer: Jane Doe\nLatte  4.50\nTotal Items: 1\nTOTAL  4.50";
+  assert.equal(looksLikeDutchie(raw.split("\n")), false);
+  const summary = summarizeReceipt(asLines(raw));
+  assert.equal(redactDutchieSummary(summary), summary, "same object, nothing rewritten");
 });
 
 // ---- Summary ----------------------------------------------------------------

@@ -92,7 +92,7 @@ import { headers } from "next/headers";
 import { fetchReceiptBytes, isValidSid } from "@/lib/rdh";
 import { platformFromUserAgent, rdhUniversalLink } from "@/lib/storeLinks";
 import { offerSaveLinkEnabled } from "@/lib/offerSaveLink";
-import { fetchParsedReceipt, isDutchieParsed, parsedToSummary } from "@/lib/rdhParsed";
+import { fetchParsedReceipt, isDutchieParsed, parsedToSummary, redactDutchieSummary } from "@/lib/rdhParsed";
 import { parseEscPos } from "@/lib/escpos";
 import { summarizeReceipt, hasStructure as computeHasStructure } from "@/lib/receiptSummary";
 import { hasVisibleContent, resolveReceiptState } from "@/lib/receiptState";
@@ -308,8 +308,12 @@ export default async function ReceiptPage({
     // A Dutchie text receipt renders from the indexer's row, not the local
     // text parser, which misreads that layout (lib/rdhParsed.ts). Only rows
     // the Dutchie extractor wrote; anything else, or no /parsed answer at
-    // all, renders the local parse exactly as before.
-    const textSummary = isDutchieParsed(parsedPayload) ? parsedToSummary(parsedPayload.receipt) : parsed;
+    // all, renders the local parse as before, except that a receipt that
+    // LOOKS like Dutchie has its customer/patient id lines redacted (rows
+    // indexed before the extractor existed carry them in the raw bytes).
+    const textSummary = isDutchieParsed(parsedPayload)
+      ? parsedToSummary(parsedPayload.receipt)
+      : redactDutchieSummary(parsed);
     // `rawSid` is re-checked purely so TypeScript can narrow it — a raster
     // page can only exist after a successful fetch for a valid sid, so this
     // is never false in practice.

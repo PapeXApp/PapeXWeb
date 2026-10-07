@@ -71,6 +71,15 @@ async function main() {
     assert.ok(t.includes("@ 6.00 ea"), "local parse names items after the qty line");
   });
 
+  await test("the local parse of a Dutchie receipt redacts the customer id too", () => {
+    // Old-engine rows and /parsed misses render locally from the raw bytes,
+    // which still carry `Customer:: <id>` (zeros in this scrubbed fixture).
+    const t = text(local.html);
+    assert.ok(t.includes("Customer:: [redacted]"));
+    assert.ok(!/Customer:: 0{8}/.test(t));
+    assert.ok(t.includes("Due Customer:"), "the change line is untouched");
+  });
+
   await test("an old-engine row renders exactly the local parse, as before", async () => {
     for (const engine of ["rdh-escpos", null]) {
       const { html } = await runScenario(scenario(`dutchie-${engine}`, json(200, withEngine(engine))));

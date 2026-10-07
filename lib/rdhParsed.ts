@@ -282,6 +282,40 @@ export function redactCustomerIds(raw: string): string {
   return raw.replace(CUSTOMER_ID_RE, "$1 [redacted]").replace(OTHER_ID_RE, "$1 [redacted]");
 }
 
+/**
+ * Anchors that identify a Dutchie print: the indexer's DUTCHIE_ANCHORS (4 of
+ * 5 must match, on trimmed lines). Used to redact rows the Dutchie extractor
+ * never saw (indexed by the generic parser before it existed, or no /parsed
+ * answer at all), which the page renders from the local parse.
+ */
+const DUTCHIE_ANCHORS = [
+  /^Order:\s*\S+/,
+  /^Cashier:\s*\S/,
+  /^Total Discount:\s*-?\$/,
+  /^Due Customer:\s*-?\$/,
+  /^Total Items:\s*\d/,
+];
+
+export function looksLikeDutchie(lines: readonly string[]): boolean {
+  const texts = lines.map((t) => t.trim());
+  return DUTCHIE_ANCHORS.filter((re) => texts.some((t) => re.test(t))).length >= 4;
+}
+
+/**
+ * A locally parsed summary with customer/patient ids redacted, when the
+ * receipt looks like Dutchie. Any other receipt comes back as the SAME
+ * object, untouched.
+ */
+export function redactDutchieSummary(summary: ReceiptSummary): ReceiptSummary {
+  if (!looksLikeDutchie(summary.bodyLines.map((l) => l.text))) return summary;
+  return {
+    ...summary,
+    addressLines: summary.addressLines.map(redactCustomerIds),
+    items: summary.items.map((i) => ({ ...i, label: redactCustomerIds(i.label), name: redactCustomerIds(i.name) })),
+    bodyLines: summary.bodyLines.map((l) => ({ ...l, text: redactCustomerIds(l.text) })),
+  };
+}
+
 function textToBodyLines(text: string): ReceiptLine[] {
   const lines = text.replace(/\r\n?/g, "\n").split("\n");
   while (lines.length > 0 && lines[0].trim() === "") lines.shift();
