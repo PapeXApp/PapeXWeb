@@ -5,16 +5,19 @@
 //
 // RDH unit 003 (Union Street) broadcasts papex.app/w?sid= so iPhones open
 // Safari rather than the App Clip. That holds only while /w emits no Smart App
-// Banner meta and stays out of the AASA, so both are pinned here, alongside
-// "/w renders exactly what /r renders" and "canonical / og:url still say /r".
+// Banner meta, stays out of the AASA, and its iOS "Save to PapeX" goes to the
+// App Store rather than the universal link, so all three are pinned here,
+// alongside "/w otherwise renders exactly what /r renders" and "canonical /
+// og:url still say /r".
 
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { finish, test, RDH, bytes, renderHtml, setUpstreams, status } from "../r/testPageHarness";
+import { finish, test, RDH, ANDROID_UA, IPHONE_UA, bytes, renderHtml, setUpstreams, status, testRequest } from "../r/testPageHarness";
 import ReceiptPage, { generateMetadata as rMetadata } from "../r/page";
 import WPage, { generateMetadata as wMetadata } from "./page";
 import { withoutAppClipBanner } from "@/lib/appClipBanner";
+import { APP_STORE_URL, rdhUniversalLink } from "@/lib/storeLinks";
 import { DUTCHIE_BUNDLE_BYTES_B64 } from "@/lib/__fixtures__/dutchieParsed";
 
 const SID = "d0c0ffee00000002";
@@ -58,16 +61,36 @@ async function main() {
     assert.deepEqual({ ...w, other: undefined }, { ...r, other: undefined });
   });
 
-  await test("/w renders exactly what /r renders", async () => {
-    const upstreams = {
-      [`${RDH}/receipt/${SID}`]: bytes(Uint8Array.from(Buffer.from(DUTCHIE_BUNDLE_BYTES_B64, "base64"))),
-      [`${RDH}/receipt/${SID}/parsed`]: status(404),
-    };
-    setUpstreams(upstreams);
-    const r = await renderHtml(await ReceiptPage(sp({ sid: SID })));
-    setUpstreams(upstreams);
-    const w = await renderHtml(await WPage(sp({ sid: SID })));
-    assert.ok(r.includes("Union Cannabis Club"), "control: the receipt rendered");
+  const upstreams = {
+    [`${RDH}/receipt/${SID}`]: bytes(Uint8Array.from(Buffer.from(DUTCHIE_BUNDLE_BYTES_B64, "base64"))),
+    [`${RDH}/receipt/${SID}/parsed`]: status(404),
+  };
+  async function renderBoth(ua: string) {
+    testRequest.userAgent = ua;
+    try {
+      setUpstreams(upstreams);
+      const r = await renderHtml(await ReceiptPage(sp({ sid: SID })));
+      setUpstreams(upstreams);
+      const w = await renderHtml(await WPage(sp({ sid: SID })));
+      assert.ok(r.includes("Union Cannabis Club"), "control: the receipt rendered");
+      return { r, w };
+    } finally {
+      testRequest.userAgent = IPHONE_UA;
+    }
+  }
+
+  await test("iOS: /w's Save to PapeX goes to the App Store, never the universal link", async () => {
+    const { r, w } = await renderBoth(IPHONE_UA);
+    const universal = `href="${rdhUniversalLink(SID)}"`;
+    assert.ok(r.includes(universal), "control: /r's Save button is the universal link");
+    assert.ok(!w.includes("links.papex.app"), "no universal link anywhere on /w");
+    assert.ok(/<a href="https:\/\/apps\.apple\.com\/us\/app\/papex\/id6754945242"[^>]*>Save to PapeX<\/a>/.test(w));
+    // Everything else is /r's page, byte for byte.
+    assert.equal(w, r.replace(universal, `href="${APP_STORE_URL}"`));
+  });
+
+  await test("Android: /w renders exactly what /r renders (in-page save, no App Clip)", async () => {
+    const { r, w } = await renderBoth(ANDROID_UA);
     assert.equal(w, r);
   });
 

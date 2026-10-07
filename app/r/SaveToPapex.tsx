@@ -224,10 +224,16 @@ export default function SaveToPapex({
   sid,
   isSample,
   isIOS,
+  iosHref,
 }: {
   sid?: string;
   isSample: boolean;
   isIOS: boolean;
+  /**
+   * Overrides the iOS href. /w passes the App Store listing: the universal
+   * link can open the App Clip, which /w exists to avoid.
+   */
+  iosHref?: string;
 }) {
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
@@ -262,7 +268,7 @@ export default function SaveToPapex({
   }
 
   if (isIOS) {
-    const href = sid ? rdhUniversalLink(sid) : APP_STORE_URL;
+    const href = iosHref ?? (sid ? rdhUniversalLink(sid) : APP_STORE_URL);
     return (
       <a
         href={href}

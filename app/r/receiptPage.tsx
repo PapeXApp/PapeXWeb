@@ -1,0 +1,447 @@
+// app/r/receiptPage.tsx
+//
+// The /r page, shared with /w. app/r/page.tsx and app/w/page.tsx are thin
+// route files over this module: a page file may only export Next's own
+// fields, so the one thing /w changes (ReceiptPageOptions) has to be passed
+// to a function that lives here. Everything below describes /r.
+//
+// RDH receipt web fallback. A customer taps the countertop NFC device;
+// iPhones with the App Clip installed launch it natively, but Android
+// phones and non-App-Clip iPhones land here in a plain browser at
+// `https://papex.app/r?sid=<16-hex>`. Before this page existed that was a
+// raw 404 — see docs/RDH_WEB_FALLBACK_PLAN.md and docs/rdh_orchestrator.md.
+//
+// Deliberately a Server Component, not a client component with a
+// browser-side fetch: the backend
+// (Papex_RDH/lambdas/fetch/handler.js, GET /receipt/{sid}) has no CORS
+// configured — it's designed for the App Clip's native URLSession, which
+// isn't CORS-gated. A browser-side `fetch()` here would just fail silently.
+// Fetching server-side sidesteps that entirely and matches the task's
+// explicit instruction to never fetch from the browser.
+//
+// `loading.tsx` in this segment covers the "slow fetch" state automatically
+// via the Suspense boundary Next.js creates around this async component.
+//
+// Fallback semantics — see lib/receiptState.ts for the full rationale. The
+// short version: a sample receipt is only ever shown when NO sid was
+// supplied. Previously an expired (404'd) receipt rendered the BLUEBIRD
+// COFFEE sample under a banner that scrolled away, which a customer who had
+// just tapped a real device could easily read as their own purchase. That is
+// the defect this rewrite fixes.
+//
+//   no `sid` at all                      -> DEMO: sample, pinned banner,
+//                                           watermarked body
+//   `?demo=1` (with or without a sid)    -> DEMO, same as above — an
+//                                           explicit opt-in, never a
+//                                           fallback from a failed lookup
+//                                           (the backend fetch is skipped
+//                                           entirely in this case)
+//   `sid` present but malformed          -> NOT_AVAILABLE (no sample)
+//   `sid` valid, backend 404s            -> NOT_AVAILABLE (no sample)
+//   `sid` valid, bytes parse to nothing  -> NOT_AVAILABLE (no sample)
+//   any other backend/network error      -> retry screen, no sample
+//   `sid` valid, real content            -> the real receipt
+//   `sid` valid, whole-page raster image -> the real receipt. See below —
+//                                           the bitmap leads only until OCR
+//                                           lands, then the structured cards
+//                                           do.
+//
+// BITMAP RECEIPTS AND THE ~46 SECOND WAIT.
+//   Blaze POS prints the whole receipt as a picture (lib/starRaster.ts), so
+//   the bytes this page fetches carry no text. The structured fields are
+//   produced by an OCR pass in the RDH indexer and read back from
+//   `GET /receipt/{sid}/parsed` (lib/rdhParsed.ts).
+//
+//   That pass takes ~46 s, measured against prod twice. The customer taps the
+//   device ~15 s after the sale. The structured receipt therefore CANNOT exist
+//   at first paint — so this page fetches whatever is ready, renders the image
+//   immediately, and hands off to a client island (ReceiptUpgrade.tsx) that
+//   polls and swaps in the designed cards the moment they exist. Waiting
+//   server-side would mean a spinner for half a minute; not polling would mean
+//   the extracted receipt is only visible to someone who reloads.
+//
+//   The parsed fetch is strictly an ENRICHMENT: if it fails, errors, or is
+//   simply not ready, this page renders exactly what it rendered before OCR
+//   existed. Nothing about the "Receipt not available" honesty rules above
+//   depends on it — the raw byte fetch remains the sole authority on whether
+//   a receipt exists at all.
+//
+// RECEIPT CARDS (1.7.0, contract: contracts/cards/v1/, W0 §1-§5).
+//   For a well-formed, NON-demo sid this page also asks the RDH cards service
+//   which merchant cards to draw with the receipt (lib/cards/fetchCards.ts,
+//   surface=web). Three rules, each held by a test:
+//     1. The receipt never waits for cards. The cards request STARTS alongside
+//        the byte and /parsed reads but is NOT in the Promise.all this page
+//        awaits. If it has finished by the time the receipt is ready, the
+//        cards are placed inline; if not, the receipt renders immediately and
+//        the cards stream into a Suspense slot (fallback: nothing) when they
+//        arrive, within the 2.5 s budget. See the REAL branch below and
+//        app/r/receiptPage.cards.test.tsx.
+//     2. No cards, byte-for-byte today's page. Any failure is "no cards", and a
+//        settled "no cards" returns the exact element tree this page returned
+//        before cards existed (app/r/receiptPage.parity.test.tsx). A demo sid,
+//        a rid link, `?demo=1` and a malformed sid never call the service.
+//     3. `layout.order`: `receipt-first` (the default) draws the stack below
+//        the receipt, before the CTA row (the demo routes' slot);
+//        `cards-first` draws it above the receipt. Web shows no Save action on
+//        cards; the "Save to PapeX" receipt CTA is unchanged.
+//   A `pending` response renders the cards it carries and is NOT re-fetched
+//   on the web in 1.7.0: the ReceiptUpgrade island swaps in the parsed receipt
+//   client-side, and re-asking for cards from there needs a client card
+//   renderer (or a whole-page refresh). No 1.7.0 rule depends on receipt facts
+//   (L12), so a re-fetch would return the same cards. v1.1.
+
+import type { Metadata } from "next";
+import { Suspense } from "react";
+import { headers } from "next/headers";
+import { fetchReceiptBytes, isValidSid } from "@/lib/rdh";
+import { platformFromUserAgent, rdhUniversalLink } from "@/lib/storeLinks";
+import { offerSaveLinkEnabled } from "@/lib/offerSaveLink";
+import { fetchParsedReceipt, isDutchieParsed, parsedToSummary, redactDutchieSummary } from "@/lib/rdhParsed";
+import { parseEscPos } from "@/lib/escpos";
+import { summarizeReceipt, hasStructure as computeHasStructure } from "@/lib/receiptSummary";
+import { hasVisibleContent, resolveReceiptState } from "@/lib/receiptState";
+import { sampleReceiptLines } from "@/lib/sampleReceipt";
+import { isDemoSid } from "@/lib/demoReceipts";
+import { resolveReceiptRoute, type ReceiptRouteInput } from "@/lib/receiptRouting";
+import { APP_CLIP_BANNER_CONTENT, ridAppClipBannerEnabled } from "@/lib/appClipBanner";
+import {
+  Shell,
+  StateCard,
+  DemoBanner,
+  SampleFrame,
+  ReceiptNotAvailable,
+  ReceiptView,
+  AppCta,
+} from "./ui";
+import { CtaRow } from "./CtaRow";
+import RetryButton from "./RetryButton";
+import ReceiptUpgrade from "./ReceiptUpgrade";
+import { renderSharedReceipt } from "./sharedReceiptView";
+import { mayFetchWebCards, startWebCards } from "@/lib/cards/fetchCards";
+import { StreamedCards, WebCardStack } from "./cards/WebCards";
+
+export type ReceiptSearchParams = { sid?: string | string[]; demo?: string | string[]; rid?: string | string[] };
+
+function routeInputFrom(params: ReceiptSearchParams): ReceiptRouteInput {
+  const rawDemo = Array.isArray(params.demo) ? params.demo[0] : params.demo;
+  return { sidParam: params.sid, ridParam: params.rid, demoRequested: rawDemo === "1" };
+}
+
+// Smart App Banner (`apple-itunes-app`) — sid (RDH) links only, unconditionally.
+// The App Clip live on the App Store has always understood `sid`, so there's
+// no sequencing risk here — see lib/appClipBanner.ts for the rid case, which
+// is NOT unconditional. Nothing prior to this branch had a banner at all
+// (checked: no `apple-itunes-app` anywhere in this repo before this change),
+// so there's nothing to deduplicate against.
+export async function receiptMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<ReceiptSearchParams>;
+}): Promise<Metadata> {
+  const params = await searchParams;
+  const route = resolveReceiptRoute(routeInputFrom(params));
+
+  const showAppClipBanner =
+    route.kind === "sid" || (route.kind === "rid" && ridAppClipBannerEnabled());
+
+  // The page's OWN url, not the layout's `https://papex.app`. iMessage builds
+  // its link card from og:url, and the card's "View" button invokes the App
+  // Clip (or, with the app installed, opens the app) with THAT url — not the
+  // one that was sent. Inheriting the layout's root og:url made every shared
+  // receipt's "View" button open the clip with no path ("This isn't a PapeX
+  // receipt link.") or drop the app on its home screen. Safari was unaffected
+  // because its banner uses the address-bar url.
+  const receiptUrl = receiptPageUrl(params, route);
+  const title = "Your PapeX Receipt";
+  const description = "View your digital receipt from PapeX.";
+
+  return {
+    title,
+    description,
+    alternates: { canonical: receiptUrl },
+    // Declaring openGraph here replaces the layout's whole block, image included.
+    openGraph: {
+      type: "website",
+      siteName: "PapeX",
+      url: receiptUrl,
+      title,
+      description,
+      images: [{ url: "https://papex.app/og-image-v2.png", width: 1200, height: 630, alt: "PapeX" }],
+    },
+    robots: {
+      index: false,
+      follow: false,
+    },
+    ...(showAppClipBanner ? { other: { "apple-itunes-app": APP_CLIP_BANNER_CONTENT } } : {}),
+  };
+}
+
+/** The absolute url this request is for, keeping only the param the route
+ * acts on (sid wins, as in resolveReceiptRoute) so tracking junk never
+ * reaches a Messages card. */
+function receiptPageUrl(params: ReceiptSearchParams, route: ReturnType<typeof resolveReceiptRoute>): string {
+  const url = new URL("https://papex.app/r");
+  if (route.kind === "sid") {
+    const sid = Array.isArray(params.sid) ? params.sid[0] : params.sid;
+    if (sid) url.searchParams.set("sid", sid.trim());
+  } else if (route.kind === "rid") {
+    url.searchParams.set("rid", route.rid);
+  } else if (routeInputFrom(params).demoRequested) {
+    url.searchParams.set("demo", "1");
+  }
+  return url.toString();
+}
+
+/** What a route built on this page may change. /r passes nothing. */
+export interface ReceiptPageOptions {
+  /**
+   * The iOS "Save to PapeX" href. Default: the universal link
+   * (lib/storeLinks.ts rdhUniversalLink). /w passes the App Store listing,
+   * because the universal link can open the App Clip.
+   */
+  iosSaveHref?: string;
+}
+
+export async function renderReceiptPage(
+  {
+    searchParams,
+  }: {
+    searchParams: Promise<ReceiptSearchParams>;
+  },
+  options: ReceiptPageOptions = {},
+) {
+  const params = await searchParams;
+  const uaHeader = (await headers()).get("user-agent") ?? "";
+  // Only decides which store link leads and whether "Save to PapeX" is a
+  // universal link or the in-page sign-in sheet — never what the page shows.
+  const platform = platformFromUserAgent(uaHeader);
+
+  // Precedence: sid > rid > demo/bare — see lib/receiptRouting.ts. A `rid`
+  // link (peer-to-peer share) is handled entirely separately, in
+  // ./sharedReceiptView, and never falls through to the sid/demo logic below.
+  const route = resolveReceiptRoute(routeInputFrom(params));
+  if (route.kind === "rid") {
+    return renderSharedReceipt(route.rid, platform);
+  }
+
+  const rawSid = Array.isArray(params.sid) ? params.sid[0] : params.sid;
+  const rawDemo = Array.isArray(params.demo) ? params.demo[0] : params.demo;
+
+  // Explicit demo opt-in (`?demo=1`) — Nico's ask so the sample stays
+  // reachable on demand. Deliberately checked before any backend fetch: this
+  // must never look like (or behave like) a fallback from a failed lookup.
+  const demoRequested = rawDemo === "1";
+  const sidIsValid = isValidSid(rawSid);
+
+  // Only hit the backend for a well-formed sid, and never when the demo was
+  // explicitly requested; every other case is decided locally by
+  // resolveReceiptState.
+  //
+  // Both reads run CONCURRENTLY. They answer different questions (does this
+  // receipt exist / has it been read yet) and serialising them would add the
+  // parsed call's latency to a page whose whole design goal is showing
+  // *something* fast.
+  //
+  // Receipt cards: started HERE, beside the two reads, and deliberately NOT
+  // part of the Promise.all below: nothing on this page awaits `cardsTask`
+  // before the receipt's markup exists (header note, rule 1). Never for a
+  // demo sid or `?demo=1`; a rid link returned above.
+  const cardsNow = new Date();
+  const cardsTask = !demoRequested && mayFetchWebCards(rawSid) ? startWebCards(rawSid, { now: cardsNow }) : null;
+
+  const [result, parsedResult] = sidIsValid && !demoRequested
+    ? await Promise.all([fetchReceiptBytes(rawSid), fetchParsedReceipt(rawSid)])
+    : [undefined, undefined];
+
+  const receipt = result?.status === "ok" ? parseEscPos(result.bytes) : undefined;
+  const parsed = receipt ? summarizeReceipt(receipt.lines) : undefined;
+
+  // Enrichment only — never lets a receipt exist that the byte fetch says
+  // doesn't, and never blocks one that it says does.
+  const parsedPayload = parsedResult?.status === "ok" ? parsedResult.payload : null;
+
+  // Blaze prints the entire receipt as a Star Line Mode raster bitmap
+  // instead of sending text (see lib/starRaster.ts). When that's what
+  // arrived, `parsed` is empty by construction and the bitmap IS the
+  // receipt — so it has to count as visible content, or a real purchase
+  // renders as "Receipt not available". A logo-sized band still doesn't
+  // count; see lib/receiptState.ts's hasVisibleContent for the line.
+  const rasterPage = receipt?.rasterPage?.fullPage ? receipt.rasterPage : undefined;
+
+  const state = resolveReceiptState({
+    rawSid,
+    demoRequested,
+    sidIsValid,
+    fetchStatus: result?.status,
+    parsedHasVisibleContent: parsed
+      ? hasVisibleContent(parsed, { hasFullPageImage: rasterPage != null })
+      : undefined,
+  });
+
+  // --- DEMO: bare /r. Nobody tapped anything, so no real receipt is being
+  // impersonated and a sample is honest — but it is marked three redundant
+  // ways (pinned banner, dashed frame with a persistent chip, repeating
+  // diagonal watermark) so a screenshot of any slice still reads as fake.
+  // CtaRow keeps the "Get PapeX" link and offers no share affordance.
+  if (state.kind === "demo") {
+    const summary = summarizeReceipt(sampleReceiptLines);
+    return (
+      <Shell>
+        <DemoBanner />
+        <SampleFrame>
+          <ReceiptView summary={summary} hasStructure={computeHasStructure(summary)} isSample />
+        </SampleFrame>
+        <CtaRow isSample platform={platform} />
+      </Shell>
+    );
+  }
+
+  // --- NOT_AVAILABLE: a sid was supplied but there is no receipt behind it.
+  // Zero sample content on this path, by design.
+  if (state.kind === "not_available") {
+    return (
+      <Shell>
+        <ReceiptNotAvailable>
+          <RetryButton />
+        </ReceiptNotAvailable>
+        <AppCta platform={platform} />
+      </Shell>
+    );
+  }
+
+  // --- REAL. `logo` (see lib/escpos.ts) is threaded through separately from
+  // `parsed`/`ReceiptSummary` on purpose: it must never factor into whether
+  // a receipt counts as "visible" (see resolveReceiptState above and
+  // lib/receiptState.ts) — a logo-only stream with no text still routes to
+  // NOT_AVAILABLE above, before this branch is ever reached, and a logo
+  // alone can never make that happen. `rasterPage` is the deliberate
+  // exception and the reason it is a different field: a full-page Blaze
+  // bitmap is the receipt itself, not decoration on one.
+  if (state.kind === "real" && parsed) {
+    // A Dutchie text receipt renders from the indexer's row, not the local
+    // text parser, which misreads that layout (lib/rdhParsed.ts). Only rows
+    // the Dutchie extractor wrote; anything else, or no /parsed answer at
+    // all, renders the local parse as before, except that a receipt that
+    // LOOKS like Dutchie has its customer/patient id lines redacted (rows
+    // indexed before the extractor existed carry them in the raw bytes).
+    const textSummary = isDutchieParsed(parsedPayload)
+      ? parsedToSummary(parsedPayload.receipt)
+      : redactDutchieSummary(parsed);
+    // `rawSid` is re-checked purely so TypeScript can narrow it — a raster
+    // page can only exist after a successful fetch for a valid sid, so this
+    // is never false in practice.
+    const receiptNode = rasterPage && rawSid ? (
+      // A bitmap receipt. Its structured form either already exists (the
+      // customer arrived late, or reloaded) or is ~30 s away, so this branch
+      // hands off to the island that can render both and move between them.
+      // A text receipt never comes through here — it has nothing to wait for,
+      // so it stays fully server-rendered and ships no polling code at all.
+      <ReceiptUpgrade
+        sid={rawSid}
+        fallbackSummary={parsed}
+        rasterPage={rasterPage}
+        initialPayload={parsedPayload}
+      />
+    ) : (
+      <ReceiptView
+        summary={textSummary}
+        hasStructure={computeHasStructure(textSummary)}
+        logo={receipt?.logo}
+      />
+    );
+    // `isDemo` — a demo sid can arrive here and not only at /r/demo: a tag
+    // written before the demo route existed, a link someone shared, a URL
+    // retyped from a screenshot. Claiming is single-owner per sid, so the
+    // Save button on a demo receipt is an action that can fail in front of an
+    // audience; suppress it wherever the sid shows up. A separate prop from
+    // `isSample` on purpose — see CtaRow.tsx.
+    const ctaRow = (
+      <CtaRow
+        sid={rawSid}
+        isSample={false}
+        isDemo={isDemoSid(rawSid)}
+        platform={platform}
+        iosSaveHref={options.iosSaveHref}
+      />
+    );
+
+    // Receipt cards (header note). `peek()` never waits: it reports a cards
+    // request that has ALREADY finished, or undefined.
+    const settledCards = cardsTask?.peek();
+
+    // "Save in the PapeX app" under an OFFER card (lib/offerSaveLink.ts).
+    // iOS only, flag-gated, and only ever reached when cardsTask exists —
+    // i.e. never for a demo sid or `?demo=1` (mayFetchWebCards already
+    // excludes both), so `isDemoSid` needs no re-check here. `undefined`
+    // when off: WebCardStack/StreamedCards then render exactly what they
+    // did before this existed.
+    const offerSaveLinkHref =
+      offerSaveLinkEnabled() && platform === "ios" && rawSid ? rdhUniversalLink(rawSid) : undefined;
+
+    // No cards: no request (demo sid), or it finished with nothing to draw.
+    // This is exactly the tree this branch returned before cards existed.
+    if (!cardsTask || (settledCards && settledCards.cards.cards.length === 0)) {
+      return (
+        <Shell>
+          {receiptNode}
+          {ctaRow}
+        </Shell>
+      );
+    }
+
+    // Cards finished first: place them inline, no Suspense, no layout shift.
+    if (settledCards) {
+      const stack = <WebCardStack cards={settledCards.cards} now={cardsNow} saveLinkHref={offerSaveLinkHref} />;
+      return settledCards.cards.layout.order === "cards-first" ? (
+        <Shell>
+          {stack}
+          {receiptNode}
+          {ctaRow}
+        </Shell>
+      ) : (
+        <Shell>
+          {receiptNode}
+          {stack}
+          {ctaRow}
+        </Shell>
+      );
+    }
+
+    // The receipt is ready and the cards are not: render the receipt NOW and
+    // leave a slot above and below it. Each slot awaits the running request
+    // inside its own Suspense boundary with an empty fallback, so the receipt
+    // streams first and reserves no space; when the cards land (or the 2.5 s
+    // budget ends them), the slot `layout.order` names fills and the other
+    // stays empty.
+    return (
+      <Shell>
+        <Suspense fallback={null}>
+          <StreamedCards task={cardsTask} position="cards-first" now={cardsNow} saveLinkHref={offerSaveLinkHref} />
+        </Suspense>
+        {receiptNode}
+        <Suspense fallback={null}>
+          <StreamedCards task={cardsTask} position="receipt-first" now={cardsNow} saveLinkHref={offerSaveLinkHref} />
+        </Suspense>
+        {ctaRow}
+      </Shell>
+    );
+  }
+
+  // --- ERROR: transient transport/backend failure. Unchanged. Also the
+  // landing spot for the (unreachable) case where the state says "real" but
+  // no parse survived — failing toward retry is always safer than failing
+  // toward fabricated content.
+  return (
+    <Shell>
+      <StateCard
+        icon="warning"
+        title="Couldn't load your receipt"
+        message="We're having trouble right now — try again in a moment."
+      >
+        <RetryButton />
+      </StateCard>
+      <AppCta platform={platform} />
+    </Shell>
+  );
+}
