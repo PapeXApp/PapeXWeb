@@ -50,6 +50,13 @@ async function main() {
     }
   });
 
+  await test("item discount and its promo name print under the item (/r and /w)", async () => {
+    for (const page of ["r", "w"] as const) {
+      const t = text(await render(page, DUTCHIE_R2_FEE));
+      assert.ok(t.includes("ST IDES - TEA - LYCHEE PEAR $10.00 ALL - 25% OFF - EMPLOYEE DISCOUNT -$2.50"), page);
+    }
+  });
+
   await test("test print: labelled, and no loyalty block even on /w", async () => {
     const t = text(await render("w", DUTCHIE_R2_TEST_PRINT));
     assert.ok(t.includes("Test print"));

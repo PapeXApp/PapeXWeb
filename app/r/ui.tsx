@@ -415,29 +415,46 @@ export function ItemsCard({ summary }: { summary: ReceiptSummary }) {
       </p>
       <GlassCard emphasis="standard" className="p-6">
         <div className="flex flex-col">
-          {summary.items.map((item, i) => (
-            <div
-              key={i}
-              className="flex items-center justify-between gap-3 py-2.5"
-              style={
-                i === summary.items.length - 1
-                  ? undefined
-                  : { borderBottom: `1px solid ${T.divider}` }
-              }
-            >
-              <ItemName name={item.name} style={{ color: T.text }} />
-              <div className="flex shrink-0 flex-col items-end">
-                {item.qty > 1 && (
-                  <span className="text-xs" style={{ color: T.textMuted }}>
-                    ×{item.qty}
+          {summary.items.map((item, i) => {
+            const border = i === summary.items.length - 1 ? undefined : { borderBottom: `1px solid ${T.divider}` };
+            const hasDiscount = item.discount != null && item.discount !== 0;
+            const row = (
+              <div
+                key={i}
+                className={`flex items-center justify-between gap-3 ${hasDiscount ? "pt-2.5" : "py-2.5"}`}
+                style={hasDiscount ? undefined : border}
+              >
+                <ItemName name={item.name} style={{ color: T.text }} />
+                <div className="flex shrink-0 flex-col items-end">
+                  {item.qty > 1 && (
+                    <span className="text-xs" style={{ color: T.textMuted }}>
+                      ×{item.qty}
+                    </span>
+                  )}
+                  <span className="font-barlow text-base font-medium" style={{ color: T.text }}>
+                    ${item.amount.toFixed(2)}
                   </span>
-                )}
-                <span className="font-barlow text-base font-medium" style={{ color: T.text }}>
-                  ${item.amount.toFixed(2)}
-                </span>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+            if (!hasDiscount) return row;
+            // The line's printed discount, under it, as on the paper. Only
+            // producers that read one set it (Dutchie), so every other
+            // receipt keeps the exact markup above.
+            return (
+              <div key={i} className="pb-2.5" style={border}>
+                {row}
+                <div className="mt-0.5 flex items-start justify-between gap-3 text-sm">
+                  <span className="min-w-0 flex-1 break-words" style={{ color: T.textMuted }}>
+                    {item.discountNote ?? "Discount"}
+                  </span>
+                  <span className="font-barlow shrink-0" style={{ color: T.success }}>
+                    -${Math.abs(item.discount!).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </GlassCard>
     </div>
