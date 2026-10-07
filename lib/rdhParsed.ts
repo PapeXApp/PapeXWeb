@@ -32,6 +32,12 @@ export interface ParsedLineItem {
   sku: string | null;
   /** Per-line discount, NEGATIVE (RDH convention); null when none printed. */
   discount: number | null;
+  /** r2: the printed promo name(s) behind `discount`, joined with "; ". */
+  discountNotes: string | null;
+  /** r2: "ea", or a weight unit ("g"). */
+  quantityUnit: string | null;
+  /** r2: the printed unit price (`2 @ 25.00 ea` -> 25). */
+  unitPrice: number | null;
 }
 
 /** The structured receipt, present only once there is something to show. */
@@ -51,30 +57,63 @@ export interface ParsedReceipt {
   extractorEngine: string | null;
   /** The receipt as text, redacted by the indexer before storage. */
   rawText: string | null;
-  // ---- Dutchie r2 (Papex_RDH_Backend feat/dutchie-extractor-r2). Every one
-  // is optional on the wire; a row without them normalises to []/null and
+  // ---- Dutchie r2: Papex_RDH_Backend docs/CONTRACT-dutchie-r2.md (branch
+  // feat/dutchie-extractor-r2 @ 60970da). Money in dollars; a reduction is
+  // NEGATIVE. The contract has every key on every row with a default; a row
+  // from before r2 lacks them and normalises to the same defaults, so it
   // renders exactly as before.
-  /** Each printed tax line, e.g. {label: "CA Sales 8.625%", amount: 3.18}. Dollars. */
-  taxComponents: AmountLine[];
-  /** Each printed fee line, e.g. {label: "Pay By Bank Fee", amount: 0.26}. Dollars. */
-  fees: AmountLine[];
-  /** The printed "Total Discount" (item + cart), as a positive dollar amount. */
+  /** One entry per printed tax line, in print order; they sum to `tax`. */
+  taxComponents: TaxComponent[];
+  /** Charges that are neither items nor tax ("Pay By Bank Fee"). Positive. */
+  fees: LabelledAmount[];
+  /** Printed "Total Discount", NEGATED (<= 0) = Σ item discounts + cartDiscount. */
   discountTotal: number | null;
-  /** The receipt's loyalty block, when one was printed. */
+  /** The part of discountTotal on no item (<= 0). */
+  cartDiscount: number | null;
+  /** The printed cart-level promo lines. Labels only: already in cartDiscount. */
+  cartDiscountLines: LabelledAmount[];
+  /** The "Subtotal:" line as printed. */
+  printedSubtotal: number | null;
+  taxInclusive: boolean | null;
+  orderNumber: string | null;
+  receiptKind: "sale" | "return" | "test_print" | null;
+  isTestPrint: boolean;
+  isReprint: boolean | null;
+  /** Every "Payment (<method>): $x" line; can exceed total on cash. */
+  payments: Payment[];
+  /** "Due Customer:" as printed (>= 0). */
+  changeDue: number | null;
+  /** The loyalty block; null on non-Dutchie rows and rows before r2. */
   loyalty: ParsedLoyalty | null;
 }
 
-/** One printed label + amount line (a tax component or a fee). */
-export interface AmountLine {
-  label: string;
+export interface TaxComponent {
+  /** As printed: "CA Sales 8.625%". */
+  label: string | null;
+  /** The label minus the rate: "CA Sales". */
+  name: string | null;
+  /** Percent, as a number (8.625). */
+  rate: number | null;
+  /** The printed rate: "8.625%". */
+  rateText: string | null;
+  amount: number;
+}
+
+export interface LabelledAmount {
+  label: string | null;
+  amount: number;
+}
+
+export interface Payment {
+  method: string | null;
   amount: number;
 }
 
 /**
- * - `enrolled` true: a member; the points fields are what the paper printed.
- *   false: printed "Not opted-into program". null: unknown (no loyalty block,
- *   or one this extractor could not read) and nothing is shown.
- * - points are decimals as printed (0.96, 13.30), never cents.
+ * - `enrolled` true: a member. false: printed "Not opted-into program".
+ *   null: unknown, and nothing is shown (never read as "not a member").
+ * - Points are decimals as printed (0.96, 13.30), not money. On the wire the
+ *   keys are ABSENT when not printed; here that is null.
  */
 export interface ParsedLoyalty {
   enrolled: boolean | null;
@@ -96,6 +135,11 @@ export type ParseStatus = "pending" | "ok_raster" | "ok" | "failed";
 
 export interface ParsedReceiptPayload {
   sid: string;
+  /**
+   * r2: the RDH merchant slug ("union-street-cannabis-club"), top level, on
+   * every 200 once papex-rdh-fetch carries r2. null until then.
+   */
+  merchantId: string | null;
   parseStatus: ParseStatus;
   /** Whether a decoded bitmap exists for this receipt. Stays true after OCR. */
   hasImage: boolean;
@@ -160,6 +204,7 @@ export function normalizePayload(raw: unknown): ParsedReceiptPayload | null {
 
   return {
     sid: typeof raw.sid === "string" ? raw.sid : "",
+    merchantId: str(raw.merchantId),
     parseStatus,
     hasImage: raw.hasImage === true,
     uploadedAt: typeof raw.uploadedAt === "string" ? raw.uploadedAt : null,
@@ -183,6 +228,9 @@ function normalizeReceipt(raw: unknown): ParsedReceipt | null {
           price: num(li.price) ?? 0,
           sku: str(li.sku),
           discount: num(li.discount),
+          discountNotes: str(li.discountNotes),
+          quantityUnit: str(li.quantityUnit),
+          unitPrice: num(li.unitPrice),
         }))
       : [],
     paymentMethod: str(raw.paymentMethod),
@@ -193,23 +241,40 @@ function normalizeReceipt(raw: unknown): ParsedReceipt | null {
     extractorEngine: str(raw.extractorEngine),
     // Not str(): leading blank lines and indentation are part of the layout.
     rawText: typeof raw.rawText === "string" && raw.rawText.trim() !== "" ? raw.rawText : null,
-    taxComponents: amountLines(raw.taxComponents),
-    fees: amountLines(raw.fees),
-    discountTotal: absOrNull(num(raw.discountTotal)),
+    taxComponents: Array.isArray(raw.taxComponents)
+      ? raw.taxComponents
+          .filter(isRecord)
+          .map((c) => ({ label: str(c.label), name: str(c.name), rate: num(c.rate), rateText: str(c.rateText), amount: num(c.amount) }))
+          .filter((c): c is TaxComponent => c.amount != null)
+      : [],
+    fees: labelledAmounts(raw.fees),
+    discountTotal: num(raw.discountTotal),
+    cartDiscount: num(raw.cartDiscount),
+    cartDiscountLines: labelledAmounts(raw.cartDiscountLines),
+    printedSubtotal: num(raw.printedSubtotal),
+    taxInclusive: typeof raw.taxInclusive === "boolean" ? raw.taxInclusive : null,
+    orderNumber: str(raw.orderNumber),
+    receiptKind:
+      raw.receiptKind === "sale" || raw.receiptKind === "return" || raw.receiptKind === "test_print" ? raw.receiptKind : null,
+    isTestPrint: raw.isTestPrint === true,
+    isReprint: typeof raw.isReprint === "boolean" ? raw.isReprint : null,
+    payments: Array.isArray(raw.payments)
+      ? raw.payments
+          .filter(isRecord)
+          .map((p) => ({ method: str(p.method), amount: num(p.amount) }))
+          .filter((p): p is Payment => p.amount != null)
+      : [],
+    changeDue: num(raw.changeDue),
     loyalty: normalizeLoyalty(raw.loyalty),
   };
 }
 
-function amountLines(raw: unknown): AmountLine[] {
+function labelledAmounts(raw: unknown): LabelledAmount[] {
   if (!Array.isArray(raw)) return [];
   return raw
     .filter(isRecord)
     .map((c) => ({ label: str(c.label), amount: num(c.amount) }))
-    .filter((c): c is AmountLine => c.label != null && c.amount != null);
-}
-
-function absOrNull(n: number | null): number | null {
-  return n == null ? null : Math.abs(n);
+    .filter((c): c is LabelledAmount => c.amount != null);
 }
 
 function normalizeLoyalty(raw: unknown): ParsedLoyalty | null {
@@ -306,34 +371,57 @@ export function isDutchieParsed(payload: ParsedReceiptPayload | null | undefined
 }
 
 function dutchieToSummary(receipt: ParsedReceipt): ReceiptSummary {
-  // Item `price` is the printed GROSS line amount and `discount` is negative
-  // per line. The row's `subtotal` is NET (total - tax - fees), so showing
-  // the discount means adding it back:
-  //   Subtotal + Tax + Fees - Discount == Total
-  // and Subtotal is then the printed figure. The discount is the printed
-  // Total Discount when the row has it (item AND cart-level discounts); an
-  // older row only has the per-item lines, which miss a cart discount.
-  const itemDiscounts = -receipt.lineItems.reduce((s, li) => s + (li.discount ?? 0), 0);
-  const discountAmount = receipt.discountTotal ?? itemDiscounts;
-  const discount = discountAmount > 0.004 ? round2(discountAmount) : undefined;
+  // Rendered as the contract's breakdown, which closes with no arithmetic of
+  // our own: printedSubtotal + Σ taxes + Σ fees + discountTotal == total.
+  // Item `price` is the printed GROSS line amount; `discount` (<= 0) prints
+  // under its item. A row from before r2 has no discountTotal or
+  // printedSubtotal: the per-item discounts stand in for the first, and the
+  // NET `subtotal` minus them for the second.
+  const itemDiscounts = receipt.lineItems.reduce((s, li) => s + (li.discount ?? 0), 0);
+  const discountTotal = receipt.discountTotal ?? itemDiscounts; // <= 0
+  const discount = discountTotal < -0.004 ? round2(-discountTotal) : undefined;
+  const subtotal =
+    receipt.printedSubtotal ?? (receipt.subtotal != null ? round2(receipt.subtotal - discountTotal) : null);
+  const tenders = receipt.payments.map((p) => ({ label: p.method ? `Paid (${p.method})` : "Paid", amount: p.amount }));
+  const showTenders = receipt.payments.length > 1 || (receipt.changeDue ?? 0) > 0;
   return {
     merchantName: receipt.merchantName ?? undefined,
     addressLines: receipt.merchantAddress ? [receipt.merchantAddress] : [],
     dateline: receipt.date ?? undefined,
-    items: receipt.lineItems.map((li) => ({ label: li.name, name: li.name, qty: li.quantity, amount: li.price })),
-    subtotal: receipt.subtotal != null ? round2(receipt.subtotal + (discount ?? 0)) : undefined,
+    items: receipt.lineItems.map((li) => ({
+      label: li.name,
+      name: li.name,
+      qty: li.quantity,
+      amount: li.price,
+      ...(li.discount != null && li.discount !== 0 ? { discount: li.discount } : {}),
+      ...(li.discountNotes ? { discountNote: li.discountNotes } : {}),
+    })),
+    subtotal: subtotal ?? undefined,
     tax: receipt.tax ?? undefined,
     tip: undefined,
     discount,
     total: receipt.total ?? undefined,
     paymentLine: paymentLineOf(receipt),
     bodyLines: receipt.rawText ? textToBodyLines(redactCustomerIds(receipt.rawText)) : [],
-    // Each tax line as printed ("CA Sales 8.625%", "CA Excise 15%"). Dutchie
-    // prices are tax-inclusive, so a rate derived from tax / subtotal is
-    // wrong; never show one, even when the components are missing.
-    taxLines: receipt.taxComponents.length > 0 ? receipt.taxComponents : undefined,
+    // "<name> <rateText>" as printed ("CA Sales 8.625%"). A rate derived from
+    // tax / subtotal is wrong here (prices are tax-inclusive): never shown.
+    taxLines:
+      receipt.taxComponents.length > 0
+        ? receipt.taxComponents.map((c) => ({
+            label: c.name && c.rateText ? `${c.name} ${c.rateText}` : (c.label ?? c.name ?? "Tax"),
+            amount: c.amount,
+          }))
+        : undefined,
     deriveTaxRate: false,
-    fees: receipt.fees.length > 0 ? receipt.fees : undefined,
+    fees: receipt.fees.length > 0 ? receipt.fees.map((f) => ({ label: f.label ?? "Fee", amount: f.amount })) : undefined,
+    // Labels for the cart-level part of Discount; already inside it.
+    discountLines:
+      receipt.cartDiscountLines.length > 0
+        ? receipt.cartDiscountLines.map((l) => ({ label: l.label ?? "Cart discount", amount: l.amount }))
+        : undefined,
+    tenders: showTenders && tenders.length > 0 ? tenders : undefined,
+    changeDue: showTenders && (receipt.changeDue ?? 0) > 0 ? receipt.changeDue! : undefined,
+    kindLabel: receipt.isTestPrint ? "Test print" : receipt.receiptKind === "return" ? "Return" : undefined,
   };
 }
 

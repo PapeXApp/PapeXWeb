@@ -6,12 +6,12 @@
 // or an entry without `enrollUrl` or with `enrollCtaEnabled: false`, shows no
 // call to action.
 //
-// The page knows the merchant only by its printed name: `/parsed` does not
-// serve a merchant id, the same rule the cards contract states ("never its
-// id"). So each entry lists the names its receipts print.
+// Keyed on /parsed's top-level `merchantId` (r2, docs/CONTRACT-dutchie-r2.md
+// in Papex_RDH_Backend). `merchantNames` is only the fallback for a fetch
+// Lambda that does not serve `merchantId` yet.
 
 export interface MerchantLoyaltyConfig {
-  /** Exactly as printed in the receipt header (the /parsed `merchantName`). */
+  /** Fallback only: as printed in the receipt header (the /parsed `merchantName`). */
   merchantNames: readonly string[];
   /** Where the merchant's own loyalty sign-up lives. null: no CTA. */
   enrollUrl: string | null;

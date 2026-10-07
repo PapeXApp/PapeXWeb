@@ -15,7 +15,15 @@ export type LoyaltyView =
 
 const points = (n: number) => `${n.toFixed(2)} points`;
 
-export function loyaltyViewOf(loyalty: ParsedLoyalty | null, merchantName: string | null): LoyaltyView | null {
+/**
+ * `merchantId` is /parsed's top-level merchant slug (r2). The printed name is
+ * only a fallback for responses from a fetch Lambda that predates r2.
+ */
+export function loyaltyViewOf(
+  loyalty: ParsedLoyalty | null,
+  merchantId: string | null,
+  merchantName: string | null,
+): LoyaltyView | null {
   if (!loyalty) return null;
   if (loyalty.enrolled === true) {
     const parts: string[] = [];
@@ -26,7 +34,7 @@ export function loyaltyViewOf(loyalty: ParsedLoyalty | null, merchantName: strin
     return { kind: "points", title: loyalty.programName ?? "Rewards", line: parts.join(" · "), tier: loyalty.tier };
   }
   if (loyalty.enrolled === false) {
-    const cta = enrollCtaFor(merchantIdForName(merchantName));
+    const cta = enrollCtaFor(merchantId ?? merchantIdForName(merchantName));
     return cta ? { kind: "enroll", cta } : null;
   }
   return null;

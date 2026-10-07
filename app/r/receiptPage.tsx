@@ -361,8 +361,8 @@ export async function renderReceiptPage(
     // Without it the node is exactly baseNode, so /r and every other receipt
     // render as before.
     const loyaltyView =
-      options.showLoyalty && !rasterPage && isDutchieParsed(parsedPayload)
-        ? loyaltyViewOf(parsedPayload.receipt.loyalty, parsedPayload.receipt.merchantName)
+      options.showLoyalty && !rasterPage && isDutchieParsed(parsedPayload) && !parsedPayload.receipt.isTestPrint
+        ? loyaltyViewOf(parsedPayload.receipt.loyalty, parsedPayload.merchantId, parsedPayload.receipt.merchantName)
         : null;
     const receiptNode =
       loyaltyView && rawSid ? (

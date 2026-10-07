@@ -8,7 +8,13 @@ import { finish, test, RDH, ANDROID_UA, IPHONE_UA, bytes, json, renderHtml, setU
 import ReceiptPage from "../r/page";
 import WPage from "./page";
 import { DUTCHIE_BUNDLE_BYTES_B64, DUTCHIE_PARSED_BUNDLE } from "@/lib/__fixtures__/dutchieParsed";
-import { DUTCHIE_R2_FEE, DUTCHIE_R2_MEMBER, DUTCHIE_R2_NONMEMBER } from "@/lib/__fixtures__/dutchieParsedR2";
+import {
+  DUTCHIE_R2_CART,
+  DUTCHIE_R2_FEE,
+  DUTCHIE_R2_MEMBER,
+  DUTCHIE_R2_NONMEMBER,
+  DUTCHIE_R2_TEST_PRINT,
+} from "@/lib/__fixtures__/dutchieParsedR2";
 
 const SID = "d0c0ffee00000003";
 const BIN = Uint8Array.from(Buffer.from(DUTCHIE_BUNDLE_BYTES_B64, "base64"));
@@ -35,6 +41,20 @@ async function main() {
       }
       assert.ok(!/Tax \(/.test(t), `${page}: no blended "Tax (x%)" row`);
     }
+  });
+
+  await test("cart discount: one Discount row, the promo named beneath it, Paid + Change", async () => {
+    const t = text(await render("w", DUTCHIE_R2_CART));
+    for (const s of ["Subtotal $43.43", "Discount -$5.00", "CART - $5 OFF ORDER -$5.00", "Total $48.00", "Paid (Cash) $50.00", "Change $2.00"]) {
+      assert.ok(t.includes(s), `missing ${s}`);
+    }
+  });
+
+  await test("test print: labelled, and no loyalty block even on /w", async () => {
+    const t = text(await render("w", DUTCHIE_R2_TEST_PRINT));
+    assert.ok(t.includes("Test print"));
+    assert.ok(!t.includes("RDH Receipt"));
+    assert.ok(!t.includes("points"));
   });
 
   await test("/w: a member sees their points; /r does not", async () => {

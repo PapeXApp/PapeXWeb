@@ -391,7 +391,7 @@ export function MerchantHeaderCard({
             </p>
           )}
           <p className="mt-1 text-xs" style={{ color: isSample ? "#FFB74D" : T.textMuted }}>
-            {isSample ? "Sample data — not a real purchase" : "RDH Receipt"}
+            {isSample ? "Sample data — not a real purchase" : (summary.kindLabel ?? "RDH Receipt")}
           </p>
         </div>
       </div>
@@ -562,6 +562,15 @@ export function TotalsCard({
           {summary.discount != null && summary.discount > 0 && (
             <TotalRow label="Discount" value={`-$${summary.discount.toFixed(2)}`} valueColor={T.success} />
           )}
+          {/* The cart-level promos inside Discount, by name. Already counted. */}
+          {summary.discount != null &&
+            summary.discount > 0 &&
+            summary.discountLines?.map((l, i) => (
+              <div key={`disc-${i}`} className="flex items-center justify-between pb-1 pl-3 text-sm" style={{ color: T.textMuted }}>
+                <span className="min-w-0 truncate">{l.label}</span>
+                <span className="font-barlow shrink-0 pl-3">{formatSigned(l.amount)}</span>
+              </div>
+            ))}
           {summary.total != null && (
             <div
               className="mt-2 flex items-center justify-between pt-2"
@@ -598,6 +607,12 @@ export function TotalsCard({
                 <PaymentRow paymentLine={summary.paymentLine} />
               )}
             </div>
+          )}
+          {summary.tenders?.map((t, i) => (
+            <TotalRow key={`tender-${i}`} label={t.label} value={formatSigned(t.amount)} labelColor={T.textMuted} valueColor={T.textMuted} />
+          ))}
+          {summary.changeDue != null && summary.changeDue > 0 && (
+            <TotalRow label="Change" value={`$${summary.changeDue.toFixed(2)}`} labelColor={T.textMuted} valueColor={T.textMuted} />
           )}
         </div>
       </GlassCard>
