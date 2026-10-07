@@ -45,6 +45,15 @@ export interface ReceiptSummary {
   paymentLine?: string;
   /** The full, verbatim receipt body for the monospace fallback view. */
   bodyLines: ReceiptLine[];
+  /**
+   * Printed tax lines, each shown with its own label in place of the single
+   * "Tax" row. Only producers that read them set it (lib/rdhParsed.ts).
+   */
+  taxLines?: { label: string; amount: number }[];
+  /** Printed fee lines (e.g. "Pay By Bank Fee"), shown after tax. */
+  fees?: { label: string; amount: number }[];
+  /** false: never show a rate derived from tax / subtotal. Default true. */
+  deriveTaxRate?: boolean;
 }
 
 /** True when enough structure was extracted to show designed cards instead of only the raw body. */

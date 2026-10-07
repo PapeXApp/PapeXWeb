@@ -51,6 +51,38 @@ export interface ParsedReceipt {
   extractorEngine: string | null;
   /** The receipt as text, redacted by the indexer before storage. */
   rawText: string | null;
+  // ---- Dutchie r2 (Papex_RDH_Backend feat/dutchie-extractor-r2). Every one
+  // is optional on the wire; a row without them normalises to []/null and
+  // renders exactly as before.
+  /** Each printed tax line, e.g. {label: "CA Sales 8.625%", amount: 3.18}. Dollars. */
+  taxComponents: AmountLine[];
+  /** Each printed fee line, e.g. {label: "Pay By Bank Fee", amount: 0.26}. Dollars. */
+  fees: AmountLine[];
+  /** The printed "Total Discount" (item + cart), as a positive dollar amount. */
+  discountTotal: number | null;
+  /** The receipt's loyalty block, when one was printed. */
+  loyalty: ParsedLoyalty | null;
+}
+
+/** One printed label + amount line (a tax component or a fee). */
+export interface AmountLine {
+  label: string;
+  amount: number;
+}
+
+/**
+ * - `enrolled` true: a member; the points fields are what the paper printed.
+ *   false: printed "Not opted-into program". null: unknown (no loyalty block,
+ *   or one this extractor could not read) and nothing is shown.
+ * - points are decimals as printed (0.96, 13.30), never cents.
+ */
+export interface ParsedLoyalty {
+  enrolled: boolean | null;
+  pointsEarned: number | null;
+  pointsRedeemed: number | null;
+  pointsBalance: number | null;
+  tier: string | null;
+  programName: string | null;
 }
 
 /**
@@ -161,6 +193,34 @@ function normalizeReceipt(raw: unknown): ParsedReceipt | null {
     extractorEngine: str(raw.extractorEngine),
     // Not str(): leading blank lines and indentation are part of the layout.
     rawText: typeof raw.rawText === "string" && raw.rawText.trim() !== "" ? raw.rawText : null,
+    taxComponents: amountLines(raw.taxComponents),
+    fees: amountLines(raw.fees),
+    discountTotal: absOrNull(num(raw.discountTotal)),
+    loyalty: normalizeLoyalty(raw.loyalty),
+  };
+}
+
+function amountLines(raw: unknown): AmountLine[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter(isRecord)
+    .map((c) => ({ label: str(c.label), amount: num(c.amount) }))
+    .filter((c): c is AmountLine => c.label != null && c.amount != null);
+}
+
+function absOrNull(n: number | null): number | null {
+  return n == null ? null : Math.abs(n);
+}
+
+function normalizeLoyalty(raw: unknown): ParsedLoyalty | null {
+  if (!isRecord(raw)) return null;
+  return {
+    enrolled: typeof raw.enrolled === "boolean" ? raw.enrolled : null,
+    pointsEarned: num(raw.pointsEarned),
+    pointsRedeemed: num(raw.pointsRedeemed),
+    pointsBalance: num(raw.pointsBalance),
+    tier: str(raw.tier),
+    programName: str(raw.programName),
   };
 }
 
@@ -247,11 +307,15 @@ export function isDutchieParsed(payload: ParsedReceiptPayload | null | undefined
 
 function dutchieToSummary(receipt: ParsedReceipt): ReceiptSummary {
   // Item `price` is the printed GROSS line amount and `discount` is negative
-  // per line. The row's `subtotal` is NET (total - tax), so showing the
-  // discount means adding it back: Subtotal + Tax - Discount == Total still
-  // holds, and on a fully itemised receipt Subtotal is the printed figure.
-  const itemDiscounts = receipt.lineItems.reduce((s, li) => s + (li.discount ?? 0), 0);
-  const discount = itemDiscounts < -0.004 ? round2(-itemDiscounts) : undefined;
+  // per line. The row's `subtotal` is NET (total - tax - fees), so showing
+  // the discount means adding it back:
+  //   Subtotal + Tax + Fees - Discount == Total
+  // and Subtotal is then the printed figure. The discount is the printed
+  // Total Discount when the row has it (item AND cart-level discounts); an
+  // older row only has the per-item lines, which miss a cart discount.
+  const itemDiscounts = -receipt.lineItems.reduce((s, li) => s + (li.discount ?? 0), 0);
+  const discountAmount = receipt.discountTotal ?? itemDiscounts;
+  const discount = discountAmount > 0.004 ? round2(discountAmount) : undefined;
   return {
     merchantName: receipt.merchantName ?? undefined,
     addressLines: receipt.merchantAddress ? [receipt.merchantAddress] : [],
@@ -264,6 +328,12 @@ function dutchieToSummary(receipt: ParsedReceipt): ReceiptSummary {
     total: receipt.total ?? undefined,
     paymentLine: paymentLineOf(receipt),
     bodyLines: receipt.rawText ? textToBodyLines(redactCustomerIds(receipt.rawText)) : [],
+    // Each tax line as printed ("CA Sales 8.625%", "CA Excise 15%"). Dutchie
+    // prices are tax-inclusive, so a rate derived from tax / subtotal is
+    // wrong; never show one, even when the components are missing.
+    taxLines: receipt.taxComponents.length > 0 ? receipt.taxComponents : undefined,
+    deriveTaxRate: false,
+    fees: receipt.fees.length > 0 ? receipt.fees : undefined,
   };
 }
 
@@ -277,9 +347,21 @@ function dutchieToSummary(receipt: ParsedReceipt): ReceiptSummary {
  */
 const CUSTOMER_ID_RE = /^(\s*(?:Customer|Patient)(?:\s+(?:Name|ID|Id|No\.?|Number|#))?\s*:{1,2})[^\r\n]*/gm;
 const OTHER_ID_RE = /^(\s*(?:MMJ|Medical|Med|State|Rec|Loyalty|Member)\s*(?:ID|Id|#|Card|Number|No\.?)\s*:{1,2})[^\r\n]*/gm;
+/**
+ * Client-only, broader than the indexer: contact details and the loyalty
+ * block's identifying lines. `Customer Phone:`, `Loyalty Phone:`,
+ * `Member: Jane Doe`, `Member Name:`, `Rewards Email:`, `Email:`, `Name:`.
+ * Never `Loyalty Points ...` (the points are shown on purpose) and never
+ * `Due Customer:` (not at line start).
+ */
+const CONTACT_RE =
+  /^(\s*(?:(?:Customer|Patient|Member|Loyalty|Rewards?)\s+(?:Phone|Mobile|Cell|E-?mail|Name)|Member|E-?mail(?:\s+Address)?|Phone\s+Number|Name)\s*:{1,2})[^\r\n]*/gim;
 
 export function redactCustomerIds(raw: string): string {
-  return raw.replace(CUSTOMER_ID_RE, "$1 [redacted]").replace(OTHER_ID_RE, "$1 [redacted]");
+  return raw
+    .replace(CUSTOMER_ID_RE, "$1 [redacted]")
+    .replace(OTHER_ID_RE, "$1 [redacted]")
+    .replace(CONTACT_RE, "$1 [redacted]");
 }
 
 /**
@@ -311,7 +393,9 @@ export function redactDutchieSummary(summary: ReceiptSummary): ReceiptSummary {
   return {
     ...summary,
     addressLines: summary.addressLines.map(redactCustomerIds),
-    items: summary.items.map((i) => ({ ...i, label: redactCustomerIds(i.label), name: redactCustomerIds(i.name) })),
+    // An "item" the local parser made out of an id or contact line goes
+    // entirely, amount included (a phone number can parse as a price).
+    items: summary.items.filter((i) => redactCustomerIds(i.label) === i.label && redactCustomerIds(i.name) === i.name),
     bodyLines: summary.bodyLines.map((l) => ({ ...l, text: redactCustomerIds(l.text) })),
   };
 }

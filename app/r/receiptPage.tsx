@@ -115,6 +115,8 @@ import {
   AppCta,
 } from "./ui";
 import { CtaRow } from "./CtaRow";
+import { LoyaltyCard } from "./LoyaltyCard";
+import { loyaltyViewOf } from "@/lib/loyaltyView";
 import RetryButton from "./RetryButton";
 import ReceiptUpgrade from "./ReceiptUpgrade";
 import { renderSharedReceipt } from "./sharedReceiptView";
@@ -201,6 +203,11 @@ export interface ReceiptPageOptions {
    * because the universal link can open the App Clip.
    */
   iosSaveHref?: string;
+  /**
+   * Show the receipt's loyalty block (points, or the merchant's enroll link)
+   * under a Dutchie receipt. /w only, for now (lib/loyaltyView.ts).
+   */
+  showLoyalty?: boolean;
 }
 
 export async function renderReceiptPage(
@@ -331,7 +338,7 @@ export async function renderReceiptPage(
     // `rawSid` is re-checked purely so TypeScript can narrow it — a raster
     // page can only exist after a successful fetch for a valid sid, so this
     // is never false in practice.
-    const receiptNode = rasterPage && rawSid ? (
+    const baseNode = rasterPage && rawSid ? (
       // A bitmap receipt. Its structured form either already exists (the
       // customer arrived late, or reloaded) or is ~30 s away, so this branch
       // hands off to the island that can render both and move between them.
@@ -350,6 +357,22 @@ export async function renderReceiptPage(
         logo={receipt?.logo}
       />
     );
+    // Loyalty (/w only): from the Dutchie row's loyalty block, never guessed.
+    // Without it the node is exactly baseNode, so /r and every other receipt
+    // render as before.
+    const loyaltyView =
+      options.showLoyalty && !rasterPage && isDutchieParsed(parsedPayload)
+        ? loyaltyViewOf(parsedPayload.receipt.loyalty, parsedPayload.receipt.merchantName)
+        : null;
+    const receiptNode =
+      loyaltyView && rawSid ? (
+        <>
+          {baseNode}
+          <LoyaltyCard view={loyaltyView} sid={rawSid} />
+        </>
+      ) : (
+        baseNode
+      );
     // `isDemo` — a demo sid can arrive here and not only at /r/demo: a tag
     // written before the demo route existed, a link someone shared, a URL
     // retyped from a screenshot. Claiming is single-owner per sid, so the

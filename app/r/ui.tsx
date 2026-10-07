@@ -500,6 +500,10 @@ function TotalRow({
   );
 }
 
+function formatSigned(amount: number): string {
+  return amount < 0 ? `-$${(-amount).toFixed(2)}` : `$${amount.toFixed(2)}`;
+}
+
 export function TotalsCard({
   summary,
   isSample = false,
@@ -510,9 +514,11 @@ export function TotalsCard({
   const computedSubtotal =
     summary.subtotal ?? (summary.items.length > 0 ? summary.items.reduce((s, i) => s + i.amount * i.qty, 0) : undefined);
   const taxRate =
-    summary.tax != null && computedSubtotal != null && computedSubtotal > 0
+    summary.deriveTaxRate !== false && summary.tax != null && computedSubtotal != null && computedSubtotal > 0
       ? ((summary.tax / computedSubtotal) * 100).toFixed(1)
       : null;
+  const taxLines = summary.taxLines?.filter((l) => l.amount !== 0);
+  const fees = summary.fees?.filter((l) => l.amount !== 0);
 
   if (
     computedSubtotal == null &&
@@ -541,9 +547,15 @@ export function TotalsCard({
           {computedSubtotal != null && (
             <TotalRow label="Subtotal" value={`$${computedSubtotal.toFixed(2)}`} valueColor={T.blue} />
           )}
-          {summary.tax != null && summary.tax > 0 && (
-            <TotalRow label={taxRate ? `Tax (${taxRate}%)` : "Tax"} value={`$${summary.tax.toFixed(2)}`} />
-          )}
+          {/* Printed tax lines, each with its printed label, when the producer
+              has them; otherwise the single Tax row. Never both. */}
+          {taxLines && taxLines.length > 0
+            ? taxLines.map((l, i) => <TotalRow key={`tax-${i}`} label={l.label} value={formatSigned(l.amount)} />)
+            : summary.tax != null &&
+              summary.tax > 0 && (
+                <TotalRow label={taxRate ? `Tax (${taxRate}%)` : "Tax"} value={`$${summary.tax.toFixed(2)}`} />
+              )}
+          {fees?.map((l, i) => <TotalRow key={`fee-${i}`} label={l.label} value={formatSigned(l.amount)} />)}
           {summary.tip != null && summary.tip > 0 && (
             <TotalRow label="Tip" value={`$${summary.tip.toFixed(2)}`} labelColor={T.textMuted} valueColor={T.textMuted} />
           )}
