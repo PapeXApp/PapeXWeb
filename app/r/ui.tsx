@@ -31,6 +31,7 @@
 // therefore safe to keep here.
 
 import type { ReactNode } from "react";
+import { ItemName } from "./ItemName";
 import { AlertTriangle, Clock, FlaskConical, SearchX } from "lucide-react";
 import type { DecodedLogo, DecodedRasterPage, ReceiptLine } from "@/lib/escpos";
 import {
@@ -424,9 +425,7 @@ export function ItemsCard({ summary }: { summary: ReceiptSummary }) {
                   : { borderBottom: `1px solid ${T.divider}` }
               }
             >
-              <span className="font-barlow min-w-0 flex-1 truncate text-base font-medium" style={{ color: T.text }}>
-                <DecodedText text={item.name} />
-              </span>
+              <ItemName name={item.name} style={{ color: T.text }} />
               <div className="flex shrink-0 flex-col items-end">
                 {item.qty > 1 && (
                   <span className="text-xs" style={{ color: T.textMuted }}>
