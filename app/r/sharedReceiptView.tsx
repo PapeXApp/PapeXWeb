@@ -37,6 +37,16 @@
 // yet — so this renders no claim affordance at all rather than wiring one up
 // to the wrong backend.
 //
+// PHOTO (1.7.2 #30). When the function offered the receipt's photo, it shows
+// below the receipt cards (SharedReceiptPhoto, a client island that removes
+// itself if the image fails). The decision to offer it is the function's alone
+// (it never offers one for a document saved past the "not a receipt"
+// warning); this file renders what lib/sharedReceipt.ts resolved and has no
+// opinion. With no photo, or a photo that fails to load, the output is
+// byte-identical to the text-only page. A receipt with NO readable text but a
+// photo (`photo_only`) shows the photo as the receipt instead of "not
+// available".
+//
 // SAVE-LINK (issue #23 S4, behind RID_SAVE_LINK — lib/ridSaveLink.ts). Below
 // AppCta, an iOS-only "Save in the PapeX app" link to
 // `links.papex.app/r?rid=...&save=1`. Only in the REAL branch below: a rid
@@ -51,6 +61,7 @@ import { ridSaveLinkEnabled, ridSaveLinkHref } from "@/lib/ridSaveLink";
 import type { Platform } from "@/lib/storeLinks";
 import { Shell, StateCard, ReceiptNotAvailable, ReceiptView, AppCta, SaveInAppLink } from "./ui";
 import RetryButton from "./RetryButton";
+import SharedReceiptPhoto from "./SharedReceiptPhoto";
 
 function NotAvailable({ platform }: { platform: Platform }) {
   return (
@@ -91,6 +102,15 @@ export async function renderSharedReceipt(rid: string, platform: Platform) {
     return <ErrorState platform={platform} />;
   }
 
+  if (state.kind === "photo_only") {
+    return (
+      <Shell>
+        <SharedReceiptPhoto src={state.photoSrc} title="Shared receipt" />
+        <AppCta platform={platform} />
+      </Shell>
+    );
+  }
+
   const summary = parsedToSummary(state.receipt);
 
   // iOS only — Android/desktop server-save is 1.7.1 (issue23-rid-scope.md
@@ -100,6 +120,11 @@ export async function renderSharedReceipt(rid: string, platform: Platform) {
   return (
     <Shell>
       <ReceiptView summary={summary} hasStructure={computeHasStructure(summary)} />
+      {state.photoSrc ? (
+        <div className="mt-4">
+          <SharedReceiptPhoto src={state.photoSrc} />
+        </div>
+      ) : null}
       <AppCta platform={platform} />
       {showSaveLink ? <SaveInAppLink href={ridSaveLinkHref(rid)} /> : null}
     </Shell>

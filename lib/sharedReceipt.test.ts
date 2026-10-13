@@ -12,8 +12,10 @@ import assert from "node:assert/strict";
 import {
   fetchSharedReceipt,
   isValidRid,
+  photoAvailableIn,
   resolveSharedReceiptPageState,
   sharedReceiptApiBase,
+  sharedReceiptPhotoUrl,
 } from "./sharedReceipt";
 
 let passed = 0;
@@ -235,6 +237,124 @@ async function main() {
         assert.deepEqual(state, { kind: "error" });
       },
     );
+  });
+
+
+  // ---- the photo (1.7.2 #30) ----------------------------------------------------
+  //
+  // The function says `photo: {available: true}`; the page builds the URL of the
+  // bytes and the browser fetches them. Everything below is also what makes the
+  // page safe to deploy BEFORE the function: no `photo` key means no photo.
+
+  const RID = "receipt_1776344585632_4mrd9txmk";
+  const GOOD_URL = `https://us-central1-papexv2.cloudfunctions.net/sharedReceipt?rid=${RID}&photo=1`;
+  const withPhoto = (extra: Record<string, unknown> = {}) => ({ ...REAL_PAYLOAD, photo: { available: true }, ...extra });
+  const EMPTY_RECEIPT = { merchantName: null, total: null, lineItems: [] };
+
+  await test("photoAvailableIn: only an explicit {available: true} counts", () => {
+    assert.equal(photoAvailableIn({ photo: { available: true } }), true);
+    for (const body of [
+      {}, null, undefined, "x", 3, [], { photo: null }, { photo: {} }, { photo: { available: false } },
+      { photo: { available: "true" } }, { photo: { available: 1 } }, { photo: true }, { photo: "yes" },
+      { hasImage: true }, { photo: [{ available: true }] },
+    ]) {
+      assert.equal(photoAvailableIn(body), false, JSON.stringify(body));
+    }
+  });
+
+  await test("sharedReceiptPhotoUrl: the function, rid encoded, &photo=1, honoring the base override", () => {
+    assert.equal(sharedReceiptPhotoUrl(RID), GOOD_URL);
+    const prior = process.env.SHARED_RECEIPT_API_BASE;
+    process.env.SHARED_RECEIPT_API_BASE = "http://127.0.0.1:9999/";
+    try {
+      assert.equal(sharedReceiptPhotoUrl("a_b-c"), "http://127.0.0.1:9999/sharedReceipt?rid=a_b-c&photo=1");
+    } finally {
+      if (prior === undefined) delete process.env.SHARED_RECEIPT_API_BASE;
+      else process.env.SHARED_RECEIPT_API_BASE = prior;
+    }
+  });
+
+  await test("fetchSharedReceipt: photoAvailable follows the envelope", async () => {
+    await withFetch((async () => jsonResponse(200, withPhoto())) as typeof fetch, async () => {
+      const r = await fetchSharedReceipt(RID);
+      assert.equal(r.status === "ok" && r.photoAvailable, true);
+    });
+    await withFetch((async () => jsonResponse(200, REAL_PAYLOAD)) as typeof fetch, async () => {
+      const r = await fetchSharedReceipt(RID);
+      assert.equal(r.status === "ok" && r.photoAvailable, false);
+    });
+  });
+
+  await test("page state: a receipt with a photo -> real, with the photo URL", async () => {
+    await withFetch((async () => jsonResponse(200, withPhoto())) as typeof fetch, async () => {
+      const state = await resolveSharedReceiptPageState(RID);
+      assert.equal(state.kind, "real");
+      if (state.kind === "real") {
+        assert.equal(state.photoSrc, GOOD_URL);
+        assert.equal(state.receipt.merchantName, "CASH RECEIPT"); // the text is unchanged
+      }
+    });
+  });
+
+  await test("page state: NO photo key (the function before #30) -> real, photoSrc null: web may ship first", async () => {
+    await withFetch((async () => jsonResponse(200, REAL_PAYLOAD)) as typeof fetch, async () => {
+      const state = await resolveSharedReceiptPageState(RID);
+      assert.equal(state.kind, "real");
+      if (state.kind === "real") assert.equal(state.photoSrc, null);
+    });
+  });
+
+  await test("page state: photo null / unavailable / junk -> real, photoSrc null", async () => {
+    for (const photo of [null, { available: false }, {}, "x", 7, true]) {
+      await withFetch((async () => jsonResponse(200, withPhoto({ photo }))) as typeof fetch, async () => {
+        const state = await resolveSharedReceiptPageState(RID);
+        assert.equal(state.kind, "real", JSON.stringify(photo));
+        if (state.kind === "real") assert.equal(state.photoSrc, null, JSON.stringify(photo));
+      });
+    }
+  });
+
+  await test("page state: an unreadable receipt WITH a photo -> photo_only; without one -> not_available", async () => {
+    await withFetch(
+      (async () => jsonResponse(200, { ...REAL_PAYLOAD, receipt: EMPTY_RECEIPT, photo: { available: true } })) as typeof fetch,
+      async () => {
+        assert.deepEqual(await resolveSharedReceiptPageState(RID), { kind: "photo_only", photoSrc: GOOD_URL });
+      },
+    );
+    await withFetch(
+      (async () => jsonResponse(200, { ...REAL_PAYLOAD, receipt: EMPTY_RECEIPT })) as typeof fetch,
+      async () => {
+        assert.deepEqual(await resolveSharedReceiptPageState(RID), { kind: "not_available" });
+      },
+    );
+  });
+
+  await test("page state: the photo never rescues a 404, an error or a malformed rid", async () => {
+    await withFetch((async () => jsonResponse(404, withPhoto())) as typeof fetch, async () => {
+      assert.deepEqual(await resolveSharedReceiptPageState(RID), { kind: "not_available" });
+    });
+    await withFetch((async () => jsonResponse(500, withPhoto())) as typeof fetch, async () => {
+      assert.deepEqual(await resolveSharedReceiptPageState(RID), { kind: "error" });
+    });
+    let called = false;
+    await withFetch((async () => { called = true; return jsonResponse(200, withPhoto()); }) as typeof fetch, async () => {
+      assert.deepEqual(await resolveSharedReceiptPageState("has space"), { kind: "not_available" });
+    });
+    assert.equal(called, false);
+  });
+
+  await test("the page itself never fetches the photo: one request, the JSON", async () => {
+    const urls: string[] = [];
+    await withFetch(
+      (async (input: RequestInfo | URL) => {
+        urls.push(String(input));
+        return jsonResponse(200, withPhoto());
+      }) as typeof fetch,
+      async () => {
+        await resolveSharedReceiptPageState(RID);
+      },
+    );
+    assert.deepEqual(urls, [`https://us-central1-papexv2.cloudfunctions.net/sharedReceipt?rid=${RID}`]);
   });
 
   console.log(`\n${passed} passed, ${failed} failed`);
