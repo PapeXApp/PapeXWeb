@@ -43,9 +43,10 @@
 // (it never offers one for a document saved past the "not a receipt"
 // warning); this file renders what lib/sharedReceipt.ts resolved and has no
 // opinion. With no photo, or a photo that fails to load, the output is
-// byte-identical to the text-only page. A receipt with NO readable text but a
-// photo (`photo_only`) shows the photo as the receipt instead of "not
-// available".
+// byte-identical to the text-only page. There is NO photo-only page (Noah,
+// 2026-10-14): a receipt with no readable merchant, total or line items is
+// "not available" whatever photo the function offers, as it was before #30, so
+// the photo only ever renders under a receipt that has readable content.
 //
 // SAVE-LINK (issue #23 S4, behind RID_SAVE_LINK — lib/ridSaveLink.ts). Below
 // AppCta, an iOS-only "Save in the PapeX app" link to
@@ -100,15 +101,6 @@ export async function renderSharedReceipt(rid: string, platform: Platform) {
   }
   if (state.kind === "error") {
     return <ErrorState platform={platform} />;
-  }
-
-  if (state.kind === "photo_only") {
-    return (
-      <Shell>
-        <SharedReceiptPhoto src={state.photoSrc} title="Shared receipt" />
-        <AppCta platform={platform} />
-      </Shell>
-    );
   }
 
   const summary = parsedToSummary(state.receipt);

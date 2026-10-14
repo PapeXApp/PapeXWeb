@@ -148,14 +148,12 @@ export async function fetchSharedReceipt(rid: string): Promise<SharedReceiptFetc
  * NOT_AVAILABLE or ERROR, never the sample.
  */
 export type SharedReceiptPageState =
-  /** `photoSrc`: the photo's URL when the function offered one, else null (text only). */
-  | { kind: "real"; receipt: ParsedReceipt; photoSrc: string | null }
   /**
-   * Nothing readable in the receipt, but the function offered its PHOTO: the
-   * picture is the receipt (the same rule the RDH page follows: when in doubt,
-   * the picture wins). Without a photo this is `not_available`, as before.
+   * `photoSrc`: the photo's URL when the function offered one, else null (text
+   * only). The photo only ever appears HERE, under a receipt that has readable
+   * content: there is deliberately no "photo only" state (see below).
    */
-  | { kind: "photo_only"; photoSrc: string }
+  | { kind: "real"; receipt: ParsedReceipt; photoSrc: string | null }
   | { kind: "not_available" }
   | { kind: "error" };
 
@@ -174,10 +172,17 @@ export async function resolveSharedReceiptPageState(rid: string): Promise<Shared
   // parses but carries no merchant/total/items is functionally a missing
   // receipt, same reasoning as lib/receiptState.ts's hasVisibleContent for
   // sid.
-  const photoSrc = result.photoAvailable ? sharedReceiptPhotoUrl(rid) : null;
-  if (!hasUsableReceipt(result.payload) || !result.payload.receipt) {
-    return photoSrc ? { kind: "photo_only", photoSrc } : { kind: "not_available" };
-  }
+  //
+  // NO PHOTO-ONLY PAGE (Noah, 2026-10-14). A receipt with no readable merchant,
+  // no total and no line items is the one OCR found nothing receipt-like in, so
+  // it is the least likely to be a receipt, and its photo must not stand in for
+  // one: it is "not available", exactly as it was before #30, WHATEVER the
+  // function says about a photo. (The function withholds the photo for such a
+  // document itself; this is the page not trusting that, so an older or odd
+  // function can never produce a photo-only page here.) The `photo` flag is
+  // not even read on this path.
+  if (!hasUsableReceipt(result.payload) || !result.payload.receipt) return { kind: "not_available" };
 
+  const photoSrc = result.photoAvailable ? sharedReceiptPhotoUrl(rid) : null;
   return { kind: "real", receipt: result.payload.receipt, photoSrc };
 }

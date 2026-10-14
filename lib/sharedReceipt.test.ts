@@ -314,11 +314,12 @@ async function main() {
     }
   });
 
-  await test("page state: an unreadable receipt WITH a photo -> photo_only; without one -> not_available", async () => {
+  await test("page state: NO photo-only page: an unreadable receipt is not_available WITH a photo too (Noah 10-14)", async () => {
     await withFetch(
       (async () => jsonResponse(200, { ...REAL_PAYLOAD, receipt: EMPTY_RECEIPT, photo: { available: true } })) as typeof fetch,
       async () => {
-        assert.deepEqual(await resolveSharedReceiptPageState(RID), { kind: "photo_only", photoSrc: GOOD_URL });
+        // exactly the pre-#30 state: no photoSrc, nothing for the view to draw
+        assert.deepEqual(await resolveSharedReceiptPageState(RID), { kind: "not_available" });
       },
     );
     await withFetch(
@@ -327,6 +328,71 @@ async function main() {
         assert.deepEqual(await resolveSharedReceiptPageState(RID), { kind: "not_available" });
       },
     );
+  });
+
+  await test("page state: a photo is never the whole receipt, however the content is missing", async () => {
+    const nothing = [
+      EMPTY_RECEIPT,
+      { ...EMPTY_RECEIPT, merchantName: "" }, // blank is the same fact as missing
+      { ...EMPTY_RECEIPT, merchantName: "   " },
+      // other fields do not make a receipt: this page's bar is merchant, total or an item
+      { ...EMPTY_RECEIPT, subtotal: 5, tax: 1, date: "2026-10-01", rawText: "SMUDGE", paymentMethod: "VISA 4242" },
+      { merchantName: null, total: null }, // no lineItems key at all
+      { merchantName: null, total: null, lineItems: "junk" },
+      {}, // an empty receipt object
+    ];
+    for (const receipt of nothing) {
+      await withFetch(
+        (async () => jsonResponse(200, { ...REAL_PAYLOAD, receipt, photo: { available: true } })) as typeof fetch,
+        async () => {
+          const state = await resolveSharedReceiptPageState(RID);
+          assert.equal(state.kind, "not_available", JSON.stringify(receipt));
+          assert.equal("photoSrc" in state, false, "no photo URL on a not_available state");
+        },
+      );
+    }
+    // No receipt object at all, and a receipt that is not an object.
+    for (const receipt of [null, undefined, "x", 7, []]) {
+      await withFetch(
+        (async () => jsonResponse(200, { ...REAL_PAYLOAD, receipt, photo: { available: true } })) as typeof fetch,
+        async () => {
+          assert.deepEqual(await resolveSharedReceiptPageState(RID), { kind: "not_available" }, JSON.stringify(receipt));
+        },
+      );
+    }
+  });
+
+  await test("page state: positive controls: the photo comes back when ANY ONE of merchant, total, an item is present", async () => {
+    for (const receipt of [
+      { ...EMPTY_RECEIPT, merchantName: "Sunset Leaf" },
+      { ...EMPTY_RECEIPT, total: 12.5 },
+      { ...EMPTY_RECEIPT, total: 0 }, // a genuine zero is a total, as on the function
+      { ...EMPTY_RECEIPT, lineItems: [{ name: "Blue Dream", quantity: 1, price: 40, sku: null }] },
+    ]) {
+      await withFetch(
+        (async () => jsonResponse(200, { ...REAL_PAYLOAD, receipt, photo: { available: true } })) as typeof fetch,
+        async () => {
+          const state = await resolveSharedReceiptPageState(RID);
+          assert.equal(state.kind, "real", JSON.stringify(receipt));
+          if (state.kind === "real") assert.equal(state.photoSrc, GOOD_URL, JSON.stringify(receipt));
+        },
+      );
+    }
+  });
+
+  await test("page state: no payload anywhere resolves to a photo-only state (there is no such state)", async () => {
+    const bodies: unknown[] = [];
+    for (const receipt of [EMPTY_RECEIPT, null, {}, REAL_PAYLOAD.receipt]) {
+      for (const photo of [{ available: true }, null, undefined, { available: false }]) {
+        bodies.push({ ...REAL_PAYLOAD, receipt, photo });
+      }
+    }
+    for (const body of bodies) {
+      await withFetch((async () => jsonResponse(200, body)) as typeof fetch, async () => {
+        const state = await resolveSharedReceiptPageState(RID);
+        assert.ok(["real", "not_available"].includes(state.kind), `${state.kind} for ${JSON.stringify(body).slice(0, 80)}`);
+      });
+    }
   });
 
   await test("page state: the photo never rescues a 404, an error or a malformed rid", async () => {

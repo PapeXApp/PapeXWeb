@@ -17,8 +17,9 @@
 //     byte-identical to the text-only page: this build may ship before the
 //     function does.
 //   - `photo: null` / `{available: false}` -> likewise.
-//   - An unreadable receipt with a photo -> the photo IS the receipt
-//     ("Shared receipt"), not "Receipt not available"; without one, as before.
+//   - NO PHOTO-ONLY PAGE (Noah, 2026-10-14): a receipt with no readable
+//     merchant, total or line items is "Receipt not available" whether or not
+//     the function offers a photo, byte-identical to the page before #30.
 //   - A 404 / error from the function never shows a photo.
 //   - The page never fetches the photo itself: the browser does.
 //   - The section is a pure function of the image's state: it renders nothing
@@ -127,11 +128,45 @@ async function main() {
     assert.equal(photoImgs(html), 1);
   });
 
-  await test("an unreadable receipt WITH a photo shows the photo as the receipt", async () => {
+  await test("NO PHOTO-ONLY PAGE: an unreadable receipt WITH a photo is 'not available', no <img>, no preload, no 'Shared receipt'", async () => {
     const html = await render({ ...WITH_PHOTO, receipt: EMPTY_RECEIPT });
-    assert.equal(photoImgs(html), 1);
-    assert.ok(html.includes("Shared receipt"));
-    assert.equal(html.includes("Receipt not available"), false);
+    assert.equal(photoImgs(html), 0);
+    assert.equal(html.includes("photo=1"), false, "the photo URL appears nowhere, not even as a preload hint");
+    assert.equal(html.includes("Receipt photo"), false);
+    assert.equal(html.includes("Shared receipt"), false);
+    assert.equal(html.includes('alt="Photo of the shared receipt"'), false);
+    assert.ok(html.includes("Receipt not available") || html.includes("not available"));
+    // byte-identical to the same page with no photo offered (the pre-#30 page)
+    assert.equal(html, await render({ ...TEXT_ONLY, receipt: EMPTY_RECEIPT }));
+  });
+
+  await test("a photo never stands in for a receipt, however the content is missing", async () => {
+    const notAvailable = await render({ ...TEXT_ONLY, receipt: EMPTY_RECEIPT });
+    for (const receipt of [
+      EMPTY_RECEIPT,
+      { ...EMPTY_RECEIPT, merchantName: "   " },
+      { ...EMPTY_RECEIPT, subtotal: 5, tax: 1, date: "2026-10-01", rawText: "SMUDGE" },
+      {},
+      null,
+    ]) {
+      const html = await render({ ...WITH_PHOTO, receipt });
+      assert.equal(photoImgs(html), 0, JSON.stringify(receipt));
+      assert.equal(html, notAvailable, JSON.stringify(receipt));
+    }
+  });
+
+  await test("positive controls: any ONE of merchant, total or a line item brings the photo back under the text", async () => {
+    for (const receipt of [
+      { ...EMPTY_RECEIPT, merchantName: "Sunset Leaf" },
+      { ...EMPTY_RECEIPT, total: 12.5 },
+      { ...EMPTY_RECEIPT, lineItems: [{ name: "Blue Dream", quantity: 1, price: 40, sku: null }] },
+    ]) {
+      const html = await render({ ...WITH_PHOTO, receipt });
+      assert.equal(photoImgs(html), 1, JSON.stringify(receipt));
+      assert.ok(SECTION.test(html), "the section sits under the receipt cards");
+      assert.equal(html.includes("Receipt not available"), false);
+      assert.equal(html.includes("Shared receipt"), false);
+    }
   });
 
   await test("an unreadable receipt WITHOUT a photo is 'not available', as before", async () => {
