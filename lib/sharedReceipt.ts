@@ -157,6 +157,29 @@ export type SharedReceiptPageState =
   | { kind: "not_available" }
   | { kind: "error" };
 
+/**
+ * May the photo be drawn under THIS receipt? Only when the text already says
+ * something about it: a merchant, a non-zero total, or a named line item.
+ * Noah, 2026-10-14: "if we don't know anything about the receipt, we don't
+ * show it". It is `hasUsableReceipt`'s bar with one difference: a total of 0 on
+ * its own does not count (it is what an empty extraction can leave behind), so
+ * a receipt whose only readable field is a 0 total keeps the text page it had
+ * before #30 and gets no photo. A 0 next to a merchant or a named item is fine.
+ *
+ * Mirrors `hasReadableReceiptContent` in PapeXV2 functions/src/
+ * sharedReceiptPhoto.ts, which the function applies before it offers the photo.
+ * This is the page not trusting that: whatever the function says, the photo
+ * never renders unless this holds. The shared `hasUsableReceipt` is left alone
+ * on purpose (the sid flow and its tests depend on it).
+ */
+export function hasPhotoWorthyContent(receipt: ParsedReceipt): boolean {
+  return (
+    receipt.merchantName != null ||
+    (receipt.total != null && receipt.total !== 0) ||
+    receipt.lineItems.some((item) => item.name.trim() !== "")
+  );
+}
+
 export async function resolveSharedReceiptPageState(rid: string): Promise<SharedReceiptPageState> {
   // Validate before ever fetching — matches the function's own
   // SHARED_RECEIPT_ID_PATTERN, so a malformed rid never spends a network
@@ -183,6 +206,10 @@ export async function resolveSharedReceiptPageState(rid: string): Promise<Shared
   // not even read on this path.
   if (!hasUsableReceipt(result.payload) || !result.payload.receipt) return { kind: "not_available" };
 
-  const photoSrc = result.photoAvailable ? sharedReceiptPhotoUrl(rid) : null;
-  return { kind: "real", receipt: result.payload.receipt, photoSrc };
+  // Same principle one step further in: a receipt that passes the gate above
+  // but whose only readable field is a total of 0 stays the text page it was
+  // before #30, with no photo (hasPhotoWorthyContent).
+  const receipt = result.payload.receipt;
+  const photoSrc = result.photoAvailable && hasPhotoWorthyContent(receipt) ? sharedReceiptPhotoUrl(rid) : null;
+  return { kind: "real", receipt, photoSrc };
 }

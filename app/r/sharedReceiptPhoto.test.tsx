@@ -20,6 +20,8 @@
 //   - NO PHOTO-ONLY PAGE (Noah, 2026-10-14): a receipt with no readable
 //     merchant, total or line items is "Receipt not available" whether or not
 //     the function offers a photo, byte-identical to the page before #30.
+//     A total of 0 and nothing else is not content either: that receipt keeps
+//     the text page it had before #30 and gets no photo.
 //   - A 404 / error from the function never shows a photo.
 //   - The page never fetches the photo itself: the browser does.
 //   - The section is a pure function of the image's state: it renders nothing
@@ -155,10 +157,25 @@ async function main() {
     }
   });
 
+  await test("a total of 0 and nothing else: the text page as before #30, NO photo (byte-identical to no photo offered)", async () => {
+    for (const receipt of [
+      { ...EMPTY_RECEIPT, total: 0 },
+      { ...EMPTY_RECEIPT, total: 0, subtotal: 0, tax: 0 },
+      { ...EMPTY_RECEIPT, total: 0, lineItems: [{ name: "   ", quantity: 1, price: 0, sku: null }] },
+    ]) {
+      const html = await render({ ...WITH_PHOTO, receipt });
+      assert.equal(photoImgs(html), 0, JSON.stringify(receipt));
+      assert.equal(html.includes("photo=1"), false, "no photo URL, not even a preload hint");
+      assert.equal(html, await render({ ...TEXT_ONLY, receipt }), JSON.stringify(receipt));
+    }
+  });
+
   await test("positive controls: any ONE of merchant, total or a line item brings the photo back under the text", async () => {
     for (const receipt of [
       { ...EMPTY_RECEIPT, merchantName: "Sunset Leaf" },
       { ...EMPTY_RECEIPT, total: 12.5 },
+      { ...EMPTY_RECEIPT, total: 0, merchantName: "Sunset Leaf" }, // a 0 next to a merchant is fine
+      { ...EMPTY_RECEIPT, total: 0, lineItems: [{ name: "Free sample", quantity: 1, price: 0, sku: null }] }, // ... or a named item
       { ...EMPTY_RECEIPT, lineItems: [{ name: "Blue Dream", quantity: 1, price: 40, sku: null }] },
     ]) {
       const html = await render({ ...WITH_PHOTO, receipt });

@@ -11,6 +11,7 @@
 import assert from "node:assert/strict";
 import {
   fetchSharedReceipt,
+  hasPhotoWorthyContent,
   isValidRid,
   photoAvailableIn,
   resolveSharedReceiptPageState,
@@ -366,7 +367,9 @@ async function main() {
     for (const receipt of [
       { ...EMPTY_RECEIPT, merchantName: "Sunset Leaf" },
       { ...EMPTY_RECEIPT, total: 12.5 },
-      { ...EMPTY_RECEIPT, total: 0 }, // a genuine zero is a total, as on the function
+      { ...EMPTY_RECEIPT, total: -5 }, // a refund's negative total is a total
+      { ...EMPTY_RECEIPT, total: 0, merchantName: "Sunset Leaf" }, // a 0 next to a merchant is fine
+      { ...EMPTY_RECEIPT, total: 0, lineItems: [{ name: "Free sample", quantity: 1, price: 0, sku: null }] }, // ... or a named item
       { ...EMPTY_RECEIPT, lineItems: [{ name: "Blue Dream", quantity: 1, price: 40, sku: null }] },
     ]) {
       await withFetch(
@@ -378,6 +381,40 @@ async function main() {
         },
       );
     }
+  });
+
+  await test("page state: a total of 0 and nothing else keeps the pre-#30 text page and gets NO photo (Noah 10-14)", async () => {
+    for (const receipt of [
+      { ...EMPTY_RECEIPT, total: 0 },
+      { ...EMPTY_RECEIPT, total: "0" }, // numeric strings are normalised to a number first
+      { ...EMPTY_RECEIPT, total: 0, subtotal: 0, tax: 0, rawText: "SMUDGE" },
+      { ...EMPTY_RECEIPT, total: 0, merchantName: "   " },
+      { ...EMPTY_RECEIPT, total: 0, lineItems: [{ name: "  ", quantity: 1, price: 0, sku: null }] }, // nameless item
+    ]) {
+      await withFetch(
+        (async () => jsonResponse(200, { ...REAL_PAYLOAD, receipt, photo: { available: true } })) as typeof fetch,
+        async () => {
+          const state = await resolveSharedReceiptPageState(RID);
+          assert.equal(state.kind, "real", JSON.stringify(receipt)); // the text page, as before #30
+          if (state.kind === "real") assert.equal(state.photoSrc, null, JSON.stringify(receipt));
+        },
+      );
+    }
+  });
+
+  await test("hasPhotoWorthyContent: merchant, a non-zero total or a named item; a lone 0 or other fields are not enough", () => {
+    const base = { ...REAL_PAYLOAD.receipt, merchantName: null, total: null, lineItems: [] as never[] };
+    const named = { name: "Blue Dream", quantity: 1, price: 40, sku: null };
+    assert.equal(hasPhotoWorthyContent(base as never), false);
+    assert.equal(hasPhotoWorthyContent({ ...base, merchantName: "A" } as never), true);
+    assert.equal(hasPhotoWorthyContent({ ...base, total: 0.01 } as never), true);
+    assert.equal(hasPhotoWorthyContent({ ...base, total: -5 } as never), true);
+    assert.equal(hasPhotoWorthyContent({ ...base, lineItems: [named] } as never), true);
+    assert.equal(hasPhotoWorthyContent({ ...base, total: 0 } as never), false);
+    assert.equal(hasPhotoWorthyContent({ ...base, total: 0, merchantName: "A" } as never), true);
+    assert.equal(hasPhotoWorthyContent({ ...base, total: 0, lineItems: [named] } as never), true);
+    assert.equal(hasPhotoWorthyContent({ ...base, lineItems: [{ ...named, name: " " }] } as never), false);
+    assert.equal(hasPhotoWorthyContent({ ...base, subtotal: 5, tax: 1, rawText: "x", date: "d" } as never), false);
   });
 
   await test("page state: no payload anywhere resolves to a photo-only state (there is no such state)", async () => {

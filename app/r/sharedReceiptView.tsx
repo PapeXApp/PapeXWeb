@@ -46,7 +46,9 @@
 // byte-identical to the text-only page. There is NO photo-only page (Noah,
 // 2026-10-14): a receipt with no readable merchant, total or line items is
 // "not available" whatever photo the function offers, as it was before #30, so
-// the photo only ever renders under a receipt that has readable content.
+// the photo only ever renders under a receipt that has readable content (a
+// merchant, a non-zero total or a named line item: a total of 0 alone does not
+// count, lib/sharedReceipt.ts `hasPhotoWorthyContent`).
 //
 // SAVE-LINK (issue #23 S4, behind RID_SAVE_LINK — lib/ridSaveLink.ts). Below
 // AppCta, an iOS-only "Save in the PapeX app" link to
