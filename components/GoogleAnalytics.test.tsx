@@ -13,7 +13,10 @@
 //   3. no other source file loads gtag.js, calls gtag(), or sets the kill
 //      switch behind the gate's back (a new unconditional tag would put GA
 //      back on /r);
-//   4. next.config.ts sends `Referrer-Policy: no-referrer` for every
+//   4. (also #53) Vercel Web Analytics is mounted only through
+//      components/VercelAnalytics.tsx, whose beforeSend redacts credential URLs
+//      (the redaction itself is tested in lib/analyticsGate.test.ts);
+//   5. next.config.ts sends `Referrer-Policy: no-referrer` for every
 //      credential route and for the merchant host, and for nothing site-wide.
 
 import assert from "node:assert/strict";
@@ -21,6 +24,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import GoogleAnalytics from "./GoogleAnalytics";
+import VercelAnalytics from "./VercelAnalytics";
 import { CREDENTIAL_PATH_PREFIXES } from "../lib/analyticsGate";
 import nextConfig from "../next.config";
 
@@ -85,6 +89,43 @@ async function main() {
     }
     // Control: the scan does see the gate itself.
     assert.ok(readFileSync(gate, "utf8").includes("googletagmanager"));
+  });
+
+  await test("Vercel Analytics: mounted only via components/VercelAnalytics.tsx, with the redacting beforeSend", () => {
+    const layout = read("app/layout.tsx");
+    assert.match(layout, /<VercelAnalytics \/>/);
+    assert.ok(!/from\s+["']@vercel\/analytics/.test(layout), "app/layout.tsx must not import @vercel/analytics directly");
+
+    const dirs = ["app", "components", "lib", "hooks"].map((d) => join(ROOT, d));
+    const users = dirs
+      .flatMap((d) => sourceFiles(d))
+      .filter((f) => /from\s+["']@vercel\/analytics/.test(readFileSync(f, "utf8")))
+      .map((f) => relative(ROOT, f));
+    assert.deepEqual(users, ["components/VercelAnalytics.tsx"], "any other <Analytics /> would bypass the redaction");
+
+    assert.equal(renderToStaticMarkup(<VercelAnalytics />), "");
+
+    // The prop the real <Analytics /> receives: run it as the browser would.
+    const element = VercelAnalytics() as { props: { beforeSend: (e: { type: string; url: string }) => { type: string; url: string } | null } };
+    const g = globalThis as unknown as Record<string, unknown>;
+    const saved = { document: g.document, window: g.window };
+    try {
+      g.document = { referrer: "" };
+      g.window = { location: { hostname: "papex.app" } };
+      const send = element.props.beforeSend;
+      assert.deepEqual(send({ type: "pageview", url: "https://papex.app/invite/SECRETtoken" }), {
+        type: "pageview",
+        url: "https://papex.app/invite/[token]",
+      });
+      assert.deepEqual(send({ type: "pageview", url: "https://papex.app/r?rid=SECRETrid" }), { type: "pageview", url: "https://papex.app/r" });
+      const normal = { type: "pageview", url: "https://papex.app/customers?utm_source=x" };
+      assert.equal(send(normal), normal);
+      g.document = { referrer: "https://papex.app/r?rid=SECRETrid" };
+      assert.equal(send(normal), null, "credential referrer: the event is dropped");
+    } finally {
+      g.document = saved.document;
+      g.window = saved.window;
+    }
   });
 
   await test("next.config.ts: Referrer-Policy no-referrer on every credential route and the merchant host", async () => {

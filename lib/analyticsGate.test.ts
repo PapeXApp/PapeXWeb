@@ -23,6 +23,8 @@ import {
   disableFlag,
   isCredentialLocation,
   isCredentialReferrer,
+  redactAnalyticsUrl,
+  redactVercelEvent,
   startGoogleAnalytics,
   type GaDocument,
   type GaWindow,
@@ -392,6 +394,124 @@ test("the history wrapper keeps `this` and still navigates", () => {
   b.win.history.pushState({ a: 1 }, "", "/business");
   assert.equal(b.nativeCalls[0].self, b.win.history);
   assert.equal(b.win.location.pathname, "/business");
+});
+
+// ---- Vercel Web Analytics: credential URL in, masked URL out -----------------
+//
+// <Analytics beforeSend> (components/VercelAnalytics.tsx) rewrites each event's
+// URL with redactAnalyticsUrl. Page views on credential routes are KEPT, under
+// their masked route; a normal page passes through as the same string.
+
+const MASKED: Array<[string, string]> = [
+  [`https://papex.app/r?rid=${SECRET}`, "https://papex.app/r"],
+  [`https://papex.app/r?sid=${SECRET}`, "https://papex.app/r"],
+  [`https://papex.app/R?rid=${SECRET}`, "https://papex.app/r"],
+  [`https://papex.app/w?sid=${SECRET}`, "https://papex.app/w"],
+  [`https://papex.app/rdh?sid=${SECRET}`, "https://papex.app/rdh"],
+  [`https://papex.app/r/demo?sid=${SECRET}`, "https://papex.app/r/demo"],
+  [`https://papex.app/demo/r?sid=${SECRET}`, "https://papex.app/demo/r"],
+  [`https://links.papex.app/r?rid=${SECRET}&save=1`, "https://links.papex.app/r"],
+  [`https://papex.app/r#rid=${SECRET}`, "https://papex.app/r"],
+  // credential in the PATH
+  [`https://papex.app/invite/${SECRET}`, "https://papex.app/invite/[token]"],
+  [`https://papex.app/invite/${SECRET}/more?x=1#y`, "https://papex.app/invite/[token]"],
+  [`https://papex.app/merchant/tx/${SECRET}`, "https://papex.app/merchant/tx/[sid]"],
+  [`https://merchant.papex.app/tx/${SECRET}?from=1`, "https://merchant.papex.app/tx/[sid]"],
+  [`https://merchant.papex.app/merchant/tx/${SECRET}`, "https://merchant.papex.app/merchant/tx/[sid]"],
+  // forms that do not exist today are masked by default
+  [`https://papex.app/r/${SECRET}`, "https://papex.app/r/[id]"],
+  [`https://papex.app/rdh/${SECRET}`, "https://papex.app/rdh/[id]"],
+  [`https://papex.app/r/%53ECRETvalue0123456789`, "https://papex.app/r/[id]"],
+  [`https://papex.app/r/constructor`, "https://papex.app/r/[id]"],
+  [`https://merchant.papex.app/anything/${SECRET}`, "https://merchant.papex.app/[id]"],
+  // merchant dashboard filters (merchant and request ids) live in the query
+  [`https://merchant.papex.app/?merchant=${SECRET}&request=${SECRET}`, "https://merchant.papex.app/"],
+  [`https://merchant.papex.app/?from=2026-10-01`, "https://merchant.papex.app/"],
+  // a credential parameter on an ordinary page: just that parameter goes
+  [`https://papex.app/?rid=${SECRET}&utm_source=a`, "https://papex.app/?utm_source=a"],
+  [`https://papex.app/customers?sid=${SECRET}#rid=${SECRET}`, "https://papex.app/customers"],
+  [`https://papex.app/blog?Token=${SECRET}&page=2`, "https://papex.app/blog?page=2"],
+  [`https://papex.app/about#sid=${SECRET}`, "https://papex.app/about"],
+];
+
+test("redactAnalyticsUrl: a credential URL comes out as its masked route, with no credential in it", () => {
+  for (const [input, expected] of MASKED) {
+    const out = redactAnalyticsUrl(input);
+    assert.equal(out, expected, input);
+    assert.ok(!String(out).toLowerCase().includes(SECRET.toLowerCase()), input);
+  }
+});
+
+test("redactAnalyticsUrl: a normal page is returned unchanged, as the same string", () => {
+  for (const href of [...CLEAN_URLS, "https://papex.app/customers?utm_source=a%20b&x=%2F", "https://papex.app/terms#section-4"]) {
+    assert.equal(redactAnalyticsUrl(href), href);
+  }
+});
+
+test("redactAnalyticsUrl: idempotent, and an unparsable URL is null (dropped)", () => {
+  for (const [, expected] of MASKED) assert.equal(redactAnalyticsUrl(expected), expected, expected);
+  assert.equal(redactAnalyticsUrl("garbage"), null);
+  assert.equal(redactAnalyticsUrl(""), null);
+});
+
+test("redactVercelEvent: keeps the event (type and all), swaps the url, never returns null for a credential route", () => {
+  for (const [input, expected] of MASKED) {
+    for (const type of ["pageview", "event"] as const) {
+      const event = { type, url: input, extra: 1 };
+      const out = redactVercelEvent(event, { referrer: "", hostname: "papex.app" });
+      assert.ok(out, `${input}: page views on credential routes are kept`);
+      assert.deepEqual(out, { type, url: expected, extra: 1 });
+      assert.equal(event.url, input, "input event not mutated");
+    }
+  }
+});
+
+test("redactVercelEvent: a normal page's event is the very same object", () => {
+  for (const href of CLEAN_URLS) {
+    const event = { type: "pageview" as const, url: href };
+    assert.equal(redactVercelEvent(event, { referrer: "https://www.google.com/", hostname: "papex.app" }), event, href);
+  }
+});
+
+test("redactVercelEvent: the event has no referrer to rewrite, so a credential referrer or an unparsable url drops it", () => {
+  const ctx = (referrer: string) => ({ referrer, hostname: "papex.app" });
+  const event = { type: "pageview" as const, url: "https://papex.app/customers" };
+  assert.equal(redactVercelEvent(event, ctx(`https://papex.app/r?rid=${SECRET}`)), null);
+  assert.equal(redactVercelEvent(event, ctx("https://merchant.papex.app/")), null);
+  assert.equal(redactVercelEvent(event, ctx("not a url")), null);
+  assert.equal(redactVercelEvent({ ...event, url: "garbage" }, ctx("")), null);
+  assert.equal(redactVercelEvent(event, ctx("https://www.reddit.com/r/privacy/")), event);
+});
+
+// The mask tree must match the folders in app/: every page under a credential
+// prefix redacts to exactly its route template (`[sid]` folder -> `[sid]`), so a
+// renamed dynamic folder or a new nested route cannot slip through unmasked.
+function pageRoutes(dir: string, prefix: string, out: string[] = []): string[] {
+  for (const name of readdirSync(dir)) {
+    const p = join(dir, name);
+    if (statSync(p).isDirectory()) pageRoutes(p, `${prefix}/${name}`, out);
+    else if (/^page\.(tsx|ts|jsx|js)$/.test(name)) out.push(prefix);
+  }
+  return out;
+}
+
+test("the redaction tree matches every page route under the credential prefixes", () => {
+  const appDir = join(__dirname, "..", "app");
+  const templates = CREDENTIAL_PATH_PREFIXES.flatMap((prefix) => {
+    const dir = join(appDir, prefix.slice(1));
+    return existsSync(dir) ? pageRoutes(dir, prefix) : [];
+  });
+  assert.ok(templates.includes("/merchant/tx/[sid]") && templates.includes("/invite/[token]"), "control: scan sees the dynamic routes");
+  assert.ok(templates.length >= 12, `control: ${templates.length} routes`);
+  for (const template of templates) {
+    const concrete = template.replace(/\[[^\]]+\]/g, "SECRETvalue0123456789");
+    assert.equal(redactAnalyticsUrl(`https://papex.app${concrete}?sid=SECRETvalue0123456789`), `https://papex.app${template}`, template);
+    if (template.startsWith("/merchant")) {
+      const visible = template.slice("/merchant".length) || "/";
+      const visibleConcrete = concrete.slice("/merchant".length) || "/";
+      assert.equal(redactAnalyticsUrl(`https://merchant.papex.app${visibleConcrete}`), `https://merchant.papex.app${visible}`, `merchant host ${visible}`);
+    }
+  }
 });
 
 // ---- every route is classified ----------------------------------------------

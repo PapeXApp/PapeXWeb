@@ -13,7 +13,7 @@ import './globals.css'
 import '@/styles/papex-brand.css'
 import { barlow, gloock, kameron } from './fonts'
 import { Geist_Mono } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/react'
+import VercelAnalytics from '@/components/VercelAnalytics'
 import GoogleAnalytics from '@/components/GoogleAnalytics'
 import {
   APP_STORE_URL,
@@ -241,7 +241,7 @@ export default function RootLayout({
         {children}
         {/* GA is started from the browser, behind a gate: it must stay off receipt/credential URLs (lib/analyticsGate.ts). */}
         <GoogleAnalytics measurementId={GA_MEASUREMENT_ID} />
-        <Analytics />
+        <VercelAnalytics />
       </body>
     </html>
   )

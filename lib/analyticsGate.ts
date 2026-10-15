@@ -91,16 +91,21 @@ function hasCredentialParam(raw: string): boolean {
   return false;
 }
 
-/** True when this location is, or may carry, a receipt/invite/merchant credential. */
-export function isCredentialLocation(loc: LocationLike): boolean {
+/** True when the host or path puts this URL on a credential route (whatever its query says). */
+export function isCredentialRoute(loc: Pick<LocationLike, "host" | "pathname">): boolean {
   if (loc.host && isMerchantHost(loc.host)) return true;
   const path = normalizePath(loc.pathname);
   if (path === null) return true; // undecodable path: fail closed
-  if (CREDENTIAL_PATH_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`))) return true;
-  const search = (loc.search ?? "").replace(/^\?/, "");
-  // `#rid=…` and `#/anything?rid=…` both count.
-  const hash = (loc.hash ?? "").replace(/^#/, "").replace(/^[^?=]*\?/, "");
-  return hasCredentialParam(search) || hasCredentialParam(hash);
+  return CREDENTIAL_PATH_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
+}
+
+/** `#rid=…` and `#/anything?rid=…` both reduce to their parameter string. */
+const hashParams = (hash: string | undefined) => (hash ?? "").replace(/^#/, "").replace(/^[^?=]*\?/, "");
+
+/** True when this location is, or may carry, a receipt/invite/merchant credential. */
+export function isCredentialLocation(loc: LocationLike): boolean {
+  if (isCredentialRoute(loc)) return true;
+  return hasCredentialParam((loc.search ?? "").replace(/^\?/, "")) || hasCredentialParam(hashParams(loc.hash));
 }
 
 /** papex.app and its subdomains (links., merchant., www.), or the host serving this page. */
@@ -124,6 +129,125 @@ export function isCredentialReferrer(referrer: string, self: { hostname: string 
   }
   if (isMerchantHost(url.host)) return true;
   return isOwnHost(url.hostname, self.hostname) && isCredentialLocation(url);
+}
+
+// ---- Vercel Web Analytics: redact, don't drop ---------------------------------
+//
+// <Analytics /> (@vercel/analytics) records the URL of every page view and
+// custom event, and its script reads `document.referrer` itself. Vercel is the
+// host, so this is defence in depth, but a credential in the PATH
+// (/invite/<token>, /merchant/tx/<sid>) is recorded verbatim, and the query is
+// only "filtered" by an undocumented list. Unlike GA, page views on these routes
+// are worth keeping (/r volume), so the URL is rewritten to its route, never
+// dropped: `/invite/abc` -> `/invite/[token]`, `/r?rid=abc` -> `/r`.
+
+interface RouteNode {
+  children?: Record<string, RouteNode>;
+  /** Mask for the one dynamic segment below this route (`[token]`, `[sid]`). */
+  dynamic?: string;
+}
+
+/**
+ * The page routes under CREDENTIAL_PATH_PREFIXES, as app/ lays them out.
+ * Anything below a credential route that is not listed is masked `[id]`, so a
+ * new nested route (or a `/r/<sid>` form) is redacted by default.
+ * lib/analyticsGate.test.ts checks this tree against the folders in app/.
+ */
+const ROUTE_TREE: Record<string, RouteNode> = {
+  r: { children: { demo: {} } },
+  w: {},
+  rdh: {},
+  demo: { children: { r: {} } },
+  invite: { dynamic: "[token]" },
+  merchant: {
+    children: {
+      admin: {},
+      devices: {},
+      insights: {},
+      intelligence: {},
+      login: {},
+      profile: {},
+      tx: { dynamic: "[sid]" },
+    },
+  },
+};
+
+/** On merchant.papex.app the visible paths drop the /merchant prefix (/tx/<sid>). */
+const MERCHANT_HOST_TREE: Record<string, RouteNode> = {
+  ...ROUTE_TREE.merchant.children,
+  merchant: ROUTE_TREE.merchant,
+};
+
+/** Replace everything dynamic in a credential route's path with its mask. */
+function maskCredentialPath(pathname: string, merchantHost: boolean): string {
+  const path = normalizePath(pathname);
+  if (path === null) return "/[id]";
+  let level = merchantHost ? MERCHANT_HOST_TREE : ROUTE_TREE;
+  let node: RouteNode | undefined;
+  const out: string[] = [];
+  for (const segment of path.split("/").filter(Boolean)) {
+    const next = Object.prototype.hasOwnProperty.call(level, segment) ? level[segment] : undefined;
+    if (!next) {
+      out.push(node?.dynamic ?? "[id]");
+      break;
+    }
+    out.push(segment);
+    node = next;
+    level = next.children ?? {};
+  }
+  return `/${out.join("/")}`;
+}
+
+/**
+ * The URL with no credential in it, for an analytics event. Credential routes
+ * (by host or path) keep only their masked path: no query, no hash. Any other
+ * page loses just its credential parameters (query and hash); a page with none
+ * is returned untouched, as the same string. null = unparsable, caller drops it.
+ */
+export function redactAnalyticsUrl(raw: string): string | null {
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return null;
+  }
+  if (isCredentialRoute(url)) {
+    url.pathname = maskCredentialPath(url.pathname, isMerchantHost(url.host));
+    url.search = "";
+    url.hash = "";
+    return url.href;
+  }
+  let changed = false;
+  const params = url.searchParams;
+  for (const name of [...params.keys()]) {
+    if (CREDENTIAL_PARAMS.includes(name.toLowerCase())) {
+      params.delete(name);
+      changed = true;
+    }
+  }
+  if (changed) url.search = params.toString();
+  if (hasCredentialParam(hashParams(url.hash))) {
+    url.hash = "";
+    changed = true;
+  }
+  return changed ? url.href : raw;
+}
+
+/**
+ * `beforeSend` for <Analytics />: the event with a redacted URL, or null.
+ * The event carries only `type` and `url`; the script adds the referrer itself
+ * and offers no way to rewrite it, so a credential referrer drops the event
+ * (fail closed). In practice `Referrer-Policy: no-referrer` on the credential
+ * routes (next.config.ts) means document.referrer is already empty there.
+ */
+export function redactVercelEvent<E extends { url: string }>(
+  event: E,
+  context: { referrer: string; hostname: string },
+): E | null {
+  if (isCredentialReferrer(context.referrer, context)) return null;
+  const url = redactAnalyticsUrl(event.url);
+  if (url === null) return null;
+  return url === event.url ? event : { ...event, url };
 }
 
 // ---- the browser side ---------------------------------------------------------
