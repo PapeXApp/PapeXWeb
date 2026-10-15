@@ -71,9 +71,13 @@ export default function PrivacyPolicyPage() {
             <h3 className="text-xl font-semibold text-[#00121D]">Your PapeX email address</h3>
             <p className="text-[#00121D]/80 leading-relaxed">
               If you use a PapeX email address, we receive the emails sent or forwarded to it, including the sender, subject, body
-              and attachments. We never access your personal email inbox. We read each email to find receipts. Emails that we judge
-              are not receipts do not appear in your receipts; we keep the details we read from them separately, where you cannot
-              see them, to check and improve this filtering (see Section 7).
+              and attachments. We never access your personal email inbox. We read each email to find receipts, using the AI
+              services described in Section 6: the text of the email, including any sign-in code, link or other personal detail in
+              it, is sent to Google&rsquo;s Gemini service and to the AI model that our contractor Marvik runs for us. This applies to
+              every email we read, whether or not it turns out to be a receipt. Emails that we judge are not receipts do not appear
+              in your receipts; we keep a record of each one separately, where you cannot see it, to check and improve this
+              filtering (see Section 7). That record includes the email&rsquo;s subject line and part of its text, so it can contain
+              a code or other detail from the email.
             </p>
             <p className="text-[#00121D]/80 leading-relaxed">
               When an email becomes a receipt, we keep a copy of the original email and its attachments (see Section 7). On an
@@ -92,7 +96,7 @@ export default function PrivacyPolicyPage() {
               <li>
                 <strong>What an item contains:</strong> the code or link, the subject line, the sender&rsquo;s name and domain, and
                 when the email arrived. It does not include the email&rsquo;s body, its headers or the sender&rsquo;s email address.
-                Where the code appears in the subject line or the sender&rsquo;s name, we replace it with dots.
+                In the item, where the code appears in the subject line or the sender&rsquo;s name, we replace it with dots.
               </li>
               <li>
                 <strong>How long it is shown:</strong> a sign-in code is shown for 24 hours. We then remove the code from the item,
@@ -109,14 +113,20 @@ export default function PrivacyPolicyPage() {
                 and then delete them automatically. Dismissing the item or deleting your account does not delete them sooner.
               </li>
               <li>
+                <strong>Other copies of the email:</strong> removing the code after 24 hours applies only to the Important mail
+                item. Other copies of the same email that we keep may still contain the code until they are deleted: the record our
+                filter keeps (deleted after 87 days), the original message as we received it (deleted after 90 days) and, if the
+                email was saved as a receipt, that receipt and its original email, for as long as they are kept (see Section 7).
+              </li>
+              <li>
                 <strong>Who can see it:</strong> only your account. Anyone who can open PapeX while you are signed in can see a code
                 shown there, so treat it like a code in your email.
               </li>
               <li>
                 <strong>How we sort these emails:</strong> to find these emails and decide what to show, we use the AI services
-                described in Section 6. As with every email sent to your PapeX email address, an email&rsquo;s text, including any
-                code or link in it, is processed by the AI model that our contractor Marvik runs for us and by Google&rsquo;s Gemini
-                service.
+                described in Section 6. Like every email we read (see &ldquo;Your PapeX email address&rdquo; above), the text of
+                these emails, including the code or link, is sent to Google&rsquo;s Gemini service and to the AI model that our
+                contractor Marvik runs for us.
               </li>
               <li>
                 <strong>Notifications:</strong> if you allow notifications, we may tell you that a code or link has arrived. The
@@ -194,14 +204,16 @@ export default function PrivacyPolicyPage() {
             <ul className="list-disc pl-6 space-y-2 text-[#00121D]/80 leading-relaxed">
               <li>
                 <strong>Google (Gemini).</strong> Every photo or PDF you scan or upload is sent to Google&rsquo;s Gemini AI service
-                to check that it is a receipt and, when needed, to read it. The text of emails sent to your PapeX email address, and
-                their image or PDF attachments, are also sent to Gemini. We use Gemini under Google&rsquo;s paid service terms, under
-                which Google does not use this content to improve its products.
+                to check that it is a receipt and, when needed, to read it. The text of emails sent to your PapeX email address,
+                whether or not they are receipts and including any sign-in codes or links in them, and their image or PDF
+                attachments, are also sent to Gemini. We use Gemini under Google&rsquo;s paid service terms, under which Google does
+                not use this content to improve its products.
               </li>
               <li>
                 <strong>Marvik.</strong> Our contractor Marvik runs an AI model, configured by PapeX, on a server that Marvik
-                operates. It receives receipt photos and the text of receipts and of emails sent to your PapeX email address, to
-                read and sort them and to check the results.
+                operates. It receives receipt photos, and the text of receipts and of emails sent to your PapeX email address
+                (whether or not they are receipts, and including any sign-in codes or links in them), to read and sort them and to
+                check the results.
               </li>
               <li>
                 <strong>Nanonets.</strong> A receipt-reading service that may receive a receipt photo when our other services cannot
@@ -266,13 +278,16 @@ export default function PrivacyPolicyPage() {
             <ul className="list-disc pl-6 space-y-2 text-[#00121D]/80 leading-relaxed">
               <li>
                 <strong>Original emails that became receipts.</strong> We keep the original email and its attachments
-                indefinitely, so that you can view the original later. Deleting the receipt or your account does not delete this
-                copy. To ask us to delete it, contact us as described in Section 13.
+                indefinitely, so that you can view the original later. This is a complete copy, so it contains anything the email
+                contained, including any code or link. Deleting the receipt or your account does not delete this copy. To ask us to
+                delete it, contact us as described in Section 13.
               </li>
               <li>
-                <strong>Other emails sent to PapeX email addresses.</strong> We keep the original message as we received it for 90
-                days after it arrives and then delete it automatically, including after you delete your account. The details we read
-                from an email we judged not to be a receipt are deleted automatically after 87 days.
+                <strong>Other emails sent to PapeX email addresses.</strong> We keep the original message as we received it,
+                including any code or link in it, for 90 days after it arrives and then delete it automatically, including after
+                you delete your account. The record we keep of an email we judged not to be a receipt (see Section 3) includes its
+                subject line and part of its text, so it can contain a code or other detail from the email; it is deleted
+                automatically after 87 days.
               </li>
               <li>
                 <strong>Important mail.</strong> See &ldquo;Important mail&rdquo; in Section 3.
@@ -284,8 +299,8 @@ export default function PrivacyPolicyPage() {
               </li>
               <li>
                 <strong>Database backups.</strong> Our database keeps recovery copies for 7 days and weekly backups for 90 days.
-                Information that has been deleted or removed, such as a removed sign-in code, can remain in these copies until they
-                expire.
+                Information that has been deleted or removed, such as a sign-in code removed from an Important mail item, can remain
+                in these copies until they expire.
               </li>
             </ul>
             <p className="text-[#00121D]/80 leading-relaxed">
