@@ -14,7 +14,7 @@ import '@/styles/papex-brand.css'
 import { barlow, gloock, kameron } from './fonts'
 import { Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/react'
-import Script from 'next/script'
+import GoogleAnalytics from '@/components/GoogleAnalytics'
 import {
   APP_STORE_URL,
   PLAY_STORE_URL,
@@ -236,22 +236,11 @@ export default function RootLayout({
         <noscript>
           <style dangerouslySetInnerHTML={{ __html: NO_JS_REVEAL_CSS }} />
         </noscript>
-        {/* Google tag (gtag.js) */}
-        <Script
-          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-          strategy="afterInteractive"
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', '${GA_MEASUREMENT_ID}');
-          `}
-        </Script>
       </head>
       <body className="font-barlow">
         {children}
+        {/* GA is started from the browser, behind a gate: it must stay off receipt/credential URLs (lib/analyticsGate.ts). */}
+        <GoogleAnalytics measurementId={GA_MEASUREMENT_ID} />
         <Analytics />
       </body>
     </html>
