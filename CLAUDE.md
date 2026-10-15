@@ -57,6 +57,7 @@ API routes:
 - `NEXT_PUBLIC_IMGBB_API_KEY` (blog image uploads — without it the dashboard upload fails), `BLOB_READ_WRITE_TOKEN`, `NEXT_PUBLIC_RDH_API_BASE` (overrides the `https://api.papex.app` default in `lib/merchantApi.ts` / `lib/rdh.ts`), and `NEXT_PUBLIC_MERCHANT_DEMO_HOST_ANY` (see the merchant route note above).
 - Images go through `lib/storageConfig.ts` — `STORAGE_PROVIDER = 'imgbb'` is a hardcoded const (the doc comment claiming it's an env var is wrong; edit the file to switch). ImgBB replaced Firebase Storage because the Firebase project has no billing plan — see `IMGBB_SETUP.md`.
 - Active blog service: `lib/blogServiceFree.ts`. `lib/blogService.ts` is dead code.
+- **Google Analytics is gated** (`lib/analyticsGate.ts`, mounted by `components/GoogleAnalytics.tsx`; there is no gtag tag in `app/layout.tsx` any more). A receipt/invite/merchant URL IS the credential (`/r?rid=`, `/r?sid=`, `/w?sid=`, `/rdh?sid=`, `/invite/<token>`, `/merchant/tx/<sid>`), so GA is never started in a document that was on one, or came from one, and stays off for that document. Those routes also send `Referrer-Policy: no-referrer` (`next.config.ts`). A NEW top-level route under `app/` must be classified in `CREDENTIAL_PATH_PREFIXES` or the `PUBLIC` list in `lib/analyticsGate.test.ts`, or `npm run test:analyticsGate` fails. Never paste a gtag snippet anywhere else (`npm run test:gaWiring` scans for one). `@vercel/analytics` (`<Analytics />`) is separate and unchanged.
 
 ## Universal links / App Clip contract — DO NOT BREAK
 
