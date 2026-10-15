@@ -13,7 +13,7 @@ export default function PrivacyPolicyPage() {
           <header className="space-y-4 text-center md:text-left">
             <div className="space-y-1 text-sm font-semibold text-[#EB7100] tracking-wide uppercase">
               <p>Effective Date: November 10, 2025</p>
-              <p>Last Updated: November 7, 2025</p>
+              <p>Last Updated: October 15, 2026</p>
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-[#00121D] uppercase">
               PapeX, Inc. – Privacy Policy
@@ -67,16 +67,106 @@ export default function PrivacyPolicyPage() {
               Device identifiers, advertising identifiers, and related usage/analytics data may be collected through third-party
               services (including AWS and Firebase) for performance monitoring, authentication, and security.
             </p>
+
+            <h3 className="text-xl font-semibold text-[#00121D]">Your PapeX email address</h3>
+            <p className="text-[#00121D]/80 leading-relaxed">
+              If you use a PapeX email address, we receive the emails sent or forwarded to it, including the sender, subject, body
+              and attachments. We never access your personal email inbox. We read each email to find receipts. Emails that we judge
+              are not receipts do not appear in your receipts; we keep the details we read from them separately, where you cannot
+              see them, to check and improve this filtering (see Section 7).
+            </p>
+            <p className="text-[#00121D]/80 leading-relaxed">
+              When an email becomes a receipt, we keep a copy of the original email and its attachments (see Section 7). On an
+              email receipt in the app, where the original is available, &ldquo;View original email&rdquo; shows a plain-text
+              version of that email. Only the account that owns the receipt can open it; people you share the receipt with cannot.
+            </p>
+
+            <h3 className="text-xl font-semibold text-[#00121D]">Important mail</h3>
+            <p className="text-[#00121D]/80 leading-relaxed">
+              Emails such as sign-in codes and links to verify an account are not receipts, so they do not appear in your
+              receipts. If Important mail is available for your account, we may show sign-in codes, and sign-in, password-reset,
+              verification or invitation links, from emails sent to your PapeX email address in the Important section of the Inbox
+              in the app, so that you can use them. We show an item only when the sender&rsquo;s email passes standard email authentication checks.
+            </p>
+            <ul className="list-disc pl-6 space-y-2 text-[#00121D]/80 leading-relaxed">
+              <li>
+                <strong>What an item contains:</strong> the code or link, the subject line, the sender&rsquo;s name and domain, and
+                when the email arrived. It does not include the email&rsquo;s body, its headers or the sender&rsquo;s email address.
+                Where the code appears in the subject line or the sender&rsquo;s name, we replace it with dots.
+              </li>
+              <li>
+                <strong>How long it is shown:</strong> a sign-in code is shown for 24 hours. We then remove the code from the item,
+                usually within 15 minutes, and keep showing a record of the email (the sender and when it arrived) until 30 days
+                after it arrived. A sign-in or password-reset link is shown for 24 hours, and a verification or invitation link for
+                30 days; we remove the link from the item when that time is up. After that we stop showing the item. We do not
+                delete items automatically: an item, without its code or link, stays stored with your account until you delete your
+                account. Dismissing an item hides it.
+              </li>
+              <li>
+                <strong>View original email:</strong> while an item is shown, you can open a plain-text copy of the email, in which
+                links are replaced with &ldquo;[link]&rdquo; and the code appears only during its first 24 hours. We keep this copy,
+                and the original message as we received it (which includes any code or link), for 90 days after the email arrives,
+                and then delete them automatically. Dismissing the item or deleting your account does not delete them sooner.
+              </li>
+              <li>
+                <strong>Who can see it:</strong> only your account. Anyone who can open PapeX while you are signed in can see a code
+                shown there, so treat it like a code in your email.
+              </li>
+              <li>
+                <strong>How we sort these emails:</strong> to find these emails and decide what to show, we use the AI services
+                described in Section 6. As with every email sent to your PapeX email address, an email&rsquo;s text, including any
+                code or link in it, is processed by the AI model that our contractor Marvik runs for us and by Google&rsquo;s Gemini
+                service.
+              </li>
+              <li>
+                <strong>Notifications:</strong> if you allow notifications, we may tell you that a code or link has arrived. The
+                notification can name the sender&rsquo;s domain, for example &ldquo;You got a code from example.com&rdquo;, but it
+                never shows the code, the subject line or the sender&rsquo;s name.
+              </li>
+            </ul>
+
+            <h3 className="text-xl font-semibold text-[#00121D]">Push notifications</h3>
+            <p className="text-[#00121D]/80 leading-relaxed">
+              Push notifications are optional, and we send them only if you allow notifications for PapeX on your phone. We may
+              notify you when a receipt you scanned has been saved, when an email receipt arrives, when someone shares a receipt
+              with you, and, if Important mail is available for your account, when a sign-in code or link arrives.
+            </p>
+            <p className="text-[#00121D]/80 leading-relaxed">
+              A notification can show a receipt&rsquo;s store name and total, for example &ldquo;Store Name &middot; $42.17&rdquo;.
+              Anyone who can see your phone&rsquo;s lock screen may be able to read it. For receipts we identify as coming from a
+              cannabis dispensary, notifications do not show the store name or the amount. To remove store names and amounts from
+              all of your notifications, turn off &ldquo;Show store and amount&rdquo; in Settings &gt; Notifications in the app;
+              notifications about Important mail then do not name the sender either.
+            </p>
+            <p className="text-[#00121D]/80 leading-relaxed">
+              When you allow notifications, the app gets a push token from Expo, the notification service we use, and we store it
+              with your PapeX account. We keep one token per account, so notifications go only to the phone that registered most
+              recently. To send a notification, we give Expo the token and the notification: its title, its text and an internal
+              reference that the app uses to open the right item when you tap it. Expo passes it to Apple&rsquo;s or Google&rsquo;s
+              notification service, which delivers it to your phone.
+            </p>
+            <p className="text-[#00121D]/80 leading-relaxed">
+              Settings &gt; Notifications in the app has a switch for each kind of notification; they are on by default once you
+              allow notifications. You can also turn notifications off in your phone&rsquo;s settings. We remove the push token from
+              your account when you sign out of PapeX on that phone or delete your account. If your phone is offline when you sign
+              out, the removal may not complete. Turning a switch off in the app stops us from sending that kind of notification;
+              neither that nor turning notifications off on your phone removes the token.
+            </p>
           </section>
 
           <section className="space-y-4">
             <h2 className="text-2xl font-semibold text-[#00121D]">4. Purpose of Processing</h2>
             <p className="text-[#00121D]/80 leading-relaxed">
               We process data to operate, maintain, and improve the Service; authenticate users; manage accounts; display and
-              store digital receipts; conduct analytics and performance optimization; communicate service updates and security
-              alerts; comply with legal obligations; and conduct research and development. We may also process anonymized or
-              aggregated transaction data for market research, trend analysis, or commercial insights, provided it cannot
-              reasonably identify an individual user.
+              store digital receipts; send the notifications you allow; show you sign-in codes and verification links from emails
+              sent to your PapeX email address, where that feature is available for your account; prevent abuse of the Service;
+              conduct analytics and performance optimization; communicate service updates and security alerts; comply with legal
+              obligations; and conduct research and development. We may also process anonymized or aggregated transaction data for
+              market research, trend analysis, or commercial insights, provided it cannot reasonably identify an individual user.
+            </p>
+            <p className="text-[#00121D]/80 leading-relaxed">
+              To help prevent abuse, we measure how much file storage each account uses and flag accounts that use far more than
+              usual for review by our team. This check is internal: it is not shown to you and it does not delete anything.
             </p>
           </section>
 
@@ -98,6 +188,62 @@ export default function PrivacyPolicyPage() {
               vendors accessing PapeX APIs must follow strict confidentiality, encryption, and least-privilege standards.
             </p>
             <p className="text-[#00121D]/80 leading-relaxed">
+              <strong>Service providers.</strong> We use other companies to run the Service. They receive personal information to
+              provide their services to us:
+            </p>
+            <ul className="list-disc pl-6 space-y-2 text-[#00121D]/80 leading-relaxed">
+              <li>
+                <strong>Google (Gemini).</strong> Every photo or PDF you scan or upload is sent to Google&rsquo;s Gemini AI service
+                to check that it is a receipt and, when needed, to read it. The text of emails sent to your PapeX email address, and
+                their image or PDF attachments, are also sent to Gemini. We use Gemini under Google&rsquo;s paid service terms, under
+                which Google does not use this content to improve its products.
+              </li>
+              <li>
+                <strong>Marvik.</strong> Our contractor Marvik runs an AI model, configured by PapeX, on a server that Marvik
+                operates. It receives receipt photos and the text of receipts and of emails sent to your PapeX email address, to
+                read and sort them and to check the results.
+              </li>
+              <li>
+                <strong>Nanonets.</strong> A receipt-reading service that may receive a receipt photo when our other services cannot
+                read it.
+              </li>
+              <li>
+                <strong>Google (Firebase and Google Cloud)</strong> stores your account, receipts, receipt photos, settings,
+                Important mail items and push token, runs parts of the Service, and holds our database backups.
+              </li>
+              <li>
+                <strong>Amazon Web Services</strong> hosts the servers that process your scans and emails, and receives and stores
+                the emails sent to your PapeX email address, including the original emails we keep.
+              </li>
+              <li>
+                <strong>Expo, Apple and Google</strong> deliver push notifications (see &ldquo;Push notifications&rdquo; in
+                Section 3).
+              </li>
+              <li>
+                <strong>Vercel</strong> hosts our website, including the pages that show receipt links (papex.app/r), so a receipt
+                opened through a link passes through Vercel&rsquo;s servers. Vercel also provides website analytics.
+              </li>
+              <li>
+                <strong>Google Analytics</strong> measures use of our website. It receives your IP address, browser details and the
+                address of each page you visit, which for a receipt link includes the link itself.
+              </li>
+              <li>
+                <strong>logo.dev</strong> provides store logos. It receives store names from our servers, and your device&rsquo;s IP
+                address when the app loads a logo.
+              </li>
+            </ul>
+            <p className="text-[#00121D]/80 leading-relaxed">
+              <strong>Receipt links.</strong> You can create a link to a single receipt (papex.app/r). Anyone who has the link can
+              view the receipt without signing in, including anyone it is forwarded to. The page shows the receipt&rsquo;s details,
+              such as the store, date, items, prices, totals, payment type and any card digits printed on the receipt, and the text
+              read from it. If the receipt has a photo that you scanned or uploaded, the page also shows the photo, with location
+              and camera details (EXIF and GPS data) removed, unless the receipt has been marked as not being a receipt, has been
+              blocked by us, or has no store name, total or items that we could read. A photo shows everything printed on the
+              receipt, which can include part of a card number, a loyalty number or your name. A link does not expire, and you
+              cannot turn off a single link: it stops working only while the receipt is in Deleted Receipts and after the receipt
+              is permanently deleted. Receipts that do not belong to a PapeX account cannot be viewed through a link.
+            </p>
+            <p className="text-[#00121D]/80 leading-relaxed">
               Information may be disclosed to governmental or regulatory authorities if required by law or in connection with a
               merger, acquisition, reorganization, or sale of Company assets.
             </p>
@@ -115,6 +261,40 @@ export default function PrivacyPolicyPage() {
               >
                 privacy@papex.app
               </a>, subject to applicable retention requirements.
+            </p>
+            <p className="text-[#00121D]/80 leading-relaxed">Some information has a specific retention period:</p>
+            <ul className="list-disc pl-6 space-y-2 text-[#00121D]/80 leading-relaxed">
+              <li>
+                <strong>Original emails that became receipts.</strong> We keep the original email and its attachments
+                indefinitely, so that you can view the original later. Deleting the receipt or your account does not delete this
+                copy. To ask us to delete it, contact us as described in Section 13.
+              </li>
+              <li>
+                <strong>Other emails sent to PapeX email addresses.</strong> We keep the original message as we received it for 90
+                days after it arrives and then delete it automatically, including after you delete your account. The details we read
+                from an email we judged not to be a receipt are deleted automatically after 87 days.
+              </li>
+              <li>
+                <strong>Important mail.</strong> See &ldquo;Important mail&rdquo; in Section 3.
+              </li>
+              <li>
+                <strong>Coupon testing.</strong> We are testing a feature, not yet shown in the app, that finds offers and coupon
+                codes in emails sent to your PapeX email address. What it finds is deleted automatically after 45 days, including
+                after you delete your account.
+              </li>
+              <li>
+                <strong>Database backups.</strong> Our database keeps recovery copies for 7 days and weekly backups for 90 days.
+                Information that has been deleted or removed, such as a removed sign-in code, can remain in these copies until they
+                expire.
+              </li>
+            </ul>
+            <p className="text-[#00121D]/80 leading-relaxed">
+              <strong>Deleting your account.</strong> You can delete your account in the app under Settings &gt; Advanced Settings
+              &gt; Delete Account. This deletes your account and the information stored with it, including your receipts, your
+              Important mail items and the records that link your email receipts to their original emails. Some information is not
+              deleted right away, including original emails that became receipts (kept indefinitely), copies of other emails
+              (deleted 90 days after they arrived), coupon test data (deleted after 45 days), database backups (up to 90 days) and,
+              for now, your receipt photos and profile photo in our file storage.
             </p>
           </section>
 
