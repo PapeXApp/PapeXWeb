@@ -237,7 +237,9 @@ export default function PrivacyPolicyPage() {
               </li>
               <li>
                 <strong>Google Analytics</strong> measures use of our website. It receives your IP address, browser details and the
-                address of each page you visit, which for a receipt link includes the link itself.
+                address of each page you visit. Until October 15, 2026, that address could include a receipt link or an invite
+                link itself. Since then, Google Analytics does not run on receipt link, invite or merchant pages and does not
+                receive their addresses.
               </li>
               <li>
                 <strong>logo.dev</strong> provides store logos. It receives store names from our servers, and your device&rsquo;s IP
