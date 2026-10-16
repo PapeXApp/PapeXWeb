@@ -255,7 +255,14 @@ export default function PrivacyPolicyPage() {
               blocked by us, or has no store name, total or items that we could read. A photo shows everything printed on the
               receipt, which can include part of a card number, a loyalty number or your name. A link does not expire, and you
               cannot turn off a single link: it stops working only while the receipt is in Deleted Receipts and after the receipt
-              is permanently deleted. Receipts that do not belong to a PapeX account cannot be viewed through a link.
+              is permanently deleted. Receipts that do not belong to a PapeX account cannot be viewed through a link. To report a
+              shared receipt that should not be public, email{' '}
+              <a
+                href="mailto:privacy@papex.app"
+                className="text-[#EB7100] underline decoration-transparent hover:decoration-[#EB7100] transition"
+              >
+                privacy@papex.app
+              </a>.
             </p>
             <p className="text-[#00121D]/80 leading-relaxed">
               Information may be disclosed to governmental or regulatory authorities if required by law or in connection with a
