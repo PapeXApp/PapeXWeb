@@ -80,10 +80,11 @@ out:
   distribution → App signing. No key rotation in progress, so no second
   historical key to carry.
 - The **upload key is a different key** (its SHA-256 starts `41:1A:7E:3E:…`,
-  visible on that same page). It is deliberately **not** in this file: only
-  builds installed outside Play carry the upload signature, and nothing we
-  distribute does. Add it only if someone starts handing out EAS artifacts
-  directly.
+  visible on that same page). It was left out at first, since only builds
+  installed outside Play carry the upload signature. **Added 2026-10-21** as a
+  second entry so EAS artifacts installed directly (`adb install`, internal
+  APKs) verify too. Play installs are unaffected: they carry the app signing
+  key.
 - The fingerprint here is also **not** the debug keystore’s
   (`EC:4D:74:A8:…`), which is the trap described below.
 
