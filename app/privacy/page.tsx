@@ -481,7 +481,9 @@ export default function PrivacyPolicyPage() {
           deleted right away, or at all: original emails that became receipts (kept indefinitely), copies of other emails
           (deleted 90 days after they arrived), usage reports (deleted 180 days after they were recorded), coupon test data
           (deleted after 45 days), database backups (up to 90 days) and the photos of your receipts and your profile photo in
-          our file storage (not currently deleted).
+          our file storage (not currently deleted). If you delete your account from an older version of the app that does not
+          include Important mail, your Important mail items are not deleted; contact us as described in Section 13 to have
+          them removed.
         </p>
       </section>
 
