@@ -350,7 +350,11 @@
        "use some space better"): steps 1-3 grow to share the room (the rail
        runs the full height of each, so it never breaks) instead of leaving
        the bottom third empty. SetupTimeline.tsx pins it at 76px. */
-    min-height: calc(100dvh - 76px - 20px);
+    /* svh, not dvh: the pin is placed with the toolbars-shown height
+       (clientHeight). Sized by dvh, the list outgrew it once Safari's
+       toolbar collapsed, and the pin slid up under the nav to keep its
+       foot on screen (Nico, 2026-10-22: step 01 covered). */
+    min-height: calc(100svh - 76px - 20px);
   }
   .step {
     flex: 1 1 auto;

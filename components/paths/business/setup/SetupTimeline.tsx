@@ -124,9 +124,12 @@ export function SetupTimeline({
   // A short screen that grows (rotate, resize) gets the scene back.
   useEffect(() => {
     if (!short) return
-    const tooShortAt = window.innerHeight
+    // clientHeight, like measure(): innerHeight jumps ~80px as Safari's
+    // toolbar collapses, which would flip the scene back on and off.
+    const height = () => document.documentElement.clientHeight || window.innerHeight
+    const tooShortAt = height()
     const onResize = () => {
-      if (window.innerHeight > tooShortAt + 40) setShort(false)
+      if (height() > tooShortAt + 40) setShort(false)
     }
     window.addEventListener("resize", onResize)
     return () => window.removeEventListener("resize", onResize)
@@ -169,6 +172,10 @@ export function SetupTimeline({
         // the list sits under the nav, or by its foot if it can't fit.
         const b = offsetIn(stage, pin)
         const stickTop = Math.min(PHONE_LIST_TOP - b.y, M.vh - (b.y + b.h) - 16)
+        // Nothing may sit under the nav (Nico, 2026-10-22: step 01 was
+        // covered). A small slide keeps step 01 clear of it; a screen that
+        // needs more (iPhone SE size) gets the static overview instead.
+        if (PHONE_LIST_TOP - b.y - stickTop > 24) return false
         pin.style.top = `${stickTop}px`
         M.runTop = runTop - stickTop
         M.runTotal = Math.max(0, runway.offsetHeight - pin.offsetHeight)
