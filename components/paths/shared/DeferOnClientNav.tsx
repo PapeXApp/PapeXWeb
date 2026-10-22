@@ -11,13 +11,15 @@ import { startTransition, useEffect, useState, type ReactNode } from "react"
  * - First load (server HTML + hydration) and on the server: children render
  *   straight away, so the HTML is unchanged and nothing is missing for
  *   search engines or no-JS visitors.
- * - Arriving by a client-side page switch (SiteNav has already mounted, see
- *   site-nav.tsx window.__rdMenu): a same-height placeholder first, then the
- *   children in an idle moment, as a transition React can interrupt for a tap.
+ * - Arriving by a client-side page switch (this document was loaded on a
+ *   different path): a same-height placeholder first, then the children in
+ *   an idle moment, as a transition React can interrupt for a tap.
  * - A link with a #hash renders at once, so the browser can scroll to it.
  *
  * Keep the section's own wrapper (FlowSection, data-ground) OUTSIDE this:
- * FlowGround finds sections once, when the page mounts.
+ * FlowGround finds sections once, when the page mounts. Use it from a client
+ * component (a server component can't import values from a "use client"
+ * file: they arrive as client references, not numbers).
  */
 export function DeferOnClientNav({ children, placeholderHeight }: { children: ReactNode; placeholderHeight: string }) {
   const [show, setShow] = useState(() => !arrivedByPageSwitch())
@@ -36,8 +38,19 @@ export function DeferOnClientNav({ children, placeholderHeight }: { children: Re
   return show ? <>{children}</> : <div aria-hidden="true" style={{ height: placeholderHeight }} />
 }
 
+/**
+ * True only when this page was reached by a client-side switch: the document
+ * itself was loaded on another path. NOT "has the app mounted": with the
+ * page's Suspense boundaries, parts of the first load hydrate after the nav
+ * has mounted, and they must still match the server HTML.
+ */
 function arrivedByPageSwitch(): boolean {
-  if (typeof window === "undefined") return false
-  const pre = (window as Window & { __rdMenu?: { ready?: boolean } }).__rdMenu
-  return Boolean(pre?.ready) && !window.location.hash
+  if (typeof window === "undefined" || window.location.hash) return false
+  const nav = performance.getEntriesByType?.("navigation")?.[0] as PerformanceNavigationTiming | undefined
+  if (!nav) return false
+  try {
+    return new URL(nav.name).pathname !== window.location.pathname
+  } catch {
+    return false
+  }
 }

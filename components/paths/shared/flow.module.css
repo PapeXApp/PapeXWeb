@@ -151,6 +151,11 @@
     -webkit-mask-image: none;
     mask-image: none;
   }
+  /* and no blurred light pools: six large blur-filter layers Safari keeps
+     composited for a glow that is barely visible on a phone */
+  .pool {
+    display: none;
+  }
 }
 /* (The old `main:has(> .flow) + .rd-footer` border reset is gone: the in-flow
    footer variant `.rd-footer-flow` in styles/papex-brand.css already drops its

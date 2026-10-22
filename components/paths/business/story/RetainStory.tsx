@@ -1,5 +1,6 @@
 "use client"
 
+import { DeferOnClientNav } from "../../shared/DeferOnClientNav"
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react"
 import { MousePointerClick } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -149,7 +150,7 @@ const DWELL_VH = 20
  *  proportions, over a third less scroll. Every mapping below works in
  *  fractions of the measured runway (runway minus pin, p8: never
  *  innerHeight), so nothing here changes. */
-export const RUNWAY_VH = 100 + SCROLL_VH + DWELL_VH
+const RUNWAY_VH = 100 + SCROLL_VH + DWELL_VH
 /**
  * HYSTERESIS. Once the story has fully opened it LATCHES: a small scroll up,
  * or scrolling inside the dashboard, changes nothing. Only after scrolling up
@@ -443,6 +444,16 @@ function offsetIn(el: HTMLElement, root: HTMLElement) {
     n = n.offsetParent as HTMLElement | null
   }
   return { x, y, w: el.offsetWidth, h: el.offsetHeight }
+}
+
+/** §03's story, built a moment after a client-side page switch (it is ~75%
+ *  of the page) behind a placeholder as tall as its runway. */
+export function DeferredRetainStory({ header }: { header: ReactNode }) {
+  return (
+    <DeferOnClientNav placeholderHeight={`${RUNWAY_VH}vh`}>
+      <RetainStory header={header} />
+    </DeferOnClientNav>
+  )
 }
 
 export function RetainStory({ header }: { header: ReactNode }) {

@@ -994,6 +994,22 @@
   color: var(--flow-fg-3);
 }
 
+/* Phones and tablets: a lighter phone (Nico's iPhone timeline, 2026-10-22:
+   once /business was on screen Safari drew a frame only every ~3.5s, taps
+   weren't turned into clicks and the menu wouldn't open; the 3D phone was
+   16 full-size layers). Only three of the twelve body layers stay (the lit
+   front edge, the middle, the back plate, so a turn still shows its
+   thickness) and the glass light (.turnShade, .turnGlint) goes. */
+@media (max-width: 820px) {
+  .slabLayer:not([data-slab="1"]):not([data-slab="6"]):not([data-slab="12"]) {
+    display: none;
+  }
+  .turnShade,
+  .turnGlint {
+    display: none;
+  }
+}
+
 @container (max-width: 439px) {
   .stage {
     /* Under the text on a phone: sized by the column, taller than wide so

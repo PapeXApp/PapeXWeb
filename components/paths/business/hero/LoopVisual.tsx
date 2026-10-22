@@ -355,6 +355,7 @@ export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock:
             <span
               key={i}
               className={s.slabLayer}
+              data-slab={i}
               style={{ "--i": i, "--n": SLAB_LAYERS.length } as CSSProperties}
             />
           ))}
