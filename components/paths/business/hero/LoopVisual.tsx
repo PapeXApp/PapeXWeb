@@ -16,7 +16,7 @@ import { loop } from "./loop"
 import s from "./hero.module.css"
 
 /**
- * The /business hero visual — "CLOSE THE LOOP", a 12.3-second looped story at
+ * The /business hero visual — "CLOSE THE LOOP", a 13-second looped story at
  * a checkout counter (P3-B1, 2026-09-25; art and guide redone in P3-B6; story
  * redone in P3-B7 to Nico's storyboard; retimed from 26.8s to 12s in P3-B10).
  *
@@ -39,6 +39,11 @@ import s from "./hero.module.css"
  *              the phone, the window goes green: "Coupon used", a check;
  *              the phone leaves, round again
  *
+ * Every tap ripples (2026-10-22, Nico: "so it brings the person's eyes
+ * there"): the sticker's orange rings on the counter, and the same rings on
+ * the screen where the finger presses View, Save to PapeX and the coupon,
+ * so a first-time viewer follows each step.
+ *
  * THE SCENE (Web 2.2 hero v2, Nico: "make the sticker straight ... I prefer
  * something like [section 04] wayyyy more"): no line-art cashier, counter or
  * hands any more. The counter is one render,
@@ -54,8 +59,9 @@ import s from "./hero.module.css"
  * list IS the text for screen readers and the still frame; "Demo data" sits
  * at the end of the sentence line.
  *
- * MOTION. A timer walks TIMELINE (one cycle = CYCLE_MS, 12.3s; P3-B10, Nico:
- * "more like 12 seconds", was 26.8s); every beat is
+ * MOTION. A timer walks TIMELINE (one cycle = CYCLE_MS, 13.05s; P3-B10, Nico:
+ * "more like 12 seconds", was 26.8s; each of the three on-screen presses
+ * held 0.25s longer for its ripple, 2026-10-22); every beat is
  * a class/attribute change, and CSS transitions/animations do the moving —
  * transform and opacity only, nothing reads layout per frame, no rAF loop.
  * The one layout read is the receipt's scroll distance, once per cycle. It
@@ -104,23 +110,23 @@ const TIMELINE: [Beat, number][] = [
   ["tap", 800], // down onto the sticker (0.45s)
   ["card", 1300], // ripple + the App Clip card pops up
   ["zoomIn", 2000], // into the phone (0.8s)
-  ["press", 2900], // a finger presses "View"
-  ["clip", 3300], // the App Clip receipt opens on the big coupon: held ~1s
-  ["scroll", 4300], // then a scroll down through the items (1.8s)
-  ["savePress", 6150], // a finger presses "Save to PapeX"
-  ["saved", 6500], // "Saved"
-  ["app", 6900], // in the PapeX app: Receipts
-  ["coupons", 7350], // the Coupons tab
-  ["couponTap", 7700], // a finger opens the coupon
-  ["couponOpen", 8050], // the coupon detail rises
-  ["out", 9000], // back out to the counter (0.6s); the coupon's barcode is held 0.3s longer first (Nico, 2026-10-21: "keep the barcode on the screen before the scan … so it is for sure clear")
-  ["turn", 9600], // the phone moves in front of the scanner and turns to its window (0.6s)
-  ["raise", 10150], // the scanner wakes: its window lights (0.5s)
-  ["scan", 10650], // the beam fans onto the barcode, which is scanned (0.6s)
-  ["used", 11250], // "Coupon used" + check
-  ["leave", 11900], // the phone leaves (0.4s)
+  ["press", 2900], // a finger presses "View" (its ripple reads before the clip opens)
+  ["clip", 3550], // the App Clip receipt opens on the big coupon: held ~1s
+  ["scroll", 4550], // then a scroll down through the items (1.8s)
+  ["savePress", 6400], // a finger presses "Save to PapeX" (+ ripple)
+  ["saved", 7000], // "Saved"
+  ["app", 7400], // in the PapeX app: Receipts
+  ["coupons", 7850], // the Coupons tab
+  ["couponTap", 8200], // a finger opens the coupon (+ ripple)
+  ["couponOpen", 8800], // the coupon detail rises
+  ["out", 9750], // back out to the counter (0.6s); the coupon's barcode is held 0.3s longer first (Nico, 2026-10-21: "keep the barcode on the screen before the scan … so it is for sure clear")
+  ["turn", 10350], // the phone moves in front of the scanner and turns to its window (0.6s)
+  ["raise", 10900], // the scanner wakes: its window lights (0.5s)
+  ["scan", 11400], // the beam fans onto the barcode, which is scanned (0.6s)
+  ["used", 12000], // "Coupon used" + check
+  ["leave", 12650], // the phone leaves (0.4s)
 ]
-const CYCLE_MS = 12300
+const CYCLE_MS = 13050
 /** The receipt's scroll (beat "scroll"); fits before "savePress". */
 const SCROLL_MS = 1800
 /** When iOS's launch banner slides off the clip (ms after "clip"): as the
@@ -170,6 +176,15 @@ const TOUCH: Partial<Record<Beat, [number, number]>> = {
   press: [317, 739],
   savePress: [166, 742],
   couponTap: [200, 226],
+}
+
+/** Which press's ripple is on the screen: it outlasts the press beat (its
+ *  rings take 0.84s), and is unmounted once the window passes. */
+function screenTapOf(b: Beat): Beat | null {
+  if (within(b, "press", "clip")) return "press"
+  if (within(b, "savePress", "saved")) return "savePress"
+  if (within(b, "couponTap", "couponOpen")) return "couponTap"
+  return null
 }
 
 export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock: string }) {
@@ -292,6 +307,7 @@ export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock:
   const scannerUp = within(beat, "raise", "used")
   const beamOn = beat === "scan" || beat === "still"
   const touch = TOUCH[beat]
+  const screenTap = screenTapOf(beat)
   const clipMounted = within(beat, "clip", "app")
 
   return (
@@ -400,6 +416,8 @@ export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock:
             <div className={cn(s.layer, s.layerRise, (from(beat, "couponOpen") || isStatic) && s.layerIn)}>
               <CouponScreen state={isStatic ? "used" : couponStateOf(beat)} time={clock} />
             </div>
+            {/* the press's ripple: the sticker's rings, on the screen */}
+            {screenTap ? <TapRipple key={`ripple-${screenTap}-${cycle}`} at={TOUCH[screenTap]} /> : null}
             {/* the scripted finger: a soft touch that presses in and lifts */}
             {touch ? (
               <span
@@ -468,9 +486,15 @@ export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock:
   )
 }
 
-function TapRipple() {
+/** Three orange rings: on the sticker, or with `at` (app points) on the
+ *  screen, where the finger presses. */
+function TapRipple({ at }: { at?: [number, number] }) {
   return (
-    <span className={s.ripple} aria-hidden="true">
+    <span
+      className={cn(s.ripple, at && s.rippleScreen)}
+      style={at ? { left: `calc(${at[0]} * var(--pt))`, top: `calc(${at[1]} * var(--pt))` } : undefined}
+      aria-hidden="true"
+    >
       <span className={s.rippleRing} />
       <span className={cn(s.rippleRing, s.rippleRing2)} />
       <span className={cn(s.rippleRing, s.rippleRing3)} />

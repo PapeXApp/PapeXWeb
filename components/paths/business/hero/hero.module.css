@@ -261,6 +261,20 @@
 .rippleRing3 {
   animation-delay: 0.24s;
 }
+/* The same rings on the screen, where the finger presses (LoopVisual
+   TOUCH, placed in app points): a circle on the glass, under the finger
+   (.touch is z 30), so they zoom and turn with the phone. */
+.rippleScreen {
+  z-index: 29;
+  width: calc(130 * var(--pt));
+  height: calc(130 * var(--pt));
+}
+/* a little slower and bolder than the sticker's, so they read at 390 wide */
+.rippleScreen .rippleRing {
+  border-width: max(2.5px, calc(4.5 * var(--pt)));
+  box-shadow: 0 0 calc(14 * var(--pt)) rgba(235, 113, 0, 0.6);
+  animation-duration: 0.8s;
+}
 @keyframes heroTap {
   0% {
     opacity: 0.95;
