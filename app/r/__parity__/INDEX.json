@@ -2,7 +2,7 @@
   "note": "Rendered before receipt cards reached production /r. Do not regenerate for a cards change.",
   "scenarios": {
     "sid-text": {
-      "sha256": "c8e6a3cdc871acb94ef3ba55d14aa5edee4aa252f0ac01575db54b93f8ac4b9e",
+      "sha256": "f4ce6f46a47a14e5b96494364550b9942d857d2a707d8cf42c494cc2ed589791",
       "redirect": null,
       "urls": [
         "https://api.papex.app/receipt/a1b2c3d4e5f60718",
@@ -10,7 +10,7 @@
       ]
     },
     "sid-text-android": {
-      "sha256": "829fc8dcc56bdbffdb56f6bc84124a15cd24b4c77e0cb9b6dc98a1a5e2aca51f",
+      "sha256": "8b1ef226202987cd52ccfd268d245e3aea74c2b6c63f8135d439e9e4dffed18a",
       "redirect": null,
       "urls": [
         "https://api.papex.app/receipt/a1b2c3d4e5f60718",
@@ -26,7 +26,7 @@
       ]
     },
     "sid-raster-parsed": {
-      "sha256": "178855f302406c86bc21c26137d282389512a11e4cd386b4f296e4fd1ae7c2e4",
+      "sha256": "6851b594400a70a632c125596d21c10947d50ff70748fdba4fb7079dc273166a",
       "redirect": null,
       "urls": [
         "https://api.papex.app/receipt/3ea8e69cc7764ad8",
@@ -42,7 +42,7 @@
       ]
     },
     "sid-unknown": {
-      "sha256": "79cd3f6f0240f6681a726763046580a748d217581138972733e6b7683b28cb11",
+      "sha256": "741fd798241c147617cb85f2aea5f29c970191e7ee7a490825ef67150d9847f4",
       "redirect": null,
       "urls": [
         "https://api.papex.app/receipt/0000000000000404",
@@ -58,7 +58,7 @@
       ]
     },
     "sid-malformed": {
-      "sha256": "79cd3f6f0240f6681a726763046580a748d217581138972733e6b7683b28cb11",
+      "sha256": "741fd798241c147617cb85f2aea5f29c970191e7ee7a490825ef67150d9847f4",
       "redirect": null,
       "urls": []
     },
@@ -78,26 +78,26 @@
       "urls": []
     },
     "rid-ok": {
-      "sha256": "688e85e21557710cd946a1e059d419dd5c24e393ae4108d097d011cf70fdf491",
+      "sha256": "cac5f5dc2f41ba85feb4e4b3e89b6b1a1c4c50cbab180393952a70833d5c8e1f",
       "redirect": null,
       "urls": [
         "https://us-central1-papexv2.cloudfunctions.net/sharedReceipt?rid=receipt_1776344585632_4mrd9txmk"
       ]
     },
     "rid-not-found": {
-      "sha256": "79cd3f6f0240f6681a726763046580a748d217581138972733e6b7683b28cb11",
+      "sha256": "741fd798241c147617cb85f2aea5f29c970191e7ee7a490825ef67150d9847f4",
       "redirect": null,
       "urls": [
         "https://us-central1-papexv2.cloudfunctions.net/sharedReceipt?rid=receipt_1776344585632_4mrd9txmk"
       ]
     },
     "rid-malformed": {
-      "sha256": "79cd3f6f0240f6681a726763046580a748d217581138972733e6b7683b28cb11",
+      "sha256": "741fd798241c147617cb85f2aea5f29c970191e7ee7a490825ef67150d9847f4",
       "redirect": null,
       "urls": []
     },
     "sid-and-rid": {
-      "sha256": "c8e6a3cdc871acb94ef3ba55d14aa5edee4aa252f0ac01575db54b93f8ac4b9e",
+      "sha256": "f4ce6f46a47a14e5b96494364550b9942d857d2a707d8cf42c494cc2ed589791",
       "redirect": null,
       "urls": [
         "https://api.papex.app/receipt/a1b2c3d4e5f60718",
@@ -105,7 +105,7 @@
       ]
     },
     "r-hartwells": {
-      "sha256": "28b45e48ce4e7c2b14c21d3a619b6f064c02d0af92f91a73a9209f5de33cc2fc",
+      "sha256": "fb7620b31eb036a3ea93b6257aa25d2ee4c95b4f29f4cfd7e438682cab4329d3",
       "redirect": null,
       "urls": [
         "https://api.papex.app/receipt/5ca1e00000000001",
@@ -113,7 +113,7 @@
       ]
     },
     "r-ellsworth": {
-      "sha256": "8dbc167c395114611b2d66727d7b8ed8198a5456879d051ca06336c852cff5d9",
+      "sha256": "5b15d6f64afce99331f8c29399d26dc2a6520c13a09818882d4a022ebcff1e69",
       "redirect": null,
       "urls": [
         "https://api.papex.app/receipt/b0de9a0000000001",
@@ -121,7 +121,7 @@
       ]
     },
     "r-sunset-leaf": {
-      "sha256": "2dcdd9454058423688e7b2aede82b687fd3dc2f0818c7ee5f4f6c9cd1c2588e5",
+      "sha256": "484397dde0901e286906c4a4e927f32f2d4e6bf3e8174e0e66ee01a325e516ed",
       "redirect": null,
       "urls": [
         "https://api.papex.app/receipt/5371e4f000000001",
@@ -129,35 +129,35 @@
       ]
     },
     "r-demo-hartwells": {
-      "sha256": "5211586a5549149cd052bdacaf10653cae4ac6b3033a0ca492eb67d78d3fa7e0",
+      "sha256": "54d8d60cf93ec892b462a91a5affaee140e9be1b84f9d9d3e27a095d03a3a1f2",
       "redirect": null,
       "urls": [
         "https://api.papex.app/receipt/5ca1e00000000001"
       ]
     },
     "r-demo-ellsworth": {
-      "sha256": "28b2bbb994b55d1a8a138e0d5f54f3178da2604da9a095b14d465af57e2016ef",
+      "sha256": "259648c970435237db86618282692445d1c5eed2fb57abcd94a79f2e1d4405c6",
       "redirect": null,
       "urls": [
         "https://api.papex.app/receipt/b0de9a0000000001"
       ]
     },
     "r-demo-sunset-leaf": {
-      "sha256": "2dcdd9454058423688e7b2aede82b687fd3dc2f0818c7ee5f4f6c9cd1c2588e5",
+      "sha256": "484397dde0901e286906c4a4e927f32f2d4e6bf3e8174e0e66ee01a325e516ed",
       "redirect": null,
       "urls": [
         "https://api.papex.app/receipt/5371e4f000000001"
       ]
     },
     "demo-r-hartwells": {
-      "sha256": "5211586a5549149cd052bdacaf10653cae4ac6b3033a0ca492eb67d78d3fa7e0",
+      "sha256": "54d8d60cf93ec892b462a91a5affaee140e9be1b84f9d9d3e27a095d03a3a1f2",
       "redirect": null,
       "urls": [
         "https://api.papex.app/receipt/5ca1e00000000001"
       ]
     },
     "demo-r-ellsworth": {
-      "sha256": "28b2bbb994b55d1a8a138e0d5f54f3178da2604da9a095b14d465af57e2016ef",
+      "sha256": "259648c970435237db86618282692445d1c5eed2fb57abcd94a79f2e1d4405c6",
       "redirect": null,
       "urls": [
         "https://api.papex.app/receipt/b0de9a0000000001"

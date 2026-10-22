@@ -161,7 +161,7 @@ export const metadata: Metadata = {
     'tap for receipt', 'mobile receipts', 'coupons', 'coupon app', 'receipt scanner',
     'coupon scanner', 'auto categorization app', 'receipt organizer', 'digital receipt app',
     'e-receipts', 'email receipts', 'save receipts', 'store coupons', 'receipt sharing',
-    'free receipt app',
+    'digital receipt app',
   ],
   // s-20: the company is the author of every page, not a list of people.
   authors: [{ name: 'PapeX' }],

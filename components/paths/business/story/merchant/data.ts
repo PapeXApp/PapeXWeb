@@ -1,11 +1,10 @@
-import type { DeviceStatus } from "@/lib/merchantApi"
 import { demoSales, type DemoSale } from "../demoSales"
 
 /**
  * DEMO DATA for the merchant dashboard in /business §03, in the shapes the
  * live dashboard's screens read (lib/merchantApi.ts: InsightsWindow, the
- * insights buckets, TapRate, MerchantDevice). Every sale is an invented
- * PapeX Cafe receipt decoded through lib/escpos.ts (demoSales.ts); the devices are
+ * insights buckets, TapRate, MerchantDevice, shown here as stickers). Every sale is an invented
+ * PapeX Cafe receipt decoded through lib/escpos.ts (demoSales.ts); the stickers are
  * invented too. Nothing here is fetched, and nothing reaches app/merchant:
  * the marketing component passes it down as props.
  *
@@ -55,9 +54,9 @@ export function insightsFor(window: DemoWindow) {
   }
 }
 
-export const demoDevices: { deviceId: string; label: string; status: DeviceStatus; last: string }[] = [
-  { deviceId: "papex-0417", label: "Front counter", status: "ok", last: "2 mins ago" },
-  { deviceId: "papex-0418", label: "Pickup window", status: "ok", last: "1 hour ago" },
+export const demoStickers: { id: string; label: string; tapsToday: number; lastTap: string }[] = [
+  { id: "front-counter", label: "Front counter", tapsToday: 14, lastTap: "2 mins ago" },
+  { id: "pickup-window", label: "Pickup window", tapsToday: 6, lastTap: "1 hour ago" },
 ]
 
 export type { DemoSale }

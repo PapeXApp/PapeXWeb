@@ -10,7 +10,7 @@ import { PhoneChrome } from "../../customer/WalkPhone"
 import { DashboardColumns, DashboardCopy } from "../DashboardPreview"
 import { MarqueeBand } from "../MarqueeBand"
 import { story } from "../story"
-import { Bin, DeviceArt, Printer } from "./Furniture"
+import { Bin, Printer, StickerArt } from "./Furniture"
 import { FitFrame } from "./merchant/FitFrame"
 import { MerchantDemo } from "./merchant/MerchantDemo"
 import { ClipScreen } from "./PhoneKit"
@@ -50,9 +50,11 @@ import ip from "../../customer/iphone.module.css"
  *   0.09-0.27  TRASH    rig shifts left + bin in; the slip folds into the
  *                       PapeX plane (3D flaps, fold.ts) and flies into the bin
  *   0.27-0.41  MERGE    printer and bin glide together into one slab, the
- *                       slab settles into the PapeX device, and an iPhone
+ *                       slab settles flat onto the counter as the PapeX
+ *                       sticker, and an iPhone
  *                       rises in front of it (lock screen, "Tap to get...")
- *   0.42-0.63  TAP      the phone bows onto the device, NFC rings go out;
+ *   0.42-0.63  TAP      the phone bows onto the sticker, NFC rings go out
+ *                       on the counter from its tap target;
  *                       then (P4-BT, Nico: "a part where we see a tap on the
  *                       App Clip, so it makes sense how you get into the
  *                       receipt") iOS's App Clip card SLIDES UP from the
@@ -60,7 +62,7 @@ import ip from "../../customer/iphone.module.css"
  *                       View pill (press + ripple), and the card EXPANDS
  *                       into "Reading your receipt", then the receipt itself
  *                       — all the /customers App Clip kit, imported as is
- *   0.64-0.81  SPARK    phone + device slide RIGHT, the laptop appears on the
+ *   0.64-0.81  SPARK    phone + sticker slide RIGHT, the laptop appears on the
  *                       LEFT (Nico, via the lead); a spark runs from the phone
  *                       to the laptop and its lid opens. On phones (<=820px)
  *                       there is no laptop: the pair shrinks, whole, into the
@@ -83,8 +85,8 @@ import ip from "../../customer/iphone.module.css"
  * a `.cam` layer between the stage and its pieces adds one scale + translate
  * keyed to `p`, framing what is on screen at each beat into the pin's free
  * area (under the nav, above the caption): printer + slip large for the
- * print, eased out as the bin, then the device + phone, then the laptop
- * arrive, ending on the laptop + phone + device, whole and centred, as large
+ * print, eased out as the bin, then the sticker + phone, then the laptop
+ * arrive, ending on the laptop + phone + sticker, whole and centred, as large
  * as the viewport allows. The frames are measured boxes (measure()), so the
  * camera never reads layout per frame either. Off on phones (<=820px), where
  * the 1:2 stage already fills the pin.
@@ -104,7 +106,7 @@ import ip from "../../customer/iphone.module.css"
  * Phones (B6, Nico: "I want to see a full phone... we have a lot of blank
  * space, use it well"): the stage is a 1:2 box as tall as the pin allows under
  * the nav, and the tap pose's iPhone is ~80% of its height, never cropped,
- * with the PapeX device fully in view under its lower right.
+ * with the PapeX sticker fully in view on the counter under its foot.
  *
  * Perf contract: the rAF frame WRITES only `transform`, `opacity` and
  * `clip-path`, and READS nothing from layout. Every geometric number (sizes,
@@ -155,7 +157,7 @@ const CATCH_TAU_MS = 110
 const T = {
   // act 1 — paper (reads its own q = p / ACT1)
   act1: 0.27,
-  // act 2 — the merge into device + phone
+  // act 2 — the merge into sticker + phone
   convA: 0.27,
   convB: 0.32,
   mrgA: 0.305,
@@ -450,7 +452,7 @@ export function RetainStory({ header }: { header: ReactNode }) {
   const halfFaceRef = useRef<HTMLDivElement>(null)
   const groupRef = useRef<HTMLDivElement>(null)
   const slabRef = useRef<HTMLSpanElement>(null)
-  const deviceRef = useRef<HTMLDivElement>(null)
+  const stickerRef = useRef<HTMLDivElement>(null)
   const glowRef = useRef<HTMLSpanElement>(null)
   const ringRefs = useRef<(HTMLSpanElement | null)[]>([])
   const phoneRef = useRef<HTMLDivElement>(null)
@@ -584,7 +586,7 @@ export function RetainStory({ header }: { header: ReactNode }) {
         side: number
         gap: number
       },
-      /** the free area, and the tap pose's phone + device boxes (stage px) */
+      /** the free area, and the tap pose's phone + sticker boxes (stage px) */
       region: null as Region | null,
       /**
        * the last frame's free area: the caption has faded by then, so it runs
@@ -645,18 +647,23 @@ export function RetainStory({ header }: { header: ReactNode }) {
       const lap = { ...L, x: L.x - grow, w: L.w + 2 * grow, y: L.y - M.labLap, h: L.h + M.labLap }
       const phl = { x: ph.x - M.labPhoneX, y: ph.y - M.labPhone, w: ph.w + 2 * M.labPhoneX, h: ph.h + M.labPhone }
       const pieces = M.head ? [lap, phl, dv] : [lap, ph, dv]
-      // BOTTOM-anchored (P3-B5): the frame's foot sits exactly on the free
-      // area's floor, --cam-final-foot above the pin's bottom, so the copy
-      // after the runway can be pulled up by that same CSS length and land a
-      // fixed gap under the screens (story.module.css .runway margin-bottom).
       // Without the heading the box is the laptop (bulge, no pill) + pair,
-      // as before.
+      // BOTTOM-anchored (P3-B5): the frame's foot sits on the free area's
+      // floor, --cam-final-foot above the pin's bottom, and the copy after
+      // the runway is pulled up by that same CSS length.
+      // With the heading (desktop) it is TOP-anchored, right under the title
+      // (Web 2.2, Nico: on a tall screen the bottom anchor left ~500px empty
+      // between the title and the screens). The room that leaves under the
+      // screens is measured (measure(): --story-slack) and the copy after
+      // the runway is pulled up over it too (.runway margin-bottom), so the
+      // dashboard's heading, lead and columns fill the bottom of the same
+      // screen.
       if (!M.head) {
         const b = union({ ...L, x: L.x - grow, w: L.w + 2 * grow }, ph, dv)
         const cam = fit(R, b, M.finalFill)
         return { ...cam, ry: R.y + R.h - (cam.s * b.h) / 2, mask: 0 }
       }
-      return place(R, M.head, pieces, { fill: M.finalFill, align: "bottom", mask })
+      return place(R, M.head, pieces, { fill: M.finalFill, align: "top", mask })
     }
 
     /**
@@ -740,11 +747,11 @@ export function RetainStory({ header }: { header: ReactNode }) {
       const bin = binRef.current
       const printer = printerRef.current
       const group = groupRef.current
-      const device = deviceRef.current
+      const sticker = stickerRef.current
       const phone = phoneRef.current
       const lid = lidRef.current
       const card = cardDashRef.current
-      if (!paper || !fold || !bin || !printer || !group || !device || !phone || !lid || !card) return
+      if (!paper || !fold || !bin || !printer || !group || !sticker || !phone || !lid || !card) return
 
       M.paperW = paper.offsetWidth
       M.foldH = fold.offsetHeight || 1
@@ -764,8 +771,8 @@ export function RetainStory({ header }: { header: ReactNode }) {
       const gcx = gb.x + gb.w / 2
       const gcy = gb.y + gb.h / 2
       const post = (x: number, y: number) => [gcx + M.postX + M.postS * (x - gcx), gcy + M.postY + M.postS * (y - gcy)]
-      // the merge point: the device's centre in the tap pose
-      const db = offsetIn(device, stage)
+      // the merge point: the sticker's centre in the tap pose
+      const db = offsetIn(sticker, stage)
       const mx = db.x + db.w / 2
       const my = db.y + db.h / 2
       const prb = offsetIn(printer, stage)
@@ -774,7 +781,8 @@ export function RetainStory({ header }: { header: ReactNode }) {
       M.bnDx = mx - (bb.x + bb.w / 2)
       M.bnDy = my - (bb.y + bb.h / 2)
 
-      // the phone: how far it rises, and the bow onto the device
+      // the phone: how far it rises, and the bow onto the sticker (towards
+      // its tap target, on whichever side of the phone it lies)
       const phb = offsetIn(phone, stage)
       M.phoneH = phb.h
       M.bowX = (db.x + db.w * 0.45 - (phb.x + phb.w / 2)) * 0.18
@@ -967,7 +975,7 @@ export function RetainStory({ header }: { header: ReactNode }) {
         M.binBox = bb
         const kTrash = trashFrame(M.head)
         M.trashMask = kTrash.mask
-        // tap: the phone on the device, as big as the free area allows
+        // tap: the phone on the sticker, as big as the free area allows
         // (P3-B8: beside the heading when that is bigger, the pair is tall)
         const kTap = place(R, M.head, [phb, db], { fill: TAP_FILL })
         M.tapMask = kTap.mask
@@ -1002,6 +1010,11 @@ export function RetainStory({ header }: { header: ReactNode }) {
         M.finalMask = kFinal.mask
         // [3] the lid up (the hold), [4] the lid still flat (its widest)
         M.cams = [kPrint, kTrash, kTap, kFinal, finalFrame(0, M.finalMask)]
+        // the room the top-anchored last frame leaves under the screens
+        // (above the foot): the copy after the runway rises into it
+        const FR = M.finalRegion
+        const slack = M.head ? Math.max(0, FR.y + FR.h - (kFinal.ry + (kFinal.s * (kFinal.h ?? 0)) / 2)) : 0
+        runwayRef.current?.style.setProperty("--story-slack", `${Math.round(slack)}px`)
       }
     }
 
@@ -1173,7 +1186,7 @@ export function RetainStory({ header }: { header: ReactNode }) {
         op(paperRef.current, (1 - fly) / 0.12, "paperO")
       }
 
-      // ---- ACT 2: printer + bin -> one slab -> the device; the phone rises ---
+      // ---- ACT 2: printer + bin -> one slab -> the sticker; the phone rises --
       const c = seg(p, T.convA, T.convB)
       const conv = ease(c)
       const mrg = ease(seg(p, T.mrgA, T.mrgB))
@@ -1194,14 +1207,17 @@ export function RetainStory({ header }: { header: ReactNode }) {
       )
       op(binRef.current, binIn * (1 - mrg), "binO")
 
-      // the slab (in the device's box) settles from the size of the two
-      // objects that made it down to the device, and hands over to the art
+      // the slab (the sticker's outline, in its box) settles from the size of
+      // the two objects that made it down onto the counter, and hands over
+      // to the art
       op(slabRef.current, mrg * (1 - dev), "slabO")
-      set(slabRef.current, "transform", `scale(${(1.7 - 0.9 * dev).toFixed(4)}, ${(1.25 - 0.45 * dev).toFixed(4)})`, "slabT")
+      // (to 1:1: the slab is the sticker's own outline now, so it lands on
+      // the art's edge exactly)
+      set(slabRef.current, "transform", `scale(${(1.7 - 0.7 * dev).toFixed(4)}, ${(1.25 - 0.25 * dev).toFixed(4)})`, "slabT")
       // the art is opaque by mid-way, so the slab settles BEHIND it
-      op(deviceRef.current, dev * 1.8, "devO")
+      op(stickerRef.current, dev * 1.8, "devO")
 
-      // the phone rises in front of the device, then bows onto it (the tap)
+      // the phone rises beside the sticker, then bows onto it (the tap)
       const rise = ease(seg(p, T.phoneA, T.phoneB))
       const bow = ease(seg(p, T.bowA, T.bowB)) * (1 - ease(seg(p, T.upA, T.upB)))
       set(
@@ -1250,7 +1266,7 @@ export function RetainStory({ header }: { header: ReactNode }) {
       const rip = seg(p, T.pressA + 0.003, T.touchB + 0.006)
       op(rippleRef.current, rip > 0 && rip < 1 ? 0.9 * (1 - rip) : 0, "ripO")
       set(rippleRef.current, "transform", `translate(-50%, -50%) scale(${(0.5 + 1.5 * rip).toFixed(3)})`, "ripT")
-      // NFC rings off the device's top face, one after another
+      // NFC rings on the counter from the sticker's tap target, one after another
       for (let n = 0; n < 3; n++) {
         const t = seg(p, T.ringsA + n * 0.018, T.ringsA + n * 0.018 + 0.04)
         const ring = ringRefs.current[n]
@@ -1259,7 +1275,7 @@ export function RetainStory({ header }: { header: ReactNode }) {
       }
       op(glowRef.current, dev * (0.45 + 0.55 * Math.sin(Math.PI * seg(p, T.bowA, T.upB))), "glow")
 
-      // ---- the spark: phone + device slide right, the laptop opens left -----
+      // ---- the spark: phone + sticker slide right, the laptop opens left ----
       const g = ease(seg(p, T.slideA, T.slideB))
       set(
         groupRef.current,
@@ -1708,7 +1724,7 @@ export function RetainStory({ header }: { header: ReactNode }) {
             <ScreenLabel on={live} title={story.screenLabels.laptop} className={s.scrLaptop} />
           </div>
 
-          {/* ---- phone + device, on the right (final layout); the group's
+          {/* ---- phone + sticker, on the right (final layout); the group's
                  pre-slide pose is a transform from measured numbers ---- */}
           <div
             className={s.group}
@@ -1718,11 +1734,11 @@ export function RetainStory({ header }: { header: ReactNode }) {
             role={live && !phoneDash ? "region" : undefined}
             aria-label={live && !phoneDash ? story.phoneLabel : undefined}
           >
-            <div className={s.device}>
-              <span className={s.deviceGlow} ref={glowRef} />
+            <div className={s.sticker}>
+              <span className={s.stickerGlow} ref={glowRef} />
               <span className={s.slab} ref={slabRef} />
-              <div className={s.deviceArt} ref={deviceRef}>
-                <DeviceArt className={s.fill} />
+              <div className={s.stickerArt} ref={stickerRef}>
+                <StickerArt />
               </div>
               {[0, 1, 2].map((n) => (
                 <span

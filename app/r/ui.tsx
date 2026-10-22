@@ -162,7 +162,7 @@ export function ReceiptNotAvailable({ children }: { children?: ReactNode }) {
         our system.
       </p>
       <p className="mt-3 max-w-[19rem] text-sm" style={{ color: S.textMuted }}>
-        If you just tapped the device, give it a moment and try again.
+        If you just tapped the sticker, give it a moment and try again.
       </p>
       {children}
     </div>
@@ -391,7 +391,7 @@ export function MerchantHeaderCard({
             </p>
           )}
           <p className="mt-1 text-xs" style={{ color: isSample ? "#FFB74D" : T.textMuted }}>
-            {isSample ? "Sample data — not a real purchase" : "RDH Receipt"}
+            {isSample ? "Sample data — not a real purchase" : "PapeX Receipt"}
           </p>
         </div>
       </div>

@@ -1,13 +1,15 @@
 // Copy for the merchant dashboard demo inside /business §03 (MerchantDemo.tsx).
 //
 // The dashboard's own labels are taken from app/merchant (page.tsx,
-// insights/page.tsx, devices/page.tsx, tx/[sid]/page.tsx, profile/page.tsx)
+// insights/page.tsx, devices/page.tsx (the demo calls it "Stickers"),
+// tx/[sid]/page.tsx, profile/page.tsx)
 // verbatim where they pass the site's copy rules. Where the live dashboard's
 // line can't be shown on the marketing site as is, the demo says it
 // differently and the reason is noted:
-//   - Transactions subtitle: the live one says "RDH device" and "kept
-//     forever" (both off-limits here) -> `txSub`.
-//   - Devices subtitle: "RDH boxes" -> "PapeX devices".
+//   - Transactions subtitle: the live one says "kept forever" (off-limits
+//     here) -> `txSub`.
+//   - Stickers: the live page lists devices with an online/offline check-in;
+//     the demo shows each register's sticker with its taps instead.
 // The Intelligence tabs are left out on purpose (not a live feature).
 // Everything shown is invented and labelled `demoTag`. "Request a change"
 // (Profile) is left out: the demo can't send one.
@@ -21,13 +23,13 @@ export const merchantCopy = {
   nav: {
     tx: "Transactions",
     insights: "Insights",
-    devices: "Devices",
+    stickers: "Stickers",
     profile: "Profile",
   },
 
   // Transactions (app/merchant/page.tsx)
   txTitle: "Transactions",
-  txSub: "Every receipt your PapeX device captures, searchable.",
+  txSub: "Every receipt from your point of sale, searchable.",
   exportCsv: "Export CSV",
   // Demo only: the button never downloads anything here (Nico 2026-09-29).
   exported: "Exported",
@@ -68,10 +70,11 @@ export const merchantCopy = {
   approximate: "(approximate)",
   noneYet: "No transactions in this window yet.",
 
-  // Devices (app/merchant/devices/page.tsx)
-  devicesTitle: "Devices",
-  devicesSub: "Your PapeX devices and when they last checked in.",
-  lastUpload: "last upload",
+  // Stickers (the live app/merchant/devices page, shown by register)
+  stickersTitle: "Stickers",
+  stickersSub: "Your PapeX stickers, by register, and how often they're tapped.",
+  tapsToday: (n: number) => `${n} ${n === 1 ? "tap" : "taps"} today`,
+  lastTap: "last tap",
 
   // Profile (app/merchant/profile/page.tsx). No "Request a change" here: it
   // can't do anything in the demo, so it isn't shown (Nico 2026-09-29).
@@ -81,7 +84,7 @@ export const merchantCopy = {
   blurb: "Coffee, pastries and a window seat.",
   category: "Cafe",
   aboutTitle: "About",
-  about: "A neighbourhood coffee bar. Tap your phone on the PapeX device at the counter to get your receipt.",
+  about: "A neighbourhood coffee bar. Tap your phone on the PapeX sticker at the counter to get your receipt.",
   hoursTitle: "Hours",
   hours: [
     ["Mon–Fri", "7:00 AM – 6:00 PM"],

@@ -6,8 +6,8 @@ import type { FaqItem } from "../shared/Faq"
  *
  * Rules this copy follows (Nico, §6a):
  *   - POS: "Works with most point of sale systems". Never name a POS brand.
- *   - Price: "It's free today. Take advantage while it lasts." + free device,
- *     free install. Never "forever", never "qualified", no future pricing.
+ *   - Price: "It's free today. Take advantage while it lasts." + the
+ *     sticker is free, and so is setup. Never "forever", never "qualified", no future pricing.
  *   - Card data: "never stores, processes or transmits card data" + /pci.
  *     No certification claim ("PCI compliant" is not said anywhere).
  *   - Proof/where: "Live in the Bay Area." No store name, no date.
@@ -26,15 +26,15 @@ export const businessFaqHeading = "What owners ask us."
 export const businessFaq: FaqItem[] = [
   {
     q: "Does PapeX work with my POS?",
-    a: "PapeX works with most point of sale systems. The PapeX device is added to your POS as a second printer, so your checkout stays exactly the same.\n\nNot sure about yours? [Ask us in a demo](#demo).",
+    a: "PapeX works with most point of sale systems. We connect through your POS, so your checkout stays exactly the same.\n\nNot sure about yours? [Ask us in a demo](#demo).",
   },
   {
     q: "What changes for my staff at checkout?",
     a: "Almost nothing. Staff ring up sales exactly as before. Instead of handing over a receipt, staff invite the customer to tap. The receipt is ready to tap for 90 seconds after each sale.\n\nYour store can keep printing or go completely paperless!",
   },
   {
-    q: "What happens if the Wi-Fi or the PapeX device goes down?",
-    a: "Your checkout doesn't depend on PapeX. Your POS keeps ringing up sales, and your paper printer keeps printing while it's switched on.\n\nThe device's status light shows what it's doing, and we're here to help. [Get help](/support).",
+    q: "What happens if PapeX goes down?",
+    a: "Your checkout doesn't depend on PapeX. Your POS keeps ringing up sales, and your paper printer keeps printing while it's switched on.",
   },
   {
     q: "Does PapeX touch card data? What about PCI?",
@@ -43,12 +43,12 @@ export const businessFaq: FaqItem[] = [
   {
     // Spec §6a round 2 (lead instruction): the "What does it cost?" and "How
     // does PapeX make money?" questions are ONE visible item, answered with
-    // "It's free today. Take advantage while it lasts." + free device/install.
+    // "It's free today. Take advantage while it lasts." + free sticker and setup.
     // Never mention future paid profiles or coupons (the earlier Q1 draft did;
     // it is superseded and intentionally not kept here). Question trimmed to
     // the cost alone at the 2.1 merge (Nico).
     q: "How much does PapeX cost?",
-    a: "It's free today. The PapeX device is free, and so is the install. Take advantage while it lasts.",
+    a: "It's free today. The PapeX sticker is free, and so is setup. Take advantage while it lasts.",
   },
   {
     // Waiting on Nico (spec §6 Q2 / §6a round 2): is there a signed pilot or
@@ -59,8 +59,8 @@ export const businessFaq: FaqItem[] = [
     hidden: true,
   },
   {
-    q: "Who installs PapeX, and how long does it take?",
-    a: "We do, for free, in about 15 minutes. We plug the PapeX device into power, connect it to Wi-Fi, connect it to your POS, test a sale and hand it over. Your dashboard is live from the first receipt.",
+    q: "Who sets up PapeX, and how long does it take?",
+    a: "We do, in about 5 minutes. We connect your POS first (with most systems, all we need is an API key from you and from your POS), then send your stickers with simple instructions. Your dashboard is live from the first receipt.",
   },
   {
     q: "Which phones can my customers tap with?",
@@ -72,6 +72,6 @@ export const businessFaq: FaqItem[] = [
   },
   {
     q: "Will my store get a page in the PapeX app?",
-    a: "Of course. Every PapeX partner gets a fully customizable page in the PapeX app, where shoppers find their receipts, coupons and anything else you want them to know. You manage it from your merchant dashboard, which starts the day we install your PapeX device. [Ask about it in your demo](#demo).",
+    a: "Of course. Every PapeX partner gets a fully customizable page in the PapeX app, where shoppers find their receipts, coupons and anything else you want them to know. You manage it from your merchant dashboard, which starts the day we set you up. [Ask about it in your demo](#demo).",
   },
 ]

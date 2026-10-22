@@ -24,7 +24,7 @@ import { BusinessPath } from '@/components/paths/business'
 // matches the search result. Title ≤60 chars, description ≤155.
 const TITLE = 'Tap to Retain | Free Digital Receipts for Business | PapeX'
 const DESCRIPTION =
-  'NFC digital receipts for small business: customers tap their phone, you get a dashboard of every receipt. Free device, installed free in about 15 minutes.'
+  'NFC digital receipts for small business: customers tap their phone, you get a dashboard of every receipt. A free NFC sticker at your register, set up in about 5 minutes.'
 // The business share card (b-01 / q-18): the page's own H1, not the shopper
 // image. Rendered by `node scripts/og/render.mjs business` (scripts/og/og.html).
 const OG_IMAGE = {

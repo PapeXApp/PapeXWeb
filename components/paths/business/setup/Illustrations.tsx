@@ -1,29 +1,37 @@
 import type { ReactElement } from "react"
+import { PlaneMark } from "@/components/brand/plane-mark"
 import s from "./setup.module.css"
 
 /**
- * The five setup illustrations for §05 "How do I get it?" — line art in one
+ * The four setup illustrations for §05 "How do I get it?" — line art in one
  * 200x150 box, one stroke weight (set by CSS on the <svg>, so the ink stays
- * the same weight across the five), navy ink (`currentColor` = the running
+ * the same weight across the four), navy ink (`currentColor` = the running
  * ground's ink), soft tinted fills and orange for the one thing that matters
- * in each step. No brands, no logos, no text.
+ * in each step. No brands and no text; the only logo is our own plane mark,
+ * drawn as outline in 01.
  *
  * One HERO OBJECT per step, big and centred, so no two share a silhouette
  * and each reads at the phone overview's ~96px width (Nico, 2026-09-25:
  * "some of them are a little repetitive and hard to understand"):
- *   01 a power plug, prongs up, bolt on its face, cable to a small device
- *   02 a big Wi-Fi fan landing on a small device
- *   03 a POS tablet on its stand, showing a Printers list with the new row
- *   04 a phone, tilted, with tap waves and a receipt on its screen
- *   05 a laptop with a live chart
+ *   01 a POS tablet linked to the PapeX plane by a dashed line, a key on it
+ *      (the API key that connects them)
+ *   02 the PapeX sticker lying flat on the counter (true isometric, the
+ *      website art's camera): tap rings, the phone and its waves, the coupon
+ *      badge; the register it belongs to, small, behind
+ *   03 a phone, tilted, with tap waves and a receipt on its screen
+ *   04 a laptop with a live chart
+ * (Web 2.2: the box's power / Wi-Fi / add-as-printer steps are gone; there
+ * is no hardware to set up.)
  *
  * Every piece is a <path> (never <rect>/<circle>) with pathLength=1 so the
  * scene can draw it with stroke-dashoffset:
  *   data-d  a stroke that draws in, in DOM order
  *   data-f  a fill that fades in once the outline is mostly drawn
  * Fills come before strokes in each drawing so the ink always sits on top.
- * Without the pinned scene (reduced motion, short screens, the server
- * render) no dash is set and every drawing is simply complete.
+ * A dashed line is drawn as separate short strokes (a dasharray of its own
+ * would fight the draw-in's). Without the pinned scene (reduced motion,
+ * short screens, the server render) no dash is set and every drawing is
+ * simply complete.
  */
 
 /** Rounded-rectangle outline as a path. */
@@ -58,103 +66,99 @@ function F({ d, tone = 1, accent }: { d: string; tone?: 1 | 2; accent?: boolean 
   return <path data-f="" d={d} className={accent ? s.accFill : tone === 2 ? s.soft2 : s.soft} />
 }
 
+/** 01 — connect your POS: the register's tablet, a dashed link with the API
+ *  key on it, and the PapeX plane at the other end. */
+function ConnectPos() {
+  return (
+    <>
+      <F d={rr(8, 30, 70, 52, 8)} tone={2} />
+      <F d={rr(14, 36, 58, 40, 3.5)} />
+      <F d={circ(162, 56, 28)} />
+      {/* the POS: a tablet on its stand, a sale on its screen */}
+      <D d={rr(8, 30, 70, 52, 8)} />
+      <D d={rr(14, 36, 58, 40, 3.5)} />
+      <D d="M43 82V100" />
+      <D d={rr(26, 100, 34, 8, 4)} />
+      <D d="M22 46H48M22 55H62M22 64H42" />
+      {/* the link: a dash, the key, a dash */}
+      <D d="M82 56H86" accent />
+      <D d={circ(98, 56, 8)} accent />
+      <D d={circ(98, 56, 2.5)} accent />
+      <D d="M106 56H126M119 56V62M124 56V60.5" accent />
+      <D d="M130 56H133" accent />
+      {/* PapeX: the real plane mark, outline only (Nico, 2026-10-21: "just
+          the lines no fill so it matches the tone"), centred in its circle.
+          It fades in with the fills: its paths are artwork, not draw-in ink. */}
+      <D d={circ(162, 56, 28)} />
+      <g data-f="" className={s.logoLine} transform="translate(139 42.5)">
+        <PlaneMark size={46} />
+      </g>
+    </>
+  )
+}
+
 /**
- * The PapeX device, drawn from the same three-quarter box as
- * public/product/rdh-device.svg: a top face, a front face and a right side,
- * with the status light on the front. `x, y` is the top face's back-left.
- * Only ever a supporting actor here (small, off to the side); the hero of
- * each step is something else.
+ * The PapeX sticker lying flat, in the true-isometric camera of the
+ * website's art (public/product/rds-sticker.webp, from
+ * public/_rds-review/sticker-iso.html): a card point (x, y) on its 502 x 426
+ * face goes to B + x*U + y*V, B its near corner. A circle of the face
+ * becomes an upright ellipse, rx = |(Ux, Vx)| r, ry = |(Uy, Vy)| r (√3:1),
+ * and the map keeps orientation (det > 0), so an arc keeps its sweep flag.
  */
-function Device({ x, y, w = 74 }: { x: number; y: number; w?: number }) {
-  const top = `M${x} ${y + 9}L${x + 9} ${y}H${x + w + 9}L${x + w} ${y + 9}Z`
-  const side = `M${x + w} ${y + 9}L${x + w + 9} ${y}V${y + 21}L${x + w} ${y + 31}Z`
-  const front = rr(x, y + 9, w, 22, 3)
+const ISO = { bx: 106.4, by: 140, ux: -0.1687, uy: -0.0974, vx: 0.1687, vy: -0.0974 }
+const ISO_RX = Math.hypot(ISO.ux, ISO.vx)
+const ISO_RY = Math.hypot(ISO.uy, ISO.vy)
+/** A card point, as "x y" in the drawing. */
+function ip(x: number, y: number) {
+  return `${(ISO.bx + x * ISO.ux + y * ISO.vx).toFixed(2)} ${(ISO.by + x * ISO.uy + y * ISO.vy).toFixed(2)}`
+}
+/** An arc of a card circle of radius r, to the card point (x, y). */
+function ia(r: number, sweep: 0 | 1, x: number, y: number) {
+  return `A${(r * ISO_RX).toFixed(2)} ${(r * ISO_RY).toFixed(2)} 0 0 ${sweep} ${ip(x, y)}`
+}
+/** A card circle, as the ellipse it lies as. */
+function icirc(cx: number, cy: number, r: number) {
+  return `M${ip(cx - r, cy)}${ia(r, 1, cx + r, cy)}${ia(r, 1, cx - r, cy)}Z`
+}
+
+/** 02 — get your sticker: the sticker, flat on the counter by its register. */
+function GetSticker() {
+  // the card's outline, its 22px corners rounded on the face
+  const card = `M${ip(22, 0)}L${ip(480, 0)}${ia(22, 1, 502, 22)}L${ip(502, 404)}${ia(22, 1, 480, 426)}L${ip(22, 426)}${ia(22, 1, 0, 404)}L${ip(0, 22)}${ia(22, 1, 22, 0)}Z`
+  // the phone in the dial (sticker-iso.html's path, laid flat)
+  const phone = `M${ip(266, 158)}L${ip(230, 158)}${ia(16, 0, 214, 174)}L${ip(214, 246)}${ia(16, 0, 230, 262)}L${ip(266, 262)}Z`
   return (
     <>
-      <F d={top} tone={2} />
-      <F d={front} />
-      <F d={side} />
-      <D d={front} />
-      <D d={top} />
-      <D d={side} />
-      <D d={`M${x + w * 0.34} ${y + 4.5}H${x + w * 0.66}`} />
-      <F d={circ(x + 10, y + 20, 3)} accent />
+      <F d={rr(140, 8, 46, 32, 5)} tone={2} />
+      <F d={card} />
+      <F d={icirc(272, 198, 96)} tone={2} />
+      <F d={phone} tone={2} />
+      <F d={icirc(334, 274, 30)} accent />
+      {/* the sticker */}
+      <D d={card} />
+      {/* "TAP HERE" and "Collect and Save.", as lines along the face */}
+      <D d={`M${ip(440, 70)}L${ip(440, 165)}`} />
+      <D d={`M${ip(440, 188)}L${ip(440, 356)}`} accent />
+      <D d={`M${ip(118, 108)}L${ip(118, 318)}`} />
+      {/* the tap target: two rings, the phone, its waves */}
+      <D d={icirc(272, 198, 116)} />
+      <D d={icirc(272, 198, 96)} accent />
+      <D d={phone} />
+      <D d={`M${ip(277, 196)}${ia(16, 1, 277, 224)}`} accent />
+      <D d={`M${ip(284, 184)}${ia(30, 1, 284, 236)}`} accent />
+      <D d={`M${ip(291.5, 171)}${ia(45, 1, 291.5, 249)}`} accent />
+      {/* the coupon badge */}
+      <D d={icirc(334, 274, 30)} accent />
+      {/* the register it belongs to: small, behind */}
+      <D d={rr(140, 8, 46, 32, 5)} />
+      <D d={rr(145, 13, 36, 22, 2.5)} />
+      <D d="M163 40V51" />
+      <D d={rr(151, 51, 24, 5, 2.5)} />
     </>
   )
 }
 
-/** 01 — power it up: the plug is the hero (prongs up, a bolt on its face), its cable runs to the device. */
-function PowerUp() {
-  const head = "M87 34H129A5 5 0 0 1 134 39V58C134 68 128 74 120 78V90H96V78C88 74 82 68 82 58V39A5 5 0 0 1 87 34Z"
-  const bolt = "M113 39L100 58H109L104 73L119 52H110L117 39Z"
-  return (
-    <>
-      <F d={head} />
-      <Device x={14} y={104} w={40} />
-      {/* the cable, from the device's end up into the plug */}
-      <D d="M60 121C92 124 108 118 108 90" />
-      {/* the plug */}
-      <D d={rr(95, 12, 7, 22, 3.5)} />
-      <D d={rr(114, 12, 7, 22, 3.5)} />
-      <D d={head} accent />
-      <D d="M96 84H120" accent />
-      <F d={bolt} accent />
-      <D d={bolt} accent />
-    </>
-  )
-}
-
-/** 02 — join the Wi-Fi: a big Wi-Fi fan whose dot lands on the (small) device. */
-function JoinWifi() {
-  const cx = 100
-  const cy = 100
-  return (
-    <>
-      <Device x={77} y={112} w={46} />
-      <F d={circ(cx, cy, 5.5)} accent />
-      <D d={arc(cx, cy, 22, 90)} accent />
-      <D d={arc(cx, cy, 44, 90)} accent />
-      <D d={arc(cx, cy, 66, 90)} accent />
-    </>
-  )
-}
-
-/** A small printer glyph, 14 wide, 13 tall, from its top-left (x, y). */
-function printerGlyph(x: number, y: number) {
-  return `M${x + 3} ${y + 3}V${y}H${x + 11}V${y + 3}${rr(x, y + 3, 14, 7, 1.5)}M${x + 3} ${y + 10}V${y + 13}H${x + 11}V${y + 10}`
-}
-
-/** 03 — add it as a printer: the register's Printers list, the new row being added. */
-function AddPrinter() {
-  return (
-    <>
-      <F d={rr(28, 10, 144, 100, 10)} tone={2} />
-      <F d={rr(36, 18, 128, 84, 4)} />
-      <F d={rr(44, 76, 112, 22, 5)} tone={2} />
-      {/* the tablet on its stand */}
-      <D d={rr(28, 10, 144, 100, 10)} />
-      <D d={rr(36, 18, 128, 84, 4)} />
-      <D d="M100 110V126" />
-      <D d={rr(68, 126, 64, 8, 4)} />
-      {/* the list header: printer icon + title */}
-      <D d={printerGlyph(44, 25)} />
-      <D d="M66 32H102" />
-      {/* the printer that was already there */}
-      <D d={rr(44, 46, 112, 22, 5)} />
-      <D d={printerGlyph(51, 50)} />
-      <D d="M73 57H116" />
-      <D d="M144 53l4 4l-4 4" />
-      {/* the new one: the PapeX device, being added */}
-      <D d={rr(44, 76, 112, 22, 5)} accent />
-      <D d={rr(51, 82, 14, 10, 2)} />
-      <D d="M73 87H108" />
-      <D d={circ(145, 87, 6.5)} accent />
-      <D d="M141.5 87H148.5M145 83.5V90.5" accent />
-    </>
-  )
-}
-
-/** 04 — test a receipt: a phone with tap waves and the receipt on its screen. */
+/** 03 — test a receipt: a phone with tap waves and the receipt on its screen. */
 function TestReceipt() {
   const teeth = Array.from({ length: 8 }, (_, i) => `l-5 ${i % 2 === 0 ? 4 : -4}`).join("")
   const slip = `M88 34H128V104${teeth}Z`
@@ -179,7 +183,7 @@ function TestReceipt() {
   )
 }
 
-/** 05 — hand-over: the dashboard is live (a laptop, a chart, a live dot). */
+/** 04 — you're live: the dashboard is live (a laptop, a chart, a live dot). */
 function DashboardLive() {
   const chart = "M52 82L70 72L86 76L104 58L120 64L140 42"
   return (
@@ -202,7 +206,8 @@ function DashboardLive() {
   )
 }
 
-const ART: ReactElement[] = [<PowerUp key="1" />, <JoinWifi key="2" />, <AddPrinter key="3" />, <TestReceipt key="4" />, <DashboardLive key="5" />]
+/** One per step, in content.ts howItWorks.steps order. */
+const ART: ReactElement[] = [<ConnectPos key="1" />, <GetSticker key="2" />, <TestReceipt key="3" />, <DashboardLive key="4" />]
 
 /** Decorative: every step's words are in its <h3> and body. */
 export function SetupIllustration({ index }: { index: number }) {

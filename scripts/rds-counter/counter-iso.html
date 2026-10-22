@@ -1,0 +1,215 @@
+<!doctype html><html><head><meta charset="utf-8">
+<!-- SOURCE of public/product/rds-counter*.webp: render with
+     node scripts/generate-rds-counter.mjs (never hand-edit the webps).
+     The PapeX sticker (verbatim from the sticker art's isometric source,
+     sticker-iso.html) lying on a store countertop, in the same true-isometric
+     camera: 0.9 units/mm, 30 deg. Ground coordinates in mm: a runs to the
+     upper left (the sticker's 76mm side), b to the upper right (its 64.5mm
+     side), z up; P(a,b,z) = (64 - 0.7794a + 0.7794b, 72 - 0.45a - 0.45b - 0.9z).
+     The sticker lies at a 0..76, b 0..64.5, z 0 (14mm from the customer's
+     edge, a = -14). Every box is drawn by box() below, each face flat in its
+     own mm coordinates inside a matrix:
+       top   (z = h)   matrix(-0.7794,-0.45,0.7794,-0.45, 64, 72-0.9h)              (a, b)
+       front (a = a0)  matrix(0.7794,-0.45,0,0.9, 64-0.7794a0, 72-0.45a0-0.9h)     (b, depth)
+       end   (b = b0)  matrix(-0.7794,-0.45,0,0.9, 64+0.7794b0, 72-0.45b0-0.9h)    (a, depth)
+     VARIANTS (location.hash; the generator renders each):
+       (none)  section 04 / story / customers: counter a -14..120, b -30..175,
+               38mm thick, a card terminal at a 20..120, b 98..152, 18mm tall.
+       #hero   the /business hero: the same counter run out to b -125..160,
+               with a handheld (pistol-grip) barcode scanner standing nose-up
+               in its cradle at the left end (gun b -106..-74, its nose
+               pointing at the customer's edge, -a; the window's centre at
+               b -90, a 62, z 84), far enough left that a phone held in front
+               of the window clears the sticker.
+     No brand anywhere. -->
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@600;800&family=Kameron:wght@700&display=block" rel="stylesheet">
+<style>html,body{margin:0;background:transparent}svg{display:block;width:3075px;height:1875px}</style></head><body>
+<svg id="art" viewBox="-160 -110 410 250" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+
+  
+    <clipPath id="card"><rect width="502" height="426" rx="22"/></clipPath>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1B3A58"/>
+      <stop offset=".38" stop-color="#071521"/>
+      <stop offset="1" stop-color="#02080D"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="502" cy="426" r="300" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#EB7100" stop-opacity=".62"/>
+      <stop offset=".45" stop-color="#EB7100" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#EB7100" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="dial" cx="272" cy="198" r="98" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0A1824"/>
+      <stop offset=".8" stop-color="#08131C"/>
+      <stop offset="1" stop-color="#3A2010"/>
+    </radialGradient>
+    <linearGradient id="phone" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7B5A44"/>
+      <stop offset=".35" stop-color="#9AA2AB"/>
+      <stop offset="1" stop-color="#E4E7EA"/>
+    </linearGradient>
+    <linearGradient id="wave" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#F6A44A"/>
+      <stop offset="1" stop-color="#EB7100"/>
+    </linearGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  
+    <filter id="drop" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.2"/></filter>
+  
+    <!-- counter materials (neutral stone: reads on the light and the navy ground) -->
+    <linearGradient id="ctTop" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#DCE2E7"/><stop offset="1" stop-color="#C6CED5"/>
+    </linearGradient>
+    <linearGradient id="ctFront" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#B8C1C8"/><stop offset="1" stop-color="#97A2AC"/>
+    </linearGradient>
+    <linearGradient id="ctEnd" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9AA5AE"/><stop offset="1" stop-color="#7C8893"/>
+    </linearGradient>
+    <filter id="soft2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3"/></filter>
+    <linearGradient id="tmBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3A4753"/><stop offset="1" stop-color="#1B242E"/>
+    </linearGradient>
+    <linearGradient id="gunSide" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4A5866"/><stop offset=".45" stop-color="#2C3742"/><stop offset="1" stop-color="#1B242E"/>
+    </linearGradient>
+    <linearGradient id="scBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#46525F"/><stop offset="1" stop-color="#252F39"/>
+    </linearGradient>
+  </defs>
+  <g id="under"></g>
+  <!-- the sticker (verbatim from sticker-iso.html; its shadow softened: it lies flat) -->
+  <g transform="translate(0.9 1.2)" filter="url(#drop)" opacity=".32"><rect transform="matrix(-0.11801,-0.068135,0.11801,-0.068135,64,72)" width="502" height="426" rx="22" fill="#000"/></g>
+  <g transform="translate(0 0.45)"><rect transform="matrix(-0.11801,-0.068135,0.11801,-0.068135,64,72)" width="502" height="426" rx="22" fill="#0B1620"/></g>
+  <g transform="matrix(-0.11801,-0.068135,0.11801,-0.068135,64,72)">
+
+  <g clip-path="url(#card)">
+    <rect width="502" height="426" fill="url(#bg)"/>
+    <rect width="502" height="426" fill="url(#glow)"/>
+
+    <!-- faint plane watermark, lower left -->
+    <image href="plane-ghost.svg" width="165" height="96" opacity=".5"
+           transform="translate(172 306) rotate(90)"/>
+
+    <!-- tap target: two rings, the phone, the waves -->
+    <circle cx="272" cy="198" r="116" fill="none" stroke="#EB7100" stroke-opacity=".3" stroke-width="1.5"/>
+    <circle cx="272" cy="198" r="96" fill="url(#dial)"/>
+    <circle cx="272" cy="198" r="96" fill="none" stroke="#EB7100" stroke-opacity=".6" stroke-width="2"/>
+
+    <path d="M266 158 H230 A16 16 0 0 0 214 174 V246 A16 16 0 0 0 230 262 H266 Z" fill="url(#phone)"/>
+    <line x1="265" y1="159" x2="265" y2="261" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/>
+
+    <g fill="none" stroke="url(#wave)" stroke-width="8" stroke-linecap="round" filter="url(#soft)">
+      <path d="M277 196 A16 16 0 0 1 277 224"/>
+      <path d="M284 184 A30 30 0 0 1 284 236"/>
+      <path d="M291.5 171 A45 45 0 0 1 291.5 249"/>
+    </g>
+
+    <!-- coupon badge -->
+    <g transform="translate(334 274)">
+      <circle r="33" fill="#EB7100"/>
+      <circle r="27" fill="#FFF6EE"/>
+      <circle r="21" fill="none" stroke="#C25E00" stroke-width="1.6" stroke-dasharray="3.2 3"/>
+      <text transform="rotate(90)" text-anchor="middle" dominant-baseline="central" font-family="Barlow, sans-serif" font-weight="800" font-size="30" fill="#00121D">$</text>
+    </g>
+
+    <!-- words, running down the sticker -->
+    <g transform="translate(416 64) rotate(90)">
+      <text x="0" y="0" font-family="Kameron, serif" font-weight="700" font-size="64" textLength="296" lengthAdjust="spacingAndGlyphs"><tspan fill="#FFFFFF">TAP </tspan><tspan fill="#EB7100">HERE</tspan></text>
+    </g>
+    <g transform="translate(106 104) rotate(90)">
+      <text x="0" y="0" font-family="Barlow, sans-serif" font-weight="800" font-size="29" fill="#FFFFFF" textLength="216" lengthAdjust="spacingAndGlyphs">Collect and Save.</text>
+    </g>
+    <g transform="translate(74 176) rotate(90)">
+      <text x="0" y="0" font-family="Barlow, sans-serif" font-weight="600" font-size="8.5" letter-spacing="2.6" fill="#FFFFFF" fill-opacity=".55">POWERED BY</text>
+    </g>
+    <image href="wordmark-white.svg" width="104" height="29" transform="translate(64 152) rotate(90)"/>
+  </g>
+</g>
+  
+  <rect transform="matrix(-0.11801,-0.068135,0.11801,-0.068135,64,72)" width="502" height="426" rx="22" fill="none" stroke="#9CC3E6" stroke-opacity=".28" stroke-width="3"/>
+
+
+  <g id="over"></g>
+</svg>
+<script>
+const NS = "http://www.w3.org/2000/svg"
+const hero = location.hash === "#hero"
+const f = (n) => +n.toFixed(4)
+const M = {
+  top: (h) => `matrix(-0.7794,-0.45,0.7794,-0.45,64,${f(72 - 0.9 * h)})`,
+  front: (a0, h) => `matrix(0.7794,-0.45,0,0.9,${f(64 - 0.7794 * a0)},${f(72 - 0.45 * a0 - 0.9 * h)})`,
+  end: (b0, h) => `matrix(-0.7794,-0.45,0,0.9,${f(64 + 0.7794 * b0)},${f(72 - 0.45 * b0 - 0.9 * h)})`,
+}
+/** A face: a <g> in its own mm coordinates, holding raw SVG. */
+const face = (parent, transform, inner) => {
+  const g = document.createElementNS(NS, "g")
+  g.setAttribute("transform", transform)
+  g.innerHTML = inner
+  document.getElementById(parent).appendChild(g)
+}
+/** A box a0..a1 x b0..b1 x z0..z1: its end, front and top faces. */
+const box = (parent, [a0, a1], [b0, b1], [z0, z1], o) => {
+  const d = z1 - z0
+  face(parent, M.end(b0, z1), `<rect x="${a0}" y="0" width="${a1 - a0}" height="${d}" rx="${o.r ?? 0}" fill="${o.end}"/>` + (o.endExtra ?? ""))
+  face(parent, M.front(a0, z1), `<rect x="${b0}" y="0" width="${b1 - b0}" height="${d}" rx="${o.r ?? 0}" fill="${o.front}"/>` + (o.frontExtra ?? ""))
+  face(parent, M.top(z1), `<rect x="${a0}" y="${b0}" width="${a1 - a0}" height="${b1 - b0}" rx="${o.rTop ?? 0}" fill="${o.top}"/>` + (o.topExtra ?? ""))
+}
+
+// the counter: a crisp block (a fade to transparent turns into a glow on the
+// navy ground; the sites that crop it fade it themselves)
+const B0 = hero ? -125 : -30
+const B1 = hero ? 160 : 175
+const lit = (x0, x1) => `<line x1="${x0}" y1="0.4" x2="${x1}" y2="0.4" stroke="#FFFFFF" stroke-opacity=".7" stroke-width=".8"/>`
+box("under", [-14, 120], [B0, B1], [-38, 0], {
+  end: "url(#ctEnd)", front: "url(#ctFront)", top: "url(#ctTop)",
+  endExtra: lit(-14, 120), frontExtra: lit(B0, B1),
+  // the terminal's soft contact shadow (and the scanner's)
+  topExtra: `<rect x="16" y="94" width="108" height="62" rx="10" fill="#00121D" opacity=".2" filter="url(#soft2)"/>` +
+    (hero ? `<rect x="98" y="-116" width="54" height="52" rx="12" fill="#00121D" opacity=".22" filter="url(#soft2)"/>` : ""),
+})
+
+// a card terminal beside the sticker, for context: a 20..120, b 98..152, 18mm
+const keys = [0, 1, 2].flatMap((i) => [0, 1, 2].map((j) => `<rect x="${28 + i * 9.5}" y="${106 + j * 12}" width="6.5" height="9" rx="1.8"/>`)).join("")
+box("over", [20, 120], [98, 152], [0, 18], {
+  r: 3, rTop: 8, end: "#18212A", front: "url(#tmBody)", top: "#2B3642",
+  frontExtra: `<line x1="108" y1="9" x2="142" y2="9" stroke="#000" stroke-opacity=".55" stroke-width="1.4" stroke-linecap="round"/>`,
+  topExtra: `<rect x="20.6" y="98.6" width="98.8" height="52.8" rx="7.5" fill="none" stroke="#FFFFFF" stroke-opacity=".18" stroke-width=".8"/>
+    <rect x="66" y="104" width="48" height="42" rx="4" fill="#07131C"/>
+    <rect x="69.5" y="107.5" width="41" height="35" rx="2.5" fill="#0E2A3D"/>
+    <g fill="#5A6875">${keys}</g>`,
+})
+
+// #hero: a handheld barcode scanner, the pistol-grip kind, resting nose-up
+// in its cradle at the counter's left end. The gun is its side profile (in a
+// and z, mm; the nose points at the customer's edge, -a) swept along b:
+// copies of the outline every 0.5mm from the far side (b -74) to the near
+// one (b -106, the lit side panel), then its window on the nose's face.
+if (hero) {
+  // the cradle: a base plate and the cup the grip stands in
+  box("over", [102, 148], [-112, -68], [0, 6], { r: 3, rTop: 10, end: "#141B22", front: "url(#scBody)", top: "#2E3A46" })
+  box("over", [110, 142], [-104, -76], [6, 26], { r: 3, rTop: 6, end: "#141B22", front: "url(#scBody)", top: "#3A4753" })
+  // the gun's outline in (a, z): a head widening to the window end, the
+  // trigger under it, the grip raked back down into the cup
+  const body = [[64, 70], [60, 98], [66, 101], [122, 88], [130, 82], [129, 73], [126, 70], [133, 22], [119, 20], [107, 72], [104, 72], [100, 63], [96, 64], [97, 71], [64, 70]]
+  const d = (pts) => "M" + pts.map(([a, z]) => `${a} ${-z}`).join("L") + "Z"
+  const side = (b, fill, extra = "") => face("over", M.end(b, 0), `<path d="${d(body)}" fill="${fill}"/>` + extra)
+  for (let b = -74; b > -106; b -= 0.5) side(b, "#121920")
+  side(-106, "url(#gunSide)",
+    // a seam along the head and the grip's rubber panel, faint
+    `<path d="M68 -76 L120 -84" stroke="#FFFFFF" stroke-opacity=".1" stroke-width=".8" fill="none"/>
+     <path d="M112 -66 L122 -26 L128 -26 L122 -68 Z" fill="#0D1318" opacity=".75"/>`)
+  // the cup's front lip, drawn again over the grip's foot
+  box("over", [110, 142], [-104, -76], [6, 26], { r: 3, rTop: 6, end: "#141B22", front: "url(#scBody)", top: "#3A4753" })
+  // the window on the nose's face, which leans forward from (a 64, z 70)
+  // to (a 60, z 98): a plane in (b, s), s up the face in mm (28.3 long)
+  // the site lights it at b -90, s 14 (screen -54.49, 9.12)
+  face("over", "matrix(0.7794,-0.45,0.1103,-0.8269,14.12,-19.8)", `<rect x="-104" y="4" width="28" height="20" rx="3" fill="#05090D"/>
+    <rect x="-101" y="13.1" width="22" height="1.8" rx=".9" fill="#FF3B30" opacity=".55"/>`)
+}
+</script>
+</body></html>

@@ -15,11 +15,11 @@ export const customerFaqHeading = "Questions, answered."
 export const customerFaq: FaqItem[] = [
   {
     q: "Do I need an app to get my receipt?",
-    a: "No. Tap your phone on the PapeX device at checkout and your receipt opens right away, with no app to download.\n\nWant to keep every receipt in one place, searchable? That's what the PapeX app is for.",
+    a: "No. Tap your phone on the PapeX sticker at checkout and your receipt opens right away, with no app to download.\n\nWant to keep every receipt in one place, searchable? That's what the PapeX app is for.",
   },
   {
     q: "Is PapeX free?",
-    a: "Yes. Getting your receipt with a tap is free, and the PapeX app is free on the App Store and Google Play.",
+    a: "Yes. Getting your receipt with a tap is free. The PapeX app is on the App Store and Google Play.",
   },
   {
     // Added 2026-09-24 (Nico): coupons are live, not a receipt-only app —
@@ -33,7 +33,7 @@ export const customerFaq: FaqItem[] = [
   },
   {
     q: "Where can I tap my phone for a receipt?",
-    a: "PapeX is live at select stores in the Bay Area. Look for the PapeX device at the register.",
+    a: "PapeX is live at select stores in the Bay Area. Look for the PapeX sticker at the register.",
   },
   {
     q: "What if the store doesn't have PapeX?",

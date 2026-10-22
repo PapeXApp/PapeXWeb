@@ -266,17 +266,17 @@ export const howItWorksContent = {
   // Web 2.1 P4 (Nico, 2026-09-28): this walkthrough moved from §02 to §06,
   // after "Why does it matter?", because most visitors can't tap yet. The
   // framing is "live, and spreading": available TODAY at select Bay Area
-  // stores — never "coming soon". The thing you tap is the PapeX tag on the
-  // counter (NfcTag.tsx), not the RDH box.
+  // stores — never "coming soon". The thing you tap is the PapeX sticker on the
+  // counter (NfcTag.tsx).
   eyebrow: "Now in the Bay Area",
   // Nico (2026-09-29): the headline is the action; "select stores" is the
   // subtitle under it.
   headline: "Tap your phone to get the receipt.",
   subtitle: "At select stores.",
-  phoneAriaLabel: "Step through a tap on a PapeX tag",
+  phoneAriaLabel: "Step through a tap on a PapeX sticker",
   /** Cue line under the phone, one per step — index 2's "Replay" is bold in the design. */
   cues: [
-    "Tap the phone on the PapeX tag.",
+    "Tap the phone on the PapeX sticker.",
     "Your receipt opens. Tap to save it to PapeX.",
     "That's it: saved, searchable, yours.",
   ],
@@ -284,24 +284,24 @@ export const howItWorksContent = {
   /** The same cues when the section is scroll-pinned (desktop): scrolling is
    *  the other way through. */
   scrollCues: [
-    "Scroll, or tap the phone on the PapeX tag.",
+    "Scroll, or tap the phone on the PapeX sticker.",
     "Your receipt opens. Keep scrolling to save it.",
     "That's it: saved, searchable, yours.",
   ],
   /** The one privacy promise here. It is true of the TAP only (the app has
    *  an account), so it lives with the tap, not in a general privacy list. */
   privacyNote: "A tap sends your receipt and nothing else: no name, no email, no sign-up.",
-  /** What is printed on the counter tag, and its accessible name. */
+  /** What is printed on the counter sticker, and its accessible name. */
   tag: {
-    line: "Tap for your receipt",
+    line: "TAP HERE",
     sub: "No app needed",
     label:
-      "The PapeX tag by the register: a small acrylic stand with the PapeX logo, a phone-tap icon and the words \u201cTap for your receipt\u201d.",
+      "The PapeX sticker lying on the counter by the register, with the words \u201cTAP HERE\u201d, a phone-tap icon and \u201cCollect and Save.\u201d",
   },
   steps: [
     {
       number: "01",
-      title: "Tap the PapeX tag",
+      title: "Tap the PapeX sticker",
       body: "Hold your phone to it. No app needed.",
     },
     {

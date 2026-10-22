@@ -6,11 +6,11 @@
      desktop  2:1 stage, as wide as the section's 1150px column allows while
               the pin still fits under the nav (height-capped).
      <=820px  1:2 stage as tall as the pin allows: a whole, large iPhone with
-              the device under it; no laptop — the phone dashboard card
+              the sticker on the counter under it; no laptop — the phone dashboard card
               (.pdScene: the dashboard's real mobile layout on a phone)
               blooms over the stage instead.
    Everything below is the scene's RESTING geometry = its final layout (the
-   laptop on the left, phone + device on the right). The component measures
+   laptop on the left, phone + sticker on the right). The component measures
    these boxes once (measure()) and every motion is a transform from them.
    The unitless --rig-shift / --g-pre-* on .stage are read by measure() only.
 
@@ -85,18 +85,23 @@
    finalFrame), and that foot is empty: pull what follows up over it. A
    margin on the RUNWAY, not on .after, so it vanishes with the runway
    whenever the static story shows instead (reduced motion, no JS: the runway
-   is display: none there). Pure CSS: the server HTML is already this height.
+   is display: none there). The server HTML is already this height; once
+   measured, --story-slack (RetainStory measure(): the room the top-anchored
+   last frame leaves under the screens on a tall screen, 0 when they fill
+   it) pulls it up further, so the dashboard's copy sits right under the
+   screens in the same screen instead of a blank band (Web 2.2). Browser
+   scroll anchoring keeps a deep link below steady when that lands.
    The camera is off on phones, so is this. */
 @media (min-width: 821px) {
   .runway {
-    margin-bottom: calc(-1 * var(--cam-final-foot));
+    margin-bottom: calc(-1 * (var(--cam-final-foot) + var(--story-slack, 0px)));
   }
 }
 /* Server render / first frame: both versions are in the HTML and CSS picks
    one (same contract as intro/intro.module.css), so the section is its final
    height before JS: the runway (inline RUNWAY_VH) for everyone, the static
    story only for reduced motion. The scene's p = 0 frame is these CSS
-   defaults (slip unprinted, laptop / phone / device hidden). */
+   defaults (slip unprinted, laptop / phone / sticker hidden). */
 .staticSlot {
   display: none;
 }
@@ -134,7 +139,7 @@
      ending at --cam-print-h of the pin's height */
   --cam-printer-w: 0.42;
   --cam-print-h: 0.7;
-  /* the last frame (laptop + phone + device): this share of the free area */
+  /* the last frame (laptop + phone + sticker): this share of the free area */
   --cam-final-fill: 0.94;
   /* the screen labels' type size on screen (RetainStory ScreenLabel) */
   --scr-label-px: clamp(15px, 1.15vw, 19px);
@@ -183,11 +188,15 @@
   /* 1: the camera frames each beat (read by measure()); 0: off */
   --cam: 1;
   --rig-shift: -14;
-  /* the group's move from its tap pose to its final spot (cqw / scale) */
-  --g-post-x: 29;
+  /* the group's move from its tap pose to its final spot (cqw / scale).
+     33, not 29, since the sticker sits at the phone's lower left: it keeps
+     the sticker ~6cqw clear of the laptop's right edge. */
+  --g-post-x: 33;
   --g-post-y: 0;
   /* a touch smaller once the laptop arrives, so the laptop leads the row */
   --g-post-s: 0.82;
+  /* the phone bows LEFT, onto the sticker (read by measure()) */
+  --bow-rot: -7;
 }
 
 /* The camera layer: every piece of the scene sits in it, laid out exactly as
@@ -531,9 +540,15 @@
   }
 }
 
-/* --- phone + PapeX device ------------------------------------------------- */
+/* --- phone + PapeX sticker ------------------------------------------------ */
 /* Laid out in the TAP pose, centred; --g-post-* carries it to the right
-   (desktop) or small to the top-right (phones) once the laptop arrives. */
+   (desktop) or small to the top-right (phones) once the laptop arrives.
+   The sticker lies flat on the counter at the phone's LOWER LEFT, its right
+   corner tucked under the phone: the art's "TAP HERE" runs along its upper
+   left edge, so a phone coming from the upper left (where the old box sat
+   under it, at the lower right) would hide it. So the phone bows LEFT onto
+   it (--bow-rot < 0 on .stage); measure() aims the bow at the sticker's
+   box, whichever side it is on. */
 .group {
   position: absolute;
   left: 33cqw;
@@ -543,51 +558,99 @@
   z-index: 5;
   transform-origin: 50% 50%;
 }
-.device {
+/* The box is the sticker art's (public/product/rds-sticker.webp,
+   1100:667); its tap target is at 44.6% / 45.5% of it. Its foot sits a
+   little below the phone's (45.3cqw, where the box's was): the tap frame
+   is measured on the phone + sticker boxes, and that room under the phone
+   is what keeps the bow clear of the caption. "Collect and Save." ends
+   clear of the phone's left edge at rest (the text's right end is at 73%
+   of the art). */
+.sticker {
   position: absolute;
-  left: 13cqw;
-  top: 29cqw;
-  width: 20cqw;
-  aspect-ratio: 169.5 / 138;
+  left: -12.5cqw;
+  top: 32.6cqw;
+  width: 21cqw;
+  aspect-ratio: 1100 / 667;
   z-index: 1;
 }
-.deviceArt {
+.stickerArt {
   position: absolute;
   inset: 0;
   opacity: 0;
-  filter: drop-shadow(0 1.4cqw 2cqw rgba(0, 18, 29, 0.28));
 }
+/* The sticker on its countertop (Furniture.tsx StickerArt), for any
+   positioned box that is the sticker art's box (1100:667). The window runs
+   past the box (left/right 30%, up 40%, down to 135%: the counter's front
+   edge starts under the sticker's near corner at ~103% of its height, so
+   the top of its thickness shows) and fades out round its edge, so the
+   counter reads as a patch of a longer countertop without running into the
+   caption under the scene. Nothing outside the box is measured. */
+.counterWin {
+  position: absolute;
+  left: -30%;
+  top: -40%;
+  width: 160%;
+  height: 175%;
+  overflow: hidden;
+  pointer-events: none;
+  -webkit-mask-image: radial-gradient(closest-side at 50% 50%, #000 66%, transparent);
+  mask-image: radial-gradient(closest-side at 50% 50%, #000 66%, transparent);
+}
+/* rds-counter.webp laid over the sticker box: its trimmed box is x -52.93,
+   y -64.53, 264.27 x 190.53 units of the isometric camera; the sticker
+   art's box is x 5.98, y 9.45, 110.6 x 67.06 (the generator prints both).
+   In % of the box: left -53.26, top -110.32, width 238.94, height 284.12;
+   here in % of the window (160% x 175% of the box, from -30% / -40%). */
+.counterImg {
+  position: absolute;
+  left: calc((-53.26% + 30%) / 1.6);
+  top: calc((-110.32% + 40%) / 1.75);
+  width: calc(238.94% / 1.6);
+  height: calc(284.12% / 1.75);
+  max-width: none;
+  user-select: none;
+}
+/* The printer + bin, merged, settling onto the counter as one flat slab in
+   the sticker's own outline (its four corners in the art), then handing
+   over to the art. */
 .slab {
   position: absolute;
-  inset: 26% 16% 18% 14%;
-  border-radius: 1.4cqw;
-  background: linear-gradient(180deg, #3a4753, #1b242e);
+  inset: 0;
+  clip-path: polygon(1% 42.5%, 44.5% 1%, 96.5% 50%, 52.5% 92%);
+  background: linear-gradient(135deg, #1b3a58, #071521 45%, #02080d);
   opacity: 0;
 }
-.deviceGlow {
+/* The tap's glow, on the counter round the tap target: a circle on the
+   sticker's plane (the iso art's 1.732:1 ellipse: 150% of the box's width
+   is 143% of its height). Over the art (the counter round the sticker is
+   opaque now), so the sticker and the counter both catch the light. */
+.stickerGlow {
   position: absolute;
-  left: 50%;
-  top: 44%;
-  width: 130%;
-  height: 115%;
+  left: 44.6%;
+  top: 45.5%;
+  width: 150%;
+  height: 143%;
   border-radius: 50%;
   transform: translate(-50%, -50%);
-  background: radial-gradient(closest-side, rgba(235, 113, 0, 0.45), rgba(235, 113, 0, 0.14) 55%, transparent);
+  background: radial-gradient(closest-side, rgba(235, 113, 0, 0.32), rgba(235, 113, 0, 0.12) 55%, transparent);
   opacity: 0;
-  z-index: -1;
+  z-index: 1;
+  pointer-events: none;
 }
-/* isometric NFC rings off the top face (the phone covers its left) */
+/* NFC rings on the sticker's plane, from its tap target (the same 1.732:1
+   circle-in-iso: 64% of the box's width is 61% of its height). */
 .ring {
   position: absolute;
-  left: 60%;
-  top: 30%;
-  width: 52%;
-  height: 30%;
+  left: 44.6%;
+  top: 45.5%;
+  width: 64%;
+  height: 61%;
   border-radius: 50%;
   border: 2px solid rgba(255, 140, 40, 0.95);
   box-shadow: 0 0 10px rgba(235, 113, 0, 0.55), inset 0 0 8px rgba(235, 113, 0, 0.3);
   opacity: 0;
   transform: translate(-50%, -50%);
+  z-index: 2;
 }
 
 .phone {
@@ -664,7 +727,7 @@
   box-shadow: 0 0 calc(12 * var(--pt)) rgba(147, 170, 246, 0.7);
 }
 
-/* --- the laptop (appears on the left once phone + device move right) -------- */
+/* --- the laptop (appears on the left once phone + sticker move right) ------- */
 .laptop {
   position: absolute;
   left: 3cqw;
@@ -1186,12 +1249,20 @@
   position: relative;
   z-index: 2;
 }
-.staticDevice {
+/* The sticker at the phone's lower left, flat on the counter (its box is
+   the art's 1100:667), its right corner tucked under the phone: ~21% of its
+   width, so "Collect and Save." (it ends at 73% of the art) clears the
+   phone's frame and side buttons. */
+.staticSticker {
   position: relative;
   z-index: 1;
-  width: 170px;
-  margin-left: -60px;
-  filter: drop-shadow(0 16px 26px rgba(0, 18, 29, 0.25));
+  flex: none;
+  width: 190px;
+  aspect-ratio: 1100 / 667;
+  margin-right: -40px;
+  /* the countertop's front edge runs ~35% of the box's height below it
+     (.counterWin): room for it above the caption */
+  margin-bottom: 40px;
 }
 .staticCap {
   max-width: 44ch;
@@ -1242,8 +1313,8 @@
    under the nav: 64px nav band + 12px gap + 45px (two-line 16px hint) + ~14px
    of margin = 136px. At 375x812 that is 335x670, at 390x844 350x700.
    The tap pose's iPhone is 158cqw of screen (a ~165cqw frame, ~80% of the
-   stage's height), whole, with the PapeX device fully in view under its lower
-   right. Once the receipt lands the pair shrinks, whole, to the top-right
+   stage's height), whole, with the PapeX sticker fully in view on the
+   counter under its foot. Once the receipt lands the pair shrinks, whole, to the top-right
    corner and the dashboard CARD (not the laptop) blooms over the stage. */
 @media (max-width: 820px) {
   .pin {
@@ -1261,15 +1332,17 @@
     /* no camera: the 1:2 stage already fills the pin */
     --cam: 0;
     --rig-shift: -14;
-    /* the pair's union box (x 2-96, y 2-195 cqw) at 0.42, to the top-right
-       corner with a 3cqw margin: x 57.5-97, y 3-84 */
-    --g-post-x: 27.68;
+    /* the pair's union box (x 2-82.2, y 2-196.7 cqw: the phone, and the
+       sticker under it) at 0.42, to the top-right corner with a 3cqw
+       margin: x 63.5-97, y 3-84.7 */
+    --g-post-x: 33.48;
     --g-post-y: -55.84;
     --g-post-s: 0.42;
     /* read by measure(): the phone card replaces the laptop */
     --phone-dash: 1;
-    /* a gentler tilt for the taller phone, so its top corner stays in */
-    --bow-rot: 3;
+    /* a gentler tilt for the taller phone, towards the sticker under its
+       lower left, so its foot clears the "TAP HERE" line */
+    --bow-rot: -2;
   }
   .ground {
     height: 16%;
@@ -1304,10 +1377,13 @@
     left: 2cqw;
     top: 2cqw;
   }
-  .device {
-    left: 58cqw;
-    top: 164cqw;
-    width: 38cqw;
+  /* the sticker on the counter under the phone's foot (the phone fills
+     the width): its top corner just under the phone, so the bow only
+     touches that corner, never the "TAP HERE" line */
+  .sticker {
+    left: 4cqw;
+    top: 170cqw;
+    width: 44cqw;
   }
   /* no laptop on phones: the dashboard phone takes its place */
   .laptop,
@@ -1357,13 +1433,14 @@
   .staticArt {
     min-height: 0;
   }
-  /* the still phone as large as fits beside its device (frame 0.507h wide,
-     plus ~80px of device) */
+  /* the still phone as large as fits beside its sticker (frame 0.507h
+     wide, plus ~118px of sticker) */
   .staticPhone {
-    --story-phone-h: min(400px, calc((100vw - 120px) * 1.9));
+    --story-phone-h: min(400px, calc((100vw - 150px) * 1.9));
   }
-  .staticDevice {
-    width: 130px;
-    margin-left: -50px;
+  .staticSticker {
+    width: 150px;
+    margin-right: -32px;
+    margin-bottom: 32px;
   }
 }

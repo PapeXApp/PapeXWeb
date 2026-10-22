@@ -1,7 +1,7 @@
 // Copy for the /business hero visual: the "CLOSE THE LOOP" animation (P3-B1,
 // 2026-09-25; story redone in P3-B7 to Nico's storyboard). One 12-second loop at a
 // checkout counter, one beat at a time:
-//   1. Tap      the phone touches the PapeX device; the App Clip card pops up;
+//   1. Tap      the phone touches the PapeX sticker; the App Clip card pops up;
 //               the view zooms into the phone and a finger presses "View"
 //   2. Receipt  the App Clip receipt opens: the next-visit coupon on top, the
 //               items below, scrolled down to "Save to PapeX"
@@ -25,7 +25,7 @@ export const loop = {
    *  under the scene); `sub` finishes the sentence shown under that row for
    *  the step that is playing. Short on purpose: each must read at a glance. */
   steps: [
-    { label: "Tap", sub: "their phone on the PapeX device" },
+    { label: "Tap", sub: "their phone on the PapeX sticker" },
     { label: "Receipt", sub: "opens, with a coupon at partner stores" },
     { label: "Save", sub: "it to the PapeX app" },
     { label: "Coupon", sub: "ready for their next visit" },
@@ -48,5 +48,5 @@ export const loop = {
    *  in the figure's caption (server HTML), for screen readers, search
    *  engines and AI agents (p8). The drawing itself is aria-hidden. */
   description:
-    "What the animation shows, with an invented demo store, PapeX Cafe: a customer taps their phone on the PapeX device at the counter and the receipt opens on their phone, with a coupon for their next visit at partner stores. They save it to the PapeX app. Back at the counter, they show the coupon and it is scanned: coupon used. Why it matters: one tap turns a sale into a reason to come back, and you get a dashboard of every sale.",
+    "What the animation shows, with an invented demo store, PapeX Cafe: a customer taps their phone on the PapeX sticker at the counter and the receipt opens on their phone, with a coupon for their next visit at partner stores. They save it to the PapeX app. Back at the counter, they show the coupon and it is scanned: coupon used. Why it matters: one tap turns a sale into a reason to come back, and you get a dashboard of every sale.",
 } as const

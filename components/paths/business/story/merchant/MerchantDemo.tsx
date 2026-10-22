@@ -6,7 +6,7 @@ import { ArrowLeft, BarChart3, Check, ChevronRight, Download, Radio, Receipt, Se
 // in app/merchant is edited for this demo, and nothing here can reach it: the
 // data below is passed in from the marketing page, never fetched, and there
 // is no URL/cookie switch — merchant.papex.app never renders this file.
-import { Button, Card, DeviceStatusPill, FilterPill, Input, StatTile } from "@/app/merchant/ui/primitives"
+import { Button, Card, FilterPill, Input, StatTile } from "@/app/merchant/ui/primitives"
 import { T } from "@/app/merchant/ui/tokens"
 import { formatMoney, hourLabel, hourLabelLong } from "@/app/merchant/ui/format"
 import { BarChart } from "@/app/merchant/insights/BarChart"
@@ -16,12 +16,12 @@ import { cafeCoupons } from "../cafeCouponStore"
 import { demoSales, type DemoSale } from "../demoSales"
 import { CafeProfile } from "./CafeProfile"
 import { merchantCopy as c } from "./copy"
-import { DOW, demoDevices, insightsFor, type DemoWindow } from "./data"
+import { DOW, demoStickers, insightsFor, type DemoWindow } from "./data"
 
 /**
  * The merchant dashboard (merchant.papex.app) as a working demo on the
  * /business page: the real screens — Transactions (search, filters, CSV),
- * a receipt, Insights, Devices, Profile — built from app/merchant's own
+ * a receipt, Insights, Stickers, Profile — built from app/merchant's own
  * primitives and tokens, laid out the way app/merchant/layout.tsx lays them
  * out: a sidebar on a laptop (`layout="desktop"`), a top bar + bottom tab
  * bar on a phone (`layout="mobile"`). The layout is a prop, not a viewport
@@ -45,12 +45,12 @@ import { DOW, demoDevices, insightsFor, type DemoWindow } from "./data"
  * everything back to the delivered frame (coupons included).
  */
 
-type View = "tx" | "insights" | "devices" | "profile"
+type View = "tx" | "insights" | "stickers" | "profile"
 
 const NAV: { id: View; label: string; icon: typeof Receipt }[] = [
   { id: "tx", label: c.nav.tx, icon: Receipt },
   { id: "insights", label: c.nav.insights, icon: BarChart3 },
-  { id: "devices", label: c.nav.devices, icon: Radio },
+  { id: "stickers", label: c.nav.stickers, icon: Radio },
   { id: "profile", label: c.nav.profile, icon: Store },
 ]
 
@@ -582,12 +582,12 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
     </div>
   )
 
-  const devices = (
-    <div className="flex flex-col gap-5" style={show(view === "devices")}>
-      {title(c.devicesTitle, c.devicesSub)}
+  const stickers = (
+    <div className="flex flex-col gap-5" style={show(view === "stickers")}>
+      {title(c.stickersTitle, c.stickersSub)}
       <div className={`grid gap-3 ${desk ? "grid-cols-2" : ""}`}>
-        {demoDevices.map((d) => (
-          <Card key={d.deviceId} className="flex items-center gap-4">
+        {demoStickers.map((d) => (
+          <Card key={d.id} className="flex items-center gap-4">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: T.orangeDim }}>
               <Radio className="h-5 w-5" style={{ color: T.orange }} strokeWidth={2} />
             </div>
@@ -596,10 +596,12 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
                 <div className="truncate font-barlow text-base font-medium" style={{ color: T.text }}>
                   {d.label}
                 </div>
-                <DeviceStatusPill status={d.status} />
+                <span className="shrink-0 text-xs" style={{ color: T.textMuted }}>
+                  {c.tapsToday(d.tapsToday)}
+                </span>
               </div>
               <p className="mt-0.5 text-xs" style={{ color: T.textMuted }}>
-                {d.deviceId} · {c.lastUpload} {d.last}
+                {c.lastTap} {d.lastTap}
               </p>
             </div>
           </Card>
@@ -620,7 +622,7 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
       {tx}
       {receipt}
       {insights}
-      {devices}
+      {stickers}
       {profile}
     </>
   )

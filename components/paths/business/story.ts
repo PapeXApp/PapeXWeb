@@ -8,7 +8,7 @@
 // named below exists in app/merchant today: search + filters and CSV export
 // ("export it to a spreadsheet" in the copy)
 // (app/merchant/page.tsx), busiest hours/days + top items + tap rate
-// (app/merchant/insights/page.tsx), device status (app/merchant/devices).
+// (app/merchant/insights/page.tsx), taps by sticker (app/merchant/devices).
 // The receipt in the scene is the /customers demo receipt ("PapeX Cafe", an
 // invented shop) decoded through lib/escpos.ts, so all three screens show the
 // same sale.
@@ -26,8 +26,8 @@ export const story = {
   beats: {
     print: "A sale prints a paper receipt.",
     trash: "Paper gets folded, lost or tossed.",
-    merge: "With PapeX, the same receipt goes to the PapeX device at your counter.",
-    tap: "Your customer taps their phone on the device…",
+    merge: "With PapeX, the same receipt goes straight from your POS to PapeX.",
+    tap: "Your customer taps their phone on the PapeX sticker…",
     view: "…a receipt card slides up on their phone, and they tap View…",
     receipt: "…and the receipt opens on their phone. No app needed.",
     spark: "The same receipt lands on your dashboard.",
@@ -40,7 +40,7 @@ export const story = {
     {
       key: "tap",
       title: "With PapeX: one tap",
-      body: "Your customer taps their phone on the PapeX device and the receipt opens instantly.",
+      body: "Your customer taps their phone on the PapeX sticker and the receipt opens instantly.",
     },
     { key: "dash", title: "And on your side", body: "The same receipt lands on your dashboard." },
   ],
@@ -52,10 +52,10 @@ export const story = {
    * list above still follows it, one line per beat.
    */
   sceneDescription:
-    "What the animation shows, with an invented demo store, PapeX Cafe: a sale prints a paper receipt, which is folded into a paper plane and tossed in the bin. With PapeX, the same receipt goes to the PapeX device at your counter. Your customer taps their phone on it, a receipt card slides up, they tap View and the receipt opens on their phone, no app needed. The same sale then lands on your dashboard, where it is searchable, counted and charted. Why it matters: your customer keeps the receipt instead of losing it, and you see every sale, your busiest hours and your top items.",
+    "What the animation shows, with an invented demo store, PapeX Cafe: a sale prints a paper receipt, which is folded into a paper plane and tossed in the bin. With PapeX, the same receipt goes straight from your POS to PapeX. Your customer taps their phone on the PapeX sticker at your register, a receipt card slides up, they tap View and the receipt opens on their phone, no app needed. The same sale then lands on your dashboard, where it is searchable, counted and charted. Why it matters: your customer keeps the receipt instead of losing it, and you see every sale, your busiest hours and your top items.",
 
   /** Accessible names for the scene's art. */
-  deviceLabel: "The PapeX device, a small black box at the counter.",
+  deviceLabel: "The PapeX sticker lying on the counter.",
   phoneLabel: "An iPhone showing the digital receipt.",
   laptopLabel: "The PapeX merchant dashboard, updating with the new receipt.",
 
@@ -74,14 +74,14 @@ export const story = {
   },
 
   /** Lock-screen Live Activity on the phone before the tap. */
-  lockPrompt: { title: "Tap to get your receipt", body: "Hold your iPhone near the PapeX device" },
+  lockPrompt: { title: "Tap to get your receipt", body: "Hold your iPhone near the PapeX sticker" },
 } as const
 
 /** The dashboard info, in flow after the scene (heading block, then columns). */
 export const storyDashboard = {
   eyebrow: "Your dashboard, included",
   heading: "See every sale, your busiest hours and top items.",
-  lead: "Each receipt the PapeX device captures shows up on your dashboard as soon as it “prints.”",
+  lead: "Each receipt from your POS shows up on your dashboard as soon as the sale is rung up.",
   columns: [
     {
       title: "Every receipt, searchable",
@@ -92,8 +92,8 @@ export const storyDashboard = {
       body: "Your busiest hours and days, and the items that actually move.",
     },
     {
-      title: "Taps and devices",
-      body: "Your tap rate: how many receipts customers opened. Plus when each PapeX device was last online.",
+      title: "Taps by sticker",
+      body: "Your tap rate: how many receipts customers opened. Plus which register’s sticker they tapped.",
     },
   ],
   /** Read as the lead's second beat (DashboardCopy), not a line of its own. */

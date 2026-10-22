@@ -12,7 +12,7 @@
  * column only changes the empty margins, never the drawing:
  *     left: calc(50% + X * var(--hero-sh));  top: calc(50% + Y * var(--hero-sh))
  * The phone is drawn at its ZOOMED size (frame = 0.95 of the scene's height)
- * and scaled DOWN into the hand (~0.4), so the close-up is crisp.
+ * and scaled DOWN over the counter (~0.4), so the close-up is crisp.
  *
  * MOTION (a 12s loop since P3-B10; every duration below fits inside the gap
  * to the next beat in LoopVisual.tsx TIMELINE): transform and opacity only.
@@ -37,6 +37,14 @@
   initial-value: 0px;
 }
 
+/* The counter render's width (see .stage): registered, so it resolves to px
+   where it is set, like --hero-sh. */
+@property --cw {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
 .visual {
   container-type: inline-size;
   width: 100%;
@@ -56,32 +64,51 @@
   /* The App Clip receipt body's own unit (customer.module.css .acBody),
      same formula as the /customers hero's stage. */
   --ac-u: max(0.72px, calc(var(--wp-size) * 393 / 852 / 346));
-  /* Beat 5, the "offer" pose: where the phone is when it is turned to the
-     counter (x in --hero-sx, y in --hero-sh, scale). High enough that its
-     barcode is above the PapeX device, so the scanner reaches OVER the
-     device to it. The scanner's beam (.beam) is placed from the same
-     numbers, so the two always meet. */
-  --opx: 0.27;
-  --opy: -0.15;
-  --opk: 0.52;
-  /* the cashier's scanner arm's scale (about the shoulder): smaller on a
-     narrow column, where the scene closes up sideways, so its window keeps a
-     gap to the phone for the beam */
-  --sak: 1;
+  /* THE COUNTER (Web 2.2 hero v2/v3): public/product/rds-counter-hero.webp,
+     1400x829 (scripts/generate-rds-counter.mjs #hero), --cw wide, centred,
+     its foot --cbot below the scene's centre. Everything layered on it is
+     placed from two points the generator prints, as fractions of the image:
+       the sticker's tap target   58.17% / 51.10%
+       the scanner's window       26.38% / 36.01%
+     as lengths from the scene's centre (--tap-*, --win-*). If the render
+     changes, re-run the generator and update these four numbers. --cw keeps
+     the sticker near true to the phone (the sticker is 76mm, the phone 72mm:
+     the render's sticker is ~0.32 of its width) and inside the stage's soft
+     sides (3%: only the leaving phone runs off now). */
+  --cw: min(calc(0.98 * var(--hero-sh)), 92cqi);
+  --ch: calc(var(--cw) * 829 / 1400);
+  --cbot: calc(0.37 * var(--hero-sh));
+  --tap-x: calc((0.5817 - 0.5) * var(--cw));
+  --tap-y: calc(var(--cbot) - (1 - 0.511) * var(--ch));
+  --win-x: calc((0.2638 - 0.5) * var(--cw));
+  --win-y: calc(var(--cbot) - (1 - 0.3601) * var(--ch));
+  /* Beat 5, the "offer" pose (v3, Nico: "make the phone go in front of the
+     scanner"): the phone held right in front of the scanner's window, a
+     little below and to its right (the window faces the customer's edge,
+     which this camera sees down and to the right), its screen turned back
+     to the window, so the beam is short: window -> barcode. --op-dx/--op-dy
+     place the phone's centre from the window (in --hero-sh), --opk is its
+     scale; the phone's near edge stays left of the sticker's "TAP HERE"
+     corner. The beam (.beam) is placed from the same numbers. */
+  --op-dx: 0.07;
+  --op-dy: 0.06;
+  --opk: 0.42;
+  --op-x: calc(var(--win-x) + var(--op-dx) * var(--hero-sh));
+  --op-y: calc(var(--win-y) + var(--op-dy) * var(--hero-sh));
 
   position: relative;
   width: 100%;
   height: var(--hero-sh);
   overflow: clip;
-  /* Soft sides and foot: the counter and the arm run off the stage, so they
-     fade out instead of stopping at a hard edge. The close-up phone sits
+  /* Soft sides and foot: anything running off the stage fades out instead
+     of stopping at a hard edge. The close-up phone sits
      inside the unmasked area (see the "zoom" pose). */
   -webkit-mask-image:
-    linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent),
+    linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent),
     linear-gradient(180deg, #000 95%, transparent);
   -webkit-mask-composite: source-in;
   mask-image:
-    linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent),
+    linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent),
     linear-gradient(180deg, #000 95%, transparent);
   mask-composite: intersect;
   transition: opacity 0.6s ease;
@@ -110,7 +137,7 @@
 .world {
   position: absolute;
   inset: 0;
-  transform-origin: calc(50% + 0.185 * var(--hero-sx)) calc(50% + 0.075 * var(--hero-sh));
+  transform-origin: calc(50% + var(--tap-x)) calc(50% + var(--tap-y));
   transition:
     opacity 0.45s ease 0.15s,
     transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
@@ -122,69 +149,48 @@
     opacity 0.45s ease,
     transform 0.8s cubic-bezier(0.5, 0, 0.2, 1);
 }
-/* The person behind the counter (SceneArt.tsx CashierBody / CashierHands:
-   one 400x600 box, 1 unit = 0.001 of the scene's height, whose y=500 is the
-   counter's back edge and y=600 its front lip). The body is painted before
-   the counter, the hands after it, so the forearms lie on the counter top. */
-.cashier {
+/* The counter render (see .stage): centred, its foot --cbot below the
+   scene's centre. A short soft lift under its front edge, as in section 04
+   (the art draws its own contact shadows on the counter). */
+.counter {
   position: absolute;
-  left: calc(50% - 0.42 * var(--hero-sx));
-  top: calc(50% - 0.48 * var(--hero-sh));
-  width: calc(0.4 * var(--hero-sh));
-  height: calc(0.6 * var(--hero-sh));
-  overflow: visible;
+  left: calc(50% - var(--cw) / 2);
+  top: calc(50% + var(--cbot) - var(--ch));
+  width: var(--cw);
+  height: var(--ch);
+  filter: drop-shadow(0 calc(0.02 * var(--hero-sh)) calc(0.04 * var(--hero-sh)) rgba(0, 0, 0, 0.45));
 }
-/* The counter, in simple perspective: a top surface running back from the
-   front lip to a fainter back edge, the rounded lip (the brightest line, in
-   the art's own ink), and the front face falling away into the ground.
-   Opaque: the person is behind it. It runs off both sides of the stage, whose
-   soft sides fade it out. */
-.counterTop,
-.counterLip,
-.counterFront {
-  position: absolute;
-  left: 0;
-  right: 0;
-}
-.counterTop {
-  top: calc(50% + 0.02 * var(--hero-sh));
-  height: calc(0.1 * var(--hero-sh));
-  background: linear-gradient(180deg, #112633, #1a3544);
-  border-top: 1px solid rgba(233, 238, 242, 0.3);
-}
-.counterLip {
-  top: calc(50% + 0.12 * var(--hero-sh));
-  height: calc(0.018 * var(--hero-sh));
-  background: linear-gradient(180deg, #2a4655, #1a3140);
-  border-top: 1.6px solid rgba(233, 238, 242, 0.85);
-  border-bottom: 1px solid rgba(233, 238, 242, 0.2);
-}
-.counterFront {
-  top: calc(50% + 0.138 * var(--hero-sh));
-  bottom: 0;
-  background: linear-gradient(180deg, #0d2230 0%, rgba(0, 18, 29, 0) 100%);
-}
-/* The PapeX device, standing on the counter top (the same artwork as section
-   04: public/product/rdh-device.svg, 169.5x138), with a soft contact shadow
-   under it. */
-.deviceShadow {
-  position: absolute;
-  left: calc(50% - 0.14 * var(--hero-sx) - 0.01 * var(--hero-sh));
-  top: calc(50% + 0.045 * var(--hero-sh));
-  width: calc(0.36 * var(--hero-sh));
-  height: calc(0.08 * var(--hero-sh));
-  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0));
-}
-.device {
-  position: absolute;
-  left: calc(50% - 0.14 * var(--hero-sx));
-  top: calc(50% - 0.155 * var(--hero-sh));
-  width: calc(0.32 * var(--hero-sh));
-}
-.deviceImg {
+.counterImg {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+}
+/* The scanner's window, lit: red while it scans, green once it has read the
+   coupon (opacity only). The window lies on the scanner's front face, which
+   runs up to the right at the camera's 30 degrees. */
+.scanLed {
+  position: absolute;
+  left: calc(50% + var(--win-x) - 0.045 * var(--cw));
+  top: calc(50% + var(--win-y) - 0.009 * var(--cw));
+  width: calc(0.09 * var(--cw));
+  height: calc(0.018 * var(--cw));
+  border-radius: 99px;
+  background: #ff3b30;
+  box-shadow: 0 0 calc(0.03 * var(--cw)) rgba(255, 59, 48, 0.9);
+  transform: skewY(-30deg);
+  opacity: 0;
+  transition:
+    opacity 0.25s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.scanLedOn {
+  opacity: 1;
+}
+.scanLedOk {
+  opacity: 1;
+  background: #34c759;
+  box-shadow: 0 0 calc(0.03 * var(--cw)) rgba(52, 199, 89, 0.9);
 }
 
 /* Line art (SceneArt.tsx), the setup illustrations' language on navy: one
@@ -230,23 +236,17 @@
 .artInkSoft {
   stroke: rgba(233, 238, 242, 0.5);
 }
-.hand .artFill,
-.hand .artSleeve,
-.hand .artCuff,
-.hand .artInk,
-.hand .artInkSoft {
-  stroke-width: 1.6;
-}
 
 /* --- the tap ------------------------------------------------------------------
-   Three rings spreading from the device's top face, where the phone meets
-   it; mounted once per cycle so they play once. */
+   Three rings spreading on the sticker's plane from its tap target, where
+   the phone meets it; mounted once per cycle so they play once. Their
+   ellipse is a circle on that plane: true isometric, 1.732:1. */
 .ripple {
   position: absolute;
-  left: calc(50% + 0.06 * var(--hero-sx));
-  top: calc(50% - 0.085 * var(--hero-sh));
-  width: calc(0.36 * var(--hero-sh));
-  height: calc(0.14 * var(--hero-sh));
+  left: calc(50% + var(--tap-x));
+  top: calc(50% + var(--tap-y));
+  width: calc(0.36 * var(--cw));
+  height: calc(0.36 * var(--cw) / 1.732);
   transform: translate(-50%, -50%);
   pointer-events: none;
   z-index: 5;
@@ -277,7 +277,7 @@
   }
 }
 
-/* --- the phone, in the hand ------------------------------------------------
+/* --- the phone ---------------------------------------------------------------
    A box exactly the zoomed iPhone frame (0.5074 x 1.0461 of --wp-size),
    centred on the scene. Each pose is a translate / scale / 3D turn about its
    centre; the per-pose duration and easing ride along as vars so the ONE
@@ -286,11 +286,10 @@
    3D (P3-B9, Nico: "less 2D, more 3D ... when he turns the phone"): the box
    is a preserve-3d space with its OWN perspective, sized from the phone (1.3
    phone-heights... of --wp-size), and applied BEFORE the scale, so a turn
-   foreshortens the phone as strongly at hand size as in the close-up. In it:
-   the screen (PhoneChrome) at z = 0, the body behind it (.slabLayer: the
-   silhouette stacked back to the phone's thickness, so a turn shows its
-   metal side), the fingers just in front (z = 1px), and the light on the
-   glass (.turnShade, .turnGlint). Poses turn it with rotateY (about its
+   foreshortens the phone as strongly at scene size as in the close-up. In
+   it: the screen (PhoneChrome) at z = 0, the body behind it (.slabLayer:
+   the silhouette stacked back to the phone's thickness, so a turn shows its
+   metal side), and the light on the glass (.turnShade, .turnGlint). Poses turn it with rotateY (about its
    upright axis), rotateX (tip back) and rotate (roll). No filter on the box:
    a filter would flatten the 3D (the shadow is on the back plate instead). */
 .held {
@@ -311,7 +310,10 @@
   left: calc(50% - var(--wp-size) * 0.2537);
   top: calc(50% - var(--wp-size) * 0.5231);
   transform-style: preserve-3d;
-  transform: translate(calc(var(--px) * var(--hero-sx)), calc(var(--py) * var(--hero-sh))) scale(var(--pk))
+  /* --pdx/--pdy: an extra offset as a length (the "tap" pose aims at the
+     counter render's tap target, which is placed in --cw, not --hero-sx) */
+  transform: translate(calc(var(--px) * var(--hero-sx) + var(--pdx, 0px)), calc(var(--py) * var(--hero-sh) + var(--pdy, 0px)))
+    scale(var(--pk))
     perspective(calc(var(--wp-size) * 1.35)) rotateY(var(--pry)) rotateX(var(--prx)) rotate(var(--pr));
   transition: transform var(--pt) var(--pe);
 }
@@ -329,9 +331,6 @@
 .slabLayer:last-child {
   background: #15191e;
   box-shadow: 0 calc(var(--wp-size) * 0.05) calc(var(--wp-size) * 0.08) rgba(0, 0, 0, 0.5);
-}
-.handFront {
-  transform: translateZ(1px);
 }
 /* Light on the glass as it turns: the edge turning away darkens, the near
    edge catches a little light. Opacity only, keyed on the pose. */
@@ -394,7 +393,7 @@
     transform: translateX(-110%);
   }
 }
-/* Off stage, bottom right: where the hand leaves to and comes in from. */
+/* Off stage, bottom right: where the phone leaves to and comes in from. */
 .held[data-pose="off"] {
   --px: 0.62;
   --py: 0.76;
@@ -403,7 +402,7 @@
   --pt: 0.4s;
   --pe: cubic-bezier(0.5, 0, 0.85, 0.55);
 }
-/* Coming up to the counter, above and right of the device. */
+/* Coming in over the counter, above and right of the sticker. */
 .held[data-pose="approach"] {
   --px: 0.28;
   --py: 0;
@@ -412,11 +411,18 @@
   --pt: 0.6s;
   --pe: cubic-bezier(0.2, 0.7, 0.3, 1);
 }
-/* Top edge down on the device's top face. */
+/* Top edge down on the sticker's tap target (--tap-x/--tap-y on .stage).
+   The phone is 0.38 of the scene tall here (0.4 x the 0.95 frame), rolled
+   -45deg about its centre, so its top edge's centre sits (-0.134, -0.134)
+   of the scene from it: the centre goes that much below-right of the
+   target. The roll lays it along the counter, so it covers the sticker's
+   lower right ("Collect and Save") and leaves "TAP HERE" in view. */
 .held[data-pose="tap"] {
-  --px: 0.185;
-  --py: 0.075;
-  --pr: -30deg;
+  --px: 0;
+  --py: 0;
+  --pdx: calc(var(--tap-x) + 0.134 * var(--hero-sh));
+  --pdy: calc(var(--tap-y) + 0.134 * var(--hero-sh));
+  --pr: -45deg;
   --pk: 0.4;
   --pt: 0.45s;
   --pe: cubic-bezier(0.45, 0, 0.35, 1);
@@ -431,7 +437,7 @@
   --pt: 0.8s;
   --pe: cubic-bezier(0.5, 0, 0.2, 1);
 }
-/* Back out: in the hand again, screen to us, over the counter, a little
+/* Back out: over the counter again, screen to us, a little
    turned our way (so the turn to the counter sweeps further). */
 .held[data-pose="show"] {
   --px: 0.2;
@@ -443,13 +449,15 @@
   --pt: 0.6s;
   --pe: cubic-bezier(0.4, 0, 0.2, 1);
 }
-/* Turned to the person behind the counter: the screen swings towards them
-   in depth (about the phone's upright axis, tipped back a little), so its
+/* Turned to the scanner on the counter: the screen swings towards it in
+   depth (about the phone's upright axis, tipped back a little), so its
    near edge shows the metal side and the glass darkens away from us. We
-   still see the coupon, foreshortened, and their scanner can read it. */
+   still see the coupon, foreshortened, and the scanner can read it. */
 .held[data-pose="offer"] {
-  --px: var(--opx);
-  --py: var(--opy);
+  --px: 0;
+  --py: 0;
+  --pdx: var(--op-x);
+  --pdy: var(--op-y);
   --pry: -56deg;
   --prx: 9deg;
   --pr: -5deg;
@@ -466,12 +474,12 @@
   --shk: 1;
   position: absolute;
   left: calc(50% - 0.13 * var(--hero-sh));
-  top: calc(50% + 0.035 * var(--hero-sh));
+  top: calc(50% + var(--tap-y) - 0.035 * var(--hero-sh));
   width: calc(0.26 * var(--hero-sh));
   height: calc(0.07 * var(--hero-sh));
   background: radial-gradient(closest-side, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0));
   opacity: 0;
-  transform: translateX(calc(var(--shx) * var(--hero-sx))) scaleX(var(--shk));
+  transform: translateX(calc(var(--shx) * var(--hero-sx) + var(--shdx, 0px))) scaleX(var(--shk));
   transition:
     transform 0.6s cubic-bezier(0.4, 0, 0.2, 1),
     opacity 0.35s ease;
@@ -480,31 +488,18 @@
   --shx: 0.1;
   opacity: 0.75;
 }
+/* in front of the scanner: on the counter just under the phone */
 .phoneShadow[data-pose="offer"] {
-  --shx: calc(var(--opx) - 0.12);
-  --shk: 0.55;
-  opacity: 0.9;
+  --shx: 0;
+  --shdx: calc(var(--op-x) - 0.04 * var(--hero-sh));
+  --shk: 0.5;
+  opacity: 0.8;
 }
 
 /* The whole cycle resets here, off stage: no transition may run back. */
 .snap,
 .snap * {
   transition: none !important;
-}
-
-.hand {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  pointer-events: none;
-  transition: opacity 0.4s ease 0.2s;
-}
-.handAway {
-  opacity: 0;
-  transition: opacity 0.3s ease;
 }
 
 /* The screens inside the phone, stacked. */
@@ -649,32 +644,6 @@
   flex: 0 0 auto;
 }
 
-/* --- beat 5: the cashier's scanner ------------------------------------------
-   ScannerArm (SceneArt.tsx) in the cashier's units: its 320x260 box starts
-   at (240, 180) of the cashier's 400x600 box, and it turns and scales about
-   the shoulder (298, 300) = (18.125%, 46.15%) of its own box. Down (turned
-   onto the counter, a little smaller: further from us, faded) until
-   "raise"; then it comes up and FORWARD, growing to full size as it nears
-   us and the phone. The hanging arm it replaces (CashierBody, CashierHands
-   .restHand) fades out. */
-.scanArm {
-  position: absolute;
-  left: calc(50% - 0.42 * var(--hero-sx) + 0.24 * var(--hero-sh));
-  top: calc(50% - 0.3 * var(--hero-sh));
-  width: calc(0.32 * var(--hero-sh));
-  height: calc(0.26 * var(--hero-sh));
-  overflow: visible;
-  transform-origin: 18.125% 46.15%;
-  transform: rotate(64deg) scale(calc(0.78 * var(--sak)));
-  opacity: 0;
-  transition:
-    transform 0.5s cubic-bezier(0.3, 0, 0.2, 1.08),
-    opacity 0.25s ease;
-}
-.scanArmUp {
-  transform: rotate(0deg) scale(var(--sak));
-  opacity: 1;
-}
 .restHand {
   transition: opacity 0.25s ease;
 }
@@ -716,27 +685,6 @@
 .scanWindowOkOn {
   opacity: 1;
 }
-/* The scanner's soft shadow on the PapeX device's top face, under it: it
-   grows in as the scanner comes up over the device. */
-.scanShadow {
-  position: absolute;
-  left: calc(50% - 0.42 * var(--hero-sx) + (0.298 + 0.137 * var(--sak)) * var(--hero-sh));
-  top: calc(50% - 0.48 * var(--hero-sh) + 0.357 * var(--hero-sh));
-  width: calc(0.12 * var(--sak) * var(--hero-sh));
-  height: calc(0.034 * var(--hero-sh));
-  border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0));
-  opacity: 0;
-  transform: rotate(-14deg) scale(0.5);
-  transition:
-    opacity 0.3s ease 0.1s,
-    transform 0.5s cubic-bezier(0.3, 0, 0.2, 1);
-}
-.scanShadowOn {
-  opacity: 1;
-  transform: rotate(-14deg);
-}
-
 /* The red beam, from the scanner's window onto the phone's barcode, OVER the
    phone (its screen is turned towards the scanner, so that is where the
    light lands). Two clip-path shapes in one box whose top-left sits 0.25 of
@@ -752,19 +700,18 @@
      bottom-left (-0.0840, -0.0292)
      middle, left (-0.0798, -0.0752)   middle, right (0.1127, -0.1260)
    If the offer pose's turn (--pry/--prx/--pr) or the coupon screen changes,
-   re-measure. The window is (0.5614, 0.2379) of the cashier's box, scaled
-   about the shoulder (0.298, 0.300) by --sak: --ax/--ay below.
-   Plays out from the window (scale), then flickers like a laser. */
+   re-measure. The window is the counter scanner's (--win-x/--win-y on
+   .stage, from the render). Plays out from the window (scale), then
+   flickers like a laser. */
 .beam {
-  --ax: calc(0.298 + 0.2634 * var(--sak));
-  --ay: calc(0.3 - 0.0621 * var(--sak));
-  /* x of a point of the barcode, from the box's left (the window) */
-  --bx0: calc((var(--opx) + 0.42) * var(--hero-sx) - var(--ax) * var(--hero-sh));
-  --by0: calc((var(--opy) - var(--ay) + 0.73) * var(--hero-sh));
+  /* x / y of the phone's centre in the offer pose, from the box's
+     top-left (the window is at 0, 0.25 of the scene) */
+  --bx0: calc(var(--op-x) - var(--win-x));
+  --by0: calc(var(--op-y) - var(--win-y) + 0.25 * var(--hero-sh));
   position: absolute;
   z-index: 6;
-  left: calc(50% - 0.42 * var(--hero-sx) + var(--ax) * var(--hero-sh));
-  top: calc(50% + (var(--ay) - 0.73) * var(--hero-sh));
+  left: calc(50% + var(--win-x));
+  top: calc(50% + var(--win-y) - 0.25 * var(--hero-sh));
   width: calc(0.8 * var(--hero-sh));
   height: calc(0.5 * var(--hero-sh));
   pointer-events: none;
@@ -812,13 +759,13 @@
     opacity: 0.6;
   }
 }
-/* Scanned: an orange check pops just above the scanner's nose, like its
+/* Scanned: an orange check pops just above the scanner's head, like its
    beep. */
 .okPop {
   position: absolute;
   z-index: 7;
-  left: calc(50% - 0.42 * var(--hero-sx) + (0.298 + 0.2634 * var(--sak) - 0.035) * var(--hero-sh));
-  top: calc(50% - 0.48 * var(--hero-sh) + (0.3 - 0.0621 * var(--sak) - 0.135) * var(--hero-sh));
+  left: calc(50% + var(--win-x) - 0.035 * var(--hero-sh));
+  top: calc(50% + var(--win-y) - 0.17 * var(--hero-sh));
   width: calc(0.07 * var(--hero-sh));
   height: calc(0.07 * var(--hero-sh));
   border-radius: 999px;
@@ -1010,14 +957,12 @@
     /* Under the text on a phone: sized by the column, taller than wide so
        the close-up phone is as big as the width allows. */
     --hero-sh: clamp(300px, min(calc(100cqi * 1.39), calc(100svh - 270px)), 600px);
-    /* The narrow column closes the scene up sideways (--hero-sx), so the
-       phone turned to the counter goes a little smaller (its near edge,
-       turned towards us, stays clear of the stage's soft side) and the
-       scanner a little smaller too, so its nose keeps a gap for the beam. */
-    --opx: 0.28;
-    --opy: -0.14;
-    --opk: 0.4;
-    --sak: 0.7;
+    /* The narrow column caps the counter (--cw) more than the scene's
+       height, so the phone in front of the scanner goes a little smaller
+       and closer, its near edge still clear of the sticker. */
+    --op-dx: 0.055;
+    --op-dy: 0.05;
+    --opk: 0.34;
   }
   .sayLine {
     font-size: 15px;

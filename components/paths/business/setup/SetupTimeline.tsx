@@ -7,14 +7,14 @@ import { SetupIllustration } from "./Illustrations"
 import s from "./setup.module.css"
 
 /**
- * §05 "How do I get it?" — the five install steps as a timeline that LIGHTS
+ * §05 "How do I get it?" — the four setup steps as a timeline that LIGHTS
  * UP as you scroll (Web 2.1 P3-B3, Nico 2026-09-25: "start with one, show the
  * whole timeline, and then it lights up orange with each point appearing").
  *
  * The layout never moves. From the first frame the pin shows the finished
- * overview — all five slots in a row on the 0 min -> about 15 min axis — with
- * steps 2-5 waiting: a faint ghost of their art, a grey dot, a grey number, a
- * grey line, no words. Each scroll leg lights the next step: the orange line
+ * overview — all four slots in a row on the 0 min -> 5 min axis (labels:
+ * content.ts howItWorks.axisStart/axisEnd) — with steps 2-4 waiting: a faint
+ * ghost of their art, a grey dot, a grey number, a grey line, no words. Each scroll leg lights the next step: the orange line
  * runs to its dot, the dot and number turn orange, the art draws in (the
  * illustrations' stroke-dashoffset contract) and the title + body rise in.
  * Lit steps stay lit — nothing slides away, so there is never an empty region.
@@ -24,9 +24,10 @@ import s from "./setup.module.css"
  * lit as c reaches i.
  *
  *   desktop (>= 821px): pinned. Step 1 lights as the section scrolls in
- *     (c: -1 -> 0 on the approach), then four legs on p (each a move of the
- *     line, then a hold), then a hold on the whole lit row and the pin
- *     releases into the demo form (#demo).
+ *     (c: -1 -> 0 on the approach), then one leg per further step on p
+ *     (three for the four steps; each a move of the line, then a hold),
+ *     then a hold on the whole lit row and the pin releases into the demo
+ *     form (#demo).
  *   phones (<= 820px): NOT pinned — the same stacked list scrolls normally
  *     and c follows a reading line (80% down the screen) from dot to dot, so
  *     each step lights as it reaches it.
@@ -45,7 +46,7 @@ import s from "./setup.module.css"
 const SCROLL_VH = 150
 /** The runway: the pinned viewport plus the scene's scroll (desktop only — CSS). */
 const RUNWAY_VH = 100 + SCROLL_VH
-/** Beats on p: the four legs (steps 2-5), then a hold to the release. */
+/** Beats on p: the legs (steps 2..N, N = steps.length), then a hold to the release. */
 const LEGS_A = 0.03
 const LEGS_B = 0.84
 /** Each leg moves the line over this share of its span, then holds. */

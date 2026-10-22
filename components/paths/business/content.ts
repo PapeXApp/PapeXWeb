@@ -17,24 +17,29 @@
 // CLAIM RULES (Web 2.1, spec §3.3 + Nico's answers §6a in
 // .claude/plans/2026-09-24-web-2.1-brainstorm.md; the phrases that were cut
 // are listed there under "Cut"). Read before editing:
-//  - Cost: "Free device. Free install." Merchants aren't charged today; no
-//    promise about how long, no eligibility condition.
+//  - Cost: "Free sticker." The sticker and setup are free today ("Take
+//    advantage while it lasts" lives in the FAQ); no eligibility condition.
+//    Never say the app is free.
 //  - Card data: "PapeX never touches card data" (a bare "Never touches card
 //    data." only as a ribbon/heading fragment) / "doesn't store, process or
 //    transmit card data", linked to /pci. No certification claim: the /pci
 //    page deliberately certifies nothing.
-//  - Connection: Wi-Fi, added as a printer ("works like a printer"). No other interface, and
-//    only the parallel mode (the paper printer stays) exists.
+//  - Connection: an NFC sticker at the register; receipts come from the
+//    store's POS. No box, cables, power, Wi-Fi setup, status light or
+//    "second printer". The paper printer stays until the merchant turns it off.
 //  - Paper (Nico, round 2): "Zero paper" only when paired with "Go
 //    paper-free: switch off the printer whenever you're ready." The paper
 //    printer keeps printing until the merchant turns it off in their POS.
-//  - Setup: we install it, free, in about 15 minutes.
+//  - Setup: about 5 minutes. We connect the POS first (with most systems,
+//    an API key from the store and the POS), then send one laminated NFC
+//    sticker per register with simple instructions. In-person setup in the
+//    Bay Area is said on the demo call, not on the page (Nico, 2026-10-21).
 //  - POS: "Works with most point of sale systems". Don't name a POS.
 //  - Contracts: say nothing until Nico confirms.
 //  - Proof: "Live in the Bay Area." only; no store type, no dates, no names.
-//  - Device name: "the PapeX device" in visible copy. RDH stands for
-//    "Receipt Delivery Hardware" (Nico, 2026-09-29, q-24; never "Receipt
-//    Data Hub"); don't add RDH to visible copy.
+//  - Product name: "Receipt Delivery Sticker (RDS)" appears once, in the
+//    hero lead; everywhere else "the PapeX sticker". Never say RDH or
+//    "device" for our product in visible copy.
 
 import { SALES_PHONE, SALES_PHONE_HREF } from "@/components/brand/links"
 
@@ -46,7 +51,7 @@ const DEMO_EMAIL = "nico@papex.app"
 // Page order (Nico, 2026-09-24): each section answers the merchant's next
 // question — 01 What is this? (hero) · 02 What is Tap to Retain? · 03 How
 // does it work, and what do I get? (the receipt scene, #how) · 04 Is it
-// safe? (device) · 05 How do I get it? (setup -> demo) · 06 FAQ.
+// safe? (sticker) · 05 How do I get it? (setup -> demo) · 06 FAQ.
 
 export const hero = {
   // H1 (round 2, d-01, Nico 2026-09-29): the hero visual tells the return-
@@ -57,7 +62,7 @@ export const hero = {
   // image (scripts/og/og.html, public/og-business.png).
   eyebrow: "Tap to Retain",
   heading: "Close the loop on every sale.",
-  lead: "A free PapeX device, our Receipt Delivery Hardware, sits at your counter and works like a printer. Customers tap their phone for a digital receipt. You get a dashboard of every sale.",
+  lead: "Our Receipt Delivery Sticker (RDS) sits at your register. Customers tap their phone and the receipt opens instantly: an App Clip on iPhone, a web page on Android, no download needed. You get a dashboard of every sale and your own page to customize.",
   // Nico's approved paper wording (§6a round 2). No longer a required pair
   // (the H1 no longer says "Zero paper"), kept as the hero's sub-line. If
   // "Zero paper" ever returns to the hero, it must ship with this line.
@@ -118,7 +123,7 @@ export const tapToRetain = {
    * is what screen readers, search engines and AI agents read (p8).
    */
   sceneDescription:
-    "What the animation shows, with an invented demo store, PapeX Cafe: a paper receipt grows until you can read it, then flies into a phone and becomes the digital receipt your customer gets with one tap on the PapeX device, no app needed. Then a paper coupon, $2 off the next visit, flies into the same phone and lands in the Coupons tab of the PapeX app. Why it matters: the receipt and the coupon stay on your customer's phone, so your store stays in their pocket and they have a reason to come back.",
+    "What the animation shows, with an invented demo store, PapeX Cafe: a paper receipt grows until you can read it, then flies into a phone and becomes the digital receipt your customer gets with one tap on the PapeX sticker, no app needed. Then a paper coupon, $2 off the next visit, flies into the same phone and lands in the Coupons tab of the PapeX app. Why it matters: the receipt and the coupon stay on your customer's phone, so your store stays in their pocket and they have a reason to come back.",
   /** Reduced motion: the static composition's image labels. */
   staticLabels: {
     paperReceipt: "A paper receipt from a demo store",
@@ -131,9 +136,9 @@ export const tapToRetain = {
 export const marquee = {
   durationSeconds: 32,
   phrases: [
-    "Free device.",
-    "Free install.",
-    "Works like a printer.",
+    "Free sticker.",
+    "Live in 5 minutes.",
+    "No hardware.",
     "Paper is optional.",
     "Never touches card data.",
     "Dashboard included.",
@@ -143,41 +148,36 @@ export const marquee = {
 export const howItWorks = {
   id: "setup",
   eyebrow: "How do I get it?",
-  heading: "Installed free in about 15 minutes.",
+  heading: "Set up in about 5 minutes.",
   // The one duration claim: a start and an end on the timeline's axis, and
   // the heading. No per-step minutes (we have no measured split to show).
-  lead: "One short visit, and you're live.",
+  lead: "We connect your POS, send your sticker, and you're live.",
   axisStart: "0 min",
-  axisEnd: "15 min",
+  axisEnd: "5 min",
   /** What the timeline's illustration and lighting show, as visually hidden
    *  text in the server HTML (p8): the steps below are the real list. */
   timelineDescription:
-    "An illustrated timeline of the five setup steps, from 0 to about 15 minutes: power it up, join your Wi-Fi, connect it to your POS, test a receipt, then the hand-over, when your dashboard is live. As you scroll, the line runs to each step and it lights up in orange. Why it matters: setup is one short visit and we do the work, so your customers can tap from your next sale.",
+    "An illustrated timeline of the four setup steps, from 0 to about 5 minutes: connect your POS, get your sticker, test a receipt, then you're live, with your dashboard running. As you scroll, the line runs to each step and it lights up in orange. Why it matters: we connect your POS and send the sticker with simple instructions, so your customers can tap from your next sale.",
   steps: [
     {
       number: "01",
-      title: "Power it up",
-      body: "We plug the PapeX device in at your counter.",
+      title: "Connect your POS",
+      body: "With most systems, all we need is an API key from you and from your POS.",
     },
     {
       number: "02",
-      title: "Join your Wi-Fi",
-      body: "It joins your store's Wi-Fi.",
+      title: "Get your sticker",
+      body: "One per register, laminated, with simple instructions.",
     },
     {
       number: "03",
-      title: "Connect it to your POS",
-      body: "We add it as a second printer.",
+      title: "Test a receipt",
+      body: "Run a test sale and tap the sticker with a phone.",
     },
     {
       number: "04",
-      title: "Test a receipt",
-      body: "We run a test sale and tap it on a phone.",
-    },
-    {
-      number: "05",
-      title: "Hand-over: your dashboard is live",
-      body: "Customers can tap from your next sale.",
+      title: "You're live",
+      body: "Customers can tap from your next sale, and your dashboard is live.",
     },
   ],
   // Leads straight into the demo form below: setup + demo read as one path.
@@ -185,31 +185,28 @@ export const howItWorks = {
   nextHref: "#demo",
 } as const
 
-export const rdhDevice = {
+export const rdsSticker = {
   eyebrow: "Is it safe?",
-  heading: "Small device. Never touches card data.",
-  deviceAlt:
-    "The RDH (Receipt Delivery Hardware): a small black box that sits by the register and works like a secondary printer. Checkout stays the same, except the receipt goes to the customer's phone instead of on a piece of paper.",
+  heading: "Just a sticker. Never touches card data.",
+  stickerAlt:
+    "The PapeX sticker lying on the counter: \"TAP HERE\" beside a phone with signal waves and a coupon badge, \"Collect and Save.\", powered by PapeX.",
   // A point with a `link` renders the label after the text, in orange.
   points: [
-    { text: "Connects over your Wi-Fi, like a printer." },
-    { text: "Your paper printer keeps printing until you choose to switch it off." },
+    { text: "No box, no cables, no Wi-Fi. Nothing to plug in." },
     {
-      text: "Doesn't store, process or transmit card data.",
+      text: "Your point of sale handles the card. PapeX only gets the receipt.",
       link: { label: "How we handle card data", href: "/pci" },
     },
-    {
-      text: "A status light shows how it's doing, and help is a click away.",
-      link: { label: "Support", href: "/support" },
-    },
+    { text: "Your paper printer keeps printing until you choose to switch it off." },
+    { text: "One sticker per register, so every tap knows where the sale happened." },
   ],
-  specs: ["Wi-Fi", "Network printer", "Status light"],
+  specs: ["NFC sticker", "One per register", "iPhone & Android"],
 } as const
 
 export const demo = {
   eyebrow: "Get started",
   heading: "Request a demo.",
-  body: "See the PapeX device in action. We install it for free, in about 15 minutes.",
+  body: "See the PapeX sticker in action. Free, and set up in about 5 minutes.",
   // Proof line above the form. Nico (2026-09-24): this exact line only; no
   // store type, no dates, no names.
   proof: "Live in the Bay Area.",

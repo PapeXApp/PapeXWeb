@@ -1,6 +1,6 @@
 /* §05 "How do I get it?" (#setup) — the setup timeline.
 
-   ONE layout, the OVERVIEW: five columns on a horizontal line (>= 821px) or a
+   ONE layout, the OVERVIEW: four columns on a horizontal line (>= 821px) or a
    stacked list on a vertical rail (phones). It is also the whole static
    fallback (reduced motion, short screens, no JS, the server render), where
    every step is lit. The live scene (SetupTimeline.tsx) never moves a box: it
@@ -94,7 +94,8 @@
   padding: 0;
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  /* one column per step (content.ts howItWorks.steps: four since Web 2.2) */
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   column-gap: var(--step-gap);
 }
 
@@ -130,7 +131,7 @@
   color: var(--flow-fg);
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.4;
+  stroke-width: 1;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
@@ -144,6 +145,20 @@
 .art .soft2 {
   stroke: none;
   fill: color-mix(in srgb, var(--flow-fg) 3%, transparent);
+}
+/* 01's PapeX plane mark as line art: every shape outlined in the ink. It is
+   drawn at 46/1347 of its own units, so its stroke width is the art's ink
+   (1, 1.4 on phones) divided by that scale; the circuit traces (the mark's
+   1st and 5th paths, already hairlines) get half that so they read as fine
+   lines, not blobs (Nico, 2026-10-21: thinner lines across the flow). */
+.art .logoLine path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 29;
+}
+.art .logoLine path:nth-of-type(1),
+.art .logoLine path:nth-of-type(5) {
+  stroke-width: 14;
 }
 .art .accFill {
   stroke: none;
@@ -204,7 +219,8 @@
   opacity: 0;
 }
 
-/* The minute axis: "0 min" on the first node, "about 15 min" on the last. */
+/* The minute axis: "0 min" on the first node, "5 min" on the last
+   (content.ts howItWorks.axisStart / axisEnd). */
 .lbl {
   position: absolute;
   left: 0;
@@ -312,7 +328,7 @@
     display: flex;
     flex-direction: column;
     gap: 14px;
-    /* room for "0 min" above the rail and "about 15 min" below it */
+    /* room for "0 min" above the rail and "5 min" below it */
     padding-block: 26px;
   }
   .step {
@@ -334,8 +350,15 @@
     grid-row: 1;
     width: 100%;
   }
+  .art .logoLine path {
+    stroke-width: 41;
+  }
+  .art .logoLine path:nth-of-type(1),
+  .art .logoLine path:nth-of-type(5) {
+    stroke-width: 20;
+  }
   .art {
-    stroke-width: 2;
+    stroke-width: 1.4;
   }
   .txt {
     grid-column: 3;
@@ -369,7 +392,7 @@
   .pinned[data-live] .connFill {
     transform: scaleY(0);
   }
-  /* "about 15 min" sits under the list, not above the last dot */
+  /* "5 min" sits under the list, not above the last dot */
   .step:last-child .lblUp {
     display: none;
   }

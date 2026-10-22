@@ -4,7 +4,7 @@ import { SiteFooter } from "@/components/brand/site-footer"
 import { Hero } from "./Hero"
 import { WhyMerchants } from "./WhyMerchants"
 import { HowItWorks } from "./HowItWorks"
-import { RdhDevice } from "./RdhDevice"
+import { RdsSticker } from "./RdsSticker"
 import { DemoForm } from "./DemoForm"
 import { TapToRetain } from "./TapToRetain"
 import { businessFaq, businessFaqHeading } from "./faq"
@@ -20,7 +20,7 @@ import { businessFaq, businessFaqHeading } from "./faq"
 //                              story scene ending on the latched dashboard
 //      [slot] merchant value calculator (coming soon)
 //      ribbon                  keeps the running ground
-//   04 RdhDevice            N  "Is it safe?"
+//   04 RdsSticker           N  "Is it safe?"
 //   05 HowItWorks (#setup)  L  "How do I get it?" -> DemoForm (#demo), L,
 //                              read as one path (no second index)
 //   06 FAQ (#faq)           L  shared Faq, last before the footer
@@ -39,7 +39,7 @@ export function BusinessPath() {
         <WhyMerchants />
       </div>
       {/* SLOT: merchant value calculator (coming soon) */}
-      <RdhDevice />
+      <RdsSticker />
       <HowItWorks />
       <DemoForm />
       <Faq id="faq" eyebrowIndex="06" ground="light" heading={businessFaqHeading} items={businessFaq} />

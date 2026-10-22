@@ -50,14 +50,21 @@ export function Bin({ landed, ref }: { landed: boolean; ref?: React.Ref<HTMLDivE
 }
 
 /**
- * The PapeX device, as the pilot unit ships. The same generated artwork the
- * rest of /business uses (public/product/rdh-device.svg, from
- * scripts/generate-rdh-device.mjs) — as an <img>, so it brings no gradient
- * ids into the page and no second copy of the art to drift.
+ * The PapeX sticker, lying flat on a store countertop. The art is
+ * public/product/rds-counter.webp (scripts/generate-rds-counter.mjs: the
+ * sticker on a counter beside a card terminal, true isometric), laid so its
+ * sticker lands EXACTLY on the parent's box, which keeps the sticker-only
+ * art's geometry (1100:667, tap target at 44.6% / 45.5%): every ring, glow
+ * and phone target placed on that box stays right. Only a window round the
+ * sticker shows (.counterWin: the counter top and its front edge, fading
+ * out), so the pieces that are measured never grow. The parent must be
+ * positioned. An <img>, so there is no second copy of the art to drift.
  */
-export function DeviceArt({ className }: { className?: string }) {
+export function StickerArt({ className }: { className?: string }) {
   return (
-    // eslint-disable-next-line @next/next/no-img-element -- a small static SVG; next/image adds nothing here
-    <img src="/product/rdh-device.svg" alt="" aria-hidden="true" className={className} draggable={false} />
+    <span className={cn(s.counterWin, className)} aria-hidden="true">
+      {/* eslint-disable-next-line @next/next/no-img-element -- a static image inside a transformed scene; next/image adds nothing here */}
+      <img src="/product/rds-counter.webp" alt="" className={s.counterImg} draggable={false} />
+    </span>
   )
 }

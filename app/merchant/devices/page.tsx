@@ -57,7 +57,7 @@ export default function DevicesPage() {
           Devices
         </h1>
         <p className="mt-1 text-sm" style={{ color: T.textSecondary }}>
-          Your RDH boxes and when they last checked in.
+          Your PapeX stickers, one per register.
         </p>
       </div>
 
@@ -66,7 +66,7 @@ export default function DevicesPage() {
       {devices === null && !error ? (
         <LoadingBlock label="Checking devices…" />
       ) : devices && devices.length === 0 ? (
-        <EmptyState title="No devices registered" message="Contact PapeX support to link an RDH device to your account." />
+        <EmptyState title="No devices registered" message="Contact PapeX support to link your PapeX sticker to your account." />
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
           {devices?.map((d) => (

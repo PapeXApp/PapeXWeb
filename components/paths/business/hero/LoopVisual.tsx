@@ -10,17 +10,17 @@ import { receiptMoment } from "../../customer/appui/Clip"
 import { demoContent } from "../../customer/content"
 import { CafeWalkAppScreen } from "./CafeAppScreen"
 import { ClipCouponLead, CouponScreen, type CouponState } from "./CouponScreen"
-import { CashierBody, CashierHands, CheckGlyph, HandBack, HandFront, ScannerArm } from "./SceneArt"
+import { CheckGlyph } from "./SceneArt"
 import { loop } from "./loop"
 import s from "./hero.module.css"
 
 /**
- * The /business hero visual — "CLOSE THE LOOP", a 12-second looped story at
+ * The /business hero visual — "CLOSE THE LOOP", a 12.3-second looped story at
  * a checkout counter (P3-B1, 2026-09-25; art and guide redone in P3-B6; story
  * redone in P3-B7 to Nico's storyboard; retimed from 26.8s to 12s in P3-B10).
  *
- *   1 Tap      a hand holds the phone near the PapeX device on the counter,
- *              taps it; iOS's App Clip card pops up on the lock screen (the
+ *   1 Tap      the phone comes down onto the PapeX sticker lying on the
+ *              counter; iOS's App Clip card pops up on the lock screen (the
  *              same mockup as /customers: appui ClipLockScreen); the view
  *              zooms into the phone and a finger presses "View"
  *   2 Receipt  the App Clip receipt opens (appui ClipApp) on the coupon for
@@ -30,21 +30,30 @@ import s from "./hero.module.css"
  *   3 Save     a finger presses Save ("Saved"), and the receipt is in the
  *              PapeX app (appui WalkAppScreen: Receipts, then Coupons)
  *   4 Coupon   a finger opens the coupon (the app kit's CouponDetail)
- *   5 Scan     the view zooms back out to the counter; the hand turns the
- *              phone, in depth, to the person behind it (P3-B9: the phone is
- *              a slab — its metal side shows, its glass darkens as it turns
- *              away), who reaches a handheld scanner forward OVER the counter
- *              and the PapeX device (it grows as it comes towards us, its
- *              shadow on the device); a red cone fans from its window onto
- *              the barcode: "Coupon used", a check; the hand leaves, round
- *              again
+ *   5 Scan     the view zooms back out to the counter; the phone moves in
+ *              front of the handheld scanner standing in its cradle and
+ *              turns, in depth, back to its window (P3-B9: the phone is a
+ *              slab — its metal side shows, its glass darkens as it turns
+ *              away); a short red cone runs from the window onto the
+ *              barcode, the window goes green: "Coupon used", a check; the
+ *              phone leaves, round again
+ *
+ * THE SCENE (Web 2.2 hero v2, Nico: "make the sticker straight ... I prefer
+ * something like [section 04] wayyyy more"): no line-art cashier, counter or
+ * hands any more. The counter is one render,
+ * public/product/rds-counter-hero.webp (scripts/generate-rds-counter.mjs
+ * #hero: the section-04 counter run out to the left, the sticker flat on it
+ * in the true-isometric camera, a card terminal and a pistol-grip barcode
+ * scanner in its cradle, v3), placed by CSS (hero.module.css .counter); the phone, the
+ * ripple, the beam and the scanner's light are layered on it from the
+ * render's measured points (the sticker's tap target, the scanner's window).
  *
  * ONE text guide (P3-B6, Nico: "too many labels"): the numbered steps under
  * the scene, with the playing step's sentence right under them. The steps
  * list IS the text for screen readers and the still frame; "Demo data" sits
  * at the end of the sentence line.
  *
- * MOTION. A timer walks TIMELINE (one cycle = CYCLE_MS, 12s; P3-B10, Nico:
+ * MOTION. A timer walks TIMELINE (one cycle = CYCLE_MS, 12.3s; P3-B10, Nico:
  * "more like 12 seconds", was 26.8s); every beat is
  * a class/attribute change, and CSS transitions/animations do the moving —
  * transform and opacity only, nothing reads layout per frame, no rAF loop.
@@ -55,8 +64,8 @@ import s from "./hero.module.css"
  * where they left off.
  *
  * STILL FRAME. The server render, no-JS and prefers-reduced-motion all show
- * beat 5 complete (the phone turned to the counter, the scanner reached
- * forward over the device with its beam on the barcode, the coupon stamped "Coupon used", a check) with
+ * beat 5 complete (the phone turned to the scanner on the counter, its beam
+ * on the barcode, the coupon stamped "Coupon used", a check) with
  * every step listed — one picture that tells the loop's end. With motion
  * allowed the stage starts hidden (CSS, keyed on `data-mode`), rewinds to
  * the empty counter with transitions off, and fades in, so the still frame
@@ -89,9 +98,9 @@ type Beat =
 /** Beat -> when it starts, in ms into the cycle. THE timeline: every other
  *  timing (transition lengths) is sized to fit inside these gaps. */
 const TIMELINE: [Beat, number][] = [
-  ["off", 0], // hand off stage, screens reset (transitions off)
-  ["enter", 150], // the hand comes in, phone locked (0.6s)
-  ["tap", 800], // down onto the device (0.45s)
+  ["off", 0], // phone off stage, screens reset (transitions off)
+  ["enter", 150], // the phone comes in, locked (0.6s)
+  ["tap", 800], // down onto the sticker (0.45s)
   ["card", 1300], // ripple + the App Clip card pops up
   ["zoomIn", 2000], // into the phone (0.8s)
   ["press", 2900], // a finger presses "View"
@@ -103,14 +112,14 @@ const TIMELINE: [Beat, number][] = [
   ["coupons", 7350], // the Coupons tab
   ["couponTap", 7700], // a finger opens the coupon
   ["couponOpen", 8050], // the coupon detail rises
-  ["out", 8700], // back out to the counter (0.6s)
-  ["turn", 9300], // the phone turns, in depth, to the person behind the counter (0.6s)
-  ["raise", 9850], // they reach the scanner forward over the counter (0.5s)
-  ["scan", 10350], // the beam fans onto the barcode, which is scanned (0.6s)
-  ["used", 10950], // "Coupon used" + check
-  ["leave", 11600], // hand and scanner leave (0.4s)
+  ["out", 9000], // back out to the counter (0.6s); the coupon's barcode is held 0.3s longer first (Nico, 2026-10-21: "keep the barcode on the screen before the scan … so it is for sure clear")
+  ["turn", 9600], // the phone moves in front of the scanner and turns to its window (0.6s)
+  ["raise", 10150], // the scanner wakes: its window lights (0.5s)
+  ["scan", 10650], // the beam fans onto the barcode, which is scanned (0.6s)
+  ["used", 11250], // "Coupon used" + check
+  ["leave", 11900], // the phone leaves (0.4s)
 ]
-const CYCLE_MS = 12000
+const CYCLE_MS = 12300
 /** The receipt's scroll (beat "scroll"); fits before "savePress". */
 const SCROLL_MS = 1800
 /** When iOS's launch banner slides off the clip (ms after "clip"): as the
@@ -278,7 +287,7 @@ export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock:
   const moment = receiptMoment(summary.dateline)
   const isStatic = mode === "static"
   const zoomed = pose === "zoom"
-  // The cashier's scanner is up from "raise" to "used" (and in the still).
+  // The counter scanner is awake (window lit) from "raise" to "used" (and in the still).
   const scannerUp = within(beat, "raise", "used")
   const beamOn = beat === "scan" || beat === "still"
   const touch = TOUCH[beat]
@@ -299,24 +308,17 @@ export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock:
       >
         {/* --- the counter scene (the "world"): fades back when we zoom in -- */}
         <div className={cn(s.world, zoomed && s.worldAway)}>
-          <CashierBody className={s.cashier} raised={scannerUp} />
-          <div className={s.counterTop} />
-          <div className={s.counterLip} />
-          <div className={s.counterFront} />
-          <CashierHands className={s.cashier} raised={scannerUp} />
-          <div className={s.deviceShadow} />
+          {/* the counter: sticker, card terminal and handheld scanner, one
+              render in section 04's camera and materials */}
+          <div className={s.counter}>
+            <Image src="/product/rds-counter-hero.webp" alt="" width={1400} height={829} className={s.counterImg} priority />
+          </div>
           {/* The phone's soft shadow on the counter top: it follows the
               phone, and narrows as the phone turns edge-on to us. */}
           <span className={s.phoneShadow} data-pose={pose} />
-          <div className={s.device}>
-            <Image src="/product/rdh-device.svg" alt="" width={170} height={138} className={s.deviceImg} priority />
-          </div>
-          {/* Beat 5: the cashier reaches the handheld scanner forward over
-              the counter (it comes up and towards us, its shadow on the
-              device under it); its window turns green once it has read the
-              coupon. */}
-          <span className={cn(s.scanShadow, scannerUp && s.scanShadowOn)} />
-          <ScannerArm className={cn(s.scanArm, scannerUp && s.scanArmUp)} done={beat === "used"} />
+          {/* Beat 5: the scanner's window lights red as the phone turns to
+              it, and green once it has read the coupon. */}
+          <span className={cn(s.scanLed, scannerUp && s.scanLedOn, (beat === "used" || beat === "still") && s.scanLedOk)} />
         </div>
 
         {/* The red beam: a cone of light from the scanner's window that fans
@@ -327,15 +329,15 @@ export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock:
         <span className={cn(s.beam, s.beamCone, beamOn && s.beamOn)} />
         <span className={cn(s.beam, s.beamSheet, beamOn && s.beamOn)} />
 
-        {/* The tap: rings from the device, where the phone meets it. Mounted
-            per cycle so each tap plays exactly once. */}
+        {/* The tap: rings on the sticker's plane from its tap target, where
+            the phone meets it. Mounted per cycle so each tap plays exactly
+            once. */}
         {beat === "card" ? <TapRipple key={cycle} /> : null}
 
-        {/* --- the phone, in the hand --------------------------------------- */}
+        {/* --- the phone ------------------------------------------------------ */}
         {/* inert: the reused screens hold disabled buttons; none of it may
             take focus. */}
         <div className={cn(s.held, beat === "off" && s.snap)} data-pose={pose} inert>
-          <HandBack className={cn(s.hand, s.handBack, zoomed && s.handAway)} />
           {/* The phone's body: its silhouette stacked back into depth, so a
               turn shows its metal side (see .held: preserve-3d). */}
           {SLAB_LAYERS.map((i) => (
@@ -398,10 +400,9 @@ export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock:
           <span className={s.turnGlint}>
             <span className={s.turnGlintBand} />
           </span>
-          <HandFront className={cn(s.hand, s.handFront, zoomed && s.handAway)} />
         </div>
 
-        {/* Scanned: a check pops between the scanner and the phone. */}
+        {/* Scanned: a check pops over the scanner, like its beep. */}
         <span className={cn(s.okPop, (beat === "used" || beat === "still") && s.okPopOn)}>
           <CheckGlyph className={s.okGlyph} />
         </span>

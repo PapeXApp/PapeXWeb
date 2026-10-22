@@ -259,7 +259,7 @@ function TransactionsPageInner() {
             Transactions
           </h1>
           <p className="mt-1 text-sm" style={{ color: T.textSecondary }}>
-            Every upload from your RDH device{multiDevice ? "s" : ""} — kept forever, past the 30-day cache. Times shown are Pacific.
+            Every receipt from your point of sale — kept forever, past the 30-day cache. Times shown are Pacific.
           </p>
         </div>
         <Button variant="outline" onClick={handleExport} disabled={exporting || loading}>
@@ -362,7 +362,7 @@ function TransactionsPageInner() {
           message={
             hasActiveFilters
               ? "Try a different search term, widen the date range, or clear a filter."
-              : "Once your RDH device uploads a receipt, it'll show up here within about a minute."
+              : "Once your first sale comes through, it'll show up here within about a minute."
           }
         >
           {hasActiveFilters && (
