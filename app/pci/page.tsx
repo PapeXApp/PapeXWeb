@@ -18,6 +18,12 @@
 // Installation Kit > 4. PapeX_PCI_Scope_Letter.docx) still describes the RDH
 // and needs the same rewrite; until then this page is the current version.
 //
+// Web 2.4: moved off the legacy FramerPageShell onto the LegalPage frame
+// /privacy and /terms use (SiteShell + FlowGround + in-flow footer). The old
+// shell's `.framer-site *` reset zeroed every Tailwind padding here, so on
+// phones the text ran to the screen edge. Table, lists and the callout are
+// styled in pci.module.css with --flow-* ink.
+//
 // Intentionally sober/official — no marketing. An assessor is reading this to
 // establish how PapeX should be scoped. The page supplies facts and certifies
 // nothing: it deliberately does NOT assert a scoping outcome, which belongs to
@@ -25,9 +31,10 @@
 
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { FramerPageShell } from '@/components/framer/framer-page-shell'
+import { LegalPage } from '@/components/legal/LegalPage'
 import { SALES_PHONE, SALES_PHONE_HREF } from '@/components/brand/links'
 import { DEFAULT_OG_IMAGE } from '@/components/blog/image'
+import styles from './pci.module.css'
 
 const OG_ALT =
   'The PapeX logo and the words Your receipt, one tap away, beside an iPhone showing a PapeX receipt'
@@ -116,255 +123,166 @@ const ASSESSOR_POINTS: string[] = [
 
 export default function PciCompliancePage() {
   return (
-    <FramerPageShell>
-      <div className="container mx-auto py-10 px-5 sm:px-4">
-        <article className="mx-auto max-w-4xl bg-white border border-[#00121D]/10 rounded-2xl shadow-sm p-6 sm:p-8 md:p-12 space-y-10">
-          {/* Header */}
-          <header className="space-y-4 border-b border-[#00121D]/10 pb-8">
-            <p className="text-[13px] leading-[18px] font-semibold uppercase tracking-[0.16em] text-[#EB7100]">
-              PapeX, Inc. — Card-data scope
-            </p>
-            <h1 className="text-3xl md:text-4xl font-bold text-[#00121D] leading-tight">
-              PCI DSS Scoping Statement
-            </h1>
-            <p className="text-lg text-[#00121D]/80 font-medium">
-              The PapeX sticker (Receipt Delivery Sticker) and POS receipt integration
-            </p>
-            <p className="text-sm text-[#00121D]/60">
-              For presentation during PCI DSS compliance reviews and assessments.
-            </p>
-          </header>
+    <LegalPage title="PCI DSS Scoping Statement" dates={['PapeX, Inc. — Card-data scope']}>
+      <p className={styles.subtitle}>
+        The PapeX sticker (Receipt Delivery Sticker) and POS receipt integration
+      </p>
+      <p className={styles.note}>
+        For presentation during PCI DSS compliance reviews and assessments.
+      </p>
 
-          {/* Purpose */}
-          <section className="space-y-3">
-            <h2 className="text-2xl font-semibold text-[#00121D]">Purpose of This Document</h2>
-            <p className="text-[#00121D]/80 leading-relaxed">
-              This document is provided by PapeX, Inc. to merchants who use PapeX at their point of
-              sale. It is intended to be presented to Qualified Security Assessors (QSAs), Internal
-              Security Assessors (ISAs), or any party conducting a PCI DSS compliance review of the
-              merchant&rsquo;s environment.
-            </p>
-            <p className="text-[#00121D]/80 leading-relaxed">
-              It explains what PapeX puts at the register, how receipt data reaches PapeX, what data
-              PapeX handles, and the facts relevant when the merchant&rsquo;s Cardholder Data
-              Environment (CDE) and PCI DSS scope are determined.
-            </p>
-          </section>
+      <section>
+        <h2>Purpose of This Document</h2>
+        <p>
+          This document is provided by PapeX, Inc. to merchants who use PapeX at their point of
+          sale. It is intended to be presented to Qualified Security Assessors (QSAs), Internal
+          Security Assessors (ISAs), or any party conducting a PCI DSS compliance review of the
+          merchant&rsquo;s environment.
+        </p>
+        <p>
+          It explains what PapeX puts at the register, how receipt data reaches PapeX, what data
+          PapeX handles, and the facts relevant when the merchant&rsquo;s Cardholder Data
+          Environment (CDE) and PCI DSS scope are determined.
+        </p>
+      </section>
 
-          {/* What is PapeX */}
-          <section className="space-y-3">
-            <h2 className="text-2xl font-semibold text-[#00121D]">What Is PapeX?</h2>
-            <p className="text-[#00121D]/80 leading-relaxed">
-              PapeX delivers a digital receipt to the customer&rsquo;s phone with one tap. It has two
-              parts:
-            </p>
-            <ul className="space-y-3 pl-1">
-              <li className="text-[#00121D]/80 leading-relaxed">
-                <span className="font-semibold text-[#00121D]">The PapeX sticker:</span> a laminated
-                NFC sticker, one per register, mailed to the merchant with simple instructions. It
-                has no power source, battery, cables or network connection, and it is not connected
-                to the POS or the payment terminal. When a customer holds a phone to it, the phone
-                opens the receipt: an App Clip on iPhone, a web page on Android. Nothing is
-                downloaded.
-              </li>
-              <li className="text-[#00121D]/80 leading-relaxed">
-                <span className="font-semibold text-[#00121D]">The POS receipt integration:</span>{' '}
-                receipts reach PapeX from the merchant&rsquo;s POS through an integration. With most
-                POS systems, the integration is authorized by an API key from the merchant and from
-                the POS. PapeX receives the receipt for each completed sale; the POS and its payment
-                provider handle the card payment itself.
-              </li>
-            </ul>
-            <p className="text-[#00121D]/80 leading-relaxed">
-              No PapeX hardware or software is installed on the merchant&rsquo;s network, POS
-              terminals or payment terminals. Setup is connecting the POS integration and placing the
-              stickers, and takes about 5 minutes.
-            </p>
-          </section>
+      <section>
+        <h2>What Is PapeX?</h2>
+        <p>
+          PapeX delivers a digital receipt to the customer&rsquo;s phone with one tap. It has two
+          parts:
+        </p>
+        <ul className={styles.list}>
+          <li>
+            <strong>The PapeX sticker:</strong> a laminated NFC sticker, one per register, mailed
+            to the merchant with simple instructions. It has no power source, battery, cables or
+            network connection, and it is not connected to the POS or the payment terminal. When a
+            customer holds a phone to it, the phone opens the receipt: an App Clip on iPhone, a web
+            page on Android. Nothing is downloaded.
+          </li>
+          <li>
+            <strong>The POS receipt integration:</strong> receipts reach PapeX from the
+            merchant&rsquo;s POS through an integration. With most POS systems, the integration is
+            authorized by an API key from the merchant and from the POS. PapeX receives the receipt
+            for each completed sale; the POS and its payment provider handle the card payment
+            itself.
+          </li>
+        </ul>
+        <p>
+          No PapeX hardware or software is installed on the merchant&rsquo;s network, POS terminals
+          or payment terminals. Setup is connecting the POS integration and placing the stickers,
+          and takes about 5 minutes.
+        </p>
+      </section>
 
-          {/* At a glance */}
-          <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#00121D]">At a Glance</h2>
-            <div className="overflow-x-auto rounded-xl border border-[#00121D]/15">
-              <table className="w-full text-sm">
-                <tbody>
-                  {SPECS.map((row, i) => (
-                    <tr
-                      key={row.label}
-                      className={i % 2 === 0 ? 'bg-[#00121D]/[0.03]' : 'bg-white'}
-                    >
-                      <th scope="row" className="w-1/3 min-w-[7.5rem] sm:min-w-[10rem] text-left align-top px-3 sm:px-4 py-3 font-semibold text-[#00121D] border-b border-[#00121D]/10">
-                        {row.label}
-                      </th>
-                      <td
-                        className={`px-3 sm:px-4 py-3 align-top border-b border-[#00121D]/10 ${
-                          row.emphasis
-                            ? 'font-semibold text-[#00121D]'
-                            : 'text-[#00121D]/80'
-                        }`}
-                      >
-                        {row.value}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          {/* Scope Analysis */}
-          <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#00121D]">PCI DSS Scope Analysis</h2>
-            <p className="text-[#00121D]/80 leading-relaxed">
-              Under PCI DSS v4.0.1, a system component is in scope for PCI DSS if it stores,
-              processes, or transmits cardholder data (CHD) or sensitive authentication data (SAD),
-              or if it is connected to or could affect the security of the Cardholder Data Environment
-              (CDE).
-            </p>
-
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-[#00121D]">
-                PapeX does not store, process, or transmit CHD or SAD.
-              </h3>
-              <p className="text-[#00121D]/80 leading-relaxed">
-                The POS and its payment provider handle the card. PapeX only receives the receipt.
-                Per card network operating regulations (Visa, Mastercard, American Express,
-                Discover), receipts must not contain the full PAN: they show at most the last four
-                digits of the card number, the card brand, and the transaction amount. PapeX never
-                receives full PAN, CVV/CVC, PIN, or magnetic stripe/chip track data.
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-[#00121D]">
-                The PapeX sticker is not a connected system.
-              </h3>
-              <p className="text-[#00121D]/80 leading-relaxed">
-                The sticker has no power source, no network connection, and no connection to the
-                POS, the payment terminal or any other device in the merchant&rsquo;s environment. It
-                cannot read cards. Its only function is to let a customer&rsquo;s phone open the
-                digital receipt with a tap.
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-[#00121D]">
-                Nothing from PapeX is installed in the merchant&rsquo;s environment.
-              </h3>
-              <p className="text-[#00121D]/80 leading-relaxed">
-                Receipt data reaches PapeX through the merchant&rsquo;s POS integration, not through
-                any device or software on the merchant&rsquo;s network. The integration is authorized
-                by an API key from the merchant&rsquo;s POS account, which the merchant controls like
-                any other third-party integration.
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-[#00121D]">
-                PapeX does not modify the payment terminal.
-              </h3>
-              <p className="text-[#00121D]/80 leading-relaxed">
-                Setup does not involve the payment terminal at all: no enclosure opened, no
-                tamper-evident seals broken, no firmware altered, and no Point of Interaction (POI)
-                device modified. PCI DSS Requirement 9.5 (protection of POI devices from tampering
-                and unauthorized substitution) is not implicated because the payment terminal is not
-                altered.
-              </p>
-            </div>
-          </section>
-
-          {/* Classification */}
-          <section className="space-y-3">
-            <h2 className="text-2xl font-semibold text-[#00121D]">Classification</h2>
-            <p className="text-[#00121D]/80 leading-relaxed">
-              The PapeX sticker is a{' '}
-              <span className="font-semibold text-[#00121D]">passive NFC label</span>, comparable
-              to a printed sign or QR code at the counter. The PapeX service is a{' '}
-              <span className="font-semibold text-[#00121D]">receipt integration</span> connected to
-              the merchant&rsquo;s POS that receives receipt data only.
-            </p>
-            <div className="rounded-xl border-l-4 border-[#EB7100] bg-[#EB7100]/[0.06] px-5 py-4">
-              <p className="text-[#00121D] leading-relaxed font-medium">
-                PapeX does not store, process, or transmit cardholder data or sensitive
-                authentication data. The PapeX sticker has no power, network connection or
-                card-reading capability, and no PapeX hardware or software is installed in the
-                merchant&rsquo;s environment. How the POS integration is treated in the
-                merchant&rsquo;s assessment is a determination for the merchant and their assessor.
-                This document is provided to give that assessment the technical facts it requires.
-              </p>
-            </div>
-          </section>
-
-          {/* Guidance for Assessors */}
-          <section className="space-y-4">
-            <h2 className="text-2xl font-semibold text-[#00121D]">Guidance for Assessors</h2>
-            <p className="text-[#00121D]/80 leading-relaxed">
-              During a PCI DSS assessment or inspection, assessors may verify the following about the
-              PapeX setup:
-            </p>
-            <ul className="space-y-3">
-              {ASSESSOR_POINTS.map((point) => (
-                <li key={point} className="flex gap-3 text-[#00121D]/80 leading-relaxed">
-                  <span
-                    aria-hidden
-                    className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#EB7100]"
-                  />
-                  <span>{point}</span>
-                </li>
+      <section>
+        <h2>At a Glance</h2>
+        <div className={styles.tableWrap}>
+          <table className={styles.table}>
+            <tbody>
+              {SPECS.map((row) => (
+                <tr key={row.label}>
+                  <th scope="row">{row.label}</th>
+                  <td className={row.emphasis ? styles.emphasis : undefined}>{row.value}</td>
+                </tr>
               ))}
-            </ul>
-          </section>
+            </tbody>
+          </table>
+        </div>
+      </section>
 
-          {/* Contact */}
-          <section className="space-y-4 border-t border-[#00121D]/10 pt-8">
-            <h2 className="text-2xl font-semibold text-[#00121D]">Contact Information</h2>
-            <p className="text-[#00121D]/80 leading-relaxed">
-              For questions about this document or PapeX, please contact:
-            </p>
-            <div className="rounded-xl border border-[#00121D]/15 bg-[#00121D]/[0.03] px-5 py-4 space-y-1">
-              <p className="font-semibold text-[#00121D]">PapeX, Inc.</p>
-              <p className="text-[#00121D]/80">San Francisco, CA</p>
-              <p className="text-[#00121D]/80">
-                Email:{' '}
-                <a
-                  href="mailto:support@papex.app"
-                  className="text-[#EB7100] underline decoration-transparent hover:decoration-[#EB7100] transition"
-                >
-                  support@papex.app
-                </a>
-              </p>
-              <p className="text-[#00121D]/80">
-                Phone:{' '}
-                <a
-                  href={SALES_PHONE_HREF}
-                  className="text-[#EB7100] underline decoration-transparent hover:decoration-[#EB7100] transition"
-                >
-                  {SALES_PHONE}
-                </a>
-              </p>
-            </div>
-            <p className="text-sm text-[#00121D]/70 leading-relaxed">
-              Merchants: for help with the PapeX sticker and quick fixes, visit{' '}
-              <Link
-                href="/support"
-                className="text-[#EB7100] underline decoration-transparent hover:decoration-[#EB7100] transition"
-              >
-                papex.app/support
-              </Link>
-              .
-            </p>
-          </section>
+      <section>
+        <h2>PCI DSS Scope Analysis</h2>
+        <p>
+          Under PCI DSS v4.0.1, a system component is in scope for PCI DSS if it stores, processes,
+          or transmits cardholder data (CHD) or sensitive authentication data (SAD), or if it is
+          connected to or could affect the security of the Cardholder Data Environment (CDE).
+        </p>
 
-          {/* Page content inside <main>, not a document landmark — SiteFooter
-              (FramerPageShell) is the page's real <footer>, so this stays a
-              <section> to keep exactly one footer landmark. */}
-          <section className="border-t border-[#00121D]/10 pt-6">
-            <p className="text-[13px] leading-[18px] text-[#00121D]/50 uppercase tracking-wide">
-              PapeX, Inc. — Provided to merchants for their PCI DSS review.
-            </p>
-          </section>
-        </article>
-      </div>
-    </FramerPageShell>
+        <h3 className={styles.h3}>PapeX does not store, process, or transmit CHD or SAD.</h3>
+        <p>
+          The POS and its payment provider handle the card. PapeX only receives the receipt. Per
+          card network operating regulations (Visa, Mastercard, American Express, Discover),
+          receipts must not contain the full PAN: they show at most the last four digits of the
+          card number, the card brand, and the transaction amount. PapeX never receives full PAN,
+          CVV/CVC, PIN, or magnetic stripe/chip track data.
+        </p>
+
+        <h3 className={styles.h3}>The PapeX sticker is not a connected system.</h3>
+        <p>
+          The sticker has no power source, no network connection, and no connection to the POS,
+          the payment terminal or any other device in the merchant&rsquo;s environment. It cannot
+          read cards. Its only function is to let a customer&rsquo;s phone open the digital receipt
+          with a tap.
+        </p>
+
+        <h3 className={styles.h3}>
+          Nothing from PapeX is installed in the merchant&rsquo;s environment.
+        </h3>
+        <p>
+          Receipt data reaches PapeX through the merchant&rsquo;s POS integration, not through any
+          device or software on the merchant&rsquo;s network. The integration is authorized by an
+          API key from the merchant&rsquo;s POS account, which the merchant controls like any other
+          third-party integration.
+        </p>
+
+        <h3 className={styles.h3}>PapeX does not modify the payment terminal.</h3>
+        <p>
+          Setup does not involve the payment terminal at all: no enclosure opened, no
+          tamper-evident seals broken, no firmware altered, and no Point of Interaction (POI)
+          device modified. PCI DSS Requirement 9.5 (protection of POI devices from tampering and
+          unauthorized substitution) is not implicated because the payment terminal is not altered.
+        </p>
+      </section>
+
+      <section>
+        <h2>Classification</h2>
+        <p>
+          The PapeX sticker is a <strong>passive NFC label</strong>, comparable to a printed sign
+          or QR code at the counter. The PapeX service is a <strong>receipt integration</strong>{' '}
+          connected to the merchant&rsquo;s POS that receives receipt data only.
+        </p>
+        <p className={styles.callout}>
+          PapeX does not store, process, or transmit cardholder data or sensitive authentication
+          data. The PapeX sticker has no power, network connection or card-reading capability, and
+          no PapeX hardware or software is installed in the merchant&rsquo;s environment. How the
+          POS integration is treated in the merchant&rsquo;s assessment is a determination for the
+          merchant and their assessor. This document is provided to give that assessment the
+          technical facts it requires.
+        </p>
+      </section>
+
+      <section>
+        <h2>Guidance for Assessors</h2>
+        <p>
+          During a PCI DSS assessment or inspection, assessors may verify the following about the
+          PapeX setup:
+        </p>
+        <ul className={styles.list}>
+          {ASSESSOR_POINTS.map((point) => (
+            <li key={point}>{point}</li>
+          ))}
+        </ul>
+      </section>
+
+      <section>
+        <h2>Contact Information</h2>
+        <p>For questions about this document or PapeX, please contact:</p>
+        <address className={styles.contact}>
+          <strong>PapeX, Inc.</strong>
+          <br />
+          San Francisco, CA
+          <br />
+          Email: <a href="mailto:support@papex.app">support@papex.app</a>
+          <br />
+          Phone: <a href={SALES_PHONE_HREF}>{SALES_PHONE}</a>
+        </address>
+        <p>
+          Merchants: for help with the PapeX sticker and quick fixes, visit{' '}
+          <Link href="/support">papex.app/support</Link>.
+        </p>
+        <p className={styles.note}>PapeX, Inc. — Provided to merchants for their PCI DSS review.</p>
+      </section>
+    </LegalPage>
   )
 }

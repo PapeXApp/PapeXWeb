@@ -1,5 +1,6 @@
 /*
- * /privacy and /terms on the redesign shell (Web 2.3 phone rework, D1).
+ * /privacy and /terms on the redesign shell (Web 2.3 phone rework, D1), and
+ * /pci since Web 2.4 (its extras live in app/pci/pci.module.css).
  *
  * Same pattern as /support and /about: SiteShell path="page" + a FlowGround
  * that starts light + the in-flow footer, so everything inside sits in `.rd`

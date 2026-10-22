@@ -1,6 +1,7 @@
 // components/legal/LegalPage.tsx
 //
-// The shared frame for /privacy and /terms (Web 2.3 phone rework, D1): the
+// The shared frame for /privacy, /terms (Web 2.3 phone rework, D1) and /pci
+// (Web 2.4): the
 // redesign shell exactly like /support and /about (SiteShell path="page" +
 // FlowGround light + in-flow footer). Server Component: nothing here needs the
 // client. The legal text itself stays in each page, verbatim.

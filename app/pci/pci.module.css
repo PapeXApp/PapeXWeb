@@ -1,0 +1,122 @@
+/*
+ * /pci on the LegalPage frame (Web 2.4). LegalPage's .doc column sets the
+ * type (h2, p, links); this adds only what the scoping statement has and the
+ * legal pages don't: the subtitle, h3s, bulleted lists, the "At a glance"
+ * table, the callout and the contact block. Every ink is a --flow-* colour.
+ */
+
+.subtitle {
+  font-size: clamp(18px, 1.6vw, 20px);
+  line-height: 1.45;
+  font-weight: 500;
+  color: var(--flow-fg);
+}
+.note {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--flow-fg-2);
+}
+
+.h3 {
+  margin: 1.6em 0 0.5em;
+  font-size: clamp(17px, 1.3vw, 18px);
+  line-height: 1.35;
+  font-weight: 600;
+  color: var(--flow-fg);
+}
+
+.list {
+  margin: 0 0 1em;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.75em;
+}
+.list li {
+  position: relative;
+  padding-left: 22px;
+}
+.list li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 0.72em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--orange);
+}
+.list strong,
+.callout,
+.contact strong {
+  color: var(--flow-fg);
+}
+
+/* The table stacks label over value on phones (a two-column table at 390px
+   leaves the values a sliver); side by side from 640px. */
+.tableWrap {
+  border: 1px solid color-mix(in srgb, var(--flow-fg) 14%, transparent);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.table tr + tr th,
+.table tr + tr td {
+  border-top: 1px solid color-mix(in srgb, var(--flow-fg) 10%, transparent);
+}
+.table th {
+  width: 34%;
+  padding: 12px 16px;
+  text-align: left;
+  vertical-align: top;
+  font-weight: 600;
+  color: var(--flow-fg);
+}
+.table td {
+  padding: 12px 16px;
+  vertical-align: top;
+}
+.table td.emphasis {
+  font-weight: 600;
+  color: var(--flow-fg);
+}
+@media (max-width: 639px) {
+  .table,
+  .table tbody,
+  .table tr,
+  .table th,
+  .table td {
+    display: block;
+    width: auto;
+  }
+  .table th {
+    padding: 12px 16px 2px;
+  }
+  .table td {
+    padding: 0 16px 12px;
+  }
+  .table tr + tr td {
+    border-top: 0;
+  }
+}
+
+.callout {
+  margin: 1.2em 0 0;
+  padding: 16px 20px;
+  border-left: 4px solid var(--orange);
+  border-radius: 0 12px 12px 0;
+  background: color-mix(in srgb, var(--orange) 7%, transparent);
+  font-weight: 500;
+}
+
+.contact {
+  margin: 0 0 1em;
+  padding: 16px 20px;
+  border: 1px solid color-mix(in srgb, var(--flow-fg) 14%, transparent);
+  border-radius: 12px;
+}
