@@ -16,8 +16,8 @@
 // PUBLISH STEP, before this reaches main:
 //   1. Replace POLICY_DATE below with the publish date, e.g. 'October 28, 2026'.
 //      It fills BOTH the "Effective Date" and the "Last Updated" line.
-//   2. Check that no placeholder is left:
-//        command grep -n '{{' app/privacy/page.tsx     (must print nothing)
+//   2. Check that no placeholder is left (this must print nothing):
+//        command grep -n 'PUBLISH[_]DATE' app/privacy/page.tsx
 //   Nothing else in this file needs editing to publish.
 
 import type { Metadata } from 'next'
