@@ -103,7 +103,8 @@ export default function PrivacyPolicyPage() {
         </p>
         <p>
           When you scan or upload a receipt, we receive the photo or PDF and the text and details read from it (see Section 6
-          for the companies that read it), and we keep them with your account.
+          for the companies that read it), and we keep them with your account. Photos of coupons that you add are stored with
+          your account in the same way.
         </p>
         <p>
           We collect device identifiers and related data as described below and through our service providers (including
@@ -135,6 +136,22 @@ export default function PrivacyPolicyPage() {
           (Apple may give us a private relay address instead of your real one); we do not receive your Apple or Google
           password. Sign-in is run by Google&rsquo;s Firebase Authentication, which receives your email address or the token
           that Apple or Google issues.
+        </p>
+
+        <h3>Feedback and support</h3>
+        <p>
+          If you send feedback or a question through the app, we receive your message, your name and email address, your
+          account ID, and your phone&rsquo;s platform and operating-system version. We delete these when you delete your
+          account.
+        </p>
+
+        <h3>Partner store offers</h3>
+        <p>
+          A partner store in the Coupons section may offer to send you rewards and offers by email if you choose to share your
+          email address with it. If you agree, we store your email address, the store, the wording you agreed to and when you
+          agreed, and we may give your email address to that store. You can withdraw in the app, which stops us including you
+          in later transfers; we cannot take back an email address that we have already given to a store. We delete what we
+          store when you delete your account.
         </p>
 
         <h3>Your PapeX email address</h3>
@@ -336,8 +353,8 @@ export default function PrivacyPolicyPage() {
             to an email, when our other services cannot read it.
           </li>
           <li>
-            <strong>Google (Firebase and Google Cloud)</strong> signs you in, stores your account, receipts, receipt photos,
-            settings, Important mail items and push token, runs parts of the Service, and holds our database backups.
+            <strong>Google (Firebase and Google Cloud)</strong> signs you in, stores your account, receipts, receipt and
+            coupon photos, settings, Important mail items and push token, runs parts of the Service, and holds our database backups.
           </li>
           <li>
             <strong>Apple and Google (sign-in).</strong> If you sign in with Apple or Google, they confirm your identity to us
@@ -351,7 +368,8 @@ export default function PrivacyPolicyPage() {
           <li>
             <strong>Expo, Apple and Google</strong> deliver push notifications (see &ldquo;Push notifications&rdquo; in
             Section 3). Expo also provides our software-update service: when the app checks for an update, Expo receives your
-            device&rsquo;s IP address and the app&rsquo;s platform and version.
+            device&rsquo;s IP address, the app&rsquo;s platform and version, and a random identifier that Expo&rsquo;s update
+            software creates for this installation of the app.
           </li>
           <li>
             <strong>Vercel</strong> hosts our website, including the pages that show receipt links (papex.app/r), so a receipt
@@ -364,6 +382,11 @@ export default function PrivacyPolicyPage() {
             then, Google Analytics does not run on those pages and does not receive their addresses. Google may still hold the
             addresses it received before then until they are deleted or expire under the retention settings for our Google
             Analytics account.
+          </li>
+          <li>
+            <strong>Partner stores.</strong> If you choose to share your email address with a partner store (see &ldquo;Partner
+            store offers&rdquo; in Section 3), we may give it to that store, and the store&rsquo;s own privacy practices then
+            apply to it.
           </li>
           <li>
             <strong>logo.dev</strong> provides store logos. It receives store names from our servers and, when the app loads a
