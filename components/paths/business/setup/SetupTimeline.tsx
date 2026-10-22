@@ -28,9 +28,11 @@ import s from "./setup.module.css"
  *     (three for the four steps; each a move of the line, then a hold),
  *     then a hold on the whole lit row and the pin releases into the demo
  *     form (#demo).
- *   phones (<= 820px): NOT pinned — the same stacked list scrolls normally
- *     and c follows a reading line (80% down the screen) from dot to dot, so
- *     each step lights as it reaches it.
+ *   phones (<= 820px): pinned too (Nico, 2026-10-21: "make this a scroll to
+ *     move forward too like the computer"; the whole list fit one screen, so
+ *     it was all lit by the time it showed). The header scrolls away and the
+ *     stacked list pins just under the nav (or, on a screen too short for
+ *     it, by its foot), then the same legs run on the runway's scroll.
  *
  * Perf contract (RetainStory's): the frame WRITES only transform, opacity and
  * stroke-dashoffset (through a change cache) and READS nothing from layout;
@@ -51,12 +53,8 @@ const LEGS_A = 0.03
 const LEGS_B = 0.84
 /** Each leg moves the line over this share of its span, then holds. */
 const LEG_MOVE = 0.62
-/** Where the phone reading line sits, as a share of the viewport height.
- *  p8 (Noah: steps "don't appear as quickly as they should on the phone"):
- *  0.62 -> 0.8, so a step is lit once its dot is 80% down the screen, i.e.
- *  as it comes into view, not when it has reached the middle. Phones only
- *  (desktop is driven by the pinned runway, cDesk). */
-const READ_AT = 0.8
+/** Phones: where the pinned list's top sits, under the nav pill (px). */
+const PHONE_LIST_TOP = 76
 /** How far below its spot a step's words start as they arrive (px). */
 const TEXT_RISE = 14
 /** A waiting step's art: a faint ghost of the finished drawing. */
@@ -102,6 +100,8 @@ export function SetupTimeline({
   const live = mode === "scene"
 
   const runwayRef = useRef<HTMLDivElement>(null)
+  const pinRef = useRef<HTMLDivElement>(null)
+  const headRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
   const listRef = useRef<HTMLOListElement>(null)
   const inkRefs = useRef<(HTMLDivElement | null)[]>([])
@@ -137,7 +137,8 @@ export function SetupTimeline({
     const stage = stageRef.current
     const list = listRef.current
     const runway = runwayRef.current
-    if (!stage || !list || !runway) return
+    const pin = pinRef.current
+    if (!stage || !list || !runway || !pin) return
     const N = steps.length
 
     // Collected ONCE: each step's drawable strokes and fading fills (the ink
@@ -148,11 +149,10 @@ export function SetupTimeline({
     /** Everything the frame needs. Rebuilt by measure() only. */
     const M = {
       phone: false,
+      /** scrollY where the pin sticks, and how far it stays stuck */
       runTop: 0,
       runTotal: 0,
       vh: 1,
-      /** phones: each dot's centre, in document px */
-      dotY: [] as number[],
     }
 
     /** Returns false when the screen can't hold the pinned row. */
@@ -162,19 +162,23 @@ export function SetupTimeline({
       // mid-scroll, which moved the phone reading line (p8 jitter).
       M.vh = document.documentElement.clientHeight || window.innerHeight || 1
       M.phone = parseFloat(getComputedStyle(stage).getPropertyValue("--t-phone")) > 0
-      M.runTop = runway.getBoundingClientRect().top + window.scrollY
-      M.runTotal = Math.max(0, runway.offsetHeight - M.vh)
+      const runTop = runway.getBoundingClientRect().top + window.scrollY
       if (M.phone) {
-        const top = stage.getBoundingClientRect().top + window.scrollY
-        M.dotY = []
-        for (let i = 0; i < N; i++) {
-          const dot = dotRefs.current[i]
-          if (!dot) return true
-          const b = offsetIn(dot, stage)
-          M.dotY.push(top + b.y + b.h / 2)
-        }
+        // The pin is as tall as the header + list (taller than the screen):
+        // it sticks at a negative top, so the header has scrolled away and
+        // the list sits under the nav, or by its foot if it can't fit.
+        const b = offsetIn(stage, pin)
+        const stickTop = Math.min(PHONE_LIST_TOP - b.y, M.vh - (b.y + b.h) - 16)
+        pin.style.top = `${stickTop}px`
+        M.runTop = runTop - stickTop
+        M.runTotal = Math.max(0, runway.offsetHeight - pin.offsetHeight)
         return true
       }
+      pin.style.top = ""
+      headRef.current?.style.removeProperty("opacity")
+      last.delete("head")
+      M.runTop = runTop
+      M.runTotal = Math.max(0, runway.offsetHeight - M.vh)
       // the row itself must fit the pin, or there is nothing to light
       return list.offsetHeight <= stage.clientHeight + 1
     }
@@ -193,7 +197,7 @@ export function SetupTimeline({
     }
     const op = (el: Element | null | undefined, v: number, key: string) => set(el, "opacity", clamp01(v).toFixed(3), key)
 
-    /** Desktop: the lit position from the approach and the runway. */
+    /** The lit position from the approach and the runway. */
     const cDesk = (y: number) => {
       if (y < M.runTop) return ease(seg(y, M.runTop - 0.6 * M.vh, M.runTop - 0.08 * M.vh)) - 1
       const p = M.runTotal > 0 ? clamp01((y - M.runTop) / M.runTotal) : 1
@@ -202,18 +206,6 @@ export function SetupTimeline({
       const k = Math.floor(t)
       return k + ease(seg(t - k, 0, LEG_MOVE))
     }
-    /** Phones: the reading line's position between the dots it sits between. */
-    const cPhone = (y: number) => {
-      const d = M.dotY
-      if (d.length < 2) return N - 1
-      const r = y + READ_AT * M.vh
-      if (r <= d[0]) return (r - d[0]) / (d[1] - d[0] || 1)
-      for (let k = 0; k < d.length - 1; k++) {
-        if (r < d[k + 1]) return k + (r - d[k]) / (d[k + 1] - d[k] || 1)
-      }
-      return N - 1
-    }
-
     const draw = (c: number) => {
       for (let i = 0; i < N; i++) {
         // the art draws in as the line runs the last stretch to its dot
@@ -253,7 +245,10 @@ export function SetupTimeline({
       if (disposed) return
       // no layout read: where the runway and the dots sit is measured
       const y = window.scrollY
-      draw(M.phone ? cPhone(y) : cDesk(y))
+      draw(cDesk(y))
+      // phones: the header has scrolled up behind the nav once the list
+      // pins; it fades out on the way, so no cut-off line shows above it
+      if (M.phone) op(headRef.current, 1 - seg(y, M.runTop - 0.22 * M.vh, M.runTop), "head")
     }
     const onScroll = () => {
       if (raf === null) raf = requestAnimationFrame(update)
@@ -363,8 +358,10 @@ export function SetupTimeline({
         data-live={live ? "" : undefined}
         style={{ "--runway-h": `${RUNWAY_VH}vh` } as CSSProperties}
       >
-        <div className={s.pin}>
-          <div className={cn(s.wrap, s.head)}>{header}</div>
+        <div className={s.pin} ref={pinRef}>
+          <div className={cn(s.wrap, s.head)} ref={headRef}>
+            {header}
+          </div>
           <div className={cn(s.wrap, s.stageWrap)}>
             <div className={s.stage} ref={stageRef}>
               {renderList(true)}

@@ -44,9 +44,10 @@
   inset: 0;
   /* under every nav bubble, over the page (the nav is the stacking context) */
   z-index: -1;
-  background: rgba(0, 18, 29, 0.32);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
+  /* a plain dim, no blur: a full-screen backdrop-filter over the animated
+     3D hero made iPhone Safari take ~3s to open the menu (Nico,
+     2026-10-21). The sheet keeps its own glass. */
+  background: rgba(0, 18, 29, 0.42);
   opacity: 0;
   visibility: hidden;
   pointer-events: none;

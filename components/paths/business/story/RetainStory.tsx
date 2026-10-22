@@ -109,8 +109,9 @@ import ip from "../../customer/iphone.module.css"
  *
  * Phones (B6, Nico: "I want to see a full phone... we have a lot of blank
  * space, use it well"): the stage is a 1:2 box as tall as the pin allows under
- * the nav, and the tap pose's iPhone is ~80% of its height, never cropped,
- * with the PapeX sticker fully in view on the counter under its foot.
+ * the nav, and the tap pose's iPhone is ~68% of its height, never cropped,
+ * under the counter and its PapeX sticker, which sit at the top: the phone
+ * reaches up to tap it.
  *
  * Perf contract: the rAF frame WRITES only `transform`, `opacity` and
  * `clip-path`, and READS nothing from layout. Every geometric number (sizes,
@@ -830,7 +831,9 @@ export function RetainStory({ header }: { header: ReactNode }) {
       const phb = offsetIn(phone, stage)
       M.phoneH = phb.h
       M.bowX = (db.x + db.w * 0.45 - (phb.x + phb.w / 2)) * 0.18
-      M.bowY = 4.2 * cq
+      // down onto a sticker below the phone's middle, up onto one above it
+      // (phones: the counter sits above the phone, Nico 2026-10-21)
+      M.bowY = (db.y + db.h / 2 < phb.y + phb.h / 2 ? -1 : 1) * 4.2 * cq
       M.lapIn = 5 * cq
 
       // P4-BT: the App Clip card inside its layer (the reused ClipLockScreen

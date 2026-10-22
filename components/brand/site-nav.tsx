@@ -173,15 +173,23 @@ export function SiteNav({ path }: { path: SitePath }) {
       if (backdropRef.current?.contains(target)) return
       closeMenu(true)
     }
-    const root = document.documentElement
-    const previousOverflow = root.style.overflow
-    root.style.overflow = 'hidden'
+    // The page underneath can't scroll: wheel and touch moves are cancelled
+    // outside the sheet. (Not overflow:hidden on <html>: on iPhone Safari that
+    // re-lays out the whole page, pinned scenes and all, before the menu can
+    // show; Nico, 2026-10-21: "takes 3 seconds to open".)
+    const onScrollIntent = (event: Event) => {
+      if (sheetRef.current?.contains(event.target as Node | null)) return
+      event.preventDefault()
+    }
     document.addEventListener('keydown', onKey)
     document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('touchmove', onScrollIntent, { passive: false })
+    document.addEventListener('wheel', onScrollIntent, { passive: false })
     return () => {
-      root.style.overflow = previousOverflow
       document.removeEventListener('keydown', onKey)
       document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('touchmove', onScrollIntent)
+      document.removeEventListener('wheel', onScrollIntent)
     }
   }, [menuOpen, closeMenu])
 

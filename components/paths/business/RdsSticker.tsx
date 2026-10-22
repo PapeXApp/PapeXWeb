@@ -100,14 +100,14 @@ export function RdsSticker() {
                 scannable row. Copy lives in content.ts (rdsSticker.specs). */}
             <ScrollReveal
               order={2}
-              // p8: on phones the row wraps, and the "·" (glued to the
-              // following spec) started the second line on its own. Phones
-              // drop the dots and let the specs wrap as separate words.
-              className="mt-[var(--gap-body)] flex flex-wrap items-center gap-x-6 gap-y-2 border-t pt-[var(--gap-list)] text-[13px] font-semibold uppercase tracking-[.16em] min-[821px]:gap-x-4"
+              // Phones: three equal columns, each spec centred in its own
+              // (Nico, 2026-10-21: the wrapped row "looks awful"), no dots.
+              // Desktop keeps the single dotted row.
+              className="mt-[var(--gap-body)] grid grid-cols-3 items-start gap-x-3 border-t pt-[var(--gap-list)] text-center text-[12px] font-semibold uppercase leading-[1.4] tracking-[.1em] min-[821px]:flex min-[821px]:flex-wrap min-[821px]:items-center min-[821px]:gap-x-4 min-[821px]:gap-y-2 min-[821px]:text-left min-[821px]:text-[13px] min-[821px]:leading-normal min-[821px]:tracking-[.16em]"
               style={{ borderColor: "var(--flow-hair)", color: "var(--flow-fg-3)", fontFamily: "var(--font-label)" }}
             >
               {rdsSticker.specs.map((spec, i) => (
-                <span key={spec} className="flex items-center gap-x-4">
+                <span key={spec} className="flex items-center justify-center gap-x-4 min-[821px]:justify-start">
                   {i > 0 ? (
                     <span aria-hidden="true" className="hidden min-[821px]:inline" style={{ color: "var(--orange)" }}>
                       ·

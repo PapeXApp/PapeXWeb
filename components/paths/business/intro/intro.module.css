@@ -41,6 +41,9 @@
   position: sticky;
   top: 0;
   height: 100svh;
+  /* the visible height: on iPhone Safari 100svh left an empty band under
+     the pin once the toolbar slid away (Nico, 2026-10-21) */
+  height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
