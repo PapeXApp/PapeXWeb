@@ -54,7 +54,7 @@ const SPECS: { label: string; value: string; emphasis?: boolean }[] = [
   {
     label: 'Connection Interface',
     value:
-      'Merchant Wi-Fi (local network), and in some installations also USB, RS-232 Serial, or Ethernet (standard POS peripheral ports)',
+      'Connects to the POS as a receipt printer: USB, or network printing over the merchant\'s Wi-Fi (raw ESC/POS on TCP port 9100, printer status on TCP port 9101)',
   },
   {
     label: 'Data Received',
@@ -63,7 +63,7 @@ const SPECS: { label: string; value: string; emphasis?: boolean }[] = [
   {
     label: 'Data Output',
     value:
-      'Digital receipt delivered to consumer device via NFC. Receipt records sent to the PapeX cloud service over HTTPS.',
+      'Receipt print data uploaded to PapeX servers (api.papex.app) over HTTPS; the customer retrieves the digital receipt by tapping their phone to the device (NFC)',
   },
   { label: 'Cardholder Data Stored', value: 'None', emphasis: true },
   { label: 'Cardholder Data Processed', value: 'None', emphasis: true },
@@ -85,17 +85,19 @@ const SPECS: { label: string; value: string; emphasis?: boolean }[] = [
   {
     label: 'Network Connectivity',
     value:
-      "The RDH joins the merchant's local Wi-Fi network and must be reachable from the POS. Outbound traffic is limited to receipt records, firmware updates, and diagnostics sent to PapeX. It does not connect to a payment gateway or processor.",
+      "Wi-Fi (2.4 GHz) on a network provided by the merchant. Outbound traffic is HTTPS to api.papex.app only, limited to receipt records and device health diagnostics. In network-print mode the RDH must be reachable from the POS on TCP ports 9100/9101. NFC for customer receipt pickup. It does not connect to the payment terminal, payment gateway, or processor, and does not carry payment traffic.",
   },
 ]
 
 const ASSESSOR_POINTS: string[] = [
   'The device receives only receipt print data (ESC/POS or equivalent print commands) and has no mechanism to receive full PAN, CVV/CVC, PIN, or track data.',
-  "The device connects to the merchant's local Wi-Fi network. Its outbound traffic goes to PapeX's cloud service over HTTPS and consists solely of receipt records, plus firmware update and diagnostic traffic.",
+  'The device connects to the POS system only as a receipt printer would: by USB, or as a network printer on TCP port 9100 (status on 9101).',
+  "The device connects to the merchant's local Wi-Fi network. Its only internet connection is outbound HTTPS to api.papex.app, carrying receipt records and device health diagnostics. Inbound access is limited to print traffic from the POS (TCP 9100/9101).",
+  'Where the RDH is treated as outside the assessed scope, the Wi-Fi network it joins is segmented from any network segment carrying payment traffic, and that segmentation is validated.',
   "The payment terminal's tamper-evident seals, screws, and enclosure are intact and unmodified.",
   "The device is clearly labeled as 'PapeX Digital Receipt Module' or equivalent.",
   'The device does not have any card-reading capability (no magnetic stripe reader, chip reader, or contactless payment reader).',
-  "The only wireless output to a customer is NFC, used to deliver the digital receipt to the customer's mobile device.",
+  "The device's wireless interfaces are Wi-Fi (receipt upload to PapeX, and print jobs in network-print mode) and NFC. The only wireless output to a customer is NFC, used to deliver the receipt link to the customer's mobile device.",
   'The device is not interposed in the cable path between the payment terminal and any other device. In a parallel installation, the existing receipt printer retains its own direct connection to the POS.',
 ]
 
@@ -141,10 +143,10 @@ export default function PciCompliancePage() {
             <h2 className="text-2xl font-semibold text-[#00121D]">What Is the PapeX RDH?</h2>
             <p className="text-[#00121D]/80 leading-relaxed">
               The PapeX Receipt Delivery Hardware is a peripheral module that connects to a
-              merchant&rsquo;s point of sale environment over the merchant&rsquo;s local network
-              (Wi-Fi), and in some installations also through a standard peripheral port (USB,
-              RS-232 serial, or Ethernet). It serves one function: capturing the receipt print data
-              stream and delivering it digitally to the customer via NFC tap.
+              merchant&rsquo;s POS system the same way a receipt printer does (USB, or network
+              printing over the merchant&rsquo;s Wi-Fi). It serves one function: capturing the
+              receipt print data stream, uploading it to PapeX over HTTPS, and letting the customer
+              retrieve it with an NFC tap.
             </p>
             <p className="text-[#00121D]/80 leading-relaxed">
               The RDH is installed in one of two configurations:
@@ -165,10 +167,11 @@ export default function PciCompliancePage() {
             </ul>
             <p className="text-[#00121D]/80 leading-relaxed">
               In both configurations the RDH joins the merchant&rsquo;s local Wi-Fi network. It uses
-              that connection for three purposes: receiving the receipt print data stream from the
-              POS, sending completed receipt records to PapeX&rsquo;s cloud service, and receiving
-              firmware updates and remote diagnostics from PapeX. The RDH must therefore be
-              reachable on the same network as the POS system that sends it print jobs.
+              that connection to send completed receipt records and device health diagnostics to
+              PapeX (api.papex.app) over outbound HTTPS. Where the POS prints to the RDH over the
+              network rather than USB, it also uses that connection to receive the receipt print
+              data stream on TCP port 9100 (printer status on 9101), so the RDH must be reachable
+              on the same network as the POS system that sends it print jobs.
             </p>
           </section>
 
@@ -230,14 +233,16 @@ export default function PciCompliancePage() {
                 The RDH connects to the merchant&rsquo;s local network.
               </h3>
               <p className="text-[#00121D]/80 leading-relaxed">
-                The RDH is not an isolated device. It joins the merchant&rsquo;s Wi-Fi and must be
-                reachable from the POS system in order to receive print jobs. Where the
+                The RDH is not an isolated device. It joins the merchant&rsquo;s Wi-Fi and, in
+                network-print mode, must be reachable from the POS system in order to receive print
+                jobs. Where the
                 merchant&rsquo;s POS network is part of, or connected to, the Cardholder Data
                 Environment, the RDH should be treated as a connected-to system component and
                 assessed accordingly. PapeX does not represent that the RDH is network-isolated.
                 What the RDH does not do is store, process, or transmit cardholder data: the only
                 payload it receives is the receipt print stream described above, and the only data
-                it sends to PapeX is that receipt record. Where a merchant places the RDH on a
+                it sends to PapeX is that receipt record and device health diagnostics. Where a
+                merchant places the RDH on a
                 network segment separated from the payment environment, and that segmentation is
                 validated, the RDH falls outside the assessed scope on the same basis as any other
                 segmented system.
