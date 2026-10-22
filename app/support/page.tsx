@@ -1,14 +1,20 @@
 // app/support/page.tsx
 //
-// Merchant support hub for the PapeX Receipt Delivery Hardware (RDH).
-// Referenced from the merchant guide pamphlet footer, the hardware label,
-// and the footer of merchant-facing documents. A merchant lands here because
-// something isn't working or they have a question — get them to the answer fast.
+// Merchant support hub for the PapeX sticker (RDS, Receipt Delivery Sticker:
+// one laminated NFC sticker per register). Linked from the instructions that
+// ship with the stickers and from merchant-facing documents. A merchant lands
+// here because something isn't working or they have a question — get them to
+// the answer fast.
 //
-// Copy (status light, troubleshooting, do's/don'ts, "If a Customer Asks...")
-// is the authoritative merchant-facing wording provided by PapeX. Light
-// behaviors also match the RDH firmware state machine
-// (Papex_RDH_Firmware/src/state_machine.c).
+// Web 2.4 (2026-10-21): rewritten for the sticker. The old RDH box copy
+// (status light, Wi-Fi, power, plug, printer) is gone. Facts used, the same
+// as the /business copy rules in components/paths/business/content.ts:
+// receipts come from the store's POS through an integration (with most POS
+// systems, an API key from the store and from the POS); we mail one laminated
+// sticker per register with simple instructions; setup takes about 5 minutes;
+// iPhone opens an App Clip, Android a web page, no download; PapeX never
+// touches card data. Never name a POS, never say the app is free (the sticker,
+// setup and the tapped receipt are).
 //
 // Web 2.1 P7 (Nico, 2026-09-29): moved off the legacy FramerPageShell onto the
 // redesign shell /about and the path homes use (SiteShell path="page" +
@@ -16,9 +22,9 @@
 // shared motion vocabulary: WordReveal/Reveal in the hero (on screen at load,
 // like the path heroes), ScrollWords/ScrollReveal below (the scroll-linked
 // pair every static section on the path homes uses). Every coloured box is
-// now ONE card: translucent, hairline, tinted only toward its bottom edge
-// (support.module.css). Content is unchanged; the "Send us a message" form
-// (SupportForm.tsx -> /api/signup kind "support" -> nico@papex.app) is new.
+// ONE card: translucent, hairline, tinted only toward its bottom edge
+// (support.module.css). The "Send us a message" form (SupportForm.tsx ->
+// /api/signup kind "support" -> nico@papex.app) sits under the FAQ.
 
 import type { Metadata } from 'next'
 import Link from 'next/link'
@@ -37,9 +43,9 @@ const OG_ALT =
   'The PapeX logo and the words Your receipt, one tap away, beside an iPhone showing a PapeX receipt'
 
 export const metadata: Metadata = {
-  title: 'Help for your PapeX device | PapeX',
+  title: 'Help with the PapeX sticker | PapeX',
   description:
-    'Status lights, quick fixes and how to reach us for your PapeX tap device.',
+    'How the PapeX sticker works, quick fixes, what to tell customers and how to reach us.',
   robots: { index: true, follow: true },
   alternates: { canonical: 'https://papex.app/support' },
   openGraph: {
@@ -47,207 +53,99 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: 'https://papex.app/support',
     siteName: 'PapeX',
-    title: 'Help for your PapeX device | PapeX',
-    description: 'Status lights, quick fixes and how to reach us for your PapeX tap device.',
+    title: 'Help with the PapeX sticker | PapeX',
+    description: 'How the PapeX sticker works, quick fixes, what to tell customers and how to reach us.',
     images: [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630, alt: OG_ALT }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Help for your PapeX device | PapeX',
-    description: 'Status lights, quick fixes and how to reach us for your PapeX tap device.',
+    title: 'Help with the PapeX sticker | PapeX',
+    description: 'How the PapeX sticker works, quick fixes, what to tell customers and how to reach us.',
     images: [DEFAULT_OG_IMAGE],
   },
 }
 
-type Signal = 'normal' | 'attention'
-
-// Source of truth: Papex_RDH_Firmware feat/tcp9100-pilot — include/led.h and
-// src/state_machine.c / upload.c / net_wifi.c (green language rebuilt
-// 2026-08-18, 3f0ed97). That branch's README table predates it; the code wins.
-const LIGHT_ROWS: {
-  light: string
-  color: 'green' | 'red' | 'off'
-  blink?: 'slow' | 'medium' | 'fast'
-  meaning: string
-  detail: string
-  signal: Signal
-}[] = [
+// What happens on a sale, in the order it happens. Plain words: a merchant
+// reads this at the counter.
+const HOW_IT_WORKS: { title: string; text: string }[] = [
   {
-    light: 'Solid green',
-    color: 'green',
-    meaning: 'Ready',
-    detail: 'Waiting for the next sale. Normal.',
-    signal: 'normal',
+    title: 'Your POS sends the receipt',
+    text: 'When a sale is done, your POS sends the receipt to PapeX through the connection we set up. Nothing to do at the register.',
   },
   {
-    light: 'Slow green blink',
-    color: 'green',
-    blink: 'slow',
-    meaning: 'Working on a receipt',
-    detail: 'A receipt just printed and is on its way. A few seconds.',
-    signal: 'normal',
+    title: 'Your customer taps',
+    text: 'They hold their phone on the PapeX sticker. On iPhone the receipt opens right away; on Android it opens in the browser. No download.',
   },
   {
-    light: 'Fast green blink',
-    color: 'green',
-    blink: 'fast',
-    meaning: 'Tap now',
-    detail: 'Receipt ready. Customer taps now.',
-    signal: 'normal',
-  },
-  {
-    light: 'Solid red',
-    color: 'red',
-    meaning: 'Connecting',
-    detail: 'Joining Wi-Fi, including just after it’s plugged in. Wait 15–30s.',
-    signal: 'attention',
-  },
-  {
-    light: 'Slow red blink',
-    color: 'red',
-    blink: 'slow',
-    meaning: 'Sorting itself out',
-    detail: 'Needs Wi-Fi setup, is resending a receipt, or is resetting its tap reader. Wait 30s. Still blinking? Call PapeX.',
-    signal: 'attention',
-  },
-  {
-    light: 'Medium red blink',
-    color: 'red',
-    blink: 'medium',
-    meaning: 'Not recognized',
-    detail: 'PapeX needs to re-activate the device. Call PapeX.',
-    signal: 'attention',
-  },
-  {
-    light: 'Fast red blink',
-    color: 'red',
-    blink: 'fast',
-    meaning: 'Error',
-    detail: 'Unplug, wait 10s, replug.',
-    signal: 'attention',
-  },
-  {
-    light: 'Off',
-    color: 'off',
-    meaning: 'No power',
-    detail: 'A working device is never dark. Check the plug and outlet.',
-    signal: 'attention',
+    title: 'You see the sale',
+    text: 'The same receipt shows up on your PapeX dashboard, live from the first receipt.',
   },
 ]
-
-const SIGNAL_STYLES: Record<Signal, { label: string; className: string }> = {
-  normal: { label: 'Normal', className: styles.signalNormal },
-  attention: { label: 'Attention', className: styles.signalAttention },
-}
-
-// The light plus its rhythm, drawn static (no looping animation anywhere on
-// the site): a dot in the light's colour, then a short strip showing the
-// on/off pattern over time: one unbroken line = solid, two long dashes =
-// slow blink, three mid dashes = medium blink, five short dashes = fast blink. Decorative; the row's own words
-// ("Slow green blink" ...) carry the meaning for screen readers.
-const RHYTHM: Record<'solid' | 'slow' | 'medium' | 'fast', string | undefined> = {
-  solid: undefined,
-  slow: '9 5',
-  medium: '5 4',
-  fast: '2.8 3',
-}
-
-function LightDot({
-  color,
-  blink,
-}: {
-  color: 'green' | 'red' | 'off'
-  blink?: 'slow' | 'medium' | 'fast'
-}) {
-  const base = 'inline-block h-3 w-3 rounded-full flex-shrink-0'
-  if (color === 'off') {
-    return (
-      <span className="inline-flex w-[46px] flex-shrink-0 items-center" aria-hidden>
-        <span className={`${base} border border-gray-400 bg-transparent`} />
-      </span>
-    )
-  }
-  const fill = color === 'green' ? 'bg-green-500' : 'bg-red-500'
-  const stroke = color === 'green' ? '#22c55e' : '#ef4444'
-  const dash = RHYTHM[blink ?? 'solid']
-  return (
-    <span className="inline-flex w-[46px] flex-shrink-0 items-center gap-[5px]" aria-hidden>
-      <span className={`${base} ${fill}`} />
-      <svg width="28" height="6" viewBox="0 0 28 6" className="flex-shrink-0">
-        <line x1="0" y1="3" x2="28" y2="3" stroke={stroke} strokeWidth="3" strokeDasharray={dash} />
-      </svg>
-    </span>
-  )
-}
 
 const TROUBLESHOOTING: { title: string; steps: string[] }[] = [
   {
     title: 'Customer tapped but nothing happened',
     steps: [
-      'Make sure their phone’s tap reader (NFC) is on. Most phones have it on already.',
-      'Ask the customer to hold their phone flat against the device for 2–3 seconds.',
-      'Phone cases can block NFC. Try without the case.',
-      'If the receipt card opened but is still blank, it may still be processing. It will show up in a few seconds.',
+      'Make sure their screen is on and their phone’s tap reader (NFC) is on. Most phones have it on already.',
+      'Ask them to hold the top of their phone flat on the PapeX sticker for 2–3 seconds.',
+      'Thick phone cases and card wallets can block the tap. Try without the case.',
     ],
   },
   {
-    title: 'Customer says the receipt is still loading',
+    title: 'The receipt opened but is blank or still loading',
     steps: [
-      'This is normal. The receipt is being processed. It typically appears within a few seconds.',
-      'If it takes more than 30 seconds, offer to reprint from your POS.',
+      'This is normal for a few seconds. The receipt is on its way from your POS.',
+      'Have customers tap once the sale is finished.',
+      'Still empty after 30 seconds? Ask them to tap again, or reprint from your POS.',
     ],
   },
   {
-    title: 'Light is blinking red',
+    title: 'Taps work, but no receipts come through',
     steps: [
-      'Slow blink: it needs Wi-Fi setup, is resending a receipt, or is resetting its tap reader. Wait 30 seconds. Still blinking? Call PapeX.',
-      'Medium blink (about 3 times a second): the device needs to be re-activated. Call PapeX.',
-      'Fast blink: power-cycle. Unplug, wait 10 seconds, plug back in.',
-      'Still fast after restart? Call PapeX support.',
+      'Your POS connection to PapeX may need a look, for example after a change to your POS settings or API keys.',
+      'Call PapeX and we’ll check it with you.',
     ],
   },
   {
-    title: 'No light, device unresponsive',
+    title: 'A sticker is damaged, peeling or missing',
     steps: [
-      "Check it's plugged in securely.",
-      'Try a different outlet or power cable.',
-      'Still nothing? Call PapeX support.',
+      'Call or email PapeX and we’ll mail you a new one.',
+      'Tell us which register it’s for.',
     ],
   },
   {
     title: 'No paper receipts (paper switched off)',
     steps: [
       'Expected if your store has switched off paper in the POS. Receipts are digital now.',
-      'Use your POS reprint function if you need paper for a specific transaction.',
+      'Use your POS reprint function if you need paper for a specific sale.',
     ],
   },
 ]
 
 const DOS: string[] = [
-  'Keep the device plugged in and powered on at all times',
-  'Tell customers they can tap for a digital receipt',
-  'Keep your merchant guide near your POS for reference',
-  'Call PapeX support if anything seems off',
-  'Let PapeX know if you change your Wi-Fi network or password',
-  'Contact PapeX before switching POS systems or terminals',
+  'Keep the PapeX sticker at the register, where customers can see it',
+  'Tell customers they can tap for their receipt',
+  'Wipe the sticker with a soft cloth if it gets dirty',
+  'Keep the instructions that came with your stickers',
+  'Call PapeX if anything seems off',
+  'Tell PapeX before you add a register, switch POS systems or change your POS API keys',
 ]
 
 const DONTS: string[] = [
-  'Don’t unplug or move the device without contacting PapeX',
-  'Don’t open, disassemble, or modify the device',
-  'Don’t pour liquids on or near the device',
-  'Don’t place stickers, tape, or objects on top of the device',
-  'Don’t move the device to a different POS station without contacting PapeX',
+  'Don’t cover the sticker with other stickers, tape or signs',
+  'Don’t cut, fold or peel apart the sticker',
+  'Don’t move a sticker to a different register without telling PapeX',
+  'Don’t delete the API key PapeX uses in your POS without telling us',
 ]
 
 const CUSTOMER_QA: { q: string; a: React.ReactNode }[] = [
   {
-    q: '“What’s that thing?”',
-    a: 'That’s PapeX. Tap your phone, and your receipt pops up. No paper, no email, no clutter.',
+    q: '“What’s that sticker?”',
+    a: 'That’s PapeX. Tap your phone on it, and your receipt pops up. No paper, no email, no clutter.',
   },
   {
     q: '“How does it work?”',
-    a: 'Just tap your phone on it after you pay. A little window pops up on your screen with your receipt. That’s it.',
+    a: 'Just tap your phone on the sticker after you pay. Your receipt pops up on your screen. That’s it.',
   },
   {
     q: '“Do I need to download an app?”',
@@ -255,15 +153,15 @@ const CUSTOMER_QA: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: '“Is there an app?”',
-    a: 'It’s an app that keeps all your receipts and coupons in one place, so finding them takes seconds rather than minutes. It’s available on Apple and Android today!',
+    a: 'Yes. It keeps all your receipts and coupons in one place, so finding them takes seconds rather than minutes. It’s on the App Store and Google Play.',
   },
   {
-    q: '“Is it free?”',
-    a: 'Yep, it’s free. It just sends your receipt to your phone instead of printing it.',
+    q: '“Does it cost anything?”',
+    a: 'No. Getting your receipt with a tap is free.',
   },
   {
     q: '“Is my info safe?”',
-    a: 'It only sends you your receipt. It doesn’t collect any personal info or card details.',
+    a: 'A tap sends you only your receipt. No name, email or phone number, and like a paper receipt it shows just the last 4 digits of your card.',
   },
   {
     q: '“Can I still get a paper receipt?”',
@@ -271,11 +169,11 @@ const CUSTOMER_QA: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: '“What if it didn’t work / nothing happened?”',
-    a: 'Try holding your phone flat against it for a couple seconds. Sometimes a phone case can block it too. When the green light blinks fast, it’s ready for your tap.',
+    a: 'Hold the top of your phone flat on the sticker for a couple of seconds, with your screen on. A thick case can block it too.',
   },
   {
     q: '“Does it work with my phone?”',
-    a: 'Yeah, iPhone and Android both tap. iPhones open the receipt right away; Android phones open it in the browser.',
+    a: 'Yes, iPhone and Android. iPhones open the receipt right away; Android phones open it in the browser.',
   },
 ]
 
@@ -334,10 +232,10 @@ export default function SupportPage() {
                   <SectionLabel>For businesses</SectionLabel>
                 </Reveal>
                 <WordReveal as="h1" className={`rd-display ${styles.title}`}>
-                  Help with your PapeX device
+                  Help with your PapeX sticker
                 </WordReveal>
                 <Reveal as="p" delay={0.15} className={styles.lead}>
-                  Status lights, quick fixes, and how to reach us.
+                  How it works, quick fixes, and how to reach us.
                 </Reveal>
               </header>
               <Reveal delay={0.25} className={styles.body}>
@@ -346,54 +244,25 @@ export default function SupportPage() {
             </div>
           </FlowSection>
 
-          <FlowSection ground="light" id="status-light" className={styles.section}>
+          <FlowSection ground="light" id="how-it-works" className={styles.section}>
             <div className={styles.wrap}>
               <SectionHead
-                title="Status light"
-                lead="Your PapeX device has one status light. Here’s what each state means:"
+                title="How it works"
+                lead="There’s one PapeX sticker at each register. Nothing to plug in, charge or connect."
               />
-              <ScrollReveal className={`${styles.card} ${styles.body}`}>
-                {/* Phones: each row stacks into a small card (support.module.css), so
-                    nothing is cut off at the card edge. Explicit roles keep it a
-                    table for screen readers once CSS changes its display. */}
-                <div className={styles.tableScroll} data-scroll-x="">
-                  <table className={styles.table} role="table">
-                    <thead role="rowgroup">
-                      <tr role="row">
-                        <th scope="col" role="columnheader" className={styles.cap}>Light</th>
-                        <th scope="col" role="columnheader" className={styles.cap}>Means</th>
-                        <th scope="col" role="columnheader" className={styles.cap}>What to do</th>
-                        <th scope="col" role="columnheader" className={styles.cap}>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody role="rowgroup">
-                      {LIGHT_ROWS.map((row) => {
-                        const sig = SIGNAL_STYLES[row.signal]
-                        return (
-                          <tr key={`${row.light}-${row.meaning}`} role="row">
-                            <td role="cell" className={styles.lightCell}>
-                              <span className={styles.lightName}>
-                                <LightDot color={row.color} blink={row.blink} />
-                                {row.light}
-                              </span>
-                            </td>
-                            <td role="cell" className={styles.meansCell}>{row.meaning}</td>
-                            <td role="cell" className={styles.detailCell}>{row.detail}</td>
-                            <td role="cell" className={styles.statusCell}>
-                              <span className={`${styles.signal} ${sig.className}`}>{sig.label}</span>
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </ScrollReveal>
+              <ol className={`${styles.howGrid} ${styles.body}`}>
+                {HOW_IT_WORKS.map((step, i) => (
+                  <ScrollReveal as="li" key={step.title} order={i} className={`${styles.card} ${styles.cardPad}`}>
+                    <p className={`${styles.cap} ${styles.howNum}`}>Step {i + 1}</p>
+                    <h3 className={styles.howTitle}>{step.title}</h3>
+                    <p className={styles.howText}>{step.text}</p>
+                  </ScrollReveal>
+                ))}
+              </ol>
               <ScrollReveal className={`${styles.card} ${styles.cardPad} ${styles.rule}`}>
                 <p className={styles.cap}>Quick rule</p>
                 <p className={styles.ruleText}>
-                  Solid green = ready. Slow green = working. Fast green = tap now. Any red = check the
-                  table.
+                  Finish the sale, then the customer holds their phone flat on the sticker.
                 </p>
               </ScrollReveal>
             </div>
@@ -529,8 +398,8 @@ export default function SupportPage() {
                     Never touches card data
                   </ScrollWords>
                   <ScrollReveal as="p" className={styles.lead}>
-                    Your PapeX device only sees the receipt. It never touches card data: nothing stored,
-                    processed or sent.
+                    The POS handles the card. PapeX only gets the receipt, and never stores, processes
+                    or transmits card data.
                   </ScrollReveal>
                   <ScrollReveal className={styles.cta}>
                     <Link href="/pci" className="rd-btn rd-btn-primary">

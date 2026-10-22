@@ -22,10 +22,15 @@ export type SignupKind = (typeof SIGNUP_KINDS)[number];
 export const BLOG_SOURCES = ["footer", "blog-index", "blog-post"] as const;
 export type BlogSource = (typeof BLOG_SOURCES)[number];
 
-/** The support form's fixed topics (value -> the label shown and emailed). */
+/**
+ * The support form's fixed topics (value -> the label shown and emailed).
+ * The `device` key predates the PapeX sticker (it was the RDH box); it stays
+ * as-is because it is the value stored in `support_requests` and sent by the
+ * form, so only its label changed (Web 2.4).
+ */
 export const SUPPORT_TOPICS = {
   app: "The PapeX app",
-  device: "My PapeX device (business)",
+  device: "My PapeX sticker (business)",
   other: "Something else",
 } as const;
 export type SupportTopic = keyof typeof SUPPORT_TOPICS;

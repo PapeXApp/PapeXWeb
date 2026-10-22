@@ -40,7 +40,7 @@ route reads at most 16 KB and a demo/blog body over 4 KB is still a 413).
 ```
 
 - Support topics (fixed; label = what the form shows and the email says):
-  `app` "The PapeX app", `device` "My PapeX device (business)", `other`
+  `app` "The PapeX app", `device` "My PapeX sticker (business)", `other`
   "Something else". Source of truth: `SUPPORT_TOPICS` in `lib/signup/schema.ts`.
 - Support `message`: 10–4,000 characters after cleaning. Unlike every other
   field it keeps its line breaks (`cleanMultilineText`: CRLF/CR → LF, other

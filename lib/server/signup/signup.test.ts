@@ -624,8 +624,8 @@ async function main() {
     assert.equal(h.sent.length, 1);
     const email = h.sent[0];
     assert.equal(email.replyTo, "Grace@Example.com");
-    assert.equal(email.subject, "PapeX support: My PapeX device (business) \u2014 Grace Hopper");
-    assert.match(email.text, /Topic:\s+My PapeX device \(business\)/);
+    assert.equal(email.subject, "PapeX support: My PapeX sticker (business) \u2014 Grace Hopper");
+    assert.match(email.text, /Topic:\s+My PapeX sticker \(business\)/);
     assert.match(email.text, /Page:\s+\/support/);
     assert.match(email.text, /2026-09-24T12:00:00.000Z/);
     assert.match(email.text, /The light is blinking red\.\nWhat should I do\?$/);
@@ -726,7 +726,7 @@ async function main() {
     assert.equal(pairs.length, 2);
     assert.ok(!/[\s#]/.test(href), href);
     const params = Object.fromEntries(pairs.map((kv) => kv.split("=").map(decodeURIComponent)));
-    assert.equal(params.subject, "PapeX support: My PapeX device (business) \u2014 Ada & Co");
+    assert.equal(params.subject, "PapeX support: My PapeX sticker (business) \u2014 Ada & Co");
     assert.ok(params.body.startsWith("Red light?\r\nTried 100% & #2\r\n\r\n---\r\n"));
     assert.match(params.body, /Email: ada@example\.com/);
     assert.match(params.body, /Page: \/support$/);
