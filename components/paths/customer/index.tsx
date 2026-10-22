@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { FlowGround } from "../shared/FlowGround";
 import { Faq } from "../shared/Faq";
 import { SiteFooter } from "@/components/brand/site-footer";
@@ -77,22 +77,41 @@ export function CustomerPath() {
   return (
     <div className={styles.path}>
       <FlowGround initial="light" footer={<SiteFooter inFlow />}>
+        {/* One Suspense boundary per section below the hero: React hydrates
+            them one at a time and can stop between them for a tap (see
+            business/index.tsx). Nothing suspends; the HTML is unchanged. */}
         <Hero />
-        <Pocket />
-        <Personas />
-        <Features />
-        <Problem />
-        <HowItWorks />
-        <MarqueeBand />
-        <Vision />
-        <Faq
-          id="faq"
-          eyebrowIndex="08"
-          ground="navy"
-          heading={customerFaqHeading}
-          items={customerFaq}
-          footer={<DownloadCta />}
-        />
+        <Suspense fallback={null}>
+          <Pocket />
+        </Suspense>
+        <Suspense fallback={null}>
+          <Personas />
+        </Suspense>
+        <Suspense fallback={null}>
+          <Features />
+        </Suspense>
+        <Suspense fallback={null}>
+          <Problem />
+        </Suspense>
+        <Suspense fallback={null}>
+          <HowItWorks />
+        </Suspense>
+        <Suspense fallback={null}>
+          <MarqueeBand />
+        </Suspense>
+        <Suspense fallback={null}>
+          <Vision />
+        </Suspense>
+        <Suspense fallback={null}>
+          <Faq
+            id="faq"
+            eyebrowIndex="08"
+            ground="navy"
+            heading={customerFaqHeading}
+            items={customerFaq}
+            footer={<DownloadCta />}
+          />
+        </Suspense>
       </FlowGround>
     </div>
   );

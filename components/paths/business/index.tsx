@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import { FlowGround } from "../shared/FlowGround"
 import { Faq } from "../shared/Faq"
 import { SiteFooter } from "@/components/brand/site-footer"
@@ -32,17 +33,34 @@ import { businessFaq, businessFaqHeading } from "./faq"
 export function BusinessPath() {
   return (
     <FlowGround initial="navy" footer={<SiteFooter inFlow />}>
+      {/* Each section below the hero is its own Suspense boundary (nothing
+          here suspends, so the server HTML is unchanged). React then hydrates
+          them one at a time and can stop between them for a tap, instead of
+          blocking the phone for the whole page at once (Nico, 2026-10-22:
+          the menu was slow to respond while the page started up). */}
       <Hero />
-      <TapToRetain />
+      <Suspense fallback={null}>
+        <TapToRetain />
+      </Suspense>
       {/* #how: the hero's "See how it works" target. */}
       <div id="how" className="min-[821px]:scroll-mt-[100px]">
-        <WhyMerchants />
+        <Suspense fallback={null}>
+          <WhyMerchants />
+        </Suspense>
       </div>
       {/* SLOT: merchant value calculator (coming soon) */}
-      <RdsSticker />
-      <HowItWorks />
-      <DemoForm />
-      <Faq id="faq" eyebrowIndex="06" ground="light" heading={businessFaqHeading} items={businessFaq} />
+      <Suspense fallback={null}>
+        <RdsSticker />
+      </Suspense>
+      <Suspense fallback={null}>
+        <HowItWorks />
+      </Suspense>
+      <Suspense fallback={null}>
+        <DemoForm />
+      </Suspense>
+      <Suspense fallback={null}>
+        <Faq id="faq" eyebrowIndex="06" ground="light" heading={businessFaqHeading} items={businessFaq} />
+      </Suspense>
     </FlowGround>
   )
 }

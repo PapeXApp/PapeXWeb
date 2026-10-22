@@ -119,6 +119,19 @@ function useHeroCtaHidden(path: SitePath, pathname: string | null): boolean {
 
 const MENU_ID = 'rd-nav-menu'
 
+/**
+ * The phone menu works from the first paint, before React has hydrated
+ * (Nico, 2026-10-22: the menu took seconds on his iPhone; a tap made while
+ * the page's JS was still loading was lost, so it only opened on a later
+ * tap). This plain script, inlined right after the nav, opens and closes the
+ * sheet by its attributes until SiteNav has mounted, and swallows those
+ * clicks so React doesn't replay them. SiteNav then takes over (it reads
+ * window.__rdMenu.open on mount).
+ */
+const PRE_HYDRATION_MENU = `(function(){var w=window,s=w.__rdMenu={ready:false,open:false};function set(o){var b=document.querySelector('button[aria-controls="${MENU_ID}"]'),m=document.getElementById('${MENU_ID}'),d=document.querySelector('[data-rd-menu-backdrop]');if(!b||!m)return;s.open=o;b.setAttribute('aria-expanded',o?'true':'false');b.setAttribute('aria-label',o?'Close menu':'Open menu');[m,d].forEach(function(e){if(!e)return;if(o)e.setAttribute('data-open','');else e.removeAttribute('data-open')});if(o)m.removeAttribute('inert');else m.setAttribute('inert','')}function on(e){if(s.ready){document.removeEventListener('click',on,true);return}var t=e.target;if(!t||!t.closest)return;if(t.closest('button[aria-controls="${MENU_ID}"]')){e.preventDefault();e.stopImmediatePropagation();set(!s.open)}else if(s.open&&t.closest('[data-rd-menu-backdrop]')){e.preventDefault();e.stopImmediatePropagation();set(false)}}document.addEventListener('click',on,true)})();`
+
+type PreMenu = { ready: boolean; open: boolean }
+
 /** Phone browser toolbar tint per ground (see the <meta> in SiteNav). */
 const THEME_COLOR_LIGHT = '#F5F5F5'
 const THEME_COLOR_DARK = '#00121D'
@@ -155,6 +168,15 @@ export function SiteNav({ path }: { path: SitePath }) {
   }, [])
 
   useEffect(() => setMenuOpen(false), [pathname])
+
+  // Take over from the pre-hydration script (PRE_HYDRATION_MENU): a menu
+  // opened before React was ready stays open.
+  useEffect(() => {
+    const pre = (window as Window & { __rdMenu?: PreMenu }).__rdMenu
+    if (!pre) return
+    pre.ready = true
+    if (pre.open) setMenuOpen(true)
+  }, [])
 
   // While the sheet is open (s-06): Escape or a tap outside closes it and
   // hands focus back to the burger, and the page underneath can't scroll.
@@ -362,6 +384,7 @@ export function SiteNav({ path }: { path: SitePath }) {
       <div
         ref={backdropRef}
         className={m.backdrop}
+        data-rd-menu-backdrop=""
         data-open={menuOpen ? '' : undefined}
         aria-hidden="true"
         onClick={() => closeMenu(true)}
@@ -387,6 +410,7 @@ export function SiteNav({ path }: { path: SitePath }) {
           </Link>
         ))}
       </div>
+      <script dangerouslySetInnerHTML={{ __html: PRE_HYDRATION_MENU }} />
     </nav>
   )
 }
