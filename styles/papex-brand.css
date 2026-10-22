@@ -549,6 +549,21 @@ html:has([data-flow-root][data-ground="light"]) {
   .rd-logo-bubble,
   .rd-burger {
     flex: none;
+    transition: background-color 0.35s ease, border-color 0.3s ease,
+      box-shadow 0.35s ease, color 0.35s ease,
+      transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+  }
+  /* Out of the way while reading (Nico, 2026-10-22: "don't cover anything
+     important"): scrolling down, the two pills slide up off the screen;
+     any scroll up, the top of the page, or keyboard focus brings them back
+     (site-nav.tsx sets data-tucked). Transform + opacity on the pills only:
+     a transform on .rd-nav itself would re-anchor the menu sheet and
+     backdrop (position: fixed inside it). */
+  .rd-nav[data-tucked]:not(:focus-within) .rd-logo-bubble,
+  .rd-nav[data-tucked]:not(:focus-within) .rd-burger {
+    transform: translateY(calc(-100% - var(--nav-pad-y) - 12px));
+    opacity: 0;
+    pointer-events: none;
   }
 }
 /* Narrow phones (320-380): tighter side padding and gaps for the pills. */
