@@ -35,6 +35,18 @@
  * still reads it.
  * ========================================================================== */
 
+/* Glass inside the drawn phones has no blur (styles/papex-brand.css,
+   [data-mock-phone]); these panels get near-solid tints instead. */
+[data-mock-phone] .activity {
+  background: rgba(8, 14, 22, 0.9);
+}
+[data-mock-phone] .acard {
+  background: rgba(46, 52, 62, 0.95);
+}
+[data-mock-phone] .banner {
+  background: rgba(52, 58, 68, 0.95);
+}
+
 .frame {
   /* A parent overrides --wp-size (screen height) to reuse the device at a
      different scale: .demoStage (hero), .featShotPhone, .walkStage. */

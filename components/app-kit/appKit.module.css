@@ -227,3 +227,9 @@
     outline-offset: max(2px, calc(3 * var(--pt, 1px)));
   }
 }
+
+/* Inside the site's drawn phones the glass has no blur (iphone.module.css
+   [data-mock-phone]): a near-solid tint keeps what scrolls under it hidden. */
+[data-mock-phone] .liquid {
+  background: rgba(28, 36, 44, 0.94);
+}

@@ -1328,3 +1328,18 @@
     transform: scaleX(1);
   }
 }
+
+/* Inside the site's drawn phones the glass has no blur (iphone.module.css
+   [data-mock-phone]): near-solid tints keep what scrolls under it hidden. */
+[data-mock-phone] .liquid {
+  background: rgba(28, 36, 44, 0.94);
+}
+[data-mock-phone] .tabBar {
+  background: rgba(0, 18, 29, 0.94);
+}
+[data-mock-phone] .clipCard {
+  background: rgba(28, 32, 40, 0.96);
+}
+[data-mock-phone] .clipBar {
+  background: rgba(60, 66, 76, 0.94);
+}

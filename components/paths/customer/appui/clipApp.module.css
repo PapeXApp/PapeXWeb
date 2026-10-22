@@ -304,3 +304,9 @@ button.save:active {
     transition: none;
   }
 }
+
+/* Inside the site's drawn phones the glass has no blur (iphone.module.css
+   [data-mock-phone]): a near-solid tint instead. */
+[data-mock-phone] .menu {
+  background: rgba(50, 56, 66, 0.96);
+}

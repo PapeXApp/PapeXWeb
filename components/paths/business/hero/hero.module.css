@@ -101,17 +101,10 @@
   width: 100%;
   height: var(--hero-sh);
   overflow: clip;
-  /* Soft sides and foot: anything running off the stage fades out instead
-     of stopping at a hard edge. The close-up phone sits
-     inside the unmasked area (see the "zoom" pose). */
-  -webkit-mask-image:
-    linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent),
-    linear-gradient(180deg, #000 95%, transparent);
-  -webkit-mask-composite: source-in;
-  mask-image:
-    linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent),
-    linear-gradient(180deg, #000 95%, transparent);
-  mask-composite: intersect;
+  /* No mask (Nico's iPhone timeline, 2026-10-21): a mask over a scene
+     with an animating 3D phone made iPhone Safari redraw the whole stage,
+     counter and all, in software on every frame (~3.5s a frame). The art
+     sits inside the stage; overflow clips the rest. */
   transition: opacity 0.6s ease;
 }
 
@@ -159,7 +152,8 @@
   top: calc(50% + var(--cbot) - var(--ch));
   width: var(--cw);
   height: var(--ch);
-  filter: drop-shadow(0 calc(0.02 * var(--hero-sh)) calc(0.04 * var(--hero-sh)) rgba(0, 0, 0, 0.45));
+  /* (no drop-shadow: re-blurred with the stage on each frame in iPhone
+     Safari; the art draws its own contact shadows) */
 }
 .counterImg {
   display: block;

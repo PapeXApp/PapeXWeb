@@ -141,6 +141,17 @@
   -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 320px), transparent);
   mask-image: linear-gradient(to bottom, #000 calc(100% - 320px), transparent);
 }
+/* Phones: no mask on this page-tall layer. iPhone Safari re-applies a mask in
+   software whenever anything inside it changes (the aurora's crossfade on
+   every ground change), and Nico's iPhone timeline (2026-10-21) showed the
+   page drawing a frame only every few seconds. The pools are faint enough
+   on a phone that their last stretch into the footer needs no fade. */
+@media (max-width: 820px) {
+  .kit {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
 /* (The old `main:has(> .flow) + .rd-footer` border reset is gone: the in-flow
    footer variant `.rd-footer-flow` in styles/papex-brand.css already drops its
    own top border, and it is no longer a sibling of <main>.) */

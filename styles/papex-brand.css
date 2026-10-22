@@ -1001,3 +1001,15 @@ html[data-fork-skip] .rd-fork {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* --- The site's drawn phones: no frosted glass --------------------------------
+   (Nico's iPhone timeline, 2026-10-21) The phone mockups animate inside
+   transformed, 3D and masked scenes, where iPhone Safari re-renders every
+   backdrop-filter in software on each frame: the /business hero drew one
+   frame every ~3.5s and taps (the menu) waited for it. Every glass panel
+   inside a PhoneChrome frame (components/paths/customer/WalkPhone.tsx,
+   data-mock-phone) gets a near-solid tint from its own module instead. */
+[data-mock-phone] * {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
