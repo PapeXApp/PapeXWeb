@@ -17,6 +17,10 @@ import s from "./hero.module.css"
  *
  * Hero-only layers on top, all transform/opacity, driven by `state`:
  *   "landed"  a one-shot orange glow round the coupon card as it arrives
+ *   `covered` the barcode plate is blank (a hint to press "Use now") until
+ *             the finger presses it; then the blank slides off, revealing
+ *             the barcode (2026-10-22, Nico: "click the use now then
+ *             'reveal the barcode'"; the app itself always shows it)
  *   "scan"    a red scan line (the counter's scanner) sweeps the barcode once
  *   "used"    a "Coupon used" stamp over the barcode (beat 5, and the still)
  *
@@ -46,7 +50,7 @@ const box = (b: typeof CARD): CSSProperties => ({
   borderRadius: `calc(${b.radius} * var(--pt))`,
 })
 
-export function CouponScreen({ state, time }: { state: CouponState; time?: string }) {
+export function CouponScreen({ state, time, covered = false }: { state: CouponState; time?: string; covered?: boolean }) {
   // PapeX Cafe with the dashboard's logo on the coupon's store mark
   const store = useCafeStore().storeFor(COUPON.storeId)
   return (
@@ -55,6 +59,7 @@ export function CouponScreen({ state, time }: { state: CouponState; time?: strin
       <StatusBar time={time} />
       <span className={cn(s.cardGlow, state === "landed" && s.cardGlowPlay)} style={box(CARD)} aria-hidden="true" />
       <span className={s.stubBox} style={box(STUB)} aria-hidden="true">
+        <span className={cn(s.stubCover, !covered && s.stubCoverOff)}>{loop.useNowHint}</span>
         {state === "scan" ? <span className={s.scanLine} /> : null}
         <span className={cn(s.stamp, state === "used" && s.stampOn)}>
           <CheckGlyph className={s.stampGlyph} />

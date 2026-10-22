@@ -1,12 +1,13 @@
 // Copy for the /business hero visual: the "CLOSE THE LOOP" animation (P3-B1,
-// 2026-09-25; story redone in P3-B7 to Nico's storyboard). One 12-second loop at a
+// 2026-09-25; story redone in P3-B7 to Nico's storyboard). One ~14.5-second loop at a
 // checkout counter, one beat at a time:
 //   1. Tap      the phone touches the PapeX sticker; the App Clip card pops up;
 //               the view zooms into the phone and a finger presses "View"
 //   2. Receipt  the App Clip receipt opens: the next-visit coupon on top, the
 //               items below, scrolled down to "Save to PapeX"
 //   3. Save     Save is pressed: the receipt lands in the PapeX app
-//   4. Coupon   the coupon is opened in the app
+//   4. Coupon   the Coupons tab, the coupon opened, "Use now" pressed: its
+//               barcode is revealed
 //   5. Scan     back out at the counter, the phone is turned to the person
 //               behind it, who scans the coupon with a red handheld scanner:
 //               "Coupon used"
@@ -38,6 +39,9 @@ export const loop = {
   coupon: {
     barcode: "2026092402",
   },
+  /** On the coupon's barcode plate until "Use now" is pressed (the barcode
+   *  is then revealed). */
+  useNowHint: "Tap Use now to show the barcode",
   /** Beat 5: the stamp on the phone once the counter has scanned it. */
   applied: "Coupon used",
   /** Heading over the coupon on top of the App Clip receipt (same style as

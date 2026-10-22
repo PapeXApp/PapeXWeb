@@ -58,12 +58,21 @@ export type TabName = (typeof navigation.tabs)[number]['name'];
 /** Measured off the reference capture (system chrome, see header). */
 const CAPSULE = { inset: 21, height: 59, labelSize: 10, iconSize: 25 } as const;
 
-export function TabBar({ active, mode = 'dark' }: { active: TabName; mode?: AppMode }) {
+/** Opt-in, /business hero only: `slideHighlight` draws the selection as ONE
+ *  pill that slides (transform) to the active tab, so a tab switch reads as
+ *  a move; without it the bar renders exactly as before. Every bar carries
+ *  `data-ak-tabbar`, so a scene can hide a screen's own bar under a shared
+ *  one. */
+export function TabBar({ active, mode = 'dark', slideHighlight = false }: { active: TabName; mode?: AppMode; slideHighlight?: boolean }) {
   const { colors, isDark } = appTheme(mode);
+  const highlight = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,18,29,0.07)';
+  const tabs = navigation.tabs.length;
+  const index = navigation.tabs.findIndex((tab) => tab.name === active);
   return (
     <V
       className={s.liquid}
       aria-hidden
+      data-ak-tabbar=""
       style={{
         position: 'absolute',
         left: pt(CAPSULE.inset),
@@ -78,6 +87,22 @@ export function TabBar({ active, mode = 'dark' }: { active: TabName; mode?: AppM
         zIndex: 20,
       }}
     >
+      {/* (before the tabs: they are positioned (.v), so they paint over it) */}
+      {slideHighlight ? (
+        <div
+          style={{
+            position: 'absolute',
+            left: pt(4),
+            top: pt(4),
+            width: `calc((100% - ${pt(8)}) / ${tabs})`,
+            height: pt(CAPSULE.height - 8),
+            borderRadius: pt((CAPSULE.height - 8) / 2),
+            background: highlight,
+            transform: `translateX(${Math.max(0, index) * 100}%)`,
+            transition: 'transform 0.38s cubic-bezier(0.3, 0.9, 0.3, 1)',
+          }}
+        />
+      ) : null}
       {navigation.tabs.map((tab) => {
         const on = tab.name === active;
         const src = isDark ? (on ? tab.icons.darkSelected : tab.icons.darkDefault) : on ? tab.icons.lightSelected : tab.icons.lightDefault;
@@ -91,7 +116,7 @@ export function TabBar({ active, mode = 'dark' }: { active: TabName; mode?: AppM
               justifyContent: 'center',
               gap: pt(1),
               borderRadius: pt((CAPSULE.height - 8) / 2),
-              background: on ? (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,18,29,0.07)') : undefined,
+              background: on && !slideHighlight ? highlight : undefined,
             }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}

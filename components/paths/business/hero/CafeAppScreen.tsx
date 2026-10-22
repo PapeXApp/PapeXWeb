@@ -23,6 +23,7 @@ import { walkReceipts } from "../../customer/appui"
 import x from "../../customer/appui/appScreens.module.css"
 import { cafeReceipt } from "../papexCafe"
 import { useCafeStore } from "../story/phone/cafeLogo"
+import h from "./hero.module.css"
 
 /**
  * The hero loop's PapeX app (Receipts tab, then Coupons tab) with the demo
@@ -31,6 +32,13 @@ import { useCafeStore } from "../story/phone/cafeLogo"
  * shared demo data, where it is still "Tidewick Cafe" for /customers. The
  * Coupons tab is composed from the kit's own parts in the order the kit's
  * CouponsScreen composes them, only so each row can take the renamed store.
+ *
+ * The switch from Receipts to Coupons reads as a page switch (2026-10-22,
+ * Nico: make it "a little more visible"): one tab bar stays put over both
+ * screens (their own bars are hidden under it) and its highlight slides to
+ * Coupons, while Receipts slides out to the left and Coupons in from the
+ * right (hero.module.css .appPage). The finger's tap on the tab is
+ * LoopVisual's.
  */
 
 const GB = R.glassBubble.consts
@@ -90,12 +98,13 @@ export function CafeWalkAppScreen({ summary, coupons, time }: { summary: Receipt
   const receipts = walkReceipts(summary).map((r) => receipt(cafeReceipt(r)))
   return (
     <AppKitRoot mode="dark" width="var(--wp-w)" className={x.root}>
-      <div className={cn(x.layer, !coupons && x.on)} aria-hidden={coupons}>
+      <div className={cn(h.appPage, coupons && h.appPageLeft)} aria-hidden={coupons}>
         <ReceiptsScreen receipts={receipts} statusBar={false} />
       </div>
-      <div className={cn(x.layer, coupons && x.on)} aria-hidden={!coupons}>
+      <div className={cn(h.appPage, !coupons && h.appPageRight)} aria-hidden={!coupons}>
         <CafeCouponsScreen />
       </div>
+      <TabBar active={coupons ? "coupons" : "receipts"} mode="dark" slideHighlight />
       <StatusBar time={time} />
     </AppKitRoot>
   )

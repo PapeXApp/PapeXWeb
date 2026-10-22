@@ -661,6 +661,57 @@
   overflow: hidden;
   pointer-events: none;
 }
+/* Before "Use now": a blank plate over the barcode, in the stub's own white,
+   with a hint; pressed, it slides off to the right and the barcode is
+   there (transform only; .stubBox clips it). */
+.stubCover {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 calc(16 * var(--pt));
+  background: #fff;
+  color: rgba(0, 18, 29, 0.5);
+  font-family: var(--ak-font-barlow, inherit);
+  font-size: calc(13 * var(--pt));
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: center;
+  transition: transform 0.5s cubic-bezier(0.6, 0, 0.2, 1);
+}
+.stubCoverOff {
+  transform: translateX(101%);
+}
+/* The app's pages (CafeAppScreen.tsx): Receipts slides out to the left as
+   Coupons slides in from the right, under one shared tab bar (each page's
+   own bar is hidden). */
+.appPage {
+  position: absolute;
+  inset: 0;
+  /* coming in: fades in just behind the outgoing page's fade out, so the
+     two never sit half-faded over each other */
+  transition:
+    transform 0.42s cubic-bezier(0.3, 0.9, 0.3, 1),
+    opacity 0.26s ease 0.1s;
+}
+.appPage [data-ak-tabbar] {
+  visibility: hidden;
+}
+.appPageLeft,
+.appPageRight {
+  opacity: 0;
+  transition:
+    transform 0.42s cubic-bezier(0.3, 0.9, 0.3, 1),
+    opacity 0.14s ease;
+}
+.appPageLeft {
+  transform: translateX(-28%);
+}
+.appPageRight {
+  transform: translateX(28%);
+}
 .scanLine {
   /* where the beam's sheet lands (.beamSheet ends on the stub's middle
      line): a red line across the barcode, and a red wash over it */
