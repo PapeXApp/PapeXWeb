@@ -569,6 +569,11 @@ export function RetainStory({ header }: { header: ReactNode }) {
       postS: 1,
       /** <=820px: the phone dashboard card replaces the laptop */
       phoneDash: false,
+      /** phones, once the counter has gone: the phone centred in the stage
+       *  and grown to fill it (about its own bottom-centre origin) */
+      focusX: 0,
+      focusY: 0,
+      focusS: 1,
       /** the tap's tilt, degrees (smaller on phones: the phone is taller) */
       bowRot: 7,
       /** phone card bloom: centre (card px) and full radius */
@@ -835,6 +840,22 @@ export function RetainStory({ header }: { header: ReactNode }) {
       // (phones: the counter sits above the phone, Nico 2026-10-21)
       M.bowY = (db.y + db.h / 2 < phb.y + phb.h / 2 ? -1 : 1) * 4.2 * cq
       M.lapIn = 5 * cq
+      // Phones (no camera): after the tap the counter fades and the phone
+      // takes the whole stage, centred, as large as it fits (Nico,
+      // 2026-10-21: "center the phone in the screen after the tap ... it
+      // should use up the white space"). Scaled about its bottom centre.
+      if (M.phoneDash) {
+        const sw = stage.clientWidth
+        const sh = stage.clientHeight
+        const fs = Math.min((0.96 * sh) / phb.h, (0.94 * sw) / phb.w)
+        M.focusS = fs
+        M.focusX = sw / 2 - (phb.x + phb.w / 2)
+        M.focusY = sh / 2 - (phb.y + phb.h - (fs * phb.h) / 2)
+      } else {
+        M.focusS = 1
+        M.focusX = 0
+        M.focusY = 0
+      }
 
       // P4-BT: the App Clip card inside its layer (the reused ClipLockScreen
       // draws it at rest; the frame slides the whole layer up and clips it
@@ -1286,10 +1307,13 @@ export function RetainStory({ header }: { header: ReactNode }) {
       // the phone rises beside the sticker, then bows onto it (the tap)
       const rise = ease(seg(p, T.phoneA, T.phoneB))
       const bow = ease(seg(p, T.bowA, T.bowB)) * (1 - ease(seg(p, T.upA, T.upB)))
+      // phones: centred and grown while the counter is gone, back to its
+      // place as the pair shrinks into the corner (the spark's slide)
+      const focus = gone * (1 - ease(seg(p, T.slideA, T.slideB)))
       set(
         phoneRef.current,
         "transform",
-        `translate(${(M.bowX * bow).toFixed(1)}px, ${((1 - rise) * 0.35 * M.phoneH + M.bowY * bow).toFixed(1)}px) rotate(${(M.bowRot * bow).toFixed(2)}deg)`,
+        `translate(${(M.bowX * bow + M.focusX * focus).toFixed(1)}px, ${((1 - rise) * 0.35 * M.phoneH + M.bowY * bow + M.focusY * focus).toFixed(1)}px) scale(${(1 + (M.focusS - 1) * focus).toFixed(4)}) rotate(${(M.bowRot * bow).toFixed(2)}deg)`,
         "phT",
       )
       op(phoneRef.current, rise * 3, "phO")
