@@ -51,8 +51,8 @@ const COLUMNS: { title: string; links: { href: string; label: string }[] }[] = [
   {
     title: 'PapeX',
     links: [
-      { href: '/customers', label: 'For Customers' },
-      { href: '/business', label: 'For Businesses' },
+      { href: '/customers', label: 'Shoppers' },
+      { href: '/business', label: 'Businesses' },
       { href: '/blog', label: 'Blog' },
     ],
   },
@@ -66,6 +66,14 @@ const COLUMNS: { title: string; links: { href: string; label: string }[] }[] = [
     ],
   },
 ]
+
+/** Social chips that have a real URL. Empty today (links.ts), so the row is
+ *  not rendered at all: an empty row still added its 22px top margin (A10). */
+const SOCIAL_CHIPS = ([
+  { key: 'linkedin', label: 'in', name: 'LinkedIn' },
+  { key: 'x', label: 'X', name: 'X' },
+  { key: 'instagram', label: 'IG', name: 'Instagram' },
+] as const).filter((chip) => Boolean(SOCIAL_LINKS[chip.key]))
 
 export function SiteFooter({ inFlow = false }: { inFlow?: boolean }) {
   return (
@@ -100,27 +108,22 @@ export function SiteFooter({ inFlow = false }: { inFlow?: boolean }) {
           {/* Social chips are brand texture only — PapeX has no confirmed
               profile URLs in this repo yet, so each chip only renders once
               its URL in SOCIAL_LINKS is filled in. */}
-          <div style={{ marginTop: 22, display: 'flex', gap: 12 }}>
-            {([
-              { key: 'linkedin', label: 'in', name: 'LinkedIn' },
-              { key: 'x', label: 'X', name: 'X' },
-              { key: 'instagram', label: 'IG', name: 'Instagram' },
-            ] as const).map(
-              (chip) =>
-                SOCIAL_LINKS[chip.key] && (
-                  <a
-                    key={chip.key}
-                    href={SOCIAL_LINKS[chip.key]}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`PapeX on ${chip.name}`}
-                    className="rd-social-chip"
-                  >
-                    {chip.label}
-                  </a>
-                ),
-            )}
-          </div>
+          {SOCIAL_CHIPS.length > 0 && (
+            <div style={{ marginTop: 22, display: 'flex', gap: 12 }}>
+              {SOCIAL_CHIPS.map((chip) => (
+                <a
+                  key={chip.key}
+                  href={SOCIAL_LINKS[chip.key]}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`PapeX on ${chip.name}`}
+                  className="rd-social-chip"
+                >
+                  {chip.label}
+                </a>
+              ))}
+            </div>
+          )}
         </div>
 
         {COLUMNS.map((column) => (
@@ -141,11 +144,11 @@ export function SiteFooter({ inFlow = false }: { inFlow?: boolean }) {
           <div
             style={{ fontSize: 14, color: 'var(--foot-ink-2)', lineHeight: 1.7 }}
           >
-            <a href={`mailto:${SUPPORT_EMAIL}`} className="rd-foot-link">
+            <a href={`mailto:${SUPPORT_EMAIL}`} className={`rd-foot-link ${f.contactLink}`}>
               {SUPPORT_EMAIL}
             </a>
             <br />
-            <a href={SALES_PHONE_HREF} className="rd-foot-link">
+            <a href={SALES_PHONE_HREF} className={`rd-foot-link ${f.contactLink}`}>
               {SALES_PHONE}
             </a>
             <br />

@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
 import { ClipLockScreen } from "../../customer/appui"
 import { receiptMoment } from "../../customer/appui/Clip"
@@ -57,7 +57,11 @@ import cardStyles from "../tapToRetain.module.css"
 
 /** Scroll budget for the scene, in viewport heights. */
 const SCROLL_VH = 230
-/** The runway: the pinned viewport plus the scene's scroll. */
+/** The runway: the pinned viewport plus the scene's scroll. Phones (<= 820px)
+ *  override it in CSS (intro.module.css `.runway`, 220vh: the same beats in
+ *  the same order over 120vh of scroll instead of 230vh, like Pocket on
+ *  /customers). Progress is a fraction of the runway measured in measure()
+ *  (runway minus pin, never innerHeight), so nothing here changes. */
 const RUNWAY_VH = 100 + SCROLL_VH
 
 const T = {
@@ -348,7 +352,12 @@ export function IntroScene({ header }: { header: ReactNode }) {
     {flowHead}
     {description}
     {staticVersion}
-    <div ref={runwayRef} className={s.runway} data-nojs="runway" style={{ height: `${RUNWAY_VH}vh` }}>
+    <div
+      ref={runwayRef}
+      className={s.runway}
+      data-nojs="runway"
+      style={{ ["--intro-runway" as string]: `${RUNWAY_VH}vh` } as CSSProperties}
+    >
       <div className={s.pin} ref={pinRef}>
         <div className={s.pinHead}>{header}</div>
         <div className={s.layout}>

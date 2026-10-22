@@ -131,6 +131,8 @@
   color: var(--flow-fg);
   fill: none;
   stroke: currentColor;
+  /* thin, like the logo's own lines (Nico, 2026-10-21: "thin lines usually
+     means cleaner look, keep it consistent across all those visuals") */
   stroke-width: 1;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -146,19 +148,20 @@
   stroke: none;
   fill: color-mix(in srgb, var(--flow-fg) 3%, transparent);
 }
-/* 01's PapeX plane mark as line art: every shape outlined in the ink. It is
-   drawn at 46/1347 of its own units, so its stroke width is the art's ink
-   (1, 1.4 on phones) divided by that scale; the circuit traces (the mark's
-   1st and 5th paths, already hairlines) get half that so they read as fine
-   lines, not blobs (Nico, 2026-10-21: thinner lines across the flow). */
+/* 01's PapeX plane mark as line art. Nico, 2026-10-21 (last): "make these
+   lines thinner, I should see a perfect render of the logo": the mark is
+   drawn from its own LINE layer (paths 1 and 5, the white outline, folds
+   and circuit traces of the real logo), filled in the ink, its orange body
+   left out. That is the logo exactly, at its own line weight (no stroke
+   round its shapes, which doubled and blurred them), and as fine as the
+   art's 1-unit ink. */
 .art .logoLine path {
   fill: none;
-  stroke: currentColor;
-  stroke-width: 29;
+  stroke: none;
 }
 .art .logoLine path:nth-of-type(1),
 .art .logoLine path:nth-of-type(5) {
-  stroke-width: 14;
+  fill: currentColor;
 }
 .art .accFill {
   stroke: none;
@@ -350,15 +353,8 @@
     grid-row: 1;
     width: 100%;
   }
-  .art .logoLine path {
-    stroke-width: 41;
-  }
-  .art .logoLine path:nth-of-type(1),
-  .art .logoLine path:nth-of-type(5) {
-    stroke-width: 20;
-  }
   .art {
-    stroke-width: 1.4;
+    stroke-width: 1.2;
   }
   .txt {
     grid-column: 3;
@@ -400,5 +396,26 @@
     display: block;
     top: calc(100% + 8px);
     bottom: auto;
+  }
+}
+/* Small phones (<= 359px, C6): beside a 96px drawing the text column was
+   ~144px at 320. The drawing goes above its text instead (same drawing, a
+   little larger), and the text takes the column's full width (~252px). */
+@media (max-width: 359px) {
+  .step {
+    grid-template-columns: var(--dot) minmax(0, 1fr);
+  }
+  .node {
+    grid-row: 1 / span 2;
+  }
+  .ill {
+    grid-column: 2;
+    grid-row: 1;
+    width: min(100%, 132px);
+  }
+  .txt {
+    grid-column: 2;
+    grid-row: 2;
+    margin-top: 6px;
   }
 }

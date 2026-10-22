@@ -31,7 +31,7 @@ export function Problem() {
         </ScrollReveal>
         <ScrollWords
           as="h2"
-          className="max-w-[20ch] [font-family:var(--font-display)] font-bold text-[length:var(--fs-h2)] leading-[1.02] tracking-[-.02em]"
+          className="max-w-[20ch] [font-family:var(--font-display)] font-bold text-[length:var(--fs-h2)] leading-[1.02] tracking-[-.02em] max-[820px]:[text-wrap:balance]"
         >
           {problemContent.headline}
         </ScrollWords>

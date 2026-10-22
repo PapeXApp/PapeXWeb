@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, type ReactNode } from "react"
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react"
 import { MousePointerClick } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PlaneMark } from "@/components/brand/plane-mark"
@@ -63,7 +63,9 @@ import ip from "../../customer/iphone.module.css"
  *                       bottom of the lock screen, a fingertip lands on its
  *                       View pill (press + ripple), and the card EXPANDS
  *                       into "Reading your receipt", then the receipt itself
- *                       — all the /customers App Clip kit, imported as is
+ *                       — all the /customers App Clip kit, imported as is.
+ *                       The counter + sticker fade out as the phone lifts
+ *                       off it (0.47-0.505): from here on, only the phone.
  *   0.64-0.81  SPARK    phone + sticker slide RIGHT, the laptop appears on the
  *                       LEFT (Nico, via the lead); a spark runs from the phone
  *                       to the laptop and its lid opens. On phones (<=820px)
@@ -140,7 +142,12 @@ const SCROLL_VH = Math.round(320 * P_END)
  * dashboard will stay open").
  */
 const DWELL_VH = 20
-/** The runway: the pinned viewport, the story, then the dwell. */
+/** The runway: the pinned viewport, the story, then the dwell. Phones
+ *  (<= 820px) override it in CSS (story.module.css `.runway`, 290vh instead
+ *  of 434vh): the same beats, hold and dwell in the same order and the same
+ *  proportions, over a third less scroll. Every mapping below works in
+ *  fractions of the measured runway (runway minus pin, p8: never
+ *  innerHeight), so nothing here changes. */
 const RUNWAY_VH = 100 + SCROLL_VH + DWELL_VH
 /**
  * HYSTERESIS. Once the story has fully opened it LATCHES: a small scroll up,
@@ -624,6 +631,11 @@ export function RetainStory({ header }: { header: ReactNode }) {
       finalRegion: null as Region | null,
       phoneBox: { x: 0, y: 0, w: 0, h: 0 } as Box,
       devBox: { x: 0, y: 0, w: 0, h: 0 } as Box,
+      /** the counter drawn round the sticker (its front corner and left end) */
+      counterBox: { x: 0, y: 0, w: 0, h: 0 } as Box,
+      /** after the tap, with the counter gone: the phone alone, centred, at
+       *  the tap frame's zoom (null = camera off) */
+      phoneCam: null as Cam | null,
       /** the final frame's pieces: laptop box, the pair's post-slide boxes */
       lapBox: { x: 0, y: 0, w: 0, h: 0 } as Box,
       finalPair: [] as Box[],
@@ -902,6 +914,7 @@ export function RetainStory({ header }: { header: ReactNode }) {
       // a zoom. The free area: under the nav (--cam-top), above the caption,
       // --cam-side from the viewport's edges, in the stage's own coordinates.
       M.cams = []
+      M.phoneCam = null
       M.cap = null
       M.region = null
       M.finalRegion = null
@@ -1009,8 +1022,21 @@ export function RetainStory({ header }: { header: ReactNode }) {
         M.trashMask = kTrash.mask
         // tap: the phone on the sticker, as big as the free area allows
         // (P3-B8: beside the heading when that is bigger, the pair is tall)
-        const kTap = place(R, M.head, [phb, db], { fill: TAP_FILL })
+        // The counter under the sticker (story.module.css .counterWin, the
+        // whole counter now) runs past the sticker's box: 0.45 of its width
+        // to the left, 2.28 of it wide, its front corner 1.39 of its height
+        // down. Frame that too (not its back, which sits behind the phone),
+        // so the counter never runs under the caption.
+        const counter: Box = { x: db.x - 0.4483 * db.w, y: db.y, w: 2.2773 * db.w, h: 1.3901 * db.h }
+        const kTap = place(R, M.head, [phb, db, counter], { fill: TAP_FILL })
         M.tapMask = kTap.mask
+        M.counterBox = counter
+        // Nico (2026-10-21): "when this is disappearing center the phone as
+        // well": as the counter fades after the tap, the camera moves onto
+        // the phone alone, no closer than the tap frame
+        // (under the heading, mask 0, so it centres on the stage, not in the
+        // room beside the title)
+        M.phoneCam = place(R, M.head, [phb], { fill: TAP_FILL, cap: kTap.s, mask: 0 })
         // final: the laptop (lid + deck) and the pair in its post-slide spot
         M.lapBox = la
         M.finalPair = [postBox(phb), postBox(db)]
@@ -1246,8 +1272,13 @@ export function RetainStory({ header }: { header: ReactNode }) {
       // (to 1:1: the slab is the sticker's own outline now, so it lands on
       // the art's edge exactly)
       set(slabRef.current, "transform", `scale(${(1.7 - 0.7 * dev).toFixed(4)}, ${(1.25 - 0.25 * dev).toFixed(4)})`, "slabT")
-      // the art is opaque by mid-way, so the slab settles BEHIND it
-      op(stickerRef.current, dev * 1.8, "devO")
+      // the art is opaque by mid-way, so the slab settles BEHIND it. Once the
+      // tap is done the counter goes (Nico, 2026-10-21: "the station should
+      // disappear and only show the phone once we are scrolling after the
+      // action of tapping occurred. the table is just for context"): it fades
+      // out as the phone lifts off the sticker, and back in on the way up.
+      const gone = ease(seg(p, T.upA, T.upB))
+      op(stickerRef.current, dev * 1.8 * (1 - gone), "devO")
 
       // the phone rises beside the sticker, then bows onto it (the tap)
       const rise = ease(seg(p, T.phoneA, T.phoneB))
@@ -1302,10 +1333,10 @@ export function RetainStory({ header }: { header: ReactNode }) {
       for (let n = 0; n < 3; n++) {
         const t = seg(p, T.ringsA + n * 0.018, T.ringsA + n * 0.018 + 0.04)
         const ring = ringRefs.current[n]
-        op(ring, t > 0 && t < 1 ? (1 - t) * 0.95 : 0, `rO${n}`)
+        op(ring, t > 0 && t < 1 ? (1 - t) * 0.95 * (1 - gone) : 0, `rO${n}`)
         set(ring, "transform", `translate(-50%, -50%) scale(${(0.4 + 0.95 * t).toFixed(3)})`, `rT${n}`)
       }
-      op(glowRef.current, dev * (0.45 + 0.55 * Math.sin(Math.PI * seg(p, T.bowA, T.upB))), "glow")
+      op(glowRef.current, dev * (1 - gone) * (0.45 + 0.55 * Math.sin(Math.PI * seg(p, T.bowA, T.upB))), "glow")
 
       // ---- the spark: phone + sticker slide right, the laptop opens left ----
       const g = ease(seg(p, T.slideA, T.slideB))
@@ -1406,8 +1437,12 @@ export function RetainStory({ header }: { header: ReactNode }) {
         const riseDy = (1 - rise) * 0.35 * M.phoneH
         const tapNow =
           riseDy > 0.5 && M.region
-            ? place(M.region, M.head, [shiftBox(M.phoneBox, 0, riseDy), M.devBox], { fill: TAP_FILL, mask: M.tapMask })
+            ? place(M.region, M.head, [shiftBox(M.phoneBox, 0, riseDy), M.devBox, M.counterBox], { fill: TAP_FILL, mask: M.tapMask })
             : cams[2]
+        // the counter fades as the phone lifts off it (T.upA..upB): the
+        // camera centres the phone over the same stretch
+        const kGo = ease(seg(p, T.upA, T.upB))
+        const phoneNow = M.phoneCam ?? cams[2]
         const finalNow = open > 0 && open < 1 ? finalFrame(open, M.finalMask) : open >= 1 ? cams[3] : cams[4]
         // P3-B11: while the heading shrinks, the print and trash frames are
         // framed against its corner at this p (the trash on its measured
@@ -1416,7 +1451,13 @@ export function RetainStory({ header }: { header: ReactNode }) {
         const printNow = hNow ? printFrame(print, hNow) : print < 1 ? printFrame(print) : cams[0]
         const trashNow = hNow ? trashFrame(hNow, M.trashMask) : cams[1]
         const [a0, b0, t0] =
-          k3 > 0 ? [cams[2], finalNow, k3] : k2 > 0 ? [trashNow, tapNow, k2] : [printNow, trashNow, k1]
+          k3 > 0
+            ? [phoneNow, finalNow, k3]
+            : kGo > 0
+              ? [cams[2], phoneNow, kGo]
+              : k2 > 0
+                ? [trashNow, tapNow, k2]
+                : [printNow, trashNow, k1]
         const cs = a0.s * Math.pow(b0.s / a0.s, t0)
         const cx = a0.x + (b0.x - a0.x) * t0
         const cy = a0.y + (b0.y - a0.y) * t0
@@ -1652,7 +1693,12 @@ export function RetainStory({ header }: { header: ReactNode }) {
     {flowHead}
     {description}
     {staticVersion}
-    <div ref={runwayRef} className={s.runway} data-nojs="runway" style={{ height: `${RUNWAY_VH}vh` }}>
+    <div
+      ref={runwayRef}
+      className={s.runway}
+      data-nojs="runway"
+      style={{ ["--story-runway" as string]: `${RUNWAY_VH}vh` } as CSSProperties}
+    >
       {/* The story for assistive tech: the scene itself is decorative. */}
       <ol className="sr-only">
         {Object.values(story.beats).map((line) => (

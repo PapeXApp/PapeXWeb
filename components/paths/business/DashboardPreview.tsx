@@ -40,7 +40,7 @@ export function DashboardCopy({
       </ScrollWords>
       <ScrollReveal>
         <p
-          className="mx-auto mt-[calc(var(--gap-title,24px)*.5)] max-w-[60ch] text-[15px] leading-[1.5] min-[821px]:text-[length:var(--fs-lead)]"
+          className="mx-auto mt-[calc(var(--gap-title,24px)*.5)] max-w-[60ch] text-[length:var(--fs-lead)] leading-[1.5] max-[820px]:mt-[var(--gap-title,20px)]"
           style={{ color: "var(--flow-fg-2)" }}
         >
           {storyDashboard.lead} {storyDashboard.customerLine.lead} {storyDashboard.customerLine.body}

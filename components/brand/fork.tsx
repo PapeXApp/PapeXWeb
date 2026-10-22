@@ -537,7 +537,7 @@ export function Fork() {
             className={`rd-eyebrow rd-eyebrow-wide ${styles.eyebrow}`}
             style={{ color: 'var(--orange)' }}
           >
-            For Businesses
+            Businesses
           </span>
           <h2
             className={`rd-display ${styles.headline} ${styles.headlineTop}`}
@@ -558,7 +558,7 @@ export function Fork() {
           type="button"
           className={styles.hit}
           onClick={() => commit(TOP_PATH)}
-          aria-label="For businesses: close the loop on every sale"
+          aria-label="Businesses: close the loop on every sale"
         />
       </div>
 
@@ -577,7 +577,7 @@ export function Fork() {
             the planes, glow and swipe motion around them are decoration. */}
         <p className="sr-only">
           Choose how you use PapeX. The top half opens the page for businesses, the bottom half the
-          page for customers: tap a half, or scroll toward it.
+          page for shoppers: tap a half, or scroll toward it.
         </p>
       </div>
 
@@ -617,7 +617,7 @@ export function Fork() {
             className={`rd-eyebrow rd-eyebrow-wide ${styles.eyebrow}`}
             style={{ color: 'var(--orange)' }}
           >
-            For Customers
+            Shoppers
           </span>
           <h2
             className={`rd-display ${styles.headline} ${styles.headlineBottom}`}
@@ -648,7 +648,7 @@ export function Fork() {
           type="button"
           className={styles.hit}
           onClick={() => commit(BOTTOM_PATH)}
-          aria-label="For customers: connecting your last dollar to your next dollar"
+          aria-label="Shoppers: connecting your last dollar to your next dollar"
         />
       </div>
     </div>

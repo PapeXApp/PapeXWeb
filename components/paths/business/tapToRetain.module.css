@@ -32,8 +32,12 @@
 .cardOn::before {
   opacity: 1;
 }
-.card:hover {
-  transform: translateY(-2px);
+/* Lift only where there is a real hover (on touch, :hover sticks after a
+   tap and leaves the card raised). A mouse sees exactly what it did. */
+@media (hover: hover) and (pointer: fine) {
+  .card:hover {
+    transform: translateY(-2px);
+  }
 }
 .card:focus-visible {
   outline: 2px solid var(--orange);
@@ -64,6 +68,8 @@
    assistive tech, visually hidden. */
 @media (max-width: 820px) {
   .card {
+    /* C9: a full 44px tap target (was ~41px: 11px + 17px x 1.15 + 11px) */
+    min-height: 44px;
     padding: 11px 14px;
     border-radius: 14px;
     text-align: center;

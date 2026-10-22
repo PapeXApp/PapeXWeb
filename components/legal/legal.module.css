@@ -1,0 +1,94 @@
+/*
+ * /privacy and /terms on the redesign shell (Web 2.3 phone rework, D1).
+ *
+ * Same pattern as /support and /about: SiteShell path="page" + a FlowGround
+ * that starts light + the in-flow footer, so everything inside sits in `.rd`
+ * and page-level ink is var(--flow-fg|fg-2) (never a fixed navy; it has to
+ * stay readable while the ground crossfades into the navy footer).
+ *
+ * One continuous reading column on the ground: no card, no backdrop blur, no
+ * blobs. Text is always left-aligned, with the same clamp(20px, 5vw, 56px)
+ * gutter as the other pages (20px on phones) and a ~68ch reading measure.
+ * The H1 uses the same token as /about and /blog (--fs-h1-customer).
+ */
+
+.top {
+  padding-top: calc(94px + var(--section-pad-y));
+  padding-bottom: calc(var(--section-pad-y) * 1.6);
+}
+
+.wrap {
+  width: 100%;
+  max-width: 1150px;
+  margin: 0 auto;
+  padding: 0 clamp(20px, 5vw, 56px);
+  text-align: left;
+}
+
+/* --- Header ---------------------------------------------------------------- */
+.head {
+  max-width: 1000px;
+  margin-bottom: clamp(36px, 4vw, 56px);
+}
+.dates {
+  margin: 0 0 clamp(14px, 1.6vw, 20px);
+  font-family: var(--font-label);
+  font-size: 13px;
+  line-height: 1.5;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--flow-fg-2);
+}
+.dates p {
+  margin: 0;
+}
+.title {
+  margin: 0;
+  font-size: var(--fs-h1-customer);
+  color: var(--flow-fg);
+  overflow-wrap: break-word;
+}
+
+/* --- Reading column --------------------------------------------------------- */
+.doc {
+  max-width: 68ch;
+  font-size: clamp(16px, 1.2vw, 17px);
+  line-height: 1.7;
+  color: var(--flow-fg-2);
+  overflow-wrap: break-word;
+}
+.doc > p:first-child {
+  margin: 0;
+}
+.doc section {
+  margin-top: clamp(32px, 3.6vw, 48px);
+}
+.doc h2 {
+  margin: 0 0 clamp(10px, 1.2vw, 14px);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(22px, 2.2vw, 28px);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--flow-fg);
+}
+.doc p {
+  margin: 0 0 1em;
+}
+.doc section > p:last-child {
+  margin-bottom: 0;
+}
+.doc address {
+  font-style: normal;
+}
+.doc a {
+  color: var(--flow-fg) !important;
+  text-decoration: underline !important;
+  text-decoration-color: var(--orange) !important;
+  text-decoration-thickness: 2px !important;
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
+.doc a:hover {
+  color: var(--orange) !important;
+}

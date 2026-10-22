@@ -72,9 +72,13 @@
     transform var(--dur-hover, 240ms) var(--ease-out-expo, ease),
     box-shadow var(--dur-hover, 240ms) ease;
 }
-.card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--sh-card-hover);
+/* A4: hover lifts only where hover is real, so a tap on iPhone doesn't leave
+   the card stuck up (sticky :hover). */
+@media (hover: hover) and (pointer: fine) {
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--sh-card-hover);
+  }
 }
 .card:focus-visible {
   outline: 2px solid var(--orange);
@@ -91,8 +95,10 @@
   object-fit: cover;
   transition: transform 400ms var(--ease-out-expo, ease);
 }
-.card:hover .cardMedia img {
-  transform: scale(1.03);
+@media (hover: hover) and (pointer: fine) {
+  .card:hover .cardMedia img {
+    transform: scale(1.03);
+  }
 }
 
 .cardBody {
@@ -141,8 +147,10 @@
   color: var(--orange);
   transition: transform var(--dur-hover, 240ms) var(--ease-out-expo, ease);
 }
-.card:hover .cardMore span {
-  transform: translateX(4px);
+@media (hover: hover) and (pointer: fine) {
+  .card:hover .cardMore span {
+    transform: translateX(4px);
+  }
 }
 
 /* Meta line — "September 1, 2026 · 5 min read" in the label face. */
@@ -207,6 +215,16 @@
 }
 .back:hover {
   color: var(--orange) !important;
+}
+/* D4: the Back link was ~22px tall. On phones give it a 44px hit area; the
+   negative top margin (and the matching bottom trim) keeps the text exactly
+   where it was, so nothing moves. */
+@media (max-width: 820px) {
+  .back {
+    min-height: 44px;
+    margin-top: -11px;
+    margin-bottom: calc(clamp(20px, 2.4vw, 32px) - 11px);
+  }
 }
 .postTitle {
   margin: 14px 0 0;

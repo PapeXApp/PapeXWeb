@@ -11,8 +11,9 @@
 //     as tall as its taller face, so nothing moves when it turns;
 //   a transparent full-bleed <button aria-expanded aria-controls> -> a tap
 //     anywhere turns the card, Enter/Space work natively;
-//   the Email/LinkedIn icons, OUTSIDE the rotating .inner -> they stay put
-//     on both faces and never turn the card.
+//   the Email/LinkedIn icons, OUTSIDE the rotating .inner -> they never
+//     turn the card, and show on the FRONT face only: .open hides them
+//     (CSS) while the bio side is up (Nico, 2026-10-21).
 // No visible toggle glyph (Nico): the whole card is the button; keyboard
 // users get the site's orange focus-visible ring.
 // The face that is turned away is aria-hidden so a screen reader only reads

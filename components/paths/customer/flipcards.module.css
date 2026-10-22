@@ -58,6 +58,30 @@
     gap: 18px;
   }
 }
+/* Phones, once scripts run (phone rework B4, 2026-10-21): no fixed height.
+   The two faces share ONE grid cell, so the card is as tall as its taller
+   face — the front no longer carries a band of empty plate, and the back
+   (stat, caption, dock slot, source) is never clipped, even at 320px. The
+   question uses the card's full width. `scripting: enabled` keeps the no-JS
+   layout (both faces stacked, app/layout.tsx) exactly as it was. */
+@media (max-width: 820px) and (scripting: enabled) {
+  .card {
+    height: auto;
+  }
+  .inner {
+    display: grid;
+    height: auto;
+    min-height: 340px;
+  }
+  .face {
+    position: relative;
+    inset: auto;
+    grid-area: 1 / 1;
+  }
+  .question {
+    max-width: none;
+  }
+}
 
 /* ---- the object ------------------------------------------------------------ */
 
@@ -581,6 +605,15 @@
   margin-left: 0.3em;
   text-decoration: none;
   color: var(--fc-orange);
+}
+/* Phones: the 13px source link sits over the card's full-size flip button,
+   so a near-miss flipped the card. Vertical padding on an INLINE link grows
+   its tap box (~44px tall) without moving a line of text; taps on it never
+   reach the flip button (a sibling, and the link stops propagation). */
+@media (max-width: 820px) {
+  .card .sourceLink {
+    padding-block: 14px;
+  }
 }
 /* the source isn't pressable until it has faded in */
 .result:not(.resultOn) .sourceLink {

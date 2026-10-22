@@ -35,7 +35,7 @@ export function BusinessPath() {
       <Hero />
       <TapToRetain />
       {/* #how: the hero's "See how it works" target. */}
-      <div id="how" className="scroll-mt-[100px]">
+      <div id="how" className="min-[821px]:scroll-mt-[100px]">
         <WhyMerchants />
       </div>
       {/* SLOT: merchant value calculator (coming soon) */}

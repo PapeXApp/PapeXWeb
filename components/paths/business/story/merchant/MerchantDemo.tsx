@@ -56,6 +56,15 @@ const NAV: { id: View; label: string; icon: typeof Receipt }[] = [
 
 const show = (on: boolean) => (on ? undefined : ({ display: "none" } as const))
 
+/** C1 (2026-10-21): on a phone-size page the demo's fields compute to 16px,
+ *  so iOS Safari does not zoom the page when one is focused (it zooms on any
+ *  field under 16px, and the zoom then sticks over the pinned story). The
+ *  live dashboard's Input/Select primitives are untouched: this class is
+ *  passed in, after their `text-sm`, and wins only at <= 820px. FitFrame
+ *  still scales the whole drawing down (about 0.55-0.72 on phones), so the
+ *  text DRAWN is smaller than 16px; iOS decides on the computed size. */
+const PHONE_INPUT = "max-[820px]:text-[16px]"
+
 /** Rows per page in Transactions. */
 const PAGE = 50
 /** How long "Exported" stays on the button. */
@@ -343,26 +352,26 @@ export function MerchantDemo({ layout, reset = 0 }: { layout: "desktop" | "mobil
       <Card className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-[200px] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" style={{ color: T.textMuted }} />
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={c.searchPlaceholder} aria-label={c.searchPlaceholder} className="w-full pl-9" />
+          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={c.searchPlaceholder} aria-label={c.searchPlaceholder} className={`w-full pl-9 ${PHONE_INPUT}`} />
         </div>
         <div className="flex items-center gap-1.5">
           <label className="flex items-center gap-1.5 text-xs" style={{ color: T.textMuted }}>
             {c.min}
-            <Input type="number" inputMode="decimal" min={0} step="0.01" value={min} onChange={(e) => setMin(e.target.value)} className="w-20" />
+            <Input type="number" inputMode="decimal" min={0} step="0.01" value={min} onChange={(e) => setMin(e.target.value)} className={`w-20 ${PHONE_INPUT}`} />
           </label>
           <label className="flex items-center gap-1.5 text-xs" style={{ color: T.textMuted }}>
             {c.max}
-            <Input type="number" inputMode="decimal" min={0} step="0.01" value={max} onChange={(e) => setMax(e.target.value)} className="w-20" />
+            <Input type="number" inputMode="decimal" min={0} step="0.01" value={max} onChange={(e) => setMax(e.target.value)} className={`w-20 ${PHONE_INPUT}`} />
           </label>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <label className="flex items-center gap-1.5 text-xs" style={{ color: T.textMuted }}>
             {c.from}
-            <Input type="date" value={from} min={sales[sales.length - 1].iso} max={delivered.iso} onChange={(e) => setFrom(e.target.value)} />
+            <Input type="date" value={from} min={sales[sales.length - 1].iso} max={delivered.iso} onChange={(e) => setFrom(e.target.value)} className={PHONE_INPUT} />
           </label>
           <label className="flex items-center gap-1.5 text-xs" style={{ color: T.textMuted }}>
             {c.to}
-            <Input type="date" value={to} min={sales[sales.length - 1].iso} max={delivered.iso} onChange={(e) => setTo(e.target.value)} />
+            <Input type="date" value={to} min={sales[sales.length - 1].iso} max={delivered.iso} onChange={(e) => setTo(e.target.value)} className={PHONE_INPUT} />
           </label>
           {from || to ? (
             <button

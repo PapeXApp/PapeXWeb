@@ -46,7 +46,7 @@ export function Hero() {
   return (
     <FlowSection
       ground="navy"
-      className={`${styles.screen} overflow-hidden px-[clamp(20px,5vw,56px)] pb-[var(--section-pad-y)] pt-[clamp(96px,12vh,120px)]`}
+      className={`${styles.screen} overflow-hidden px-[clamp(20px,5vw,56px)] pb-[var(--section-pad-y)] pt-[clamp(96px,12vh,120px)] max-[820px]:pt-[84px]`}
     >
       {/* No JS: LoopVisual's stage and caption wait hidden for hydration
           (see its STILL FRAME note); without JS they show the still frame. */}
@@ -63,7 +63,7 @@ export function Hero() {
 
       {/* Text column gets the larger share: at an even split the 80px
           headline broke into five one-word lines. */}
-      <div className="relative mx-auto grid w-full max-w-[1150px] grid-cols-1 items-center gap-[clamp(30px,5vw,70px)] min-[900px]:grid-cols-[1.14fr_.86fr]">
+      <div className="relative mx-auto grid w-full max-w-[1150px] grid-cols-1 items-center gap-[clamp(30px,5vw,70px)] max-[820px]:gap-5 min-[900px]:grid-cols-[1.14fr_.86fr]">
         <ChildStagger className="max-w-[620px]">
           <SectionLabel index="01">{hero.eyebrow}</SectionLabel>
           {/* Round 6b (Nico, 2026-09-29: "use a little more space for the
@@ -90,7 +90,11 @@ export function Hero() {
           >
             {hero.paperLine}
           </p>
-          <div className="mt-[var(--gap-body)] flex flex-wrap items-center gap-3.5">
+          {/* Phones (C3, layout only): the two CTAs share a row when they fit
+              (390 and up), the big-CTA size (.rd-cta-lg's 52px / 32px / 16px,
+              copied here so desktop keeps its own), tighter gaps, so the loop
+              starts higher on the first screen. Same copy, same buttons. */}
+          <div className="mt-[var(--gap-body)] flex flex-wrap items-center gap-3.5 max-[820px]:mt-[calc(var(--gap-body)*.75)] max-[820px]:gap-2.5">
             {/* Jumps to the on-page demo form (section 3.7). */}
             <Ripple as="div" variant="navy" className="inline-block overflow-hidden rounded-full">
               {/* data-hero-cta (s-02): the nav hides its own "Request a demo"
@@ -98,7 +102,7 @@ export function Hero() {
               <a
                 href="#demo"
                 data-hero-cta=""
-                className="block rounded-full px-[30px] py-[15px] text-base font-semibold transition-shadow duration-300 hover:shadow-[0_12px_34px_rgba(235,113,0,.5)]"
+                className="block rounded-full px-[30px] py-[15px] text-base font-semibold transition-shadow duration-300 max-[820px]:flex max-[820px]:min-h-[52px] max-[820px]:items-center max-[820px]:justify-center max-[820px]:px-8 max-[820px]:py-0 max-[820px]:text-[16px] [@media(hover:hover)_and_(pointer:fine)]:hover:shadow-[0_12px_34px_rgba(235,113,0,.5)]"
                 style={{
                   background: "var(--orange)",
                   color: "var(--navy)",
@@ -113,7 +117,7 @@ export function Hero() {
                 stays legible if the ground crossfades while it's on screen. */}
             <a
               href={hero.phoneHref}
-              className="inline-flex items-center gap-[11px] rounded-full border px-5 py-[7px] no-underline transition-[border-color,box-shadow,transform] duration-[250ms] hover:-translate-y-px hover:border-[rgba(235,113,0,.45)]"
+              className="inline-flex items-center gap-[11px] rounded-full border px-5 py-[7px] no-underline transition-[border-color,box-shadow,transform] duration-[250ms] max-[820px]:gap-2 max-[820px]:px-3.5 [@media(hover:hover)_and_(pointer:fine)]:hover:-translate-y-px [@media(hover:hover)_and_(pointer:fine)]:hover:border-[rgba(235,113,0,.45)]"
               style={{
                 background: "color-mix(in srgb, var(--flow-fg) 6%, transparent)",
                 borderColor: "color-mix(in srgb, var(--flow-fg) 14%, transparent)",
@@ -147,7 +151,7 @@ export function Hero() {
               "What your customers see" section's id. */}
           <a
             href={hero.secondaryHref}
-            className={`${styles.hit} mt-[calc(var(--gap-body)*.6)] flex w-fit items-center gap-2 text-[15px] font-semibold underline-offset-4 transition-colors duration-200 hover:underline`}
+            className={`${styles.hit} mt-[calc(var(--gap-body)*.6)] max-[820px]:mt-3 flex w-fit items-center gap-2 text-[15px] font-semibold underline-offset-4 transition-colors duration-200 hover:underline`}
             style={{ color: "var(--flow-fg-2)" }}
           >
             {hero.secondaryLabel}

@@ -33,10 +33,20 @@ const PIN_QUERY = "(prefers-reduced-motion: no-preference) and (min-width: 821px
  *  only: the heading and steps scroll past normally, then the PHONE column
  *  pins (a sticky .walkPhoneStick inside a .walkPhoneColInner made taller by the
  *  scroll it consumes) and the scroll steps 1 -> 2 -> 3 before it releases.
- *  720px is where the two-column grid would otherwise start; below 500px
- *  tall (a phone on its side) the tag + phone can't fit, so it stays tap
- *  mode. MUST match the phone media query in customer.module.css. */
-const PHONE_PIN_QUERY = "(prefers-reduced-motion: no-preference) and (max-width: 720px) and (min-height: 500px)";
+ *  820px is the site's phone/desktop split: .walkGrid stacks up to there
+ *  (phone rework B10, 2026-10-21; it was 720 and 721-820 got an unpinned
+ *  two-column hybrid); below 500px tall (a phone on its side) the tag +
+ *  phone can't fit, so it stays tap mode. MUST match the phone media query
+ *  in customer.module.css. */
+const PHONE_PIN_QUERY = "(prefers-reduced-motion: no-preference) and (max-width: 820px) and (min-height: 500px)";
+
+/** The stacked (phone) layout, whatever the motion or height: title, then
+ *  the tap scene, then the steps as plain static info (Nico, 2026-10-21: "this
+ *  doesn't work if we can't see both"). The reorder and the static look are
+ *  CSS (.walkGrid's phone query in customer.module.css); this only stops the
+ *  step titles being buttons there, since nothing on a phone steps through
+ *  them. MUST match that query. */
+const STACK_QUERY = "(max-width: 820px)";
 
 type PinMode = "desk" | "phone" | null;
 
@@ -61,9 +71,19 @@ const TAG_SEAT = {
  *   SCROLL — on desktop the stage pins inside a runway (see .walkRunway) and
  *          keeping on scrolling walks 1 -> 2 -> 3, then releases into the next
  *          section. Crossing into step 2 plays the tap (bow + LED pulse).
- *          On phones (P8, PHONE_PIN_QUERY) the heading and steps scroll past
- *          in flow and only the PHONE column pins (.walkPhoneStick), then
- *          the same scroll -> step mapping runs over its travel.
+ *          On phones (P8, PHONE_PIN_QUERY) the heading scrolls past in flow
+ *          and only the PHONE column pins (.walkPhoneStick), then the same
+ *          scroll -> step mapping runs over ITS travel, so the scene's beats
+ *          are driven by scroll progress through the pinned animation, not
+ *          by the list.
+ *
+ * PHONES (<= 820px, 2026-10-21, Nico): title -> the tag + phone scene ->
+ * the three steps as plain info -> the privacy line. A phone can't see the
+ * list and the scene at once, so the list is not a control there: all three
+ * steps at full ink, no greyed state, no rail/progress, not clickable. The
+ * DOM keeps the desktop order (heading, steps, scene); on phones the text
+ * column's wrapper is `display: contents` and CSS `order` slots the scene
+ * between its two halves. Desktop is unchanged.
  *
  * WHY THIS IS NOT THE 2026-09-09 SCROLL VERSION THAT WAS REVERTED: that one
  * advanced the steps while the section was still travelling past (nothing
@@ -81,7 +101,7 @@ const TAG_SEAT = {
  * NO MODE NEEDS A TAP TO SEE THE DEMO (P3-C1, 2026-09-25, Nico: a first-time
  * visitor won't know to tap):
  *   - pinned: scrolling plays it (the pin now fits down to 640px tall);
- *   - tap mode (tablets 721-820px, phones on their side, short windows): the first time the phone is mostly
+ *   - tap mode (phones on their side, short windows): the first time the phone is mostly
  *     on screen it plays 1 -> 2 -> 3 by itself, once;
  *   - after step 3 the phone keeps alternating Receipts <-> Coupons while it
  *     is on screen (WalkPhone), and a tap/click on the phone replays the demo
@@ -125,6 +145,8 @@ export function HowItWorks() {
   const autoplayed = useRef(false);
   /** `pinned` for callbacks that must not re-subscribe when it flips. */
   const pinnedRef = useRef(false);
+  /** Phone layout (STACK_QUERY): the steps are static info, not buttons. */
+  const [stacked, setStacked] = useState(false);
 
   const stopAuto = useCallback(() => {
     autoTimers.current.forEach((t) => window.clearTimeout(t));
@@ -142,17 +164,21 @@ export function HowItWorks() {
   useEffect(() => {
     const desk = window.matchMedia(PIN_QUERY);
     const phone = window.matchMedia(PHONE_PIN_QUERY);
+    const stack = window.matchMedia(STACK_QUERY);
     const apply = () => {
       const mode: PinMode = desk.matches ? "desk" : phone.matches ? "phone" : null;
       pinnedRef.current = mode !== null;
       setPinMode(mode);
+      setStacked(stack.matches);
     };
     apply();
     desk.addEventListener("change", apply);
     phone.addEventListener("change", apply);
+    stack.addEventListener("change", apply);
     return () => {
       desk.removeEventListener("change", apply);
       phone.removeEventListener("change", apply);
+      stack.removeEventListener("change", apply);
     };
   }, []);
 
@@ -445,78 +471,91 @@ export function HowItWorks() {
       >
         <div ref={stageRef} className={styles.walkStage} data-nojs="walk-stage" style={stageStyle}>
           <div
-            className="grid w-full items-center"
+            // .walkGrid: the columns (min(310px, 100%) tracks — on a 320px
+            // phone the stage's content box is 280px, and a bare 310px track
+            // pushed the page 10px wide), stacked at <= 820px.
+            className={cn("grid w-full items-center", styles.walkGrid)}
             style={{
               maxWidth: 1150,
               margin: "0 auto",
-              // min(310px, 100%): on a 320px phone the stage's content box is
-              // 280px, and a bare 310px track pushed the page 10px wide.
-              gridTemplateColumns: "repeat(auto-fit,minmax(min(310px,100%),1fr))",
-              gap: "clamp(34px,6vw,80px)",
             }}
           >
             {/* ScrollReveal/ScrollWords (P8): scroll-linked, finished ~13vh into
                 the screen, so a phone never waits on a timer to see the text
                 (the old IntersectionObserver Reveal waited for 12% of this
-                tall column, then ran 700ms with a blur). */}
-            <ScrollReveal>
-              <SectionLabel index="06">{howItWorksContent.eyebrow}</SectionLabel>
-              <ScrollWords
-                as="h2"
-                className={cn(
-                  "max-w-[16ch] [font-family:var(--font-display)] font-bold text-[length:var(--fs-h2)] leading-[1.02] tracking-[-.02em]",
-                  styles.walkHeading,
-                )}
-              >
-                {howItWorksContent.headline}
-              </ScrollWords>
-              <p
-                className={cn(
-                  "mt-[clamp(8px,1.2vw,14px)] text-[length:var(--fs-lead)] leading-[1.4]",
-                  styles.walkSub,
-                )}
-                style={{ color: "var(--flow-fg-2)" }}
-              >
-                {howItWorksContent.subtitle}
-              </p>
-              <div ref={stepsRef} className={cn(styles.walkSteps, !pinned && styles.walkStepsEased)}>
-                {howItWorksContent.steps.map((s, index) => (
-                  // The row is the click target; the <button> inside is what
-                  // keyboard and screen-reader users reach (its click bubbles
-                  // here, so there is exactly one handler).
-                  <div
-                    key={s.number}
-                    className={styles.walkStep}
-                    data-nojs="walk-step"
-                    style={{ ["--walk-i" as string]: index } as CSSProperties}
-                    onClick={() => goToStep(index)}
-                  >
-                    <div className={styles.walkStepRail}>
-                      <div className={styles.walkStepFill} data-nojs="walk-fill" />
+                tall column, then ran 700ms with a blur).
+                Desktop: this one ScrollReveal is the text column, as before;
+                its two halves are plain blocks (their own reveal is switched
+                off there, .walkTextPart). Phones: the column is `display:
+                contents`, so the halves are grid items placed around the
+                scene by `order`, and each rises in on its own. */}
+            <ScrollReveal className={styles.walkTextCol}>
+              <ScrollReveal className={cn(styles.walkTextPart, styles.walkHead)}>
+                <SectionLabel index="06">{howItWorksContent.eyebrow}</SectionLabel>
+                <ScrollWords
+                  as="h2"
+                  className={cn(
+                    "max-w-[16ch] [font-family:var(--font-display)] font-bold text-[length:var(--fs-h2)] leading-[1.02] tracking-[-.02em] max-[820px]:[text-wrap:balance]",
+                    styles.walkHeading,
+                  )}
+                >
+                  {howItWorksContent.headline}
+                </ScrollWords>
+                <p
+                  className={cn(
+                    "mt-[clamp(8px,1.2vw,14px)] text-[length:var(--fs-lead)] leading-[1.4]",
+                    styles.walkSub,
+                  )}
+                  style={{ color: "var(--flow-fg-2)" }}
+                >
+                  {howItWorksContent.subtitle}
+                </p>
+              </ScrollReveal>
+              <ScrollReveal className={cn(styles.walkTextPart, styles.walkInfo)}>
+                <div ref={stepsRef} className={cn(styles.walkSteps, !pinned && styles.walkStepsEased)}>
+                  {howItWorksContent.steps.map((s, index) => (
+                    // Desktop: the row is the click target; the <button>
+                    // inside is what keyboard and screen-reader users reach
+                    // (its click bubbles here, so there is exactly one
+                    // handler). Phones: plain text, no handler.
+                    <div
+                      key={s.number}
+                      className={styles.walkStep}
+                      data-nojs="walk-step"
+                      style={{ ["--walk-i" as string]: index } as CSSProperties}
+                      onClick={stacked ? undefined : () => goToStep(index)}
+                    >
+                      <div className={styles.walkStepRail}>
+                        <div className={styles.walkStepFill} data-nojs="walk-fill" />
+                      </div>
+                      <div className={styles.walkStepText}>
+                        <div className={styles.walkStepNum}>{s.number}</div>
+                        <h3 className={styles.walkStepTitle}>
+                          {stacked ? (
+                            s.title
+                          ) : (
+                            <button
+                              type="button"
+                              className={styles.walkStepBtn}
+                              aria-current={index === step ? "step" : undefined}
+                            >
+                              {s.title}
+                            </button>
+                          )}
+                        </h3>
+                        <p className={styles.walkStepBody}>{s.body}</p>
+                      </div>
                     </div>
-                    <div className={styles.walkStepText}>
-                      <div className={styles.walkStepNum}>{s.number}</div>
-                      <h3 className={styles.walkStepTitle}>
-                        <button
-                          type="button"
-                          className={styles.walkStepBtn}
-                          aria-current={index === step ? "step" : undefined}
-                        >
-                          {s.title}
-                        </button>
-                      </h3>
-                      <p className={styles.walkStepBody}>{s.body}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <p className={styles.walkPrivacy}>
-                <svg viewBox="0 0 16 16" className={styles.walkPrivacyIcon} aria-hidden="true">
-                  <rect x="3" y="7" width="10" height="7.5" rx="1.8" fill="currentColor" />
-                  <path d="M5.2 7V5.2a2.8 2.8 0 0 1 5.6 0V7" fill="none" stroke="currentColor" strokeWidth="1.6" />
-                </svg>
-                <span>{howItWorksContent.privacyNote}</span>
-              </p>
+                  ))}
+                </div>
+                <p className={styles.walkPrivacy}>
+                  <svg viewBox="0 0 16 16" className={styles.walkPrivacyIcon} aria-hidden="true">
+                    <rect x="3" y="7" width="10" height="7.5" rx="1.8" fill="currentColor" />
+                    <path d="M5.2 7V5.2a2.8 2.8 0 0 1 5.6 0V7" fill="none" stroke="currentColor" strokeWidth="1.6" />
+                  </svg>
+                  <span>{howItWorksContent.privacyNote}</span>
+                </p>
+              </ScrollReveal>
             </ScrollReveal>
 
             {/* Phone pin: this column is made taller by the scroll it consumes

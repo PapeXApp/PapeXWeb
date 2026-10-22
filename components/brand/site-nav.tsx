@@ -7,8 +7,8 @@
 // with pointer-events:auto per child, so the page stays interactive in the gaps
 // between bubbles (see .rd-nav in styles/papex-brand.css).
 //
-// Nav link set (Web 2.1 spec §3.5): Home · For Customers · For Businesses ·
-// Blog · About us. /contact redirects to /about (next.config.ts, S2).
+// Nav link set (Web 2.1 spec §3.5; labels renamed 2026-10-21, Nico): Home ·
+// Shoppers · Businesses · Blog · About us. /contact redirects to /about (next.config.ts, S2).
 //
 // CTA per page (Phase 4, s-02/s-03/f-01): /customers gets "Download the
 // app", matched to the visitor's device (useStoreUrl below); /business gets
@@ -49,8 +49,8 @@ type NavLink = { href: string; label: string; choice?: PathChoice; home?: boolea
 
 const LINKS: NavLink[] = [
   { href: '/', label: 'Home', home: true },
-  { href: '/customers', label: 'For Customers', choice: 'customer' },
-  { href: '/business', label: 'For Businesses', choice: 'business' },
+  { href: '/customers', label: 'Shoppers', choice: 'customer' },
+  { href: '/business', label: 'Businesses', choice: 'business' },
   { href: '/blog', label: 'Blog' },
   { href: '/about', label: 'About us' },
 ]
@@ -118,6 +118,10 @@ function useHeroCtaHidden(path: SitePath, pathname: string | null): boolean {
 }
 
 const MENU_ID = 'rd-nav-menu'
+
+/** Phone browser toolbar tint per ground (see the <meta> in SiteNav). */
+const THEME_COLOR_LIGHT = '#F5F5F5'
+const THEME_COLOR_DARK = '#00121D'
 
 export function SiteNav({ path }: { path: SitePath }) {
   // The customer hero opens on #F5F5F5 (it continues the fork's light bottom
@@ -258,6 +262,18 @@ export function SiteNav({ path }: { path: SitePath }) {
 
   return (
     <nav className="rd-nav" data-glass={glass} aria-label="Primary">
+      {/* Browser toolbar tint (A3, 2026-10-21): React 19 hoists this into
+          <head>, server-rendered with the first-paint ground and then kept in
+          step with the ground under the header (light bar, light toolbar;
+          navy section, navy toolbar). It lives here rather than in
+          app/layout.tsx's viewport export so only pages with the site chrome
+          get it: /r, /rdh, /invite and the merchant dashboard keep their own
+          look. Phone-only media, so desktop Safari's tab bar is never tinted. */}
+      <meta
+        name="theme-color"
+        media="(max-width: 820px)"
+        content={glass === 'dark' ? THEME_COLOR_DARK : THEME_COLOR_LIGHT}
+      />
       <Link
         href="/"
         onClick={onLogoClick}
@@ -290,11 +306,12 @@ export function SiteNav({ path }: { path: SitePath }) {
       </div>
 
       <div className="rd-nav-actions" onKeyDown={menuOpen ? onMenuTab : undefined}>
-        {/* Hidden = visibility:hidden (.rd-btn-nav[data-hidden]): out of the
-            tab order and the accessibility tree, but its box stays, so the
-            burger and the links bubble never move when it appears. On the
-            fork ("fork") phones drop the box too: there the links bubble is
-            already gone and nothing can shift. */}
+        {/* Desktop only: phones (<=820px) show just the logo pill and the
+            menu button, so .rd-btn-nav is display:none there (Nico,
+            2026-10-21). On desktop, hidden = visibility:hidden
+            (.rd-btn-nav[data-hidden]): out of the tab order and the
+            accessibility tree, but its box stays, so the links bubble never
+            moves when it appears. */}
         {cta.external ? (
           <a
             className="rd-btn rd-btn-primary rd-btn-nav"
@@ -303,7 +320,7 @@ export function SiteNav({ path }: { path: SitePath }) {
             rel="noopener noreferrer"
             data-hidden={ctaHidden ? (path === 'fork' ? 'fork' : 'true') : undefined}
           >
-            {cta.label}
+            <span className="rd-btn-nav-label">{cta.label}</span>
           </a>
         ) : (
           <Link
@@ -311,7 +328,7 @@ export function SiteNav({ path }: { path: SitePath }) {
             href={cta.href}
             data-hidden={ctaHidden ? (path === 'fork' ? 'fork' : 'true') : undefined}
           >
-            {cta.label}
+            <span className="rd-btn-nav-label">{cta.label}</span>
           </Link>
         )}
 

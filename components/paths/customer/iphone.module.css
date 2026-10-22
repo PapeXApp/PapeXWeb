@@ -41,7 +41,11 @@
   --wp-h: var(--wp-size, min(560px, 62vh));
   --wp-w: calc(var(--wp-h) * 393 / 852);
   --wp-u: calc(var(--wp-w) / 355);
-  --u: max(0.55px, calc(var(--wp-w) / 393));
+  /* --u-floor: 0.55px everywhere except /customers phones, where the path
+     wrapper (customer.module.css .path, <= 820px) lowers it so the small
+     page phones draw the app at its true 393pt scale (phone rework B2,
+     2026-10-21: the 0.55 floor drew 128-210px phones 1.2-2.3x too big). */
+  --u: max(var(--u-floor, 0.55px), calc(var(--wp-w) / 393));
   /* --pt is one TRUE iPhone point, with no floor (P3-C1, 2026-09-25). --u
      keeps its 0.55px floor so app content (receipt lines, row text) stays
      legible on a small phone, but iOS's own furniture — island, status bar,

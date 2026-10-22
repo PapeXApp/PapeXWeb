@@ -210,7 +210,7 @@ export function DemoForm() {
          dashboard columns above it. `styles.screen` gives it >= 100svh with
          copy left / form right centred in that box; the footer still follows
          as the page's navy tail. */
-      className={`${styles.screen} scroll-mt-[100px] px-[clamp(20px,5vw,56px)] py-[var(--section-pad-y)]`}
+      className={`${styles.screen} min-[821px]:scroll-mt-[100px] px-[clamp(20px,5vw,56px)] py-[var(--section-pad-y)]`}
     >
       {/* P3-R1: each piece rises on its own scroll position (label, title,
           proof, body, phone; then the form fields top to bottom). */}
@@ -448,7 +448,7 @@ export function DemoForm() {
                     type="submit"
                     disabled={status === "submitting"}
                     aria-busy={status === "submitting"}
-                    className="h-[60px] w-full rounded-[12px] text-[17px] font-semibold transition-transform duration-200 hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
+                    className="h-[60px] w-full rounded-[12px] text-[17px] font-semibold transition-transform duration-200 max-[820px]:h-auto max-[820px]:min-h-[52px] max-[820px]:px-8 max-[820px]:text-[16px] disabled:cursor-not-allowed disabled:opacity-60 [@media(hover:hover)_and_(pointer:fine)]:hover:-translate-y-px"
                     style={{ background: "var(--orange)", color: "var(--ink)" }}
                   >
                     {status === "submitting" ? demo.submitLabelPending : demo.submitLabel}

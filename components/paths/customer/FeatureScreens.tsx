@@ -92,18 +92,26 @@ export const FEATURE_CROP: Record<FeatureKey, Crop> = {
 
 function Shot({ children, crop }: { children: React.ReactNode; crop: Crop }) {
   return (
-    // "dark" = the pointer-glow variant for a card on the navy ground.
-    <div className={cn(styles.shot, crop === "top" && styles.shotCropTop)} data-lit="dark" data-crop={crop}>
-      {/* Decorative: the row's own text says what the phone shows. */}
-      <div className={styles.shotPhone} aria-hidden="true">
-        <PhoneChrome screenClassName={styles.shotScreen}>
-          <AppKitRoot mode="dark" width={SCREEN_W} className={x.root}>
-            {children}
-          </AppKitRoot>
-        </PhoneChrome>
+    <>
+      {/* "dark" = the pointer-glow variant for a card on the navy ground. */}
+      <div className={cn(styles.shot, crop === "top" && styles.shotCropTop)} data-lit="dark" data-crop={crop}>
+        {/* Decorative: the row's own text says what the phone shows. */}
+        <div className={styles.shotPhone} aria-hidden="true">
+          <PhoneChrome screenClassName={styles.shotScreen}>
+            <AppKitRoot mode="dark" width={SCREEN_W} className={x.root}>
+              {children}
+            </AppKitRoot>
+          </PhoneChrome>
+        </div>
+        <span className={styles.shotDemo}>{featuresContent.demoLabel}</span>
       </div>
-      <span className={styles.shotDemo}>{featuresContent.demoLabel}</span>
-    </div>
+      {/* The same caption for the side-by-side phone rows, OUTSIDE the card
+          (its cell is too narrow to keep it off the phone); CSS shows exactly
+          one of the two (quizFeatures.module.css .shotDemoSide). */}
+      <span className={styles.shotDemoSide} aria-hidden="true">
+        {featuresContent.demoLabel}
+      </span>
+    </>
   );
 }
 

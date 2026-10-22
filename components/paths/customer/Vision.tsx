@@ -5,6 +5,7 @@ import { FlowSection } from "../shared/FlowSection";
 import { NextSection } from "../shared/NextSection";
 import { SectionLabel } from "../shared/SectionLabel";
 import { proofContent, visionContent } from "./content";
+import { cn } from "@/lib/utils";
 import { useStoreUrl } from "./Hero";
 import styles from "./customer.module.css";
 
@@ -39,7 +40,9 @@ export function Vision() {
       className={`${styles.screen} ${styles.rhythm}`}
       style={{ padding: "var(--section-pad) clamp(20px,5vw,56px)" }}
     >
-      <div className="w-full" style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
+      {/* .visionCol: centred on desktop, left-aligned on phones like every
+          other section (phone rework B7, customer.module.css). */}
+      <div className={cn("w-full", styles.visionCol)} style={{ maxWidth: 900, margin: "0 auto" }}>
         {/* P3-R1: scroll-linked — label, the statement (it rises AND lights
             word by word: ScrollLit), the body, the three facts left to right,
             then the CTA. */}
@@ -50,11 +53,13 @@ export function Vision() {
           <ScrollLit
             as="h2"
             text={visionContent.headline}
-            className="[font-family:var(--font-display)] font-bold text-[length:var(--fs-h2-emphasis)] leading-[1.06] tracking-[-.02em]"
+            className="[font-family:var(--font-display)] font-bold text-[length:var(--fs-h2-emphasis)] leading-[1.06] tracking-[-.02em] max-[820px]:[text-wrap:balance]"
           />
         </ScrollReveal>
         <ScrollReveal
           as="p"
+          // .visionBody: centred block on desktop, on the left edge on phones.
+          className={styles.visionBody}
           style={{
             marginTop: "var(--gap-title)",
             fontSize: "var(--fs-lead)",
@@ -63,8 +68,6 @@ export function Vision() {
             maxWidth: "52ch",
             // Round 2 (c-29): the longer body never ends on a lone word.
             textWrap: "pretty",
-            marginLeft: "auto",
-            marginRight: "auto",
           }}
         >
           {visionContent.body}
@@ -105,26 +108,27 @@ export function Vision() {
           </ul>
         </div>
 
-        <ScrollReveal className="flex justify-center" style={{ marginTop: "var(--gap-body)" }}>
+        <ScrollReveal className={cn("flex", styles.visionCta)} style={{ marginTop: "var(--gap-body)" }}>
           <Magnetic className={styles.ctaMagnetic}>
             {/* The glow and the press scale live on the Ripple (styles.ctaPill),
                 the element that IS the pill — see .ctaPill in
                 customer.module.css for why. */}
             <Ripple variant="navy" className={`overflow-hidden rounded-full ${styles.ctaPill}`}>
+              {/* Size (17px type, 17/38 padding on desktop; the shared 52px
+                  pill on phones) lives in .visionCtaButton so the phone size
+                  can override it — an inline style can't be (phone rework A5). */}
               <a
                 href={storeUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={styles.ctaButton}
+                className={cn(styles.ctaButton, styles.visionCtaButton)}
                 style={{
                   border: "none",
                   cursor: "pointer",
-                  padding: "17px 38px",
                   borderRadius: 999,
                   background: "var(--orange)",
                   color: "var(--navy)",
                   fontWeight: 600,
-                  fontSize: 17,
                   textDecoration: "none",
                   display: "inline-flex",
                 }}

@@ -15,12 +15,12 @@
      VARIANTS (location.hash; the generator renders each):
        (none)  section 04 / story / customers: counter a -14..120, b -30..175,
                38mm thick, a card terminal at a 20..120, b 98..152, 18mm tall.
-       #hero   the /business hero: the same counter run out to b -125..160,
-               with a handheld (pistol-grip) barcode scanner standing nose-up
-               in its cradle at the left end (gun b -106..-74, its nose
-               pointing at the customer's edge, -a; the window's centre at
-               b -90, a 62, z 84), far enough left that a phone held in front
-               of the window clears the sticker.
+       #story  the /business story (section 03): a shallower counter, so the
+               whole block shows under the phone without reaching the caption:
+               a -10..120, b -18..175, 20mm thick, the same terminal.
+       #hero   the /business hero: the same, the counter run out to b -80 and
+               a countertop barcode scanner on it (a 45..85, b -66..-26), its
+               window facing the customer side, for the coupon scan.
      No brand anywhere. -->
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@600;800&family=Kameron:wght@700&display=block" rel="stylesheet">
 <style>html,body{margin:0;background:transparent}svg{display:block;width:3075px;height:1875px}</style></head><body>
@@ -73,9 +73,6 @@
     <filter id="soft2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3"/></filter>
     <linearGradient id="tmBody" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#3A4753"/><stop offset="1" stop-color="#1B242E"/>
-    </linearGradient>
-    <linearGradient id="gunSide" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#4A5866"/><stop offset=".45" stop-color="#2C3742"/><stop offset="1" stop-color="#1B242E"/>
     </linearGradient>
     <linearGradient id="scBody" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#46525F"/><stop offset="1" stop-color="#252F39"/>
@@ -139,6 +136,7 @@
 <script>
 const NS = "http://www.w3.org/2000/svg"
 const hero = location.hash === "#hero"
+const story = location.hash === "#story"
 const f = (n) => +n.toFixed(4)
 const M = {
   top: (h) => `matrix(-0.7794,-0.45,0.7794,-0.45,64,${f(72 - 0.9 * h)})`,
@@ -162,15 +160,17 @@ const box = (parent, [a0, a1], [b0, b1], [z0, z1], o) => {
 
 // the counter: a crisp block (a fade to transparent turns into a glow on the
 // navy ground; the sites that crop it fade it themselves)
-const B0 = hero ? -125 : -30
-const B1 = hero ? 160 : 175
+const A0 = story ? -10 : -14
+const B0 = hero ? -80 : story ? -18 : -30
+const B1 = 175
+const T = story ? 20 : 38
 const lit = (x0, x1) => `<line x1="${x0}" y1="0.4" x2="${x1}" y2="0.4" stroke="#FFFFFF" stroke-opacity=".7" stroke-width=".8"/>`
-box("under", [-14, 120], [B0, B1], [-38, 0], {
+box("under", [A0, 120], [B0, B1], [-T, 0], {
   end: "url(#ctEnd)", front: "url(#ctFront)", top: "url(#ctTop)",
-  endExtra: lit(-14, 120), frontExtra: lit(B0, B1),
+  endExtra: lit(A0, 120), frontExtra: lit(B0, B1),
   // the terminal's soft contact shadow (and the scanner's)
   topExtra: `<rect x="16" y="94" width="108" height="62" rx="10" fill="#00121D" opacity=".2" filter="url(#soft2)"/>` +
-    (hero ? `<rect x="98" y="-116" width="54" height="52" rx="12" fill="#00121D" opacity=".22" filter="url(#soft2)"/>` : ""),
+    (hero ? `<rect x="40" y="-70" width="50" height="50" rx="12" fill="#00121D" opacity=".22" filter="url(#soft2)"/>` : ""),
 })
 
 // a card terminal beside the sticker, for context: a 20..120, b 98..152, 18mm
@@ -184,32 +184,17 @@ box("over", [20, 120], [98, 152], [0, 18], {
     <g fill="#5A6875">${keys}</g>`,
 })
 
-// #hero: a handheld barcode scanner, the pistol-grip kind, resting nose-up
-// in its cradle at the counter's left end. The gun is its side profile (in a
-// and z, mm; the nose points at the customer's edge, -a) swept along b:
-// copies of the outline every 0.5mm from the far side (b -74) to the near
-// one (b -106, the lit side panel), then its window on the nose's face.
+// #hero: a countertop barcode scanner, left of the sticker: a base, a neck
+// and a head whose window (on its front face, a = 48) faces the customer
 if (hero) {
-  // the cradle: a base plate and the cup the grip stands in
-  box("over", [102, 148], [-112, -68], [0, 6], { r: 3, rTop: 10, end: "#141B22", front: "url(#scBody)", top: "#2E3A46" })
-  box("over", [110, 142], [-104, -76], [6, 26], { r: 3, rTop: 6, end: "#141B22", front: "url(#scBody)", top: "#3A4753" })
-  // the gun's outline in (a, z): a head widening to the window end, the
-  // trigger under it, the grip raked back down into the cup
-  const body = [[64, 70], [60, 98], [66, 101], [122, 88], [130, 82], [129, 73], [126, 70], [133, 22], [119, 20], [107, 72], [104, 72], [100, 63], [96, 64], [97, 71], [64, 70]]
-  const d = (pts) => "M" + pts.map(([a, z]) => `${a} ${-z}`).join("L") + "Z"
-  const side = (b, fill, extra = "") => face("over", M.end(b, 0), `<path d="${d(body)}" fill="${fill}"/>` + extra)
-  for (let b = -74; b > -106; b -= 0.5) side(b, "#121920")
-  side(-106, "url(#gunSide)",
-    // a seam along the head and the grip's rubber panel, faint
-    `<path d="M68 -76 L120 -84" stroke="#FFFFFF" stroke-opacity=".1" stroke-width=".8" fill="none"/>
-     <path d="M112 -66 L122 -26 L128 -26 L122 -68 Z" fill="#0D1318" opacity=".75"/>`)
-  // the cup's front lip, drawn again over the grip's foot
-  box("over", [110, 142], [-104, -76], [6, 26], { r: 3, rTop: 6, end: "#141B22", front: "url(#scBody)", top: "#3A4753" })
-  // the window on the nose's face, which leans forward from (a 64, z 70)
-  // to (a 60, z 98): a plane in (b, s), s up the face in mm (28.3 long)
-  // the site lights it at b -90, s 14 (screen -54.49, 9.12)
-  face("over", "matrix(0.7794,-0.45,0.1103,-0.8269,14.12,-19.8)", `<rect x="-104" y="4" width="28" height="20" rx="3" fill="#05090D"/>
-    <rect x="-101" y="13.1" width="22" height="1.8" rx=".9" fill="#FF3B30" opacity=".55"/>`)
+  box("over", [45, 85], [-66, -26], [0, 8], { r: 2, rTop: 10, end: "#1B242E", front: "url(#scBody)", top: "#3A4753" })
+  box("over", [58, 72], [-53, -39], [8, 52], { end: "#1B242E", front: "url(#scBody)", top: "#3A4753" })
+  box("over", [48, 82], [-64, -28], [52, 80], {
+    r: 4, rTop: 6, end: "#1B242E", front: "url(#scBody)", top: "#4A5966",
+    // the window: dark glass with a faint red glint (the site lights it)
+    frontExtra: `<rect x="-60" y="5" width="28" height="15" rx="3" fill="#05090D"/>
+      <rect x="-58" y="11.6" width="24" height="1.6" rx=".8" fill="#FF3B30" opacity=".55"/>`,
+  })
 }
 </script>
 </body></html>

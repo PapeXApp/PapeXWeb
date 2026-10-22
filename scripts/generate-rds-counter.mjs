@@ -4,10 +4,11 @@
 // Renders the PapeX sticker lying on a store countertop, beside a card
 // terminal, in the same true-isometric camera as
 // public/product/rds-sticker.webp:
-//   public/product/rds-counter.webp       section 04, the story, /customers
+//   public/product/rds-counter.webp       section 04, /customers
+//   public/product/rds-counter-story.webp the /business story (section 03): a
+//                                         shallower counter, shown whole
 //   public/product/rds-counter-hero.webp  the /business hero (the counter run
-//                                         out left, a handheld barcode
-//                                         scanner in its cradle on it)
+//                                         out left, a barcode scanner on it)
 // The source of record is scripts/rds-counter/counter-iso.html (inline SVG;
 // the sticker group is the sticker art's own isometric source, verbatim; the
 // variant is its location.hash). Edit that, then run:
@@ -36,7 +37,8 @@ const VB_Y = -110
 const PX = 7.5
 const VARIANTS = [
   { out: "public/product/rds-counter.webp", hash: "" },
-  { out: "public/product/rds-counter-hero.webp", hash: "#hero", scanWindow: [-54.49, 9.12] },
+  { out: "public/product/rds-counter-hero.webp", hash: "#hero", scanWindow: [-9.27, 10.35] },
+  { out: "public/product/rds-counter-story.webp", hash: "#story" },
 ]
 
 for (const v of VARIANTS) {

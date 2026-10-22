@@ -36,14 +36,14 @@ export function HowItWorks() {
       >
         {howItWorks.heading}
       </ScrollWords>
-      <p className="mt-[clamp(12px,1.6vw,22px)] max-w-[44ch] text-[length:var(--fs-lead)] leading-[1.5]" style={{ color: "var(--flow-fg-2)" }}>
+      <p className="mt-[clamp(12px,1.6vw,22px)] max-w-[44ch] max-[820px]:mt-[var(--gap-title)] text-[length:var(--fs-lead)] leading-[1.5]" style={{ color: "var(--flow-fg-2)" }}>
         {howItWorks.lead}
       </p>
     </ScrollReveal>
   )
 
   return (
-    <FlowSection id={howItWorks.id} ground="light" index="05" className={`${styles.rhythm} scroll-mt-[40px]`}>
+    <FlowSection id={howItWorks.id} ground="light" index="05" className={`${styles.rhythm} min-[821px]:scroll-mt-[40px]`}>
       <SetupTimeline
         header={header}
         steps={howItWorks.steps}

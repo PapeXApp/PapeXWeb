@@ -49,7 +49,7 @@ function Header() {
       <SectionLabel index="02">{t.eyebrow}</SectionLabel>
       <ScrollWords
         as="h2"
-        className="text-[length:var(--fs-h2)] font-bold leading-[1.04] tracking-[-.02em] [font-family:var(--font-display)]"
+        className="text-[length:var(--fs-h2)] font-bold leading-[1.04] tracking-[-.02em] [font-family:var(--font-display)] max-[820px]:[text-wrap:balance]"
       >
         {t.heading}
       </ScrollWords>

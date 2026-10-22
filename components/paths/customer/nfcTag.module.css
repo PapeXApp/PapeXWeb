@@ -12,6 +12,14 @@
   line-height: 1;
 }
 
+/* Nico's iPad / narrow-laptop widths (821-900px): the art runs past the
+   viewport on the right there and the page scrolled sideways. Clip the
+   section the tag sits in, horizontally only: `clip` (not `hidden`) makes
+   no scroll container, so the pinned phone's sticky still works. */
+:global(section):has(.tag) {
+  overflow-x: clip;
+}
+
 /* The art's box (.scene) and the window that shows it (.win: the art, cut
    to the viewport on phones, so it never widens the page, and to 0.45 W
    above the box, 0 on phones, so it never climbs into the text above).
@@ -42,6 +50,26 @@
 @media (max-width: 820px) {
   .win {
     --wt: max(var(--at), 0px);
+    /* Nico, 2026-10-21 (390px): the window cut the counter with hard,
+       straight edges on the left and right and chopped the card terminal
+       at the top right. It now fades out at those edges instead (same
+       art, same place): ~10% of its width on each side, and a wedge from
+       the top-right corner whose fade runs parallel to the sticker's far
+       edge (the box's anti-diagonal is ~30 degrees, the art's iso angle),
+       so the terminal's base dissolves while "TAP HERE" and the sticker's
+       far corner, further in along that diagonal, stay whole; plus a
+       short fade along the top (7%: "TAP HERE" starts below it). The foot
+       stays as it was (the phone covers it). */
+    -webkit-mask-image:
+      linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent),
+      linear-gradient(to bottom left, transparent 10%, #000 24%),
+      linear-gradient(180deg, transparent, #000 7%);
+    -webkit-mask-composite: source-in, source-in;
+    mask-image:
+      linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent),
+      linear-gradient(to bottom left, transparent 10%, #000 24%),
+      linear-gradient(180deg, transparent, #000 7%);
+    mask-composite: intersect;
   }
 }
 .scene {

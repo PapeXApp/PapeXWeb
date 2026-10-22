@@ -32,20 +32,20 @@ import s from "./hero.module.css"
  *              PapeX app (appui WalkAppScreen: Receipts, then Coupons)
  *   4 Coupon   a finger opens the coupon (the app kit's CouponDetail)
  *   5 Scan     the view zooms back out to the counter; the phone moves in
- *              front of the handheld scanner standing in its cradle and
- *              turns, in depth, back to its window (P3-B9: the phone is a
- *              slab — its metal side shows, its glass darkens as it turns
- *              away); a short red cone runs from the window onto the
- *              barcode, the window goes green: "Coupon used", a check; the
- *              phone leaves, round again
+ *              front of the countertop scanner and turns, in depth, until
+ *              its screen faces the window (P3-B9: the phone is a slab; v4,
+ *              Nico: we no longer see the screen, only its back, camera
+ *              and metal side); a short red cone runs from the window to
+ *              the phone, the window goes green: "Coupon used", a check;
+ *              the phone leaves, round again
  *
  * THE SCENE (Web 2.2 hero v2, Nico: "make the sticker straight ... I prefer
  * something like [section 04] wayyyy more"): no line-art cashier, counter or
  * hands any more. The counter is one render,
  * public/product/rds-counter-hero.webp (scripts/generate-rds-counter.mjs
  * #hero: the section-04 counter run out to the left, the sticker flat on it
- * in the true-isometric camera, a card terminal and a pistol-grip barcode
- * scanner in its cradle, v3), placed by CSS (hero.module.css .counter); the phone, the
+ * in the true-isometric camera, a card terminal and a countertop barcode
+ * scanner), placed by CSS (hero.module.css .counter); the phone, the
  * ripple, the beam and the scanner's light are layered on it from the
  * render's measured points (the sticker's tap target, the scanner's window).
  *
@@ -309,10 +309,20 @@ export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock:
       >
         {/* --- the counter scene (the "world"): fades back when we zoom in -- */}
         <div className={cn(s.world, zoomed && s.worldAway)}>
-          {/* the counter: sticker, card terminal and handheld scanner, one
+          {/* the counter: sticker, card terminal and barcode scanner, one
               render in section 04's camera and materials */}
           <div className={s.counter}>
-            <Image src="/product/rds-counter-hero.webp" alt="" width={1400} height={829} className={s.counterImg} priority />
+            <Image
+              src="/product/rds-counter-hero.webp"
+              alt=""
+              width={1400}
+              height={944}
+              // its drawn width (--cw, hero.module.css): up to 1.3 x the
+              // viewport on a phone, never over ~590px in a wider column
+              sizes="(max-width: 480px) 130vw, 600px"
+              className={s.counterImg}
+              priority
+            />
           </div>
           {/* The phone's soft shadow on the counter top: it follows the
               phone, and narrows as the phone turns edge-on to us. */}
@@ -348,6 +358,8 @@ export function LoopVisual({ summary, clock }: { summary: ReceiptSummary; clock:
               style={{ "--i": i, "--n": SLAB_LAYERS.length } as CSSProperties}
             />
           ))}
+          {/* its back's camera, seen when the screen turns to the scanner */}
+          <span className={s.backCam} />
           <PhoneChrome islandLock={!from(beat, "clip")}>
             {/* 1: the lock screen; iOS's App Clip card pops up on the tap */}
             <div className={cn(s.layer, s.layerFade, !from(beat, "clip") && s.layerOn)}>

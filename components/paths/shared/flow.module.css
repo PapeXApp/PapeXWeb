@@ -250,8 +250,9 @@
   display: block;
 }
 /* Below ~820px there isn't room for the whole plane to sit clear of the
-   column, so it's hidden rather than shown half-cropped. */
-@media (max-width: 819px) {
+   column, so it's hidden rather than shown half-cropped. (<=820 since A6,
+   2026-10-21: the site's one phone split; was 819, so 820 showed it.) */
+@media (max-width: 820px) {
   .mark {
     display: none;
   }

@@ -29,17 +29,40 @@ export function useStoreUrl(): string {
   return url;
 }
 
+/** Bottom edge of the fixed nav, in px from the viewport top: the shell's
+ *  published `--rd-nav-h` when it sets one, else the nav's own box. */
+function navBottom(): number {
+  const published = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--rd-nav-h"));
+  if (Number.isFinite(published) && published > 0) return published;
+  return document.querySelector(".rd-nav")?.getBoundingClientRect().bottom ?? 0;
+}
+
 /** The hero cues' click: a smooth scroll to the link's own `#id` target (an
- *  instant jump under reduced motion). The href carries the hash, so without
- *  JS — or if the target isn't on the page — it is an ordinary in-page link. */
+ *  instant jump under reduced motion), landing the section's heading 12px
+ *  under the fixed nav instead of behind it (phone rework A2 — the same
+ *  clearance Features' "Answer 3 questions" link uses). The href carries the
+ *  hash, so without JS — or if the target isn't on the page — it is an
+ *  ordinary in-page link. */
 function scrollToHash(event: MouseEvent<HTMLAnchorElement>) {
   const id = event.currentTarget.hash.slice(1);
   const target = id ? document.getElementById(id) : null;
   if (!target) return;
   event.preventDefault();
   const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const sectionTop = target.getBoundingClientRect().top;
+  // Phones only (desktop lands exactly where it always did): pushed down just
+  // as far as the section's own top padding leaves its heading block (the
+  // eyebrow + h2, the first one that is displayed — Pocket places its header
+  // twice) under the nav. A few reads, once, on click.
+  let clearance = 0;
+  if (window.matchMedia("(max-width: 820px)").matches) {
+    const heading = Array.from(target.querySelectorAll("h2")).find((el) => el.getClientRects().length > 0);
+    const lead = heading?.parentElement ?? target;
+    const leadOffset = lead.getBoundingClientRect().top - sectionTop;
+    clearance = Math.max(0, navBottom() + 12 - leadOffset);
+  }
   window.scrollTo({
-    top: Math.round(target.getBoundingClientRect().top + window.scrollY),
+    top: Math.round(sectionTop + window.scrollY - clearance),
     behavior: reduce ? "auto" : "smooth",
   });
 }
@@ -85,7 +108,9 @@ export function Hero() {
       <div className={h.row}>
         <div className={h.copy}>
           <ChildStagger>
-            <SectionLabel index="01">{heroCopy.eyebrow}</SectionLabel>
+            <SectionLabel index="01" className={h.eyebrow}>
+              {heroCopy.eyebrow}
+            </SectionLabel>
             <WordReveal as="h1" className={h.title}>
               {heroCopy.headline}
             </WordReveal>

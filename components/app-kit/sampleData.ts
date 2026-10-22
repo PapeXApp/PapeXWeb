@@ -100,7 +100,7 @@ export const demoStores: KitStore[] = [
     brandColorSecondary: '#C9894B',
     category: 'Cafe',
     blurb: 'Coffee, pastries and a window seat.',
-    description: 'A neighbourhood coffee bar. Tap your phone on the PapeX device at the counter to get your receipt.',
+    description: 'A neighbourhood coffee bar. Tap your phone on the PapeX sticker at the counter to get your receipt.',
     partner: true,
     openNow: true,
     hours: [

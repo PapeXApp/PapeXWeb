@@ -68,6 +68,14 @@
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
+/* D2: at 320-359px two columns left ~132px cards with a ~104px bio measure.
+   One column gives the bio room; the flip works the same (each card is its
+   own grid cell, the transform lives inside it). */
+@media (max-width: 359px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 
 /*
  * Team card = a real 3D flip on the Y axis. .inner holds both faces in ONE
@@ -78,7 +86,9 @@
  * tap anywhere turns the card and Enter/Space work natively (there is no
  * visible toggle glyph, Nico 2026-09-29; the focus ring shows keyboard focus).
  * The Email/LinkedIn icons sit above the button and OUTSIDE the rotating
- * .inner, so they stay put on both faces and never turn the card.
+ * .inner, so they never turn the card; they belong to the FRONT face only
+ * (Nico, 2026-10-21: "remove socials when the cards flip"), so they fade out
+ * as the card turns to the bio and back in once the front is round again.
  * Reduced motion: no rotation, the faces just swap.
  */
 .card {
@@ -90,12 +100,15 @@
   perspective: 1400px;
   transition: transform var(--dur-hover, 240ms) var(--ease-out-expo, ease);
 }
-.card:hover {
-  transform: translateY(-3px);
-}
-/* hover shadow lives on the faces, so it turns with the card */
-.card:hover .face {
-  box-shadow: var(--sh-card-hover);
+/* A4: hover lift only where hover is real (no sticky lift after an iPhone tap). */
+@media (hover: hover) and (pointer: fine) {
+  .card:hover {
+    transform: translateY(-3px);
+  }
+  /* hover shadow lives on the faces, so it turns with the card */
+  .card:hover .face {
+    box-shadow: var(--sh-card-hover);
+  }
 }
 
 .inner {
@@ -190,9 +203,9 @@
   border: 0;
 }
 
-/* Email / LinkedIn: icon-only, pinned bottom-right on both faces. Each link
-   is 32 x 44px around a 20px thin-stroke icon, so the pair sits ~12px apart
-   (Nico, 2026-09-29: closer together, thinner lines). */
+/* Email / LinkedIn: icon-only, pinned bottom-right of the FRONT face. Each
+   link is 32 x 44px around a 20px thin-stroke icon, so the pair sits ~12px
+   apart (Nico, 2026-09-29: closer together, thinner lines). */
 .links {
   position: absolute;
   right: 10px;
@@ -200,6 +213,22 @@
   z-index: 2;
   display: flex;
   gap: 0;
+  /* Turning back to the front: they return once the front is facing again
+     (just under half the flip), not while the bio is still showing. */
+  transition:
+    opacity 0.2s ease calc(var(--flip-dur) * 0.45),
+    visibility 0s linear calc(var(--flip-dur) * 0.45);
+}
+/* Bio side: no socials, at every width. visibility (after the quick fade)
+   also takes the two links out of the tab order and the accessibility tree,
+   so they can't be reached while hidden. */
+.open .links {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.15s ease,
+    visibility 0s linear 0.15s;
 }
 .iconLink {
   display: inline-flex;
@@ -220,6 +249,16 @@
   height: 20px;
   display: block;
 }
+/* D4: on phones each icon link is a full 44 x 44 tap target (was 32 wide).
+   Right inset trimmed so the rightmost icon stays where it was. */
+@media (max-width: 820px) {
+  .links {
+    right: 4px;
+  }
+  .iconLink {
+    width: 44px;
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .inner,
@@ -236,6 +275,10 @@
   }
   .open .front {
     visibility: hidden;
+  }
+  .links,
+  .open .links {
+    transition: none;
   }
 }
 

@@ -187,13 +187,15 @@ export function Personas() {
       <div className={styles.inner}>
         {/* P3-R1: scroll-linked — label, title word by word, intro, then the
             quiz card. The quiz itself is untouched. */}
-        <div style={{ textAlign: "center" }}>
+        {/* .head: centred on desktop, left-aligned on phones like every
+            other section (phone rework B7). */}
+        <div className={styles.head}>
           <ScrollReveal>
             <SectionLabel index="04">{personasContent.eyebrow}</SectionLabel>
           </ScrollReveal>
           <ScrollWords
             as="h2"
-            className="mx-auto max-w-[24ch] [font-family:var(--font-display)] font-bold text-[length:var(--fs-h2)] leading-[1.03] tracking-[-.02em]"
+            className="mx-auto max-w-[24ch] [font-family:var(--font-display)] font-bold text-[length:var(--fs-h2)] leading-[1.03] tracking-[-.02em] max-[820px]:mx-0 max-[820px]:[text-wrap:balance]"
           >
             {personasContent.headline}
           </ScrollWords>
@@ -204,7 +206,8 @@ export function Personas() {
 
         <ScrollReveal>
           <div className={styles.quiz} role="group" aria-label="Receipt personality quiz, three questions">
-            {/* Progress: Back on the left, "Question N of 3" on the right,
+            {/* Progress: Back on the left, "Question N of 3" on the right
+                (swapped on phones, so the label leads the left edge),
                 three steps underneath. The steps are decoration for sighted
                 visitors; the text line is the accessible progress. */}
             <div className={styles.progress}>
@@ -240,6 +243,46 @@ export function Personas() {
             </p>
 
             <div className={styles.stage}>
+              {/* Phones: invisible copies of every panel share the live
+                  panel's grid cell, so the stage is always as tall as the
+                  tallest step and the page never jumps between answers
+                  (phone rework B3; display: none on desktop, which keeps its
+                  420px floor). Plain elements, no headings or controls. */}
+              <div className={styles.sizers} aria-hidden="true" inert>
+                {questions.map((q) => (
+                  <div key={`size-${q.prompt}`} className={styles.panel}>
+                    <p className={styles.prompt}>{q.prompt}</p>
+                    <p className={styles.hint}>{personasContent.tapHint}</p>
+                    <div className={styles.options}>
+                      {q.options.map((option, oi) => (
+                        <div key={option.label} className={styles.option}>
+                          <span className={styles.optionLetter}>{LETTERS[oi]}</span>
+                          <span className={styles.optionLabel}>{option.label}</span>
+                          <span className={styles.optionCheck} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                {personasContent.results.map((r) => (
+                  <div key={`size-${r.id}`} className={cn(styles.panel, styles.resultPanel)}>
+                    <div className={styles.resultCard}>
+                      <span className={styles.resultTag}>{r.tag}</span>
+                      <div className={styles.resultEyebrow}>{r.eyebrow}</div>
+                      <p className={styles.resultTitle}>{r.title}</p>
+                      <p className={styles.resultBody}>{r.body}</p>
+                    </div>
+                    <div className={styles.resultActions}>
+                      <span className={styles.cta}>{heroCopy.ctaLabel}</span>
+                      <span className={styles.ctaSub}>{heroCopy.ctaSubtext}</span>
+                    </div>
+                    <span className={styles.retake}>
+                      <span>↺</span>
+                      {personasContent.restartLabel}
+                    </span>
+                  </div>
+                ))}
+              </div>
               {question ? (
                 <div key={`q-${step}`} className={cn(styles.panel, panelMotion)}>
                   <h3 ref={headingRef} tabIndex={-1} id={`quiz-q-${step}`} className={styles.prompt}>
@@ -284,7 +327,9 @@ export function Personas() {
                     <p className={styles.resultBody}>{result.body}</p>
                   </div>
                   <div className={styles.resultActions}>
-                    <a href={storeUrl} target="_blank" rel="noopener noreferrer" className={styles.cta}>
+                    {/* rd-cta-lg: the site's one large CTA size (papex-brand.css);
+                        .cta already matched it, so nothing changes here. */}
+                    <a href={storeUrl} target="_blank" rel="noopener noreferrer" className={cn("rd-cta-lg", styles.cta)}>
                       {heroCopy.ctaLabel}
                     </a>
                     <span className={styles.ctaSub}>{heroCopy.ctaSubtext}</span>

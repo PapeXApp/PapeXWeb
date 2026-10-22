@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 // framer-site.css is imported BEFORE globals.css on purpose: its `.framer-site *`
 // reset (margin/padding 0) ties with Tailwind utilities on specificity, so the
 // later stylesheet wins. Loading Tailwind last lets spacing utilities (px-*,
@@ -214,6 +214,17 @@ export const metadata: Metadata = {
   }
 }
 
+// Viewport (A3, 2026-10-21). Next emits the viewport meta from this export
+// (it always did, by default); the hand-written <meta name="viewport"> that
+// sat in <head> duplicated it and is gone. No themeColor here on purpose: a
+// root value would also tint /r, /rdh, /invite and the merchant dashboard.
+// The site chrome sets it instead, per ground (<meta name="theme-color"> in
+// components/brand/site-nav.tsx).
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -230,7 +241,6 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: SITE_JSON_LD }} />
         {/* JS off only: see NO_JS_REVEAL_CSS above. */}
         <noscript>

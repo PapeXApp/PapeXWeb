@@ -31,6 +31,15 @@
   --faq-dur: 420ms;
 }
 
+/* Phones: html's scroll-padding-top already clears the header bar
+   (--rd-nav-h + 12px, papex-brand.css); the 100px margin on top of it
+   would leave a ~180px gap above the section. */
+@media (max-width: 820px) {
+  .section {
+    scroll-margin-top: 0;
+  }
+}
+
 /* "Screens, not sections": the same model both path homes use. A floor, not
    a fit — opening answers can grow the section past one screen. */
 @media (min-width: 821px) {
@@ -287,8 +296,10 @@
   text-underline-offset: 3px;
   transition: text-decoration-color 200ms ease;
 }
-.answer a:hover {
-  text-decoration-color: currentColor;
+@media (hover: hover) and (pointer: fine) {
+  .answer a:hover {
+    text-decoration-color: currentColor;
+  }
 }
 .answer a:focus-visible {
   outline: 2px solid var(--orange);
@@ -296,7 +307,9 @@
   border-radius: 3px;
 }
 
-@media (max-width: 480px) {
+/* Phones (<=820, the site's one split; was 480, A6 2026-10-21, so 481-820
+   no longer gets the desktop row padding). */
+@media (max-width: 820px) {
   .button {
     gap: 12px;
     padding: 18px 14px;

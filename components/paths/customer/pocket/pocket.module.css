@@ -13,6 +13,16 @@
 /* --- runway + pin ---------------------------------------------------------- */
 .runway {
   position: relative;
+  /* PocketScene.tsx sets --pocket-runway (420vh); phones shorten it below. */
+  height: var(--pocket-runway, 420vh);
+}
+/* Phones (<= 820px, phone rework B1, 2026-10-21; Nico approved ~30-40% less
+   pinned scroll): 270vh instead of 420vh — the same beats in the same order
+   over 170vh of scroll instead of 320vh. */
+@media (max-width: 820px) {
+  .runway {
+    height: 270vh;
+  }
 }
 /* Server render / first frame: both versions are in the HTML and CSS picks
    one, so the section never changes height when JS arrives. */
@@ -231,8 +241,12 @@
 .cardLead .cardBody {
   font-size: 17.5px;
 }
-.card:hover {
-  transform: translateY(-2px);
+/* Pointer devices only: on a touch screen :hover sticks after a tap
+   (phone rework A4). */
+@media (hover: hover) and (pointer: fine) {
+  .card:hover {
+    transform: translateY(-2px);
+  }
 }
 .card:focus-visible {
   outline: 2px solid var(--orange);
@@ -568,8 +582,9 @@
 /* --- phones (<=820px): the phone whole and large, paper grows over it ------ */
 @media (max-width: 820px) {
   .pin {
-    /* 72: a clear 10px under the fixed nav pill (it ends at ~62px). */
-    padding: 72px 0 12px;
+    /* A clear 10px under the fixed nav: the phone header bar's height when
+       the shared shell publishes it (--rd-nav-h), else the old pill's ~62px. */
+    padding: calc(var(--rd-nav-h, 62px) + 10px) 0 12px;
   }
   .layout {
     height: 100%;
@@ -612,8 +627,20 @@
     position: static;
   }
   .cards {
-    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr);
-    gap: 8px;
+    /* Columns sized by their (single-line) titles, the spare width shared
+       out, so no title has to wrap (B6). */
+    grid-template-columns: auto auto auto;
+    /* The stack under the phone (Nico, 2026-10-21: "this spacing can be
+       improved"): caption -> 20px -> buttons -> 16px -> description -> 16px
+       -> "Demo data". Rows 16px apart; the caption adds 4px below itself.
+       The buttons keep their 8px between each other. */
+    column-gap: 8px;
+    row-gap: 16px;
+  }
+  .cardsLead {
+    margin-bottom: 4px;
+    /* "all." no longer orphans onto its own line at 390 */
+    text-wrap: balance;
   }
   .card,
   .cardLead {
@@ -630,6 +657,9 @@
   .cardTitle,
   .cardLead .cardTitle {
     font-size: 15px;
+    /* One line each (phone rework B6, 2026-10-21): "Paper receipts" used to
+       wrap to two at 390px while the others held one. */
+    white-space: nowrap;
   }
   .cardLead .cardTitle {
     font-size: 16px;
@@ -689,6 +719,36 @@
      unchanged 14px from ~370px up, scales down below that */
   .staticLead .staticPaper .flyer {
     --pf: min(14px, calc((100vw - 40px) / 23.4));
+  }
+}
+/* Narrow phones: the three single-line titles still fit side by side.
+   Kameron, measured: "Email receipts" 6.88em, "Paper receipts" 6.96em,
+   "Coupons" 4.26em. At 15/14/14px with 6px padding and 8px gaps the row is
+   ~325px (fits from ~365px wide); at 13px with 3px padding and 6px gaps it
+   is ~277px (fits the 280px column of a 320px phone). */
+@media (max-width: 400px) {
+  .card,
+  .cardLead {
+    padding-inline: 6px;
+  }
+  .cardTitle {
+    font-size: 14px;
+  }
+  .cardLead .cardTitle {
+    font-size: 15px;
+  }
+}
+@media (max-width: 374px) {
+  .cards {
+    column-gap: 6px;
+  }
+  .card,
+  .cardLead {
+    padding-inline: 3px;
+  }
+  .cardTitle,
+  .cardLead .cardTitle {
+    font-size: 13px;
   }
 }
 

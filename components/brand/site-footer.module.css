@@ -5,8 +5,11 @@
    keeps the full width and the link columns pair up two by two, so the
    footer is about half as tall with the same links and the same 44px rows.
    Below 360px "Get in touch" (an email address) takes the full width.
-   .grid.grid: must outrank the global .rd-footer-grid whatever the load order. */
-@media (max-width: 620px) {
+   .grid.grid: must outrank the global .rd-footer-grid whatever the load order.
+   Breakpoint: the site's phone split, <=820 (was 620, A6 2026-10-21): 621-820
+   fell back to the desktop auto-fit grid (3 + 2 ragged columns). The desktop
+   grid now starts at 821 like everything else. */
+@media (max-width: 820px) {
   .grid.grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     column-gap: 20px;
@@ -19,5 +22,24 @@
 @media (max-width: 359px) {
   .contact {
     grid-column: 1 / -1;
+  }
+}
+
+/* "Get in touch" links on phones (A10, 2026-10-21): the email and phone were
+   inline links 24px apart, each with a 44px hit area (papex-brand.css), so
+   the two areas overlapped. Each is its own 44px row now (10px padding on a
+   23.8px line); the <br>s that separated them would add empty lines between
+   blocks, so they are dropped here. Desktop keeps the inline lines. */
+@media (max-width: 820px) {
+  .contact br {
+    display: none;
+  }
+  .contactLink {
+    display: block;
+    padding: 10px 0;
+  }
+  /* the email's text lines up with the first link of the column beside it */
+  .contactLink:first-of-type {
+    margin-top: -10px;
   }
 }

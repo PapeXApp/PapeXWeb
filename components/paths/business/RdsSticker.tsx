@@ -59,6 +59,9 @@ export function RdsSticker() {
               alt={rdsSticker.stickerAlt}
               width={1400}
               height={1009}
+              // its drawn width: 280px on a phone, up to 700px beside the
+              // bullets on a wide screen (C9: phones no longer fetch it big)
+              sizes="(max-width: 820px) 280px, 700px"
               // Width-led, but never so tall that heading + sticker overflow
               // a short desktop screen (~300px is the label, heading, gap and
               // the section's padding).

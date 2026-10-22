@@ -336,6 +336,12 @@
    the gaps a notch, and the narrowest (<=359px) take a 30px headline so the
    customer promise keeps its three set lines instead of breaking to four. */
 @media (max-width: 820px) {
+  /* Phones have the header bar (A1): clear exactly its height. Same 66px the
+     old pad + 54 gave at <=600 wide; 4px less at 600-820, where the old
+     clamp()ed pad grew but the bar does not. */
+  .fork {
+    --fork-nav-clear: var(--rd-nav-h, 66px);
+  }
   .fork .contentTop {
     padding-bottom: 16px;
   }

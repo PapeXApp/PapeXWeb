@@ -125,7 +125,7 @@ export function FlowGround({
   }, [])
 
   return (
-    <div ref={ref} className={styles.flow} data-ground={initial}>
+    <div ref={ref} className={styles.flow} data-ground={initial} data-flow-root="">
       <div aria-hidden="true" className={styles.kit}>
         <div className={styles.viewport}>
           <div className={`${styles.aurora} ${styles.auroraLight}`}>

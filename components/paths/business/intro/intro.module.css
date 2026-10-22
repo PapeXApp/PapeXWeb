@@ -10,6 +10,16 @@
 /* --- runway + pin ---------------------------------------------------------- */
 .runway {
   position: relative;
+  /* IntroScene.tsx sets --intro-runway (330vh); phones shorten it below. */
+  height: var(--intro-runway, 330vh);
+}
+/* Phones (<= 820px, C2, 2026-10-21; Nico approved ~30-40% less pinned
+   scroll): 220vh instead of 330vh, the same beats in the same order over
+   120vh of scroll instead of 230vh. */
+@media (max-width: 820px) {
+  .runway {
+    height: 220vh;
+  }
 }
 /* Server render / first frame: both versions are in the HTML and CSS picks
    one, so the section never changes height when JS arrives. The static
@@ -545,17 +555,47 @@
     justify-content: center;
     gap: 14px;
   }
+  /* C5 (2026-10-21): the scene takes ALL the height the captions leave (a
+     size container, as on desktop) instead of a fixed 236px guess, so the
+     phone is as large as the pin allows on a short screen (with Safari's
+     bars: 375 x 553 -> 299px tall, was ~265). It centres in that room;
+     only if it is taller than the room (the floor below, on a very short
+     screen) does it run upwards into the nav band, never down over the
+     captions (auto margins give way, justify-content: flex-end wins). */
+  .sceneWrap {
+    /* full width (.layout centres its items): the paper's home is the
+       scene's box, so a phone narrower than the paper no longer pushes the
+       paper off its centre and out of the screen on the right */
+    align-self: stretch;
+    flex: 1 1 0;
+    min-height: 0;
+    container-type: size;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
   .scene {
     --dim: 0.7;
     justify-content: center;
+    margin-block: auto;
   }
   .paperHome {
     position: absolute;
     inset: 0;
   }
+  /* The paper is never taller than the phone: its type (13px, the receipt
+     is 21.7em tall) steps down to 11px with the room, and the phone has a
+     floor of that paper's height (frame = 1.046 x screen), so it is never
+     smaller than the paper growing over it. */
+  .scene .paper {
+    --pf: clamp(11px, 4.6cqh, 13px);
+  }
   .phone {
-    /* whole phone, as large as the pin allows under the captions */
-    --wp-size: min(600px, calc(100svh - 64px - 236px), calc((100vw - 40px) * 1.97));
+    /* whole phone, as large as the room allows (frame ~1.05 x --wp-size) */
+    --wp-size: max(
+      calc(20.75 * clamp(11px, 4.6cqh, 13px)),
+      min(600px, calc(100cqh / 1.05), calc((100vw - 40px) * 1.97))
+    );
   }
   .sceneWrap > .demoTag {
     display: none;

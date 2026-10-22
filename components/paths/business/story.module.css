@@ -77,8 +77,19 @@
    whole viewport's width, not just the 1150px column. */
 .runway {
   position: relative;
+  /* RetainStory.tsx sets --story-runway (434vh); phones shorten it below. */
+  height: var(--story-runway, 434vh);
   margin-top: var(--gap-body, 40px);
   margin-inline: calc(-1 * var(--story-px));
+}
+/* Phones (<= 820px, C2, 2026-10-21; Nico approved ~30-40% less pinned
+   scroll): 290vh instead of 434vh. The story, its receipt hold and the
+   dwell keep their proportions (RetainStory maps scroll as fractions of the
+   measured runway), over 190vh of scroll instead of 334vh. */
+@media (max-width: 820px) {
+  .runway {
+    height: 290vh;
+  }
 }
 /* P3-B5 (Nico: "a little less blank space between that and the next title").
    The pin's last frame ends --cam-final-foot above its bottom (RetainStory
@@ -579,34 +590,31 @@
   opacity: 0;
 }
 /* The sticker on its countertop (Furniture.tsx StickerArt), for any
-   positioned box that is the sticker art's box (1100:667). The window runs
-   past the box (left/right 30%, up 40%, down to 135%: the counter's front
-   edge starts under the sticker's near corner at ~103% of its height, so
-   the top of its thickness shows) and fades out round its edge, so the
-   counter reads as a patch of a longer countertop without running into the
-   caption under the scene. Nothing outside the box is measured. */
+   positioned box that is the sticker art's box (1100:667). Nico (2026-10-21,
+   "make this look more like a real counter"): the whole counter shows, a
+   crisp block with its front faces and the card terminal, no fade round it
+   (that read as a white blob on the light ground). The art is
+   public/product/rds-counter-story.webp, a shallower counter than section
+   04's (20mm thick, its front edge 10mm from the sticker), so the block
+   ends ~39% of the sticker's height under it and stays clear of the
+   caption. Its trimmed box is x -43.60, y -64.53, 251.87 x 167.20 units of
+   the isometric camera; the sticker art's box is x 5.98, y 9.45, 110.6 x
+   67.06 (the generator prints both). In % of the box: left -44.83, top
+   -110.32, width 227.73, height 249.33. Nothing outside the box is
+   measured. */
 .counterWin {
   position: absolute;
-  left: -30%;
-  top: -40%;
-  width: 160%;
-  height: 175%;
-  overflow: hidden;
+  left: -44.83%;
+  top: -110.32%;
+  width: 227.73%;
+  height: 249.33%;
   pointer-events: none;
-  -webkit-mask-image: radial-gradient(closest-side at 50% 50%, #000 66%, transparent);
-  mask-image: radial-gradient(closest-side at 50% 50%, #000 66%, transparent);
 }
-/* rds-counter.webp laid over the sticker box: its trimmed box is x -52.93,
-   y -64.53, 264.27 x 190.53 units of the isometric camera; the sticker
-   art's box is x 5.98, y 9.45, 110.6 x 67.06 (the generator prints both).
-   In % of the box: left -53.26, top -110.32, width 238.94, height 284.12;
-   here in % of the window (160% x 175% of the box, from -30% / -40%). */
 .counterImg {
   position: absolute;
-  left: calc((-53.26% + 30%) / 1.6);
-  top: calc((-110.32% + 40%) / 1.75);
-  width: calc(238.94% / 1.6);
-  height: calc(284.12% / 1.75);
+  inset: 0;
+  width: 100%;
+  height: 100%;
   max-width: none;
   user-select: none;
 }
@@ -1264,9 +1272,9 @@
   width: 190px;
   aspect-ratio: 1100 / 667;
   margin-right: -40px;
-  /* the countertop's front edge runs ~35% of the box's height below it
+  /* the counter's front corner runs ~39% of the box's height below it
      (.counterWin): room for it above the caption */
-  margin-bottom: 40px;
+  margin-bottom: 48px;
 }
 .staticCap {
   max-width: 44ch;
@@ -1324,10 +1332,12 @@
   .pin {
     padding-top: 64px;
   }
+  /* The runway is edge to edge, so the caption takes the section's
+     gutters back (it ran to the screen's edges and clipped on a phone). */
   .hint {
     position: static;
-    width: min(100%, 62ch);
-    margin-inline: 0;
+    width: min(100% - 2 * var(--story-px), 62ch);
+    margin-inline: auto;
   }
   .stage {
     /* the runway is edge to edge: the section's gutter comes back here */
@@ -1336,11 +1346,11 @@
     /* no camera: the 1:2 stage already fills the pin */
     --cam: 0;
     --rig-shift: -14;
-    /* the pair's union box (x 2-82.2, y 2-196.7 cqw: the phone, and the
-       sticker under it) at 0.42, to the top-right corner with a 3cqw
-       margin: x 63.5-97, y 3-84.7 */
-    --g-post-x: 33.48;
-    --g-post-y: -55.84;
+    /* the pair's union box (x 1.5-76.6, y 1.5-189.7 cqw: the phone, and
+       the sticker below it) at 0.42 about the group's centre (50, 100), to
+       the top-right corner with a 3cqw margin: x 65.5-97, y 3-82 */
+    --g-post-x: 35.87;
+    --g-post-y: -55.63;
     --g-post-s: 0.42;
     /* read by measure(): the phone card replaces the laptop */
     --phone-dash: 1;
@@ -1376,18 +1386,26 @@
     height: 200cqw;
     pointer-events: none;
   }
+  /* Nico, 2026-10-21 (390px): the sticker sat "half under the phone's
+     bottom-left corner". The phone is a little shorter (148cqw of screen,
+     was 158; frame 1.5-76.6 x 1.5-156.5cqw) so the sticker sits clearly
+     BELOW it, centred under it (its box 16-60 x 163-189.7cqw, "TAP HERE"
+     ~7cqw clear of the phone's foot), and its counter patch (to 135% of
+     the box, 199cqw) ends inside the stage, so it fades out instead of
+     being cut by the stage's edge. The bow (measured) dips the phone
+     towards it without covering it. */
   .phone {
-    --story-phone-h: 158cqw;
-    left: 2cqw;
-    top: 2cqw;
+    --story-phone-h: 148cqw;
+    left: 1.5cqw;
+    top: 1.5cqw;
   }
-  /* the sticker on the counter under the phone's foot (the phone fills
-     the width): its top corner just under the phone, so the bow only
-     touches that corner, never the "TAP HERE" line */
+  /* The whole counter shows now (2.28 x the sticker's width, from 0.45 of
+     it to its left): at 42cqw the sticker's counter runs 2.2cqw to 97.8cqw,
+     inside the stage, so neither end is cut. */
   .sticker {
-    left: 4cqw;
-    top: 170cqw;
-    width: 44cqw;
+    left: 21cqw;
+    top: 163cqw;
+    width: 42cqw;
   }
   /* no laptop on phones: the dashboard phone takes its place */
   .laptop,
@@ -1398,6 +1416,18 @@
   .pdScene,
   .pdStatic {
     display: flex;
+  }
+  /* C4 (2026-10-21): the dashboard phone as large as the stage allows. It
+     was 176cqw (88% of the 1:2 stage's height, so 0.55-0.72 of a real
+     phone at 320-390). Now its frame (1.046 x the screen) fills the stage's
+     height under the one-row label (.scrPd: 1.5cqw + ~18px + 8px of air),
+     standing on the stage's foot. Its width (0.507 x) stays inside the
+     stage, so the bloom and the spark's landing (measured) still fit it. */
+  .pdScene {
+    align-items: flex-end;
+  }
+  .pdPhone {
+    --story-phone-h: calc((198.5cqw - 26px) / 1.046);
   }
   .dot {
     width: 2.2cqw;

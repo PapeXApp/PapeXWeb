@@ -47,7 +47,7 @@ export function WhyMerchants() {
       />
       <p
         data-head-lead=""
-        className="mt-[var(--gap-title)] max-w-[52ch] text-[16px] leading-[1.5] min-[821px]:text-[length:var(--fs-lead)]"
+        className="mt-[var(--gap-title)] max-w-[52ch] text-[length:var(--fs-lead)] leading-[1.5]"
         style={{ color: "var(--flow-fg-2)" }}
       >
         {story.lead}

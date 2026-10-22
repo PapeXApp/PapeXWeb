@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
 import { receiptMoment } from "../appui/Clip"
 import { PhoneChrome } from "../WalkPhone"
@@ -60,7 +60,11 @@ import s from "./pocket.module.css"
 
 /** Scroll budget for the scene, in viewport heights. */
 const SCROLL_VH = 320
-/** The runway: the pinned viewport plus the scene's scroll. */
+/** The runway: the pinned viewport plus the scene's scroll. Phones (<= 820px)
+ *  override it in CSS (pocket.module.css `.runway`, 270vh: the same beats
+ *  over ~half the scroll, phone rework B1, 2026-10-21). Every beat is a
+ *  fraction of the runway measured in measure(), so nothing here changes
+ *  with it. */
 const RUNWAY_VH = 100 + SCROLL_VH
 
 /** A flyer's grow -> fly -> land clock. */
@@ -438,7 +442,12 @@ export function PocketScene({ header }: { header: ReactNode }) {
     <>
       {flowHead}
       {staticVersion}
-      <div ref={runwayRef} className={s.runway} data-nojs="runway" style={{ height: `${RUNWAY_VH}vh` }}>
+      <div
+        ref={runwayRef}
+        className={s.runway}
+        data-nojs="runway"
+        style={{ ["--pocket-runway" as string]: `${RUNWAY_VH}vh` } as CSSProperties}
+      >
         <div className={s.pin} ref={pinRef}>
           <div className={s.pinHead}>{header}</div>
           <div className={s.layout}>

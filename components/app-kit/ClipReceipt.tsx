@@ -60,7 +60,7 @@ function ClipCard({ children, padding, edge = clip.color.orange, style }: { chil
 
 const SAVE_LABEL = 'Save to PapeX';
 const CLIP_DESCRIPTION =
-  'The PapeX App Clip receipt: what a shopper sees after tapping their phone on the PapeX device at checkout. The itemized receipt opens right away, with no app to install, and Save to PapeX keeps it in the PapeX app.';
+  'The PapeX App Clip receipt: what a shopper sees after tapping their phone on the PapeX sticker at checkout. The itemized receipt opens right away, with no app to install, and Save to PapeX keeps it in the PapeX app.';
 
 /** `.bubble(shape)` — iOS 26 `.glassEffect(.clear)`; web approximation. */
 function Bubble({ children, radius, style }: { children: ReactNode; radius: number | string; style?: CSSProperties }) {

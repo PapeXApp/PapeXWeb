@@ -153,6 +153,21 @@
   text-rendering: optimizeLegibility;
 }
 
+/* Page canvas (A3, 2026-10-21). Overscrolling past the navy footer (iOS
+   rubber-band, trackpad bounce) used to show the body's white (#0a0a0a in
+   dark mode) band. Giving <html> its own colour stops the body background
+   propagating to the canvas: the body still paints its own box exactly as
+   before, so nothing changes at rest; only the area beyond the document
+   (overscroll) is now navy. html:has(.rd) keeps it to pages with the redesign
+   chrome. The canvas follows FlowGround's live ground (its root carries
+   data-flow-root), so pulling past a light hero shows light, not navy. */
+html:has([data-flow-root][data-ground="navy"]) {
+  background-color: #00121d;
+}
+html:has([data-flow-root][data-ground="light"]) {
+  background-color: #f5f5f5;
+}
+
 .rd ::selection {
   background: var(--orange);
   color: var(--navy);
@@ -173,6 +188,15 @@
   font-weight: 700;
   line-height: 0.98;
   letter-spacing: -0.02em;
+}
+/* Phones (A7, 2026-10-21): headlines balance their lines so none ends on a
+   single orphan word. Zero specificity (:where), so a component that sets its
+   own text-wrap (e.g. `pretty`) still wins; phone-only so desktop line
+   breaks don't move. */
+@media (max-width: 820px) {
+  :where(.rd) :where(h1, h2, .rd-display) {
+    text-wrap: balance;
+  }
 }
 .rd-kicker,
 .rd-eyebrow {
@@ -259,10 +283,6 @@
   color: var(--navy) !important;
   box-shadow: var(--sh-cta);
 }
-.rd-btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--sh-cta-hover);
-}
 .rd-btn-nav {
   box-shadow: var(--sh-cta-nav);
 }
@@ -271,26 +291,49 @@
   color: var(--offwhite) !important;
   border-color: var(--hairline-dark);
 }
-.rd-btn-ghost:hover {
-  border-color: rgba(245, 245, 245, 0.4);
-  background: rgba(245, 245, 245, 0.04);
-}
 /* secondary on light sections (vision CTA cross-link) */
 .rd-btn-outline {
   background: transparent;
   color: var(--navy) !important;
   border: 1.5px solid var(--on-light-border-strong);
 }
-.rd-btn-outline:hover {
-  border-color: var(--navy);
-  background: rgba(0, 18, 29, 0.04);
-}
 .rd-btn-dark {
   background: var(--navy);
   color: var(--white) !important;
 }
-.rd-btn-dark:hover {
-  background: var(--navy-700);
+/* Hover states only where there is a real hover (A4, 2026-10-21): on a touch
+   screen :hover sticks after a tap, leaving the button lifted/tinted. A mouse
+   sees exactly what it saw before. */
+@media (hover: hover) and (pointer: fine) {
+  .rd-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--sh-cta-hover);
+  }
+  .rd-btn-ghost:hover {
+    border-color: rgba(245, 245, 245, 0.4);
+    background: rgba(245, 245, 245, 0.04);
+  }
+  .rd-btn-outline:hover {
+    border-color: var(--navy);
+    background: rgba(0, 18, 29, 0.04);
+  }
+  .rd-btn-dark:hover {
+    background: var(--navy-700);
+  }
+}
+
+/* The one large call-to-action size (A5, 2026-10-21). A size modifier only:
+   compose it with the base and a colour, e.g.
+   `rd-btn rd-btn-primary rd-cta-lg` (or rd-btn-outline / rd-btn-dark).
+   Declared after .rd-btn so it wins at equal specificity. */
+.rd-cta-lg {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 0 32px;
+  font-size: 16px;
+  border-radius: var(--r-pill);
 }
 
 /* --- Liquid-glass bubbles (nav) ------------------------------------------ */
@@ -343,8 +386,10 @@
   user-select: none;
   padding: 9px 17px 9px 14px;
 }
-.rd-logo-bubble:hover {
-  border-color: rgba(235, 113, 0, 0.5);
+@media (hover: hover) and (pointer: fine) {
+  .rd-logo-bubble:hover {
+    border-color: rgba(235, 113, 0, 0.5);
+  }
 }
 
 .rd-links-bubble {
@@ -363,9 +408,11 @@
   cursor: pointer;
   transition: background-color 0.25s ease, color 0.25s ease;
 }
-.rd-navlink:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--offwhite);
+@media (hover: hover) and (pointer: fine) {
+  .rd-navlink:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--offwhite);
+  }
 }
 .rd-navlink[aria-current="page"] {
   color: var(--orange);
@@ -374,9 +421,11 @@
 [data-glass="light"] .rd-navlink {
   color: rgba(0, 18, 29, 0.7);
 }
-[data-glass="light"] .rd-navlink:hover {
-  background: rgba(0, 18, 29, 0.07);
-  color: var(--navy);
+@media (hover: hover) and (pointer: fine) {
+  [data-glass="light"] .rd-navlink:hover {
+    background: rgba(0, 18, 29, 0.07);
+    color: var(--navy);
+  }
 }
 /* s-23: on light glass the current page reads navy on its pale orange pill
    (orange-on-pale-orange measured 2.4:1). On the dark glass the orange text
@@ -469,21 +518,38 @@
   transition: opacity 0.2s ease, visibility 0s linear 0.2s;
 }
 
-@media (max-width: 820px) {
-  .rd-btn-nav[data-hidden="fork"] {
-    display: none;
-  }
-}
-
 .rd-nav-actions {
   display: flex;
   align-items: center;
   gap: 10px;
 }
-/* Narrow phones (320-380): logo + "Download the app" + burger overran the
-   right edge by up to 30px at 320 (the burger was cut off). Trim the side
-   padding, gaps and the button's padding; every target stays >= 44px tall
-   through the hit areas below. */
+
+/* --- Phone header (A1, 2026-10-21) ----------------------------------------
+   Same floating pills as on laptops (Nico rejected a full-width frosted bar
+   behind them). --rd-nav-h is the height the pills occupy, for anything that
+   has to clear them: html's scroll-padding-top below (anchor jumps) and any
+   JS scroll math. Declared on html:has(.rd), not :root, so pages without the
+   redesign never get it. */
+@media (max-width: 820px) {
+  html:has(.rd) {
+    --rd-nav-h: 66px;
+    scroll-padding-top: calc(var(--rd-nav-h) + 12px);
+  }
+  /* Two floaters only on phones (Nico, 2026-10-21: "remove download the app
+     and keep the other 2 floaters"): the logo pill and the menu button. The
+     nav CTA ("Download the app" / "Request a demo") is desktop-only; on
+     phones its destinations stay one tap away in each hero's own CTA and
+     the menu sheet. display:none also takes it out of the tab order and the
+     accessibility tree, whatever its data-hidden state. */
+  .rd-btn-nav {
+    display: none;
+  }
+  .rd-logo-bubble,
+  .rd-burger {
+    flex: none;
+  }
+}
+/* Narrow phones (320-380): tighter side padding and gaps for the pills. */
 @media (max-width: 380px) {
   .rd {
     --nav-pad-x: 10px;
@@ -496,10 +562,6 @@
   }
   .rd-logo-bubble {
     padding: 8px 12px 8px 10px;
-  }
-  .rd-btn-nav {
-    padding: 11px 14px;
-    font-size: 13.5px;
   }
 }
 
@@ -583,8 +645,13 @@ main[tabindex="-1"]:focus {
   /* flex-grow drives the 620ms commit expansion */
   transition: flex-grow var(--dur-commit) var(--ease-commit), filter 0.4s ease;
 }
-.rd-fork-half:hover {
-  filter: brightness(1.06);
+/* Hover only with a real pointer (A4): on a phone the tap left the half
+   stuck brightened through the 620ms commit. The commit transition above is
+   the locked spec and is untouched. */
+@media (hover: hover) and (pointer: fine) {
+  .rd-fork-half:hover {
+    filter: brightness(1.06);
+  }
 }
 /* Keyed on the painted surface, not the destination — the navy half is always
    the top one. Swapping which path a half leads to (TOP_PATH / BOTTOM_PATH in
@@ -725,8 +792,10 @@ html[data-fork-skip] .rd-fork {
   color: var(--foot-link);
   transition: color 0.2s ease;
 }
-.rd-foot-link:hover {
-  color: var(--orange);
+@media (hover: hover) and (pointer: fine) {
+  .rd-foot-link:hover {
+    color: var(--orange);
+  }
 }
 .rd-social-chip {
   width: 36px;
@@ -740,9 +809,11 @@ html[data-fork-skip] .rd-fork {
   font-size: 13px;
   transition: color 0.25s ease, border-color 0.25s ease;
 }
-.rd-social-chip:hover {
-  border-color: var(--orange);
-  color: var(--orange);
+@media (hover: hover) and (pointer: fine) {
+  .rd-social-chip:hover {
+    border-color: var(--orange);
+    color: var(--orange);
+  }
 }
 .rd-foot-bottom {
   max-width: var(--section-max);
@@ -778,6 +849,13 @@ html[data-fork-skip] .rd-fork {
   }
   .rd-btn {
     overflow: visible;
+  }
+  /* Real 44px buttons on phones (coordinator, 2026-10-21): .rd-btn was ~38px
+     tall (12px padding on a 14.5px line). The nav CTA is display:none on
+     phones (phone header above); the :not() only keeps this selector's
+     specificity as it was. */
+  .rd-btn:not(.rd-btn-nav) {
+    min-height: 44px;
   }
   .rd-foot-link::after,
   .rd-logo-bubble::after,

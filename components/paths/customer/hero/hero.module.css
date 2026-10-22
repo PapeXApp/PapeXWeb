@@ -17,7 +17,18 @@
 .hero {
   --gutter: clamp(20px, 5vw, 56px);
   --hero-pt: clamp(80px, 10vh, 112px);
-  padding: var(--hero-pt) var(--gutter) 56px;
+  /* Phones: the bottom is the shared section rhythm (40px at phone widths;
+     phone rework B5, 2026-10-21 — it was 56, so Hero -> Pocket read 96px
+     where every other section break is 80). Desktop sets its own 64 below. */
+  padding: var(--hero-pt) var(--gutter) var(--section-pad-y, 40px);
+}
+/* Phones: the eyebrow starts at least 16px under the floating header pills
+   (--rd-nav-h is the height they occupy, styles/papex-brand.css), even on a
+   short screen where 10vh would put it closer. */
+@media (max-width: 820px) {
+  .hero {
+    --hero-pt: max(calc(var(--rd-nav-h, 66px) + 16px), clamp(80px, 10vh, 112px));
+  }
 }
 @media (min-width: 821px) {
   .hero {
@@ -75,6 +86,44 @@
 .title > :nth-child(n + 3) {
   order: 2;
 }
+/* Small phones (<= 359px): at the 40px floor the two lines broke into four
+   ragged ones; 34px keeps "Your receipt," / "not your identity." to a clean
+   three at most (phone rework B5). */
+@media (max-width: 359px) {
+  .title {
+    font-size: 34px;
+  }
+}
+/* The eyebrow, "Connecting your last dollar to your next dollar." (48
+   characters in Geist Mono, 0.6em each). Phones only (Nico, 2026-10-21: the
+   wrapped "NEXT DOLLAR." line looked bad): one line from 375px up, sized to
+   the copy column (100cqw: .row is the inline-size container on phones).
+   Each character takes 0.6em + letter-spacing, so the size is the column /
+   49 / 0.64 (a character of slack) between 11 and 13px, and the
+   letter-spacing is what is left of a 49th of the column, between 0.01em and
+   the desktop 0.14em. 375: 11px, ~0.02em, ~328px of a 335px column; 390:
+   ~11.2px, ~343 of 350; 430: ~12.3px, ~379 of 387. nowrap keeps sub-pixel
+   rounding from dropping the last word. 320-374: two lines, balanced. */
+@media (max-width: 820px) {
+  /* .copy for specificity over the shared .label (flow.module.css) */
+  .copy .eyebrow {
+    font-size: clamp(11px, calc(100cqw / 49 / 0.64), 13px);
+    letter-spacing: clamp(0.01em, calc(100cqw / 49 - 0.6em), 0.14em);
+  }
+  .copy .eyebrow > span {
+    white-space: nowrap;
+  }
+}
+@media (max-width: 374px) {
+  .copy .eyebrow {
+    font-size: 12px;
+    letter-spacing: 0.1em;
+  }
+  .copy .eyebrow > span {
+    white-space: normal;
+    text-wrap: balance;
+  }
+}
 .lead {
   margin-top: var(--gap-title);
   font-size: var(--fs-lead);
@@ -101,6 +150,18 @@
   font-size: 16px;
   text-decoration: none;
   cursor: pointer;
+}
+/* Phones: the one big-button size (phone rework A5, 2026-10-21) — the same
+   52px pill as the quiz's CTA and Vision's on phones, mirroring
+   .rd-cta-lg in styles/papex-brand.css. Desktop keeps its 15/30 padding. */
+@media (max-width: 820px) {
+  .ctaButton {
+    align-items: center;
+    justify-content: center;
+    min-height: 52px;
+    padding: 0 32px;
+    font-size: 16px;
+  }
 }
 .ctaSub {
   padding-left: 4px;
@@ -134,8 +195,10 @@
   text-decoration: none;
   cursor: pointer;
 }
-.hero .downCue:hover {
-  color: var(--flow-fg);
+@media (hover: hover) and (pointer: fine) {
+  .hero .downCue:hover {
+    color: var(--flow-fg);
+  }
 }
 .downCue:focus-visible {
   outline: 2px solid var(--orange);
@@ -161,10 +224,12 @@
   width: 16px;
   height: 16px;
 }
-.downCue:hover .downRing {
-  transform: translateY(3px) scale(1.06);
-  border-color: #a04e00;
-  background-color: rgba(235, 113, 0, 0.1);
+@media (hover: hover) and (pointer: fine) {
+  .downCue:hover .downRing {
+    transform: translateY(3px) scale(1.06);
+    border-color: #a04e00;
+    background-color: rgba(235, 113, 0, 0.1);
+  }
 }
 .hero .faqCue {
   font-size: 14px;
@@ -174,9 +239,11 @@
   text-underline-offset: 4px;
   transition: color 0.2s ease, text-decoration-color 0.2s ease;
 }
-.hero .faqCue:hover {
-  color: var(--flow-fg);
-  text-decoration-color: #a04e00;
+@media (hover: hover) and (pointer: fine) {
+  .hero .faqCue:hover {
+    color: var(--flow-fg);
+    text-decoration-color: #a04e00;
+  }
 }
 .faqCue:focus-visible {
   outline: 2px solid var(--orange);
@@ -227,6 +294,19 @@
   max-width: 100%;
   height: var(--fh);
   margin-inline: auto;
+}
+/* Phones: the stage is sized from the copy row's own width (a container),
+   not 100vw, so the chips' outer edges always land on the page gutter
+   (>= 20px in from the screen) — 100vw counts a desktop scrollbar a phone
+   emulator may show, which put them ~5px from the edge (phone rework B5). */
+@media (max-width: 820px) {
+  .row {
+    container-type: inline-size;
+  }
+  .stage {
+    --pw: min(232px, calc(100cqw * 0.6));
+    --side: max(0px, calc((100cqw - var(--fw)) / 2));
+  }
 }
 @media (min-width: 821px) {
   .stage {

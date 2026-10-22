@@ -108,7 +108,6 @@ export const marqueeContent = {
     "One tap.",
     "No app needed to receive. Download it to collect them all.",
     "iPhone & Android.",
-    "Free.",
     "Coupons at select stores.",
     "Less paper.",
   ],
