@@ -54,6 +54,8 @@ const readJson = (path: string): unknown => JSON.parse(readFileSync(path, "utf8"
 const fixture = (name: string) => readJson(join(CONTRACT, "fixtures", name));
 
 const NOW = new Date("2026-10-01T17:00:00Z");
+/** Before every fixture's expiresAt, so "shows all of its text" includes the redemption. */
+const EARLY = new Date("2026-09-01T00:00:00Z");
 
 /** Decode + render, exactly the page's path. */
 function renderResponse(response: unknown, sid: string, now = NOW): string {
@@ -88,7 +90,7 @@ test("every valid fixture renders every card, showing all of its text", () => {
   const dir = join(CONTRACT, "fixtures/valid");
   for (const f of readdirSync(dir).filter((x) => x.endsWith(".json"))) {
     const r = readJson(join(dir, f)) as ResolvedCards;
-    const html = renderResponse(r, r.sid);
+    const html = renderResponse(r, r.sid, EARLY);
     if (r.status === "none" || r.status === "degraded") {
       assert.equal(html, "", `${f}: renders nothing`);
       continue;
@@ -115,8 +117,58 @@ test("offer: code, caption, countdown chip, and no chip once expired", () => {
   const lastDay = renderFixture("valid/offer-code.json", new Date("2026-10-05T20:00:00Z"));
   assert.ok(lastDay.includes(">Last day<"));
   const after = renderFixture("valid/offer-code.json", new Date("2026-10-06T07:00:00Z"));
-  assert.ok(!after.includes("left<") && !after.includes("Last day") && !/expired/i.test(after), "no chip, never 'Expired'");
-  assert.ok(after.includes("EXM15OFF100"), "the voucher itself stays");
+  assert.ok(!after.includes("left<") && !after.includes("Last day"), "no chip once expired");
+  assert.ok(after.includes("Expired Oct 5, 2026"), "says Expired <merchant's last day>");
+  assert.ok(!after.includes("EXM15OFF100") && !after.includes("Give this code at the register"), "an expired coupon shows no code");
+  // The last valid second still shows the code; one second later it does not.
+  assert.ok(renderFixture("valid/offer-code.json", new Date("2026-10-06T06:59:59Z")).includes("EXM15OFF100"));
+  assert.ok(!renderFixture("valid/offer-code.json", new Date("2026-10-06T07:00:00Z")).includes("EXM15OFF100"));
+});
+
+test("expired offer: no code, barcode or QR anywhere, with or without hideWhenExpired, with or without a clock in the normalizer", () => {
+  const LATE = new Date("2027-01-01T00:00:00Z");
+  for (const [name, label, value] of [
+    ["valid/offer-barcode-code128.json", "Expired Sep 27, 2026", "EXM-BOGO-0926"],
+    ["valid/offer-code.json", "Expired Oct 5, 2026", "EXM15OFF100"],
+  ]) {
+    const r = fixture(name) as ResolvedCards;
+    for (const hide of [undefined, false]) {
+      const raw = JSON.parse(JSON.stringify(r)) as ResolvedCards;
+      for (const c of raw.cards) if (c.type === "offer" && c.validity) c.validity = { ...c.validity, hideWhenExpired: hide };
+      // (a) renderer backstop: normalizer given no clock, view given the clock.
+      const noClock = renderToStaticMarkup(<CardList cards={normalizeResolvedCards(raw, raw.sid)} now={LATE} />);
+      // (b) normalizer strips with a clock, even handed to a view with an early clock.
+      const stripped = normalizeResolvedCards(raw, raw.sid, { now: LATE });
+      const withClock = renderToStaticMarkup(<CardList cards={stripped} now={EARLY} />);
+      for (const html of [noClock, withClock]) {
+        assert.ok(!html.includes("<rect") && !html.includes("aria-label=\"Barcode") && !html.includes("aria-label=\"QR"), "no bars");
+        assert.ok(!html.includes(value), "no value text");
+      }
+      assert.ok(noClock.includes(label), "Expired <date>");
+      for (const c of stripped.cards) if (c.type === "offer") assert.equal(c.redemption, undefined, "stripped at the data layer");
+    }
+  }
+});
+
+test("offer with no validity, or an unparseable expiresAt: redemption is left alone", () => {
+  const r = JSON.parse(JSON.stringify(fixture("valid/offer-code.json"))) as ResolvedCards;
+  const offer = r.cards.find((c) => c.type === "offer")!;
+  if (offer.type !== "offer") throw new Error("fixture");
+  delete offer.validity;
+  assert.ok(renderResponse(r, r.sid, new Date("2030-01-01T00:00:00Z")).includes("EXM15OFF100"), "no expiry: code stays");
+  // An unparseable expiresAt fails the normalizer (card dropped), as before; a forged one that skips it draws the code.
+  const n = normalizeResolvedCards(fixture("valid/offer-code.json"), (r as ResolvedCards).sid);
+  const forged = JSON.parse(JSON.stringify(n)) as NormalizedCards;
+  for (const c of forged.cards) if (c.type === "offer" && c.validity) c.validity.expiresAt = "garbage";
+  assert.ok(renderToStaticMarkup(<CardList cards={forged} now={new Date("2030-01-01T00:00:00Z")} />).includes("EXM15OFF100"));
+});
+
+test("ExpiringRedemption island: renders its children byte-for-byte before any client check", () => {
+  const live = renderFixture("valid/offer-code.json");
+  assert.ok(live.includes("EXM15OFF100"));
+  const src = readFileSync(join(__dirname, "../ExpiringRedemption.tsx"), "utf8");
+  assert.ok(/^\s*["']use client["']/m.test(src));
+  for (const hook of ["visibilitychange", "setTimeout", "isExpired"]) assert.ok(src.includes(hook), hook);
 });
 
 test("offer: Save is an inert printed line, not a button or link", () => {
@@ -126,7 +178,7 @@ test("offer: Save is an inert printed line, not a button or link", () => {
 });
 
 test("offer: barcodes render as SVG rects with a readable line; countdown:false shows no chip", () => {
-  const code128 = renderFixture("valid/offer-barcode-code128.json");
+  const code128 = renderFixture("valid/offer-barcode-code128.json", EARLY);
   assert.ok(code128.includes("<svg") && code128.includes("<rect"), "svg bars");
   assert.ok(code128.includes('aria-label="Barcode EXM-BOGO-0926"'));
   assert.ok(!code128.includes("days left") && !code128.includes("Last day"));

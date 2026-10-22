@@ -191,6 +191,68 @@
   color: var(--attention);
 }
 
+/* Phones (Web 2.1 P8): a four-column table cut off at the card edge read
+   as clutter. Each row becomes a stacked block: light + status on one line,
+   then what it means (bold) and what to do. Column heads are hidden (the
+   row reads on its own); the roles in page.tsx keep it a table. */
+@media (max-width: 600px) {
+  .tableScroll {
+    overflow-x: visible;
+  }
+  .table {
+    min-width: 0;
+    display: block;
+  }
+  .table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .table tbody {
+    display: block;
+  }
+  .table tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "light status"
+      "means means"
+      "detail detail";
+    column-gap: 12px;
+    row-gap: 4px;
+    padding: 14px 18px;
+  }
+  .table tbody tr + tr {
+    border-top: 1px solid color-mix(in srgb, var(--flow-fg) 8%, transparent);
+  }
+  .table td,
+  .table tbody tr + tr td {
+    display: block;
+    padding: 0;
+    border-top: 0;
+  }
+  .table td.lightCell {
+    grid-area: light;
+  }
+  .table td.statusCell {
+    grid-area: status;
+    align-self: center;
+    font-size: 13px;
+  }
+  .table td.meansCell {
+    grid-area: means;
+    margin-top: 4px;
+    color: var(--flow-fg);
+    font-weight: 500;
+  }
+  .table td.detailCell {
+    grid-area: detail;
+  }
+}
+
 .rule {
   margin-top: var(--gap-list);
   display: flex;

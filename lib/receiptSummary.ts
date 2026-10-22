@@ -30,6 +30,10 @@ export interface ReceiptLineItem {
   name: string;
   qty: number;
   amount: number;
+  /** The line's printed discount, NEGATIVE. Only producers that read it set it. */
+  discount?: number;
+  /** The printed promo name behind `discount`. */
+  discountNote?: string;
 }
 
 export interface ReceiptSummary {
@@ -45,6 +49,22 @@ export interface ReceiptSummary {
   paymentLine?: string;
   /** The full, verbatim receipt body for the monospace fallback view. */
   bodyLines: ReceiptLine[];
+  /**
+   * Printed tax lines, each shown with its own label in place of the single
+   * "Tax" row. Only producers that read them set it (lib/rdhParsed.ts).
+   */
+  taxLines?: { label: string; amount: number }[];
+  /** Printed fee lines (e.g. "Pay By Bank Fee"), shown after tax. */
+  fees?: { label: string; amount: number }[];
+  /** false: never show a rate derived from tax / subtotal. Default true. */
+  deriveTaxRate?: boolean;
+  /** Labelled parts of `discount` (cart-level promos), shown under its row. NEGATIVE amounts. */
+  discountLines?: { label: string; amount: number }[];
+  /** Tendered amounts, shown after Total when there is change or a split. */
+  tenders?: { label: string; amount: number }[];
+  changeDue?: number;
+  /** "Test print" / "Return", shown in place of the header's "RDH Receipt" line. */
+  kindLabel?: string;
 }
 
 /** True when enough structure was extracted to show designed cards instead of only the raw body. */

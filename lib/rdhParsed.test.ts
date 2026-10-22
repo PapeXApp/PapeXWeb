@@ -19,12 +19,18 @@
 import assert from "node:assert/strict";
 import {
   hasUsableReceipt,
+  isDutchieParsed,
+  looksLikeDutchie,
   normalizePayload,
   parsedToSummary,
+  redactCustomerIds,
+  redactDutchieSummary,
   shouldKeepPolling,
   type ParsedReceiptPayload,
 } from "./rdhParsed";
-import { hasStructure } from "./receiptSummary";
+import { hasStructure, summarizeReceipt } from "./receiptSummary";
+import { defaultStyle } from "./escpos";
+import { DUTCHIE_PARSED_BUNDLE, DUTCHIE_PARSED_FEE } from "./__fixtures__/dutchieParsed";
 
 let passed = 0;
 let failed = 0;
@@ -226,6 +232,133 @@ test("a receipt with only a total still structures (no fabricated merchant)", ()
   assert.equal(hasStructure(summary), true);
   assert.equal(summary.merchantName, undefined, "never invents a merchant name");
   assert.deepEqual(summary.addressLines, []);
+});
+
+// ---- Dutchie: the indexer's row replaces the local text parse ----------------
+
+const dutchie = (raw: unknown) => normalizePayload(raw) as ParsedReceiptPayload;
+const bodyText = (raw: unknown) =>
+  parsedToSummary(dutchie(raw).receipt!).bodyLines.map((l) => l.text).join("\n");
+
+test("isDutchieParsed: only an ok row written by the Dutchie extractor", () => {
+  assert.equal(isDutchieParsed(dutchie(DUTCHIE_PARSED_BUNDLE)), true);
+  // Old rows keep the generic parser's engine and must keep rendering locally.
+  const old = structuredClone(DUTCHIE_PARSED_BUNDLE);
+  old.receipt.extractorEngine = "rdh-escpos";
+  assert.equal(isDutchieParsed(dutchie(old)), false);
+  const noEngine = structuredClone(DUTCHIE_PARSED_BUNDLE) as Record<string, unknown>;
+  delete (noEngine.receipt as Record<string, unknown>).extractorEngine;
+  assert.equal(isDutchieParsed(dutchie(noEngine)), false);
+  assert.equal(isDutchieParsed(dutchie({ ...DUTCHIE_PARSED_BUNDLE, parseStatus: "failed" })), false);
+  assert.equal(isDutchieParsed(dutchie({ ...DUTCHIE_PARSED_BUNDLE, parseStatus: "pending", receipt: null })), false);
+  assert.equal(isDutchieParsed(null), false);
+  // Blaze/OCR rows (the existing fixture) are not Dutchie.
+  assert.equal(isDutchieParsed(normalizePayload(PAYLOAD)), false);
+});
+
+test("Dutchie: items, per-item discounts and totals match the paper", () => {
+  const p = dutchie(DUTCHIE_PARSED_BUNDLE);
+  assert.deepEqual(p.receipt!.lineItems.map((li) => li.discount), [-2, -2, null]);
+  const s = parsedToSummary(p.receipt!);
+  assert.equal(s.merchantName, "Union Cannabis Club");
+  assert.deepEqual(s.items.map((i) => [i.name, i.qty, i.amount]), [
+    ["SUNSET CONNECT - 1G - HYBRID - FULTON 5ER", 2, 12],
+    ["SUNSET CONNECT - 1G - SATIVA - FULTON 5ER", 2, 12],
+    ["ST IDES - TEA - HIGH PUNCH", 2, 20],
+  ]);
+  // Paper: Subtotal $36.02, Total Tax $7.98, Total Discount $4.00, Total $40.00.
+  assert.equal(s.subtotal, 36.02);
+  assert.equal(s.tax, 7.98);
+  assert.equal(s.discount, 4);
+  assert.equal(s.total, 40);
+  assert.equal((s.subtotal! + s.tax! - s.discount!).toFixed(2), "40.00");
+  assert.equal(s.paymentLine, "Cash");
+  assert.equal(hasStructure(s), true);
+});
+
+test("Dutchie: a receipt with a fee still shows the printed subtotal", () => {
+  const s = parsedToSummary(dutchie(DUTCHIE_PARSED_FEE).receipt!);
+  // Paper: $10.00 item, -$2.50, Subtotal $8.50, Tax $1.50, fee $0.26, Total $7.76.
+  assert.equal(s.subtotal, 8.5);
+  assert.equal(s.discount, 2.5);
+  assert.equal(s.total, 7.76);
+  assert.equal(s.paymentLine, "Dutchie Pay");
+});
+
+test("Dutchie: no discounts -> no Discount row and the subtotal is untouched", () => {
+  const raw = structuredClone(DUTCHIE_PARSED_BUNDLE);
+  raw.receipt.lineItems = raw.receipt.lineItems.map((li) => ({ ...li, discount: null }));
+  const s = parsedToSummary(dutchie(raw).receipt!);
+  assert.equal(s.discount, undefined);
+  assert.equal(s.subtotal, 32.02);
+});
+
+test("Dutchie: the original receipt is the indexer's text, customer id redacted", () => {
+  const text = bodyText(DUTCHIE_PARSED_BUNDLE);
+  assert.match(text, /^Union Cannabis Club\n2030 Union Street/, "leading blank lines trimmed");
+  assert.match(text, /^Customer:: \[redacted\]$/m);
+  assert.match(text, /^Due Customer: \$10\.00$/m, "the change line is not an id");
+  assert.match(text, /^Total: \$40\.00$/m);
+  const lines = parsedToSummary(dutchie(DUTCHIE_PARSED_BUNDLE).receipt!).bodyLines;
+  assert.ok(lines.every((l) => l.align === "left" && l.style.fontB), "rendered as printed: Font B");
+});
+
+test("Dutchie: an unredacted id in rawText is redacted client-side too", () => {
+  const raw = structuredClone(DUTCHIE_PARSED_BUNDLE);
+  raw.receipt.rawText = raw.receipt.rawText
+    .replace("Customer:: [redacted]", "Customer:: 12345678\nPatient: 7654321\nMMJ ID: CA-0001");
+  const text = bodyText(raw);
+  assert.doesNotMatch(text, /12345678|7654321|CA-0001/);
+  assert.match(text, /^Customer:: \[redacted\]$/m);
+  assert.match(text, /^Patient: \[redacted\]$/m);
+  assert.match(text, /^MMJ ID: \[redacted\]$/m);
+  assert.match(text, /^Due Customer: \$10\.00$/m);
+});
+
+test("redactCustomerIds is idempotent and leaves other lines alone", () => {
+  const once = redactCustomerIds("Order: 1\nCustomer:: 42\nDue Customer: $0");
+  assert.equal(once, "Order: 1\nCustomer:: [redacted]\nDue Customer: $0");
+  assert.equal(redactCustomerIds(once), once);
+});
+
+test("Dutchie: no rawText -> no Original receipt box", () => {
+  const raw = structuredClone(DUTCHIE_PARSED_BUNDLE) as Record<string, unknown>;
+  (raw.receipt as Record<string, unknown>).rawText = null;
+  assert.deepEqual(parsedToSummary(dutchie(raw).receipt!).bodyLines, []);
+});
+
+test("non-Dutchie rows are unchanged: no Discount, no text body", () => {
+  const withDiscount = structuredClone(PAYLOAD) as { receipt: { lineItems: Record<string, unknown>[]; rawText?: string } };
+  withDiscount.receipt.lineItems[0].discount = -1;
+  withDiscount.receipt.rawText = "STAR CLOTHING\nCustomer:: 1";
+  const s = parsedToSummary((normalizePayload(withDiscount) as ParsedReceiptPayload).receipt!);
+  assert.equal(s.discount, undefined);
+  assert.equal(s.subtotal, 156.95);
+  assert.deepEqual(s.bodyLines, []);
+});
+
+// ---- Local-parse redaction for anything that looks like Dutchie -------------
+
+const asLines = (text: string) =>
+  text.split("\n").map((t) => ({ text: t, align: "left" as const, style: defaultStyle() }));
+
+test("redactDutchieSummary: a Dutchie-looking local parse loses its ids", () => {
+  const raw = DUTCHIE_PARSED_BUNDLE.receipt.rawText.replace("Customer:: [redacted]", "Customer:: 12345678\nPatient: 7654321");
+  assert.equal(looksLikeDutchie(raw.split("\n")), true);
+  const s = redactDutchieSummary(summarizeReceipt(asLines(raw)));
+  const all = JSON.stringify(s);
+  assert.doesNotMatch(all, /12345678|7654321/);
+  assert.ok(s.bodyLines.some((l) => l.text === "Customer:: [redacted]"));
+  assert.ok(s.bodyLines.some((l) => l.text === "Patient: [redacted]"));
+  assert.ok(s.bodyLines.some((l) => l.text === "Due Customer: $10.00"));
+});
+
+test("redactDutchieSummary: a non-Dutchie receipt is returned untouched", () => {
+  // Has a Customer line and two of the five anchors: not enough.
+  const raw = "CORNER CAFE\nOrder: 77\nCustomer: Jane Doe\nLatte  4.50\nTotal Items: 1\nTOTAL  4.50";
+  assert.equal(looksLikeDutchie(raw.split("\n")), false);
+  const summary = summarizeReceipt(asLines(raw));
+  assert.equal(redactDutchieSummary(summary), summary, "same object, nothing rewritten");
 });
 
 // ---- Summary ----------------------------------------------------------------

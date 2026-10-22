@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useInView } from "motion/react"
 import { useSafeReducedMotion } from "./useSafeReducedMotion"
+import { PHONE_SCALE, PHONE_VIEWPORT, useIsPhone } from "./phoneTiming"
 import type { CSSProperties } from "react"
 
 type CounterProps = {
@@ -37,7 +38,13 @@ const VIEWPORT = { once: true, amount: 0.12, margin: "0px 0px -6% 0px" } as cons
 export function Counter({ value, prefix = "", suffix = "", className, style, locale = "en-US" }: CounterProps) {
   const prefersReduced = useSafeReducedMotion()
   const ref = useRef<HTMLSpanElement>(null)
-  const inView = useInView(ref, VIEWPORT)
+  const phone = useIsPhone()
+  // Phones start earlier and count faster (phoneTiming.ts); desktop unchanged.
+  const inView = useInView(ref, phone ? PHONE_VIEWPORT : VIEWPORT)
+  // A ref, not an effect dependency: re-running the effect mid-count would
+  // cancel the frame loop without restarting it (startedRef).
+  const durationRef = useRef(DURATION)
+  durationRef.current = DURATION * (phone ? PHONE_SCALE : 1)
   const [display, setDisplay] = useState(0)
   const startedRef = useRef(false)
   const rafRef = useRef<number | null>(null)
@@ -46,8 +53,9 @@ export function Counter({ value, prefix = "", suffix = "", className, style, loc
     if (prefersReduced || !inView || startedRef.current) return
     startedRef.current = true
     const start = performance.now()
+    const duration = durationRef.current
     const tick = (now: number) => {
-      const p = Math.min(1, (now - start) / DURATION)
+      const p = Math.min(1, (now - start) / duration)
       setDisplay(Math.floor(value * easeOutCubic(p)))
       rafRef.current = p < 1 ? requestAnimationFrame(tick) : null
     }

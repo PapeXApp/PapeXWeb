@@ -1,0 +1,137 @@
+rules_version = '2';
+
+// Firestore security rules for `papexweb-aed97`, the marketing site's own
+// Firebase project (firebase/firebaseConfig.ts). Deploy from this repo with
+//
+//   firebase deploy --only firestore:rules --project papexweb-aed97
+//
+// and test with `npm run test:rules` (see firestore-tests/).
+//
+// History: until 2026-09-29 the live ruleset (2ffa6dff…, released 2025-06-21)
+// was `allow read, write: if true` on EVERY document. Anyone holding the public
+// web config could list the waitlist leads, rewrite or delete every blog post,
+// and would have been able to read `support_requests` (names, emails, messages)
+// the moment /support went live. These rules replace that.
+//
+// Who touches this database, and what each needs:
+//
+//   Browser, client SDK (firebase/firebaseConfig.ts):
+//     blogs      READ  the /blog pages on `main` call blogServiceFree.getBlogs(),
+//                      which lists the WHOLE collection and filters `published`
+//                      in JS, so `list` has to stay public until that code is
+//                      gone (2.1's app/blog/_lib/posts.ts filters server-side).
+//                      Drafts were readable before too; nothing sensitive lives
+//                      in them.
+//                WRITE the CMS (CreateBlogModal, EditBlogModal, lib/imageUpload)
+//                      creates and updates posts as a signed-in blog admin.
+//     waitlist   CREATE only, in exactly two shapes: `main`'s
+//                      components/waitlist-form-enhanced.tsx, and the TEMPORARY
+//                      client-side fallback in 2.1's DemoForm. Once /api/signup
+//                      has been live with PAPEXWEB_SERVICE_ACCOUNT for a day,
+//                      flip `allow create` to `if false` (docs/SIGNUP_ROUTE.md).
+//
+//   Server, firebase-admin (PAPEXWEB_SERVICE_ACCOUNT) — bypasses these rules:
+//     /api/signup writes waitlist, blog_subscribers and support_requests.
+//
+//   Server, unauthenticated REST (2.1 app/blog/_lib/posts.ts):
+//     lists blogs where published == true (covered by the public read).
+//
+// Everything not matched below is denied.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Blog/CMS admins. Mirrors BLOG_ADMIN_EMAILS in lib/adminEmails.ts.
+    //
+    // Email/password self-signup is OPEN on this project, and several of the
+    // allowlisted addresses have no account yet, so a stranger could register
+    // one of them. An unverified email is therefore never enough on its own.
+    // None of the six existing admin accounts has a verified email (the CMS has
+    // no verification flow), so those are pinned by uid instead. A new admin
+    // gets in by verifying their email; a departed one is removed from BOTH
+    // lists.
+    function isBlogAdmin() {
+      return request.auth != null && (
+        request.auth.uid in [
+          '7r5IEt2BcgQDCt2J83FgFlnZ5zt1', // nico.courbage@gmail.com
+          'DBApnDntfNMgqewogARMBtF4V6X2', // raasinr@gmail.com
+          'ioM1RBk1tMWnxqruQcZlIRvZCzI2', // admin@papex.app
+          '7a7U3rgTD3O60VrQgUBvW8p0VYS2', // krutartha2002@gmail.com
+          'iGekSOqm0LcyiOfYScRa2mkB1HP2', // michael_khoury@icloud.com
+          'r3pQcDI2X5fbNya7671o4igkm863'  // mike@series-zero.com
+        ]
+        || (
+          request.auth.token.email_verified == true
+          && request.auth.token.email in [
+            'admin@papex.app',
+            'nicolas@papex.app',
+            'michael@papex.app',
+            'nico@papex.app',
+            'raasinr@gmail.com',
+            'nico.courbage@gmail.com',
+            'mike@series-zero.com',
+            'michael_khoury@icloud.com',
+            'krutartha2002@gmail.com',
+            'test@papex.app'
+          ]
+        )
+      );
+    }
+
+    function isShortString(v, max) {
+      return v is string && v.size() <= max;
+    }
+
+    // The two payloads the browser is allowed to drop into `waitlist`.
+    // `createdAt` must be serverTimestamp() (== request.time in rules), so a
+    // client cannot backdate or forward-date a lead.
+    function isWaitlistLead(d) {
+      return d.createdAt == request.time
+        && isShortString(d.fullName, 200)
+        && isShortString(d.email, 254)
+        && (
+          // main: components/waitlist-form-enhanced.tsx
+          (
+            d.keys().hasOnly(['fullName', 'email', 'company', 'role', 'message', 'createdAt'])
+            && isShortString(d.company, 200)
+            && isShortString(d.role, 200)
+            && isShortString(d.message, 4000)
+          )
+          ||
+          // 2.1: components/paths/business/DemoForm.tsx client-side fallback
+          (
+            d.keys().hasOnly(['fullName', 'businessName', 'email', 'phone', 'posSystem', 'type', 'createdAt'])
+            && d.type == 'business-demo-request'
+            && isShortString(d.businessName, 200)
+            && isShortString(d.phone, 50)
+            && isShortString(d.posSystem, 200)
+          )
+        );
+    }
+
+    match /blogs/{postId} {
+      allow read: if true;
+      allow create, update: if isBlogAdmin();
+      allow delete: if false; // no code path deletes; the CMS unpublishes instead
+    }
+
+    match /waitlist/{leadId} {
+      allow read, update, delete: if false;
+      allow create: if isWaitlistLead(request.resource.data);
+    }
+
+    // Written only by /api/signup through firebase-admin. Clients never touch
+    // them; support_requests holds people's names, emails and messages.
+    match /blog_subscribers/{id} {
+      allow read, write: if false;
+    }
+    match /support_requests/{id} {
+      allow read, write: if false;
+    }
+
+    // Legacy: 3 documents from 2025-06-18 that nothing in the codebase reads.
+    match /blog-posts/{id} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -13,9 +13,10 @@
 //   Because expiresAt sits on the merchant's day boundary, this counts the
 //   merchant's calendar days without the client knowing the timezone (a DST
 //   change can shift the flip by an hour on two nights a year).
-//   There is NO "Expired" state: once the window closes the chip disappears
-//   and the card keeps its own fine print, which states the window as a
-//   duration and so stays true.
+//   Once the window closes the chip disappears, and the redemption (code /
+//   barcode / QR) is REMOVED and replaced by "Expired <date>" (isExpired,
+//   formatExpired), whatever hideWhenExpired says. An expired coupon never
+//   shows a usable code anywhere.
 
 const DAY_SECONDS = 86_400;
 const EXPIRES_AT_RE = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})Z$/;
@@ -50,6 +51,32 @@ export function countdownDays(expiresAt: string, now: Date): number | null {
   const nowSec = Math.floor(now.getTime() / 1000);
   if (!Number.isFinite(nowSec) || nowSec > exp) return null;
   return Math.floor((exp - nowSec) / DAY_SECONDS);
+}
+
+/**
+ * True iff the window has closed: floor(now / 1 s) > expiresAt, the chip's own
+ * rule. An unparseable expiresAt or an unusable clock is NOT expired (the
+ * offer behaves as it always did). Redemption codes/barcodes are gated on this.
+ */
+export function isExpired(expiresAt: string, now: Date): boolean {
+  const exp = parseExpiresAt(expiresAt);
+  if (exp == null) return false;
+  const nowSec = Math.floor(now.getTime() / 1000);
+  return Number.isFinite(nowSec) && nowSec > exp;
+}
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/**
+ * "Expired Sep 22, 2026". expiresAt is 23:59:59 merchant-local sent as UTC, so
+ * the merchant's last valid day is the UTC date of (expiresAt - 12h) for any
+ * offset from UTC-12 to UTC+11. Returns "Expired" if expiresAt is unreadable.
+ */
+export function formatExpired(expiresAt: string): string {
+  const exp = parseExpiresAt(expiresAt);
+  if (exp == null) return "Expired";
+  const d = new Date((exp - 12 * 3600) * 1000);
+  return `Expired ${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
 }
 
 /** The chip's text. Fixed English strings, identical to the demo layer's and the clip's. */

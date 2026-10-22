@@ -56,6 +56,10 @@ const LABEL: Record<ProblemCardId, string> = { print: "Paper", forest: "Forest",
 const FLIP_TO_SCENE_MS = 360;
 /** Matches .inner's rotateY transition — the back stays intact until it has turned away. */
 const FLIP_BACK_MS = 800;
+/** When the faces trade visibility: the 90° point of .inner's 0.8s
+ *  cubic-bezier(0.2, 0.8, 0.2, 1) turn (~104ms). Matches the `visibility 0s
+ *  linear 0.1s` transition on .face. */
+const FACE_SWAP_MS = 100;
 const COUNT_MS = 1200;
 
 /** Every scene is drawn in this view box. */
@@ -1139,7 +1143,7 @@ function useDock(
 type Stage = "idle" | "scene" | "revealed";
 
 export function FlipCard({ card, index }: { card: Card; index: number }) {
-  const { id, question, hint, value, caption, source } = card;
+  const { id, question, hint, value, caption, source, frontArt, sceneArt } = card;
   const href = PROBLEM_SOURCE_URLS[id];
   const [flipped, setFlipped] = useState(false);
   const [stage, setStage] = useState<Stage>("idle");
@@ -1162,12 +1166,20 @@ export function FlipCard({ card, index }: { card: Card; index: number }) {
 
   useEffect(() => () => timers.current.forEach((t) => window.clearTimeout(t)), []);
 
-  // A keyboard flip leaves focus on a button that just went inert — hand it across.
+  // After hydration the turned-away face is visibility:hidden (the iOS Safari
+  // fix in flipcards.module.css). Before it, the no-JS stacking still works.
+  const [live, setLive] = useState(false);
+  useEffect(() => setLive(true), []);
+
+  // A keyboard flip leaves focus on a button that just went inert — hand it
+  // across once the other face has become visible (FACE_SWAP_MS).
   useEffect(() => {
     if (!focusAfterFlip.current) return;
     focusAfterFlip.current = false;
-    (flipped ? backBtn : frontBtn).current?.focus({ preventScroll: true });
-  }, [flipped]);
+    const btn = (flipped ? backBtn : frontBtn).current;
+    const t = window.setTimeout(() => btn?.focus({ preventScroll: true }), prefersReduced ? 0 : FACE_SWAP_MS + 20);
+    return () => window.clearTimeout(t);
+  }, [flipped, prefersReduced]);
 
   const after = (ms: number, fn: () => void) => timers.current.push(window.setTimeout(fn, ms));
 
@@ -1227,7 +1239,7 @@ export function FlipCard({ card, index }: { card: Card; index: number }) {
       // per-frame restyle (see [data-flow-static] in shared/flow.module.css).
       data-flow-static=""
       onPointerMove={onPointerMove}
-      className={cn(styles.card, flipped && styles.cardFlipped)}
+      className={cn(styles.card, live && styles.cardLive, flipped && styles.cardFlipped)}
     >
       <div className={styles.inner} data-nojs="flip-inner">
         <div className={styles.face} data-nojs="flip-face" inert={flipped} aria-hidden={flipped}>
@@ -1244,7 +1256,9 @@ export function FlipCard({ card, index }: { card: Card; index: number }) {
             </span>
             <FlipGlyph />
           </div>
-          <div className={styles.plate}>
+          {/* The picture's words are in the HTML (role="img"), so a crawler or
+              screen reader gets what the drawing shows. */}
+          <div className={styles.plate} role="img" aria-label={frontArt}>
             <FrontArt id={id} />
           </div>
           <p className={styles.question}>{question}</p>
@@ -1278,6 +1292,9 @@ export function FlipCard({ card, index }: { card: Card; index: number }) {
             <FlipGlyph />
           </div>
           <div id={resultId} className={cn(styles.result, revealed && styles.resultOn)} data-nojs="flip-result">
+            {/* The back's scene mounts only after a tap (client-only), so its
+                description is server-rendered here, visually hidden. */}
+            <p className="sr-only">{sceneArt}</p>
             <div className={styles.resultTop} data-nojs="flip-result">
               <Stat value={value} run={revealed} instant={prefersReduced} />
               <span className={styles.rule} aria-hidden="true" />

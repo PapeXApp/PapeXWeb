@@ -8,7 +8,7 @@
 // (papexv2/functions/src/index.ts, `functions.https.onRequest`), which reads
 // a user's saved receipt straight out of `scanned_receipts/{id}` in
 // Firestore and projects it down to the fields safe to hand to a stranger
-// holding the link — no owner identity, no image, no extras. See the
+// holding the link — no owner identity, no image URL, no extras. See the
 // 2026-09-23 share-link diagnosis: prior to this file, `app/r/page.tsx` only
 // read `sid`, so a `rid` link fell through to the bare-`/r` DEMO branch and
 // rendered the BLUEBIRD COFFEE sample instead of the real receipt — the P0
@@ -20,6 +20,14 @@
 // `GET /receipt/{sid}/parsed` (lib/rdhParsed.ts). `normalizePayload` there
 // already validates and narrows exactly this envelope, so this module reuses
 // it rather than writing a second, laxer parser that could drift.
+//
+// THE PHOTO (1.7.2 #30). The function's envelope also carries an additive
+// `photo: {available: true} | null`. It is a flag and nothing more: no URL, no
+// Storage path, no token. The page builds the URL of the bytes itself
+// (`sharedReceiptPhotoUrl`, the same function with `&photo=1`) and the
+// BROWSER fetches them, because Vercel caps a function response at 4.5 MB and
+// stored originals reach 4.8 MB. A response with no `photo` key (the function
+// before #30) is "no photo", so this page may ship before the function does.
 //
 // CORS. Unlike lib/rdh.ts's RDH backend, `sharedReceipt` sets permissive CORS
 // headers deliberately (see its own comment) because it expects to be called
@@ -64,9 +72,32 @@ export function isValidRid(rid: string | undefined | null): rid is string {
 }
 
 export type SharedReceiptFetchResult =
-  | { status: "ok"; payload: ParsedReceiptPayload }
+  /** `photoAvailable`: the function said it would serve this receipt's photo. */
+  | { status: "ok"; payload: ParsedReceiptPayload; photoAvailable: boolean }
   | { status: "not_found" }
   | { status: "error" };
+
+/**
+ * Did the function say a photo is available? Only an explicit
+ * `photo: {available: true}` counts: a missing key (older function), null,
+ * `{available: false}` or any other shape is "no photo", and "no photo" is a
+ * state the page already renders correctly.
+ */
+export function photoAvailableIn(body: unknown): boolean {
+  if (typeof body !== "object" || body === null) return false;
+  const photo = (body as { photo?: unknown }).photo;
+  return typeof photo === "object" && photo !== null && (photo as { available?: unknown }).available === true;
+}
+
+/**
+ * Where the browser gets the photo's bytes: the same function, `&photo=1`.
+ * The function decides again on this request (a receipt binned since, or
+ * flagged non-receipt, answers 404), so the page can promise nothing the
+ * function will not deliver. Callers pass an already validated `rid`.
+ */
+export function sharedReceiptPhotoUrl(rid: string): string {
+  return `${sharedReceiptApiBase()}/sharedReceipt?rid=${encodeURIComponent(rid)}&photo=1`;
+}
 
 /**
  * Fetch the shared-receipt envelope for a `rid`. Never throws — every
@@ -93,8 +124,9 @@ export async function fetchSharedReceipt(rid: string): Promise<SharedReceiptFetc
     if (res.status === 404) return { status: "not_found" };
     if (!res.ok) return { status: "error" };
 
-    const payload = normalizePayload(await res.json());
-    return payload ? { status: "ok", payload } : { status: "error" };
+    const body: unknown = await res.json();
+    const payload = normalizePayload(body);
+    return payload ? { status: "ok", payload, photoAvailable: photoAvailableIn(body) } : { status: "error" };
   } catch {
     return { status: "error" };
   } finally {
@@ -116,9 +148,37 @@ export async function fetchSharedReceipt(rid: string): Promise<SharedReceiptFetc
  * NOT_AVAILABLE or ERROR, never the sample.
  */
 export type SharedReceiptPageState =
-  | { kind: "real"; receipt: ParsedReceipt }
+  /**
+   * `photoSrc`: the photo's URL when the function offered one, else null (text
+   * only). The photo only ever appears HERE, under a receipt that has readable
+   * content: there is deliberately no "photo only" state (see below).
+   */
+  | { kind: "real"; receipt: ParsedReceipt; photoSrc: string | null }
   | { kind: "not_available" }
   | { kind: "error" };
+
+/**
+ * May the photo be drawn under THIS receipt? Only when the text already says
+ * something about it: a merchant, a non-zero total, or a named line item.
+ * Noah, 2026-10-14: "if we don't know anything about the receipt, we don't
+ * show it". It is `hasUsableReceipt`'s bar with one difference: a total of 0 on
+ * its own does not count (it is what an empty extraction can leave behind), so
+ * a receipt whose only readable field is a 0 total keeps the text page it had
+ * before #30 and gets no photo. A 0 next to a merchant or a named item is fine.
+ *
+ * Mirrors `hasReadableReceiptContent` in PapeXV2 functions/src/
+ * sharedReceiptPhoto.ts, which the function applies before it offers the photo.
+ * This is the page not trusting that: whatever the function says, the photo
+ * never renders unless this holds. The shared `hasUsableReceipt` is left alone
+ * on purpose (the sid flow and its tests depend on it).
+ */
+export function hasPhotoWorthyContent(receipt: ParsedReceipt): boolean {
+  return (
+    receipt.merchantName != null ||
+    (receipt.total != null && receipt.total !== 0) ||
+    receipt.lineItems.some((item) => item.name.trim() !== "")
+  );
+}
 
 export async function resolveSharedReceiptPageState(rid: string): Promise<SharedReceiptPageState> {
   // Validate before ever fetching — matches the function's own
@@ -135,9 +195,21 @@ export async function resolveSharedReceiptPageState(rid: string): Promise<Shared
   // parses but carries no merchant/total/items is functionally a missing
   // receipt, same reasoning as lib/receiptState.ts's hasVisibleContent for
   // sid.
-  if (!hasUsableReceipt(result.payload) || !result.payload.receipt) {
-    return { kind: "not_available" };
-  }
+  //
+  // NO PHOTO-ONLY PAGE (Noah, 2026-10-14). A receipt with no readable merchant,
+  // no total and no line items is the one OCR found nothing receipt-like in, so
+  // it is the least likely to be a receipt, and its photo must not stand in for
+  // one: it is "not available", exactly as it was before #30, WHATEVER the
+  // function says about a photo. (The function withholds the photo for such a
+  // document itself; this is the page not trusting that, so an older or odd
+  // function can never produce a photo-only page here.) The `photo` flag is
+  // not even read on this path.
+  if (!hasUsableReceipt(result.payload) || !result.payload.receipt) return { kind: "not_available" };
 
-  return { kind: "real", receipt: result.payload.receipt };
+  // Same principle one step further in: a receipt that passes the gate above
+  // but whose only readable field is a total of 0 stays the text page it was
+  // before #30, with no photo (hasPhotoWorthyContent).
+  const receipt = result.payload.receipt;
+  const photoSrc = result.photoAvailable && hasPhotoWorthyContent(receipt) ? sharedReceiptPhotoUrl(rid) : null;
+  return { kind: "real", receipt, photoSrc };
 }

@@ -328,13 +328,14 @@ async function main() {
     assert.ok(late.html.includes("$RC("), "and are swapped into their slot by React's boundary script");
   });
 
-  await test("structure: page.tsx starts the cards task before the awaited reads and never awaits it", () => {
-    const src = readFileSync(join(__dirname, "page.tsx"), "utf8").replace(/^\s*\/\/.*$/gm, "");
+  // The /r page body lives in receiptPage.tsx (page.tsx and app/w/page.tsx are thin route files).
+  await test("structure: receiptPage.tsx starts the cards task before the awaited reads and never awaits it", () => {
+    const src = readFileSync(join(__dirname, "receiptPage.tsx"), "utf8").replace(/^\s*\/\/.*$/gm, "");
     const start = src.indexOf("startWebCards(");
     const all = src.indexOf("await Promise.all([fetchReceiptBytes(rawSid), fetchParsedReceipt(rawSid)])");
     assert.ok(start > 0 && all > start, "started before, and outside, the only Promise.all");
     for (const line of src.split("\n").filter((l) => /\bawait\b/.test(l))) {
-      assert.ok(!/cards/i.test(line), `page.tsx awaits something cards-related: ${line.trim()}`);
+      assert.ok(!/cards/i.test(line), `receiptPage.tsx awaits something cards-related: ${line.trim()}`);
     }
     const streamed = [...src.matchAll(/<StreamedCards\b/g)].map((m) => m.index!);
     assert.equal(streamed.length, 2);
@@ -351,6 +352,7 @@ async function main() {
       ...readdirSync(join(__dirname, "cards")).filter((f) => /\.tsx?$/.test(f)).map((f) => join(__dirname, "cards", f)),
       ...readdirSync(join(ROOT, "lib/cards")).filter((f) => /\.ts$/.test(f)).map((f) => join(ROOT, "lib/cards", f)),
       join(__dirname, "page.tsx"),
+      join(__dirname, "receiptPage.tsx"),
     ];
     for (const f of files) {
       const src = readFileSync(f, "utf8");

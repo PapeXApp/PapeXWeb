@@ -412,6 +412,17 @@
   align-items: center;
   justify-content: center;
 }
+.acMonoBadgeLogo {
+  /* A logo (DemoReceiptView `logo`) fills the circle instead of the letter. */
+  overflow: hidden;
+}
+.acMonoBadgeLogo > img,
+.acMonoBadgeLogo > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 .acMname {
   font-size: calc(24 * var(--u));
   font-weight: 600;
@@ -935,6 +946,77 @@
   flex-direction: column;
   align-items: center;
   gap: 18px;
+}
+/* Two wrappers that only exist for the phone pin below. Everywhere else they
+   draw no box, so the tag, phone, dots and cue stay direct flex items of
+   .walkPhoneCol, exactly as before. */
+.walkPhoneColInner,
+.walkPhoneStick {
+  display: contents;
+}
+
+/* --- Phone pin (P8, 2026-09-30) -------------------------------------------
+ * Noah, on an iPhone: read the heading and steps, then the section PINS and
+ * scrolling plays the tap step by step, then releases. The heading + steps
+ * scroll by in flow; only the phone column pins. .walkPhoneColInner is made
+ * taller by exactly the scroll the pin consumes ((steps - 1)
+ * x --walk-m-step, an ::after spacer) and .walkPhoneStick sticks inside it
+ * for that long.
+ * HowItWorks.tsx reads the same query (PHONE_PIN_QUERY) and maps the stick's
+ * travel onto the step. Pure CSS layout: server and hydrated heights match.
+ *
+ * Sized to the SMALL viewport (svh), so Safari's toolbars coming and going
+ * can never push the cue under them: the stick is 100svh minus the nav's
+ * clearance, and the phone takes what the tag, dots and cue leave:
+ *   --walk-m-top               sticky top: clears the fixed nav pill (~62px)
+ *   tag-w * tag-seat           the tag above the phone (seat padding)
+ *   phone footprint            --wp-size * 1.047 (frame, see the desktop note)
+ *   3 x 10px gaps + 7px dots + 38px cue (two lines of 13.5px) + 10px bottom */
+@media (prefers-reduced-motion: no-preference) and (max-width: 720px) and (min-height: 500px) {
+  .walkPhoneColInner {
+    --walk-m-top: 72px;
+    --walk-m-step: 42svh;
+    display: block;
+    align-self: stretch;
+  }
+  /* The runway is an in-flow spacer, NOT padding: a sticky box may only
+     travel inside its container's CONTENT box, so padding gives it no room. */
+  .walkPhoneColInner::after {
+    content: "";
+    display: block;
+    height: calc((var(--walk-steps, 3) - 1) * var(--walk-m-step));
+  }
+  .walkPhoneStick {
+    position: sticky;
+    top: var(--walk-m-top);
+    box-sizing: border-box;
+    height: calc(100svh - var(--walk-m-top));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding-bottom: 10px;
+  }
+  .walkPhoneStick .walkTagSeat {
+    --walk-tag-w: clamp(92px, 16svh, 150px);
+  }
+  .walkPhoneStick .walkPhone {
+    --wp-size: min(
+      470px,
+      calc(
+        (100svh - var(--walk-m-top) - 10px - 30px - 7px - 38px - (var(--walk-tag-w) * var(--walk-tag-seat, 0.8))) /
+          1.047
+      )
+    );
+  }
+  .walkPhoneStick .wpDots {
+    margin-top: 0;
+  }
+  .walkPhoneStick .walkCue {
+    min-height: 38px;
+    max-width: 30ch;
+  }
 }
 
 .walkStep {

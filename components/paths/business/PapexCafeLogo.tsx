@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import { PlaneMark } from "@/components/brand/plane-mark"
 
 /**
@@ -61,4 +62,20 @@ export function PapexCafeLogo({
       </g>
     </svg>
   )
+}
+
+/** Whether a receipt's merchant is the demo cafe, however the ticket prints
+ *  its name ("PAPEX CAFE" on the paper, "PapeX Cafe" in the app). */
+export function isPapexCafe(name?: string | null): boolean {
+  return (name ?? "").trim().toLowerCase() === "papex cafe"
+}
+
+/**
+ * The cafe's logo, sized to fill a receipt header's round badge (the `logo`
+ * prop of app-kit ClipReceipt / customer ClipApp / DemoReceiptView /
+ * ClipReceiptScreen). Any other store gets `undefined`, so it keeps its
+ * monogram (p8, Noah: no "P" letter on a /business phone).
+ */
+export function cafeBadgeLogo(name?: string | null): ReactNode {
+  return isPapexCafe(name) ? <PapexCafeLogo size={56} className="block h-full w-full" /> : undefined
 }

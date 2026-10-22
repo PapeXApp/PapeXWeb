@@ -31,6 +31,7 @@
 // therefore safe to keep here.
 
 import type { ReactNode } from "react";
+import { ItemName } from "./ItemName";
 import { AlertTriangle, Clock, FlaskConical, SearchX } from "lucide-react";
 import type { DecodedLogo, DecodedRasterPage, ReceiptLine } from "@/lib/escpos";
 import {
@@ -391,7 +392,7 @@ export function MerchantHeaderCard({
             </p>
           )}
           <p className="mt-1 text-xs" style={{ color: isSample ? "#FFB74D" : T.textMuted }}>
-            {isSample ? "Sample data — not a real purchase" : "PapeX Receipt"}
+            {isSample ? "Sample data — not a real purchase" : (summary.kindLabel ?? "PapeX Receipt")}
           </p>
         </div>
       </div>
@@ -414,31 +415,46 @@ export function ItemsCard({ summary }: { summary: ReceiptSummary }) {
       </p>
       <GlassCard emphasis="standard" className="p-6">
         <div className="flex flex-col">
-          {summary.items.map((item, i) => (
-            <div
-              key={i}
-              className="flex items-center justify-between gap-3 py-2.5"
-              style={
-                i === summary.items.length - 1
-                  ? undefined
-                  : { borderBottom: `1px solid ${T.divider}` }
-              }
-            >
-              <span className="font-barlow min-w-0 flex-1 truncate text-base font-medium" style={{ color: T.text }}>
-                <DecodedText text={item.name} />
-              </span>
-              <div className="flex shrink-0 flex-col items-end">
-                {item.qty > 1 && (
-                  <span className="text-xs" style={{ color: T.textMuted }}>
-                    ×{item.qty}
+          {summary.items.map((item, i) => {
+            const border = i === summary.items.length - 1 ? undefined : { borderBottom: `1px solid ${T.divider}` };
+            const hasDiscount = item.discount != null && item.discount !== 0;
+            const row = (
+              <div
+                key={i}
+                className={`flex items-center justify-between gap-3 ${hasDiscount ? "pt-2.5" : "py-2.5"}`}
+                style={hasDiscount ? undefined : border}
+              >
+                <ItemName name={item.name} style={{ color: T.text }} />
+                <div className="flex shrink-0 flex-col items-end">
+                  {item.qty > 1 && (
+                    <span className="text-xs" style={{ color: T.textMuted }}>
+                      ×{item.qty}
+                    </span>
+                  )}
+                  <span className="font-barlow text-base font-medium" style={{ color: T.text }}>
+                    ${item.amount.toFixed(2)}
                   </span>
-                )}
-                <span className="font-barlow text-base font-medium" style={{ color: T.text }}>
-                  ${item.amount.toFixed(2)}
-                </span>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+            if (!hasDiscount) return row;
+            // The line's printed discount, under it, as on the paper. Only
+            // producers that read one set it (Dutchie), so every other
+            // receipt keeps the exact markup above.
+            return (
+              <div key={i} className="pb-2.5" style={border}>
+                {row}
+                <div className="mt-0.5 flex items-start justify-between gap-3 text-sm">
+                  <span className="min-w-0 flex-1 break-words" style={{ color: T.textMuted }}>
+                    {item.discountNote ?? "Discount"}
+                  </span>
+                  <span className="font-barlow shrink-0" style={{ color: T.success }}>
+                    -${Math.abs(item.discount!).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </GlassCard>
     </div>
@@ -500,6 +516,10 @@ function TotalRow({
   );
 }
 
+function formatSigned(amount: number): string {
+  return amount < 0 ? `-$${(-amount).toFixed(2)}` : `$${amount.toFixed(2)}`;
+}
+
 export function TotalsCard({
   summary,
   isSample = false,
@@ -510,9 +530,11 @@ export function TotalsCard({
   const computedSubtotal =
     summary.subtotal ?? (summary.items.length > 0 ? summary.items.reduce((s, i) => s + i.amount * i.qty, 0) : undefined);
   const taxRate =
-    summary.tax != null && computedSubtotal != null && computedSubtotal > 0
+    summary.deriveTaxRate !== false && summary.tax != null && computedSubtotal != null && computedSubtotal > 0
       ? ((summary.tax / computedSubtotal) * 100).toFixed(1)
       : null;
+  const taxLines = summary.taxLines?.filter((l) => l.amount !== 0);
+  const fees = summary.fees?.filter((l) => l.amount !== 0);
 
   if (
     computedSubtotal == null &&
@@ -541,15 +563,30 @@ export function TotalsCard({
           {computedSubtotal != null && (
             <TotalRow label="Subtotal" value={`$${computedSubtotal.toFixed(2)}`} valueColor={T.blue} />
           )}
-          {summary.tax != null && summary.tax > 0 && (
-            <TotalRow label={taxRate ? `Tax (${taxRate}%)` : "Tax"} value={`$${summary.tax.toFixed(2)}`} />
-          )}
+          {/* Printed tax lines, each with its printed label, when the producer
+              has them; otherwise the single Tax row. Never both. */}
+          {taxLines && taxLines.length > 0
+            ? taxLines.map((l, i) => <TotalRow key={`tax-${i}`} label={l.label} value={formatSigned(l.amount)} />)
+            : summary.tax != null &&
+              summary.tax > 0 && (
+                <TotalRow label={taxRate ? `Tax (${taxRate}%)` : "Tax"} value={`$${summary.tax.toFixed(2)}`} />
+              )}
+          {fees?.map((l, i) => <TotalRow key={`fee-${i}`} label={l.label} value={formatSigned(l.amount)} />)}
           {summary.tip != null && summary.tip > 0 && (
             <TotalRow label="Tip" value={`$${summary.tip.toFixed(2)}`} labelColor={T.textMuted} valueColor={T.textMuted} />
           )}
           {summary.discount != null && summary.discount > 0 && (
             <TotalRow label="Discount" value={`-$${summary.discount.toFixed(2)}`} valueColor={T.success} />
           )}
+          {/* The cart-level promos inside Discount, by name. Already counted. */}
+          {summary.discount != null &&
+            summary.discount > 0 &&
+            summary.discountLines?.map((l, i) => (
+              <div key={`disc-${i}`} className="flex items-center justify-between pb-1 pl-3 text-sm" style={{ color: T.textMuted }}>
+                <span className="min-w-0 truncate">{l.label}</span>
+                <span className="font-barlow shrink-0 pl-3">{formatSigned(l.amount)}</span>
+              </div>
+            ))}
           {summary.total != null && (
             <div
               className="mt-2 flex items-center justify-between pt-2"
@@ -586,6 +623,12 @@ export function TotalsCard({
                 <PaymentRow paymentLine={summary.paymentLine} />
               )}
             </div>
+          )}
+          {summary.tenders?.map((t, i) => (
+            <TotalRow key={`tender-${i}`} label={t.label} value={formatSigned(t.amount)} labelColor={T.textMuted} valueColor={T.textMuted} />
+          ))}
+          {summary.changeDue != null && summary.changeDue > 0 && (
+            <TotalRow label="Change" value={`$${summary.changeDue.toFixed(2)}`} labelColor={T.textMuted} valueColor={T.textMuted} />
           )}
         </div>
       </GlassCard>

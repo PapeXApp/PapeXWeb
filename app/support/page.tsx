@@ -353,31 +353,33 @@ export default function SupportPage() {
                 lead="Your PapeX device has one status light. Here’s what each state means:"
               />
               <ScrollReveal className={`${styles.card} ${styles.body}`}>
-                {/* Scrolls sideways inside the card on phones; the page never does. */}
+                {/* Phones: each row stacks into a small card (support.module.css), so
+                    nothing is cut off at the card edge. Explicit roles keep it a
+                    table for screen readers once CSS changes its display. */}
                 <div className={styles.tableScroll} data-scroll-x="">
-                  <table className={styles.table}>
-                    <thead>
-                      <tr>
-                        <th scope="col" className={styles.cap}>Light</th>
-                        <th scope="col" className={styles.cap}>Means</th>
-                        <th scope="col" className={styles.cap}>What to do</th>
-                        <th scope="col" className={styles.cap}>Status</th>
+                  <table className={styles.table} role="table">
+                    <thead role="rowgroup">
+                      <tr role="row">
+                        <th scope="col" role="columnheader" className={styles.cap}>Light</th>
+                        <th scope="col" role="columnheader" className={styles.cap}>Means</th>
+                        <th scope="col" role="columnheader" className={styles.cap}>What to do</th>
+                        <th scope="col" role="columnheader" className={styles.cap}>Status</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody role="rowgroup">
                       {LIGHT_ROWS.map((row) => {
                         const sig = SIGNAL_STYLES[row.signal]
                         return (
-                          <tr key={`${row.light}-${row.meaning}`}>
-                            <td className={styles.lightCell}>
+                          <tr key={`${row.light}-${row.meaning}`} role="row">
+                            <td role="cell" className={styles.lightCell}>
                               <span className={styles.lightName}>
                                 <LightDot color={row.color} blink={row.blink} />
                                 {row.light}
                               </span>
                             </td>
-                            <td>{row.meaning}</td>
-                            <td>{row.detail}</td>
-                            <td>
+                            <td role="cell" className={styles.meansCell}>{row.meaning}</td>
+                            <td role="cell" className={styles.detailCell}>{row.detail}</td>
+                            <td role="cell" className={styles.statusCell}>
                               <span className={`${styles.signal} ${sig.className}`}>{sig.label}</span>
                             </td>
                           </tr>

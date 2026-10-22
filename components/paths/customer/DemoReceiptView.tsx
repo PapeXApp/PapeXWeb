@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { ReceiptLine } from "@/lib/escpos";
 import {
   detectPaymentMethod,
@@ -30,7 +31,16 @@ import styles from "./customer.module.css";
  * `summary` is the output of `summarizeReceipt(parseEscPos(bytes).lines)` —
  * both real functions from this repo's lib/, not a re-implementation.
  */
-export function DemoReceiptView({ summary }: { summary: ReceiptSummary }) {
+export function DemoReceiptView({
+  summary,
+  logo,
+}: {
+  summary: ReceiptSummary;
+  /** Optional merchant logo drawn inside the round badge in place of the
+   *  monogram letter (the letter stays the fallback). Decorative: the name
+   *  sits right beside it. */
+  logo?: ReactNode;
+}) {
   const money = (n: number) => (n < 0 ? "-$" : "$") + Math.abs(n).toFixed(2);
 
   const network = summary.paymentLine ? detectPaymentMethod(summary.paymentLine) : null;
@@ -61,8 +71,11 @@ export function DemoReceiptView({ summary }: { summary: ReceiptSummary }) {
       {(summary.merchantName || summary.addressLines.length > 0) && (
         <div className={styles.acCard}>
           <div className={styles.acMerchant}>
-            <span aria-hidden="true" className={styles.acMonoBadge}>
-              {monogram}
+            <span
+              aria-hidden="true"
+              className={logo ? `${styles.acMonoBadge} ${styles.acMonoBadgeLogo}` : styles.acMonoBadge}
+            >
+              {logo ?? monogram}
             </span>
             {summary.merchantName && <div className={styles.acMname}>{summary.merchantName}</div>}
           </div>

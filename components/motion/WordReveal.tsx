@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useInView } from "motion/react"
 import { useSafeReducedMotion } from "./useSafeReducedMotion"
+import { PHONE_SCALE, PHONE_VIEWPORT, useIsPhone } from "./phoneTiming"
 import type { CSSProperties } from "react"
 
 export type HeadingLevel = "h1" | "h2" | "h3" | "h4" | "h5" | "h6"
@@ -27,8 +28,8 @@ type WordRevealProps = {
 }
 
 const EASE = "cubic-bezier(.16,1,.3,1)"
-const DURATION = 0.85
-const STAGGER = 0.055
+const BASE_DURATION = 0.85
+const BASE_STAGGER = 0.055
 
 const VIEWPORT = { once: true, amount: 0.12, margin: "0px 0px -6% 0px" } as const
 
@@ -50,10 +51,16 @@ const WORD_SPACE = " "
  * Renders every word shown and still (no animation, same markup, so the same
  * height) under `prefers-reduced-motion: reduce`.
  */
-export function WordReveal({ text, children, as = "h2", delay = 0, className, style, wordClassName }: WordRevealProps) {
+export function WordReveal({ text, children, as = "h2", delay: delayProp = 0, className, style, wordClassName }: WordRevealProps) {
   const prefersReduced = useSafeReducedMotion()
+  const phone = useIsPhone()
   const ref = useRef<HTMLHeadingElement>(null)
-  const inView = useInView(ref, VIEWPORT)
+  // Phones start earlier and run shorter (phoneTiming.ts); desktop unchanged.
+  const inView = useInView(ref, phone ? PHONE_VIEWPORT : VIEWPORT)
+  const k = phone ? PHONE_SCALE : 1
+  const delay = delayProp * k
+  const DURATION = BASE_DURATION * k
+  const STAGGER = BASE_STAGGER * k
   const [settled, setSettled] = useState(false)
   const Tag = as
   const content = text ?? children ?? ""
@@ -65,7 +72,7 @@ export function WordReveal({ text, children, as = "h2", delay = 0, className, st
     const total = delay + Math.max(0, words.length - 1) * STAGGER + DURATION
     const timer = window.setTimeout(() => setSettled(true), total * 1000)
     return () => window.clearTimeout(timer)
-  }, [inView, prefersReduced, delay, words.length])
+  }, [inView, prefersReduced, delay, words.length, DURATION, STAGGER])
 
   // Reduced motion keeps the SAME per-word markup, just shown and still: the
   // word spans wrap a little differently from plain text, so swapping to
@@ -88,7 +95,7 @@ export function WordReveal({ text, children, as = "h2", delay = 0, className, st
           display: "inline-block",
           transform: shown ? "translateY(0)" : "translateY(115%)",
           opacity: shown ? 1 : 0,
-          transition: prefersReduced ? "none" : `transform ${DURATION}s ${EASE} ${wordDelay}s, opacity .6s ${wordDelay}s`,
+          transition: prefersReduced ? "none" : `transform ${DURATION}s ${EASE} ${wordDelay}s, opacity ${0.6 * k}s ${wordDelay}s`,
           willChange: settled || prefersReduced ? undefined : "transform, opacity",
         }
         return (

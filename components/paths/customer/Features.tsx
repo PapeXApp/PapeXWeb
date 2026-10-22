@@ -237,7 +237,10 @@ export function Features() {
                         sets the side; its child carries the clip. */}
                     {/* data-flow-static: the phone draws in its own colours
                         (see shared/flow.module.css). */}
-                    <div className={styles.shotCell} data-flow-static="">
+                    {/* role="img": the picture's words (content.ts shotLabel) are
+                        in the server HTML for screen readers and crawlers; the
+                        phone inside stays aria-hidden. */}
+                    <div className={styles.shotCell} data-flow-static="" role="img" aria-label={row.shotLabel}>
                       <div className={styles.shotWipe} data-reveal="mask">
                         <FeatureShot feature={key} persona={active} />
                       </div>

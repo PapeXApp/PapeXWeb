@@ -2,30 +2,12 @@
    Imported directly by the components that need them (Marquee). Scoped to
    this directory; not wired into any global stylesheet. */
 
-@keyframes papex-marquee-track {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-/* Finite on purpose (no infinite animations on the site): Marquee.tsx sets
-   the loop count inline and starts it on first scroll-in; `forwards` holds
-   the last frame, -50%, which is pixel-identical to the first. */
-.papex-marquee-track {
-  animation-name: papex-marquee-track;
-  animation-timing-function: linear;
-  animation-iteration-count: 2;
-  animation-fill-mode: forwards;
-  will-change: transform;
-}
-@media (prefers-reduced-motion: reduce) {
-  .papex-marquee-track {
-    animation: none;
-  }
-}
+/* Marquee.tsx moves the track (.papex-marquee-track) with the Web Animations
+   API, in pixels it measures itself (see the component for why a CSS -50%
+   keyframe broke on iOS Safari). No will-change / backface-visibility here on
+   purpose: the track is two runs wide (~3,000px, ~9,000 device px at 3x), and
+   a permanent layer hint made WebKit keep that backing store even while the
+   loop is paused off screen. The running animation promotes it by itself. */
 
 /* ScrollLit — words light up across a staggered slice of the paragraph's own
    view timeline. `cover 12%` is roughly "the paragraph has just cleared the
@@ -171,5 +153,36 @@
   to {
     clip-path: inset(calc(-1 * var(--wipe-bleed)));
     transform: none;
+  }
+}
+
+/* Phones (<= 820px, the site's one breakpoint) — Web 2.1 P8, Noah: reveals
+   "don't lag but don't appear as quickly as they should". A phone scroll
+   crosses a section in a few flicks, so the scroll-linked reveals finish
+   sooner after the element enters: body pieces by ~9vh of travel (desktop
+   13-15vh), heading words by ~9.5vh (13.5vh), lit paragraphs by ~39% of
+   their cover range (54%). Same guards as above, so reduced motion and
+   older browsers still get the finished frame. Desktop is untouched. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) and (max-width: 820px) {
+    .papex-rv,
+    .papex-wipe {
+      animation-range:
+        cover calc(var(--rv-from, 1vh) * 0.5)
+        cover calc(var(--rv-to, 13vh) * 0.7);
+    }
+    .papex-rv-arrow {
+      animation-range: entry 0% entry 70%;
+    }
+    .papex-rw-word {
+      animation-range:
+        cover calc(0.25vh + 3.5vh * var(--i) / var(--n))
+        cover calc(6vh + 3.5vh * var(--i) / var(--n));
+    }
+    .papex-lit-word {
+      animation-range:
+        cover calc(8% + 26% * var(--i) / var(--n))
+        cover calc(13% + 26% * var(--i) / var(--n));
+    }
   }
 }

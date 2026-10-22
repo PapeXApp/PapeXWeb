@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useInView } from "motion/react"
 import { useSafeReducedMotion } from "./useSafeReducedMotion"
+import { PHONE_SCALE, PHONE_VIEWPORT, useIsPhone } from "./phoneTiming"
 import type { CSSProperties, ElementType, ReactNode } from "react"
 
 export type RevealVariant = "up" | "left" | "right" | "scale" | "mask"
@@ -27,6 +28,8 @@ const DURATION = 0.7
 const RISE = 14
 const SHIFT = 28
 const BLUR = "blur(8px)"
+// Phones: half the blur (a big blur on a small screen reads as "not there yet").
+const PHONE_BLUR = "blur(4px)"
 // The 'mask' variant (clip-path wipe) has its own easing/duration.
 const MASK_EASE = "cubic-bezier(.7,0,.15,1)"
 const MASK_DURATION = 1.1
@@ -41,19 +44,19 @@ const VIEWPORT = { once: true, amount: 0.12, margin: "0px 0px -6% 0px" } as cons
 // is always some area to intersect.
 const VIEWPORT_MASK = { once: true, amount: 0, margin: "0px 0px -12% 0px" } as const
 
-function hiddenStyle(variant: RevealVariant): CSSProperties {
+function hiddenStyle(variant: RevealVariant, blur: string = BLUR): CSSProperties {
   switch (variant) {
     case "left":
-      return { opacity: 0, transform: `translateX(-${SHIFT}px)`, filter: BLUR }
+      return { opacity: 0, transform: `translateX(-${SHIFT}px)`, filter: blur }
     case "right":
-      return { opacity: 0, transform: `translateX(${SHIFT}px)`, filter: BLUR }
+      return { opacity: 0, transform: `translateX(${SHIFT}px)`, filter: blur }
     case "scale":
-      return { opacity: 0, transform: "scale(.96)", filter: BLUR }
+      return { opacity: 0, transform: "scale(.96)", filter: blur }
     case "mask":
       return { clipPath: "inset(0 calc(100% - 1px) 0 0)" }
     case "up":
     default:
-      return { opacity: 0, transform: `translateY(${RISE}px)`, filter: BLUR }
+      return { opacity: 0, transform: `translateY(${RISE}px)`, filter: blur }
   }
 }
 
@@ -75,15 +78,22 @@ function visibleStyle(variant: RevealVariant, settled: boolean): CSSProperties {
  * Renders children in their FINAL state immediately under `prefers-reduced-motion:
  * reduce` — no blur, no translate, never stuck invisible.
  */
-export function Reveal({ children, variant = "up", delay = 0, as = "div", className, style }: RevealProps) {
+export function Reveal({ children, variant = "up", delay: delayProp = 0, as = "div", className, style }: RevealProps) {
   const prefersReduced = useSafeReducedMotion()
+  const phone = useIsPhone()
   const ref = useRef<HTMLDivElement>(null)
-  const inView = useInView(ref, variant === "mask" ? VIEWPORT_MASK : VIEWPORT)
+  // Phones start earlier and run shorter (phoneTiming.ts); desktop unchanged.
+  const inView = useInView(
+    ref,
+    phone ? (variant === "mask" ? { ...PHONE_VIEWPORT, amount: 0 } : PHONE_VIEWPORT) : variant === "mask" ? VIEWPORT_MASK : VIEWPORT,
+  )
   const [settled, setSettled] = useState(false)
   const Tag = as as ElementType
 
   const isMask = variant === "mask"
-  const duration = isMask ? MASK_DURATION : DURATION
+  const k = phone ? PHONE_SCALE : 1
+  const duration = (isMask ? MASK_DURATION : DURATION) * k
+  const delay = delayProp * k
 
   useEffect(() => {
     if (!inView || prefersReduced) return
@@ -107,7 +117,7 @@ export function Reveal({ children, variant = "up", delay = 0, as = "div", classN
 
   const computedStyle: CSSProperties = {
     ...style,
-    ...(inView ? visibleStyle(variant, settled) : hiddenStyle(variant)),
+    ...(inView ? visibleStyle(variant, settled) : hiddenStyle(variant, phone ? PHONE_BLUR : BLUR)),
     transition,
     willChange: settled ? undefined : willChangeProp,
   }

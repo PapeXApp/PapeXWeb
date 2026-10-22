@@ -573,6 +573,12 @@ export function Fork() {
       <div className="rd-fork-seam">
         <div className={styles.seamRule} aria-hidden="true" />
         <h1 className={styles.seamLine}>Your receipt, one tap away.</h1>
+        {/* What the two halves do, for screen readers and search agents:
+            the planes, glow and swipe motion around them are decoration. */}
+        <p className="sr-only">
+          Choose how you use PapeX. The top half opens the page for businesses, the bottom half the
+          page for customers: tap a half, or scroll toward it.
+        </p>
       </div>
 
       {/* BOTTOM HALF — light surface, always. Its destination is BOTTOM_PATH.
@@ -606,7 +612,7 @@ export function Fork() {
             priority
           />
         </span>
-        <div className="rd-fork-content">
+        <div className={`rd-fork-content ${styles.contentBottom}`}>
           <span
             className={`rd-eyebrow rd-eyebrow-wide ${styles.eyebrow}`}
             style={{ color: 'var(--orange)' }}

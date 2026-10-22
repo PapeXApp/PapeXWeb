@@ -11,9 +11,12 @@
 import assert from "node:assert/strict";
 import {
   fetchSharedReceipt,
+  hasPhotoWorthyContent,
   isValidRid,
+  photoAvailableIn,
   resolveSharedReceiptPageState,
   sharedReceiptApiBase,
+  sharedReceiptPhotoUrl,
 } from "./sharedReceipt";
 
 let passed = 0;
@@ -235,6 +238,226 @@ async function main() {
         assert.deepEqual(state, { kind: "error" });
       },
     );
+  });
+
+
+  // ---- the photo (1.7.2 #30) ----------------------------------------------------
+  //
+  // The function says `photo: {available: true}`; the page builds the URL of the
+  // bytes and the browser fetches them. Everything below is also what makes the
+  // page safe to deploy BEFORE the function: no `photo` key means no photo.
+
+  const RID = "receipt_1776344585632_4mrd9txmk";
+  const GOOD_URL = `https://us-central1-papexv2.cloudfunctions.net/sharedReceipt?rid=${RID}&photo=1`;
+  const withPhoto = (extra: Record<string, unknown> = {}) => ({ ...REAL_PAYLOAD, photo: { available: true }, ...extra });
+  const EMPTY_RECEIPT = { merchantName: null, total: null, lineItems: [] };
+
+  await test("photoAvailableIn: only an explicit {available: true} counts", () => {
+    assert.equal(photoAvailableIn({ photo: { available: true } }), true);
+    for (const body of [
+      {}, null, undefined, "x", 3, [], { photo: null }, { photo: {} }, { photo: { available: false } },
+      { photo: { available: "true" } }, { photo: { available: 1 } }, { photo: true }, { photo: "yes" },
+      { hasImage: true }, { photo: [{ available: true }] },
+    ]) {
+      assert.equal(photoAvailableIn(body), false, JSON.stringify(body));
+    }
+  });
+
+  await test("sharedReceiptPhotoUrl: the function, rid encoded, &photo=1, honoring the base override", () => {
+    assert.equal(sharedReceiptPhotoUrl(RID), GOOD_URL);
+    const prior = process.env.SHARED_RECEIPT_API_BASE;
+    process.env.SHARED_RECEIPT_API_BASE = "http://127.0.0.1:9999/";
+    try {
+      assert.equal(sharedReceiptPhotoUrl("a_b-c"), "http://127.0.0.1:9999/sharedReceipt?rid=a_b-c&photo=1");
+    } finally {
+      if (prior === undefined) delete process.env.SHARED_RECEIPT_API_BASE;
+      else process.env.SHARED_RECEIPT_API_BASE = prior;
+    }
+  });
+
+  await test("fetchSharedReceipt: photoAvailable follows the envelope", async () => {
+    await withFetch((async () => jsonResponse(200, withPhoto())) as typeof fetch, async () => {
+      const r = await fetchSharedReceipt(RID);
+      assert.equal(r.status === "ok" && r.photoAvailable, true);
+    });
+    await withFetch((async () => jsonResponse(200, REAL_PAYLOAD)) as typeof fetch, async () => {
+      const r = await fetchSharedReceipt(RID);
+      assert.equal(r.status === "ok" && r.photoAvailable, false);
+    });
+  });
+
+  await test("page state: a receipt with a photo -> real, with the photo URL", async () => {
+    await withFetch((async () => jsonResponse(200, withPhoto())) as typeof fetch, async () => {
+      const state = await resolveSharedReceiptPageState(RID);
+      assert.equal(state.kind, "real");
+      if (state.kind === "real") {
+        assert.equal(state.photoSrc, GOOD_URL);
+        assert.equal(state.receipt.merchantName, "CASH RECEIPT"); // the text is unchanged
+      }
+    });
+  });
+
+  await test("page state: NO photo key (the function before #30) -> real, photoSrc null: web may ship first", async () => {
+    await withFetch((async () => jsonResponse(200, REAL_PAYLOAD)) as typeof fetch, async () => {
+      const state = await resolveSharedReceiptPageState(RID);
+      assert.equal(state.kind, "real");
+      if (state.kind === "real") assert.equal(state.photoSrc, null);
+    });
+  });
+
+  await test("page state: photo null / unavailable / junk -> real, photoSrc null", async () => {
+    for (const photo of [null, { available: false }, {}, "x", 7, true]) {
+      await withFetch((async () => jsonResponse(200, withPhoto({ photo }))) as typeof fetch, async () => {
+        const state = await resolveSharedReceiptPageState(RID);
+        assert.equal(state.kind, "real", JSON.stringify(photo));
+        if (state.kind === "real") assert.equal(state.photoSrc, null, JSON.stringify(photo));
+      });
+    }
+  });
+
+  await test("page state: NO photo-only page: an unreadable receipt is not_available WITH a photo too (Noah 10-14)", async () => {
+    await withFetch(
+      (async () => jsonResponse(200, { ...REAL_PAYLOAD, receipt: EMPTY_RECEIPT, photo: { available: true } })) as typeof fetch,
+      async () => {
+        // exactly the pre-#30 state: no photoSrc, nothing for the view to draw
+        assert.deepEqual(await resolveSharedReceiptPageState(RID), { kind: "not_available" });
+      },
+    );
+    await withFetch(
+      (async () => jsonResponse(200, { ...REAL_PAYLOAD, receipt: EMPTY_RECEIPT })) as typeof fetch,
+      async () => {
+        assert.deepEqual(await resolveSharedReceiptPageState(RID), { kind: "not_available" });
+      },
+    );
+  });
+
+  await test("page state: a photo is never the whole receipt, however the content is missing", async () => {
+    const nothing = [
+      EMPTY_RECEIPT,
+      { ...EMPTY_RECEIPT, merchantName: "" }, // blank is the same fact as missing
+      { ...EMPTY_RECEIPT, merchantName: "   " },
+      // other fields do not make a receipt: this page's bar is merchant, total or an item
+      { ...EMPTY_RECEIPT, subtotal: 5, tax: 1, date: "2026-10-01", rawText: "SMUDGE", paymentMethod: "VISA 4242" },
+      { merchantName: null, total: null }, // no lineItems key at all
+      { merchantName: null, total: null, lineItems: "junk" },
+      {}, // an empty receipt object
+    ];
+    for (const receipt of nothing) {
+      await withFetch(
+        (async () => jsonResponse(200, { ...REAL_PAYLOAD, receipt, photo: { available: true } })) as typeof fetch,
+        async () => {
+          const state = await resolveSharedReceiptPageState(RID);
+          assert.equal(state.kind, "not_available", JSON.stringify(receipt));
+          assert.equal("photoSrc" in state, false, "no photo URL on a not_available state");
+        },
+      );
+    }
+    // No receipt object at all, and a receipt that is not an object.
+    for (const receipt of [null, undefined, "x", 7, []]) {
+      await withFetch(
+        (async () => jsonResponse(200, { ...REAL_PAYLOAD, receipt, photo: { available: true } })) as typeof fetch,
+        async () => {
+          assert.deepEqual(await resolveSharedReceiptPageState(RID), { kind: "not_available" }, JSON.stringify(receipt));
+        },
+      );
+    }
+  });
+
+  await test("page state: positive controls: the photo comes back when ANY ONE of merchant, total, an item is present", async () => {
+    for (const receipt of [
+      { ...EMPTY_RECEIPT, merchantName: "Sunset Leaf" },
+      { ...EMPTY_RECEIPT, total: 12.5 },
+      { ...EMPTY_RECEIPT, total: -5 }, // a refund's negative total is a total
+      { ...EMPTY_RECEIPT, total: 0, merchantName: "Sunset Leaf" }, // a 0 next to a merchant is fine
+      { ...EMPTY_RECEIPT, total: 0, lineItems: [{ name: "Free sample", quantity: 1, price: 0, sku: null }] }, // ... or a named item
+      { ...EMPTY_RECEIPT, lineItems: [{ name: "Blue Dream", quantity: 1, price: 40, sku: null }] },
+    ]) {
+      await withFetch(
+        (async () => jsonResponse(200, { ...REAL_PAYLOAD, receipt, photo: { available: true } })) as typeof fetch,
+        async () => {
+          const state = await resolveSharedReceiptPageState(RID);
+          assert.equal(state.kind, "real", JSON.stringify(receipt));
+          if (state.kind === "real") assert.equal(state.photoSrc, GOOD_URL, JSON.stringify(receipt));
+        },
+      );
+    }
+  });
+
+  await test("page state: a total of 0 and nothing else keeps the pre-#30 text page and gets NO photo (Noah 10-14)", async () => {
+    for (const receipt of [
+      { ...EMPTY_RECEIPT, total: 0 },
+      { ...EMPTY_RECEIPT, total: "0" }, // numeric strings are normalised to a number first
+      { ...EMPTY_RECEIPT, total: 0, subtotal: 0, tax: 0, rawText: "SMUDGE" },
+      { ...EMPTY_RECEIPT, total: 0, merchantName: "   " },
+      { ...EMPTY_RECEIPT, total: 0, lineItems: [{ name: "  ", quantity: 1, price: 0, sku: null }] }, // nameless item
+    ]) {
+      await withFetch(
+        (async () => jsonResponse(200, { ...REAL_PAYLOAD, receipt, photo: { available: true } })) as typeof fetch,
+        async () => {
+          const state = await resolveSharedReceiptPageState(RID);
+          assert.equal(state.kind, "real", JSON.stringify(receipt)); // the text page, as before #30
+          if (state.kind === "real") assert.equal(state.photoSrc, null, JSON.stringify(receipt));
+        },
+      );
+    }
+  });
+
+  await test("hasPhotoWorthyContent: merchant, a non-zero total or a named item; a lone 0 or other fields are not enough", () => {
+    const base = { ...REAL_PAYLOAD.receipt, merchantName: null, total: null, lineItems: [] as never[] };
+    const named = { name: "Blue Dream", quantity: 1, price: 40, sku: null };
+    assert.equal(hasPhotoWorthyContent(base as never), false);
+    assert.equal(hasPhotoWorthyContent({ ...base, merchantName: "A" } as never), true);
+    assert.equal(hasPhotoWorthyContent({ ...base, total: 0.01 } as never), true);
+    assert.equal(hasPhotoWorthyContent({ ...base, total: -5 } as never), true);
+    assert.equal(hasPhotoWorthyContent({ ...base, lineItems: [named] } as never), true);
+    assert.equal(hasPhotoWorthyContent({ ...base, total: 0 } as never), false);
+    assert.equal(hasPhotoWorthyContent({ ...base, total: 0, merchantName: "A" } as never), true);
+    assert.equal(hasPhotoWorthyContent({ ...base, total: 0, lineItems: [named] } as never), true);
+    assert.equal(hasPhotoWorthyContent({ ...base, lineItems: [{ ...named, name: " " }] } as never), false);
+    assert.equal(hasPhotoWorthyContent({ ...base, subtotal: 5, tax: 1, rawText: "x", date: "d" } as never), false);
+  });
+
+  await test("page state: no payload anywhere resolves to a photo-only state (there is no such state)", async () => {
+    const bodies: unknown[] = [];
+    for (const receipt of [EMPTY_RECEIPT, null, {}, REAL_PAYLOAD.receipt]) {
+      for (const photo of [{ available: true }, null, undefined, { available: false }]) {
+        bodies.push({ ...REAL_PAYLOAD, receipt, photo });
+      }
+    }
+    for (const body of bodies) {
+      await withFetch((async () => jsonResponse(200, body)) as typeof fetch, async () => {
+        const state = await resolveSharedReceiptPageState(RID);
+        assert.ok(["real", "not_available"].includes(state.kind), `${state.kind} for ${JSON.stringify(body).slice(0, 80)}`);
+      });
+    }
+  });
+
+  await test("page state: the photo never rescues a 404, an error or a malformed rid", async () => {
+    await withFetch((async () => jsonResponse(404, withPhoto())) as typeof fetch, async () => {
+      assert.deepEqual(await resolveSharedReceiptPageState(RID), { kind: "not_available" });
+    });
+    await withFetch((async () => jsonResponse(500, withPhoto())) as typeof fetch, async () => {
+      assert.deepEqual(await resolveSharedReceiptPageState(RID), { kind: "error" });
+    });
+    let called = false;
+    await withFetch((async () => { called = true; return jsonResponse(200, withPhoto()); }) as typeof fetch, async () => {
+      assert.deepEqual(await resolveSharedReceiptPageState("has space"), { kind: "not_available" });
+    });
+    assert.equal(called, false);
+  });
+
+  await test("the page itself never fetches the photo: one request, the JSON", async () => {
+    const urls: string[] = [];
+    await withFetch(
+      (async (input: RequestInfo | URL) => {
+        urls.push(String(input));
+        return jsonResponse(200, withPhoto());
+      }) as typeof fetch,
+      async () => {
+        await resolveSharedReceiptPageState(RID);
+      },
+    );
+    assert.deepEqual(urls, [`https://us-central1-papexv2.cloudfunctions.net/sharedReceipt?rid=${RID}`]);
   });
 
   console.log(`\n${passed} passed, ${failed} failed`);

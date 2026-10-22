@@ -5,7 +5,8 @@
       "namespace": "android_app",
       "package_name": "com.app.papex",
       "sha256_cert_fingerprints": [
-        "6D:51:25:3F:99:D5:D4:62:73:31:33:B5:FA:81:13:6D:07:EE:54:42:66:34:3C:7F:EE:DE:82:92:C9:74:C6:C2"
+        "6D:51:25:3F:99:D5:D4:62:73:31:33:B5:FA:81:13:6D:07:EE:54:42:66:34:3C:7F:EE:DE:82:92:C9:74:C6:C2",
+        "41:1A:7E:3E:A3:6C:95:D9:D9:8A:15:DB:68:D1:A9:F2:28:D9:F8:65:94:57:6C:38:52:F4:D5:BA:54:E0:1A:89"
       ]
     }
   }

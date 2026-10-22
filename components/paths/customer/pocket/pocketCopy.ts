@@ -32,6 +32,10 @@ export const pocketCopy = {
       body: "Scan a store coupon and it's saved next to your receipts, ready at the register. At select partner stores, you can earn them with a tap.",
     },
   ],
+  /** What the scroll-driven scene shows and means, server-rendered and
+   *  visually hidden next to it (the scene itself is aria-hidden). */
+  sceneLabel:
+    "Animation, with demo data: an email receipt is forwarded to yourname@papexmail.com and lands at the top of the Receipts tab in the PapeX app. Then a paper receipt is scanned and saved above it, and a paper coupon is scanned into the Coupons tab, so every receipt and coupon ends up in one place.",
   /** Shown on the scene: the receipts and coupon are sample data. */
   demoTag: "Demo data",
   /** The card line printed on the receipts. Never a full number, never a brand. */

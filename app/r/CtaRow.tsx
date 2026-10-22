@@ -29,6 +29,7 @@ export function CtaRow({
   isSample,
   isDemo = false,
   platform,
+  iosSaveHref,
 }: {
   sid?: string;
   isSample: boolean;
@@ -57,6 +58,8 @@ export function CtaRow({
    */
   isDemo?: boolean;
   platform: Platform;
+  /** iOS "Save to PapeX" href override (/w: the App Store). See SaveToPapex. */
+  iosSaveHref?: string;
 }) {
   if (isDemo) {
     return <DemoCtaRow platform={platform} />;
@@ -64,7 +67,7 @@ export function CtaRow({
 
   return (
     <div className="mt-2 flex flex-col items-center gap-4">
-      <SaveToPapex sid={sid} isSample={isSample} isIOS={platform === "ios"} />
+      <SaveToPapex sid={sid} isSample={isSample} isIOS={platform === "ios"} iosHref={iosSaveHref} />
       <AppCta platform={platform} />
     </div>
   );

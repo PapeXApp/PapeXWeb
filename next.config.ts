@@ -1,4 +1,21 @@
 import type { NextConfig } from "next";
+import { CREDENTIAL_PATH_PREFIXES } from "./lib/analyticsGate";
+
+// Receipt / invite / merchant URLs are credentials (lib/analyticsGate.ts), so
+// nothing on those pages may hand the URL on in a Referer header or
+// document.referrer: a same-origin click out of /r?rid=… would otherwise reach
+// the next page's analytics as its referrer. `no-referrer` rather than the
+// default, because the default still sends the FULL url to same-origin targets.
+// One rule per prefix (`/r` and `/r/…`), plus the merchant subdomain, whose
+// visible paths (/, /tx/<sid>) are rewritten to /merchant/* after this match.
+const NO_REFERRER = [{ key: "Referrer-Policy", value: "no-referrer" }];
+const credentialRouteHeaders = [
+  ...CREDENTIAL_PATH_PREFIXES.flatMap((prefix) => [
+    { source: prefix, headers: NO_REFERRER },
+    { source: `${prefix}/:path*`, headers: NO_REFERRER },
+  ]),
+  { source: "/:path*", has: [{ type: "host" as const, value: "merchant\\..*" }], headers: NO_REFERRER },
+];
 
 const nextConfig: NextConfig = {
   images: {
@@ -50,6 +67,7 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      ...credentialRouteHeaders,
       // Android App Links (assetlinks.json) and iOS Universal Links (AASA) are
       // DIFFERENT mechanisms that happen to share the /.well-known/ prefix.
       // Android needs this file to name com.app.papex plus the SHA-256 of the

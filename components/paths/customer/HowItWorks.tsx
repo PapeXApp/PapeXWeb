@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
-import { Reveal, WordReveal } from "@/components/motion";
+import { ScrollReveal, ScrollWords } from "@/components/motion";
 import { FlowSection } from "../shared/FlowSection";
 import { SectionLabel } from "../shared/SectionLabel";
 import { NfcTag, TAG_READ_LINE } from "./NfcTag";
@@ -28,6 +28,18 @@ const AUTO_CLIP_HOLD_MS = 2400;
  *  so a normal ~780px laptop window scrolls through the steps again. */
 const PIN_QUERY = "(prefers-reduced-motion: no-preference) and (min-width: 821px) and (min-height: 640px)";
 
+/** Phones (P8, 2026-09-30 — Noah: "scroll and read the heading/steps, then
+ *  the section pins and scrolling drives the tap"). Single-column widths
+ *  only: the heading and steps scroll past normally, then the PHONE column
+ *  pins (a sticky .walkPhoneStick inside a .walkPhoneColInner made taller by the
+ *  scroll it consumes) and the scroll steps 1 -> 2 -> 3 before it releases.
+ *  720px is where the two-column grid would otherwise start; below 500px
+ *  tall (a phone on its side) the tag + phone can't fit, so it stays tap
+ *  mode. MUST match the phone media query in customer.module.css. */
+const PHONE_PIN_QUERY = "(prefers-reduced-motion: no-preference) and (max-width: 720px) and (min-height: 500px)";
+
+type PinMode = "desk" | "phone" | null;
+
 /** Seats the phone in front of the PapeX tag (see .walkTagSeat): its top
  *  edge sits at the tag's read line, so the logo, the tap glyph and "Tap for
  *  your receipt" all show above it and only the acrylic foot is covered. The
@@ -49,6 +61,9 @@ const TAG_SEAT = {
  *   SCROLL — on desktop the stage pins inside a runway (see .walkRunway) and
  *          keeping on scrolling walks 1 -> 2 -> 3, then releases into the next
  *          section. Crossing into step 2 plays the tap (bow + LED pulse).
+ *          On phones (P8, PHONE_PIN_QUERY) the heading and steps scroll past
+ *          in flow and only the PHONE column pins (.walkPhoneStick), then
+ *          the same scroll -> step mapping runs over its travel.
  *
  * WHY THIS IS NOT THE 2026-09-09 SCROLL VERSION THAT WAS REVERTED: that one
  * advanced the steps while the section was still travelling past (nothing
@@ -66,7 +81,7 @@ const TAG_SEAT = {
  * NO MODE NEEDS A TAP TO SEE THE DEMO (P3-C1, 2026-09-25, Nico: a first-time
  * visitor won't know to tap):
  *   - pinned: scrolling plays it (the pin now fits down to 640px tall);
- *   - tap mode (phones, short windows): the first time the phone is mostly
+ *   - tap mode (tablets 721-820px, phones on their side, short windows): the first time the phone is mostly
  *     on screen it plays 1 -> 2 -> 3 by itself, once;
  *   - after step 3 the phone keeps alternating Receipts <-> Coupons while it
  *     is on screen (WalkPhone), and a tap/click on the phone replays the demo
@@ -81,7 +96,9 @@ export function HowItWorks() {
   const last = stepCount - 1;
   const [step, setStep] = useState(0);
   const [bowing, setBowing] = useState(false);
-  const [pinned, setPinned] = useState(false);
+  /** Which scroll-driven layout is live (null = tap mode). */
+  const [pinMode, setPinMode] = useState<PinMode>(null);
+  const pinned = pinMode !== null;
   /** The phone is mostly on screen. Drives the tap-mode autoplay and pauses
    *  WalkPhone's tab alternation off-screen. */
   const [inView, setInView] = useState(false);
@@ -95,6 +112,10 @@ export function HowItWorks() {
    *  every scroll frame. */
   const stepsRef = useRef<HTMLDivElement>(null);
   const phoneRef = useRef<HTMLDivElement>(null);
+  const demoDescId = useId();
+  /** Phone pin: the tall phone column and the sticky block inside it. */
+  const phoneColRef = useRef<HTMLDivElement>(null);
+  const phoneStickRef = useRef<HTMLDivElement>(null);
   /** The step most recently asked for. Equal to `step` except during a bow,
    *  which lands on whatever this is when it finishes. */
   const target = useRef(0);
@@ -119,15 +140,42 @@ export function HowItWorks() {
   );
 
   useEffect(() => {
-    const mq = window.matchMedia(PIN_QUERY);
+    const desk = window.matchMedia(PIN_QUERY);
+    const phone = window.matchMedia(PHONE_PIN_QUERY);
     const apply = () => {
-      pinnedRef.current = mq.matches;
-      setPinned(mq.matches);
+      const mode: PinMode = desk.matches ? "desk" : phone.matches ? "phone" : null;
+      pinnedRef.current = mode !== null;
+      setPinMode(mode);
     };
     apply();
-    mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
+    desk.addEventListener("change", apply);
+    phone.addEventListener("change", apply);
+    return () => {
+      desk.removeEventListener("change", apply);
+      phone.removeEventListener("change", apply);
+    };
   }, []);
+
+  /** The scroll the pin consumes, as [start scrollY, travel px, scrollY that
+   *  moves on to the next section]. Desktop: the runway minus one viewport,
+   *  from its top. Phone: the phone column's extra height, from the moment its
+   *  sticky block reaches its `top`. */
+  const pinSpan = useCallback((): [number, number, number] => {
+    if (pinMode === "phone") {
+      const col = phoneColRef.current;
+      const stick = phoneStickRef.current;
+      if (!col || !stick) return [0, 0, 0];
+      const stickTop = parseFloat(getComputedStyle(stick).top) || 0;
+      const rect = col.getBoundingClientRect();
+      const top = rect.top + window.scrollY;
+      return [top - stickTop, rect.height - stick.offsetHeight, top + rect.height];
+    }
+    const runway = runwayRef.current;
+    if (!runway) return [0, 0, 0];
+    const rect = runway.getBoundingClientRect();
+    const top = rect.top + window.scrollY;
+    return [top, rect.height - window.innerHeight, top + rect.height];
+  }, [pinMode]);
 
 
   /** Show step `next`. Leaving step 0 forwards plays the bow first. */
@@ -230,9 +278,8 @@ export function HowItWorks() {
     let listening = false;
     const read = (animate = true) => {
       raf = 0;
-      const rect = runway.getBoundingClientRect();
-      const travel = rect.height - window.innerHeight;
-      const progress = travel > 0 ? Math.min(1, Math.max(0, -rect.top / travel)) : 0;
+      const [start, travel] = pinSpan();
+      const progress = travel > 0 ? Math.min(1, Math.max(0, (window.scrollY - start) / travel)) : 0;
       const s = progress * (stepCount - 1);
       steps.style.setProperty("--walk-s", s.toFixed(4));
       land(Math.round(s), animate);
@@ -263,19 +310,14 @@ export function HowItWorks() {
       if (raf) cancelAnimationFrame(raf);
       steps.style.removeProperty("--walk-s");
     };
-  }, [pinned, stepCount, land, stopAuto]);
+  }, [pinned, pinSpan, stepCount, land, stopAuto]);
 
   /** Pinned mode's only way to change step: scroll to its spot in the runway.
    *  `index === stepCount` means past the runway, i.e. on to the next section. */
   function scrollToStep(index: number) {
-    const runway = runwayRef.current;
-    if (!runway) return;
-    const rect = runway.getBoundingClientRect();
-    const travel = rect.height - window.innerHeight;
-    const y =
-      index >= stepCount
-        ? rect.bottom + window.scrollY
-        : rect.top + window.scrollY + (travel * Math.max(0, index)) / (stepCount - 1);
+    const [start, travel, past] = pinSpan();
+    if (travel <= 0) return;
+    const y = index >= stepCount ? past : start + (travel * Math.max(0, index)) / (stepCount - 1);
     window.scrollTo({ top: Math.round(y), behavior: "smooth" });
   }
 
@@ -413,9 +455,13 @@ export function HowItWorks() {
               gap: "clamp(34px,6vw,80px)",
             }}
           >
-            <Reveal variant="up">
+            {/* ScrollReveal/ScrollWords (P8): scroll-linked, finished ~13vh into
+                the screen, so a phone never waits on a timer to see the text
+                (the old IntersectionObserver Reveal waited for 12% of this
+                tall column, then ran 700ms with a blur). */}
+            <ScrollReveal>
               <SectionLabel index="06">{howItWorksContent.eyebrow}</SectionLabel>
-              <WordReveal
+              <ScrollWords
                 as="h2"
                 className={cn(
                   "max-w-[16ch] [font-family:var(--font-display)] font-bold text-[length:var(--fs-h2)] leading-[1.02] tracking-[-.02em]",
@@ -423,7 +469,7 @@ export function HowItWorks() {
                 )}
               >
                 {howItWorksContent.headline}
-              </WordReveal>
+              </ScrollWords>
               <p
                 className={cn(
                   "mt-[clamp(8px,1.2vw,14px)] text-[length:var(--fs-lead)] leading-[1.4]",
@@ -471,89 +517,104 @@ export function HowItWorks() {
                 </svg>
                 <span>{howItWorksContent.privacyNote}</span>
               </p>
-            </Reveal>
+            </ScrollReveal>
 
-            <Reveal variant="up" className={styles.walkPhoneCol}>
-              {/* data-flow-static: tag + phone draw in their own colours
-                  (see shared/flow.module.css). */}
-              <div
-                className={cn("relative flex items-end justify-center", styles.walkTagSeat)}
-                style={TAG_SEAT}
-                data-flow-static=""
-              >
-                {/* The PapeX counter tag. It stands behind the phone; the bow
-                    lifts the phone onto its tap glyph and the waves answer. */}
-                <div className={styles.walkTag}>
-                  <NfcTag
-                    pulsing={bowing}
-                    label={howItWorksContent.tag.label}
-                    line={howItWorksContent.tag.line}
-                    sub={howItWorksContent.tag.sub}
-                  />
-                </div>
+            {/* Phone pin: this column is made taller by the scroll it consumes
+                (CSS) and .walkPhoneStick sticks inside it. Elsewhere the
+                stick block is `display: contents`, so the layout is the same
+                one column of tag, phone, dots and cue as before. */}
+            <ScrollReveal className={styles.walkPhoneCol}>
+              <div ref={phoneColRef} className={styles.walkPhoneColInner}>
+                <div ref={phoneStickRef} className={styles.walkPhoneStick}>
+                  {/* data-flow-static: tag + phone draw in their own colours
+                      (see shared/flow.module.css). */}
+                  <div
+                    className={cn("relative flex items-end justify-center", styles.walkTagSeat)}
+                    style={TAG_SEAT}
+                    data-flow-static=""
+                  >
+                    {/* The PapeX counter tag. It stands behind the phone; the bow
+                        lifts the phone onto its tap glyph and the waves answer. */}
+                    <div className={styles.walkTag}>
+                      <NfcTag
+                        pulsing={bowing}
+                        label={howItWorksContent.tag.label}
+                        line={howItWorksContent.tag.line}
+                        sub={howItWorksContent.tag.sub}
+                      />
+                    </div>
 
-                {/* Tap OR swipe. Swipe matters more than tap: most visitors will
-                    never think to tap a picture of a phone, so without a drag the
-                    walkthrough is invisible to them. Pointer Events cover mouse,
-                    trackpad and touch in one path. */}
-                <div
-                  ref={phoneRef}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={howItWorksContent.phoneAriaLabel}
-                  onClick={() => advance()}
-                  onKeyDown={(event) => {
-                    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
-                      event.preventDefault();
-                      advance(false);
-                      return;
-                    }
-                    if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
-                      event.preventDefault();
-                      stepBack();
-                      return;
-                    }
-                    if (event.key !== "Enter" && event.key !== " ") return;
-                    event.preventDefault();
-                    advance();
-                  }}
-                  onPointerDown={onPointerDown}
-                  onPointerUp={onPointerUp}
-                  onPointerCancel={() => {
-                    dragFrom.current = null;
-                  }}
-                  className={cn(styles.walkPhone, bowing && styles.walkPhoneBowing)}
-                  style={{ touchAction: "pan-y", cursor: "grab" }}
-                >
-                  <div className={styles.walkTilt}>
-                    <WalkPhone step={step} active={inView} />
+                    {/* Tap OR swipe. Swipe matters more than tap: most visitors will
+                        never think to tap a picture of a phone, so without a drag the
+                        walkthrough is invisible to them. Pointer Events cover mouse,
+                        trackpad and touch in one path. */}
+                    <div
+                      ref={phoneRef}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={howItWorksContent.phoneAriaLabel}
+                      aria-describedby={demoDescId}
+                      onClick={() => advance()}
+                      onKeyDown={(event) => {
+                        if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+                          event.preventDefault();
+                          advance(false);
+                          return;
+                        }
+                        if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+                          event.preventDefault();
+                          stepBack();
+                          return;
+                        }
+                        if (event.key !== "Enter" && event.key !== " ") return;
+                        event.preventDefault();
+                        advance();
+                      }}
+                      onPointerDown={onPointerDown}
+                      onPointerUp={onPointerUp}
+                      onPointerCancel={() => {
+                        dragFrom.current = null;
+                      }}
+                      className={cn(styles.walkPhone, bowing && styles.walkPhoneBowing)}
+                      style={{ touchAction: "pan-y", cursor: "grab" }}
+                    >
+                      <div className={styles.walkTilt}>
+                        <WalkPhone step={step} active={inView} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* What the demo shows and means, in the server HTML (the
+                      phone's screens are drawn, not described). */}
+                  <p id={demoDescId} className="sr-only">
+                    {howItWorksContent.demoDescription}
+                  </p>
+
+                  {/* Page dots: the affordance that says "there are three of these and
+                      you can move between them". */}
+                  <div className={styles.wpDots} data-nojs="walk-dots" aria-hidden="true">
+                    {howItWorksContent.steps.map((s, i) => (
+                      <span key={s.number} className={cn(styles.wpDot, i === step && styles.wpDotOn)} />
+                    ))}
+                  </div>
+
+                  <div className={styles.walkCue} data-nojs="walk-cue" aria-live="polite">
+                    {step === last ? (
+                      <>
+                        {cue}{" "}
+                        {/* The phone replays on a tap too; this is the same
+                            action as a real button (keyboard + >=44px area). */}
+                        <button type="button" className={styles.walkReplay} onClick={() => stepForward()}>
+                          {howItWorksContent.replayLabel}
+                        </button>
+                      </>
+                    ) : (
+                      cue
+                    )}
                   </div>
                 </div>
               </div>
-
-              {/* Page dots: the affordance that says "there are three of these and
-                  you can move between them". */}
-              <div className={styles.wpDots} data-nojs="walk-dots" aria-hidden="true">
-                {howItWorksContent.steps.map((s, i) => (
-                  <span key={s.number} className={cn(styles.wpDot, i === step && styles.wpDotOn)} />
-                ))}
-              </div>
-
-              <div className={styles.walkCue} data-nojs="walk-cue" aria-live="polite">
-                {step === last ? (
-                  <>
-                    {cue}{" "}
-                    {/* The phone replays on a tap too; this is the same
-                        action as a real button (keyboard + >=44px area). */}
-                    <button type="button" className={styles.walkReplay} onClick={() => stepForward()}>
-                      {howItWorksContent.replayLabel}
-                    </button>
-                  </>
-                ) : (
-                  cue
-                )}
-              </div>
-            </Reveal>
+            </ScrollReveal>
           </div>
         </div>
       </div>

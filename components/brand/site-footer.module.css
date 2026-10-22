@@ -1,0 +1,23 @@
+/* components/brand/site-footer.module.css — phone layout only (Web 2.1 P8).
+   The footer's look lives in styles/papex-brand.css (.rd-footer*). On a
+   phone its auto-fit grid fell to ONE column: four link lists stacked on the
+   44px tap rhythm made a ~900px tower of short links. Here the brand block
+   keeps the full width and the link columns pair up two by two, so the
+   footer is about half as tall with the same links and the same 44px rows.
+   Below 360px "Get in touch" (an email address) takes the full width.
+   .grid.grid: must outrank the global .rd-footer-grid whatever the load order. */
+@media (max-width: 620px) {
+  .grid.grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 20px;
+    row-gap: 36px;
+  }
+  .brand {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 359px) {
+  .contact {
+    grid-column: 1 / -1;
+  }
+}
