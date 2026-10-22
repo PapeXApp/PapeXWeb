@@ -66,6 +66,8 @@
 
 /* --- sheet ----------------------------------------------------------------- */
 .sheet {
+  /* its own layer, painted ahead of time: opening only fades it in */
+  will-change: opacity, transform;
   transform-origin: 100% 0;
   opacity: 0;
   visibility: hidden;

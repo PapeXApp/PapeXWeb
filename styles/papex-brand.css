@@ -467,9 +467,11 @@ html:has([data-flow-root][data-ground="light"]) {
   flex-direction: column;
   padding: 10px 16px 16px;
   border-radius: var(--r-sheet);
-  background: var(--navy-glass-sheet);
-  -webkit-backdrop-filter: blur(24px) saturate(160%);
-  backdrop-filter: blur(24px) saturate(160%);
+  /* Near-solid, no backdrop-filter (Nico, 2026-10-21: the menu still took
+     seconds to open in iPhone Safari): a blur over the page's 3D scenes has
+     to be redrawn the moment the sheet shows; a plain panel is just faded in.
+     (Phones only: the sheet is display:none from 821px.) */
+  background: #071822;
   border: var(--glass-border);
   box-shadow: var(--sh-menu);
 }
