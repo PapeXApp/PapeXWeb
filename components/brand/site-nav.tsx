@@ -159,6 +159,7 @@ export function SiteNav({ path }: { path: SitePath }) {
   const burgerRef = useRef<HTMLButtonElement>(null)
   const sheetRef = useRef<HTMLDivElement>(null)
   const backdropRef = useRef<HTMLDivElement>(null)
+  const navRef = useRef<HTMLElement>(null)
 
   /** Close the phone menu. Focus goes back to the burger that opened it,
    *  except when a link was followed (the page is changing under it). */
@@ -258,6 +259,60 @@ export function SiteNav({ path }: { path: SitePath }) {
     return () => mq.removeEventListener('change', onChange)
   }, [])
 
+  // Phones: tuck the two pills away while the page scrolls down, so they
+  // never sit on what's being read (Nico, 2026-10-22); any scroll up or the
+  // top of the page brings them back (CSS: .rd-nav[data-tucked] in
+  // papex-brand.css). One passive listener, at most one read of scrollY per
+  // frame, and the attribute is written straight on the nav only when it
+  // flips (no React render per scroll).
+  useEffect(() => {
+    const nav = navRef.current
+    if (!nav) return
+    const mq = window.matchMedia('(max-width:820px)')
+    let lastY = window.scrollY
+    let frame = 0
+    const tuck = (on: boolean) => {
+      if (on === nav.hasAttribute('data-tucked')) return
+      if (on) nav.setAttribute('data-tucked', '')
+      else nav.removeAttribute('data-tucked')
+    }
+    const check = () => {
+      frame = 0
+      const y = window.scrollY
+      const dy = y - lastY
+      // Below 80px the pills always show; past it, 8px of travel one way
+      // or the other decides (slow scrolls add up until they get there).
+      if (y < 80) tuck(false)
+      else if (dy > 8) tuck(true)
+      else if (dy < -8) tuck(false)
+      if (y < 80 || Math.abs(dy) > 8) lastY = y
+    }
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(check)
+    }
+    const attach = () => {
+      if (mq.matches) {
+        lastY = window.scrollY
+        window.addEventListener('scroll', onScroll, { passive: true })
+      } else {
+        window.removeEventListener('scroll', onScroll)
+        tuck(false)
+      }
+    }
+    attach()
+    mq.addEventListener('change', attach)
+    return () => {
+      mq.removeEventListener('change', attach)
+      window.removeEventListener('scroll', onScroll)
+      cancelAnimationFrame(frame)
+    }
+  }, [])
+
+  // The menu button is how the sheet closes: never tucked while it's open.
+  useEffect(() => {
+    if (menuOpen) navRef.current?.removeAttribute('data-tucked')
+  }, [menuOpen])
+
   const onLinkClick = useCallback(
     (link: NavLink) => (event: React.MouseEvent) => {
       setMenuOpen(false)
@@ -291,7 +346,7 @@ export function SiteNav({ path }: { path: SitePath }) {
   const ctaHidden = path === 'fork' || heroCtaOnScreen
 
   return (
-    <nav className="rd-nav" data-glass={glass} aria-label="Primary">
+    <nav ref={navRef} className="rd-nav" data-glass={glass} aria-label="Primary">
       {/* Browser toolbar tint (A3, 2026-10-21): React 19 hoists this into
           <head>, server-rendered with the first-paint ground and then kept in
           step with the ground under the header (light bar, light toolbar;
