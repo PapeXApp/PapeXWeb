@@ -2,7 +2,8 @@ import { ScrollLit, ScrollReveal } from "@/components/motion"
 import { FlowSection } from "../shared/FlowSection"
 import { SectionLabel } from "../shared/SectionLabel"
 import { story } from "./story"
-import { RetainStory } from "./story/RetainStory"
+import { DeferOnClientNav } from "../shared/DeferOnClientNav"
+import { RetainStory, RUNWAY_VH } from "./story/RetainStory"
 import s from "./story.module.css"
 
 // /business section 03, "Tap to Retain" (Web 2.1 FINAL PAGE ORDER, B5).
@@ -56,7 +57,11 @@ export function WhyMerchants() {
   )
   return (
     <FlowSection ground="light" index="03" className={s.section}>
-      <RetainStory header={header} />
+      {/* the page's heaviest scene: built just after a page switch, not in
+          the same step (DeferOnClientNav) */}
+      <DeferOnClientNav placeholderHeight={`${RUNWAY_VH}vh`}>
+        <RetainStory header={header} />
+      </DeferOnClientNav>
     </FlowSection>
   )
 }

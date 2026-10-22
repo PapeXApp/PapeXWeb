@@ -149,7 +149,7 @@ const DWELL_VH = 20
  *  proportions, over a third less scroll. Every mapping below works in
  *  fractions of the measured runway (runway minus pin, p8: never
  *  innerHeight), so nothing here changes. */
-const RUNWAY_VH = 100 + SCROLL_VH + DWELL_VH
+export const RUNWAY_VH = 100 + SCROLL_VH + DWELL_VH
 /**
  * HYSTERESIS. Once the story has fully opened it LATCHES: a small scroll up,
  * or scrolling inside the dashboard, changes nothing. Only after scrolling up
