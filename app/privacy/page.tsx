@@ -539,6 +539,16 @@ export default function PrivacyPolicyPage() {
             immediately when you delete your account.
           </li>
           <li>
+            <strong>Sign-in attempts.</strong> To limit abuse we keep records of sign-in attempts, with your number replaced by
+            a keyed one-way code, and an identifier of your app installation, for a few days; counts with no number for up to
+            13 months; and the area code and exchange of numbers we texted for up to 2 days, for abuse alarms. Our servers
+            also log the IP address of requests for up to 30 days for security.
+          </li>
+          <li>
+            <strong>Your phone number.</strong> Your verified number stays with your account until you remove it or delete
+            your account.
+          </li>
+          <li>
             <strong>Database backups.</strong> Our database keeps recovery copies for 7 days and weekly backups for 90 days, and
             our file storage keeps deleted files recoverable for 7 days. Information that has been deleted or removed, such as a
             sign-in code removed from an Important mail item or an account you deleted, can remain in these copies until they
@@ -556,10 +566,16 @@ export default function PrivacyPolicyPage() {
         </p>
         <p>
           <strong>Deleting your account.</strong> You can delete your account in the app under Settings &gt; Advanced Settings
-          &gt; Delete Account, or by contacting us as described in Section 13. Your account and the information stored with it
+          &gt; Delete Account, or by contacting us as described in Section 13. If you signed up with your phone number and no
+          longer have the app, email{' '}
+          <a href="mailto:privacy@papex.app">
+            privacy@papex.app
+          </a>{' '}
+          with the number; we confirm it by texting it a one-time code before deleting. Your account and the information stored with it
           in our app database and file storage are deleted immediately, including your receipts and their photos, your profile
-          photo, your coupons and coupon photos, cards, Important mail items, settings, partner store sign-ups, feedback, and
-          the records that link your email receipts to their original emails. Two kinds of information are deleted after a
+          photo, your coupons and coupon photos, cards, Important mail items, settings, partner store sign-ups, feedback, your
+          phone number and our records of your phone sign-ins, and the records that link your email receipts to their original
+          emails. Two kinds of information are deleted after a
           short review by a member of our team, usually within 1 to 4 days: the original emails of your email receipts (see
           above) and the usage reports described in Section 3. Some copies are kept for a set time: emails sent to your PapeX
           email address (deleted 90 days after they arrived, as described above) and database backups and recovery copies (up
@@ -627,8 +643,9 @@ export default function PrivacyPolicyPage() {
           <a href="mailto:privacy@papex.app">
             privacy@papex.app
           </a>{' '}
-          with &ldquo;Privacy Request&rdquo; in the subject line. We will acknowledge within 10 days and respond within 45 days,
-          extendable once by 45 days if needed.
+          with &ldquo;Privacy Request&rdquo; in the subject line. If you signed up with your phone number, include it; we confirm
+          it by texting it a one-time code before we act on your request. We will acknowledge within 10 days and respond within
+          45 days, extendable once by 45 days if needed.
         </p>
       </section>
 
