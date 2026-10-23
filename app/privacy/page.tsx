@@ -161,11 +161,11 @@ export default function PrivacyPolicyPage() {
           forwarded to your PapeX address. We read these emails to find receipts, using the AI services described in
           Section 6. When we recognise an email as a sign-in or verification message and judge that it is not a receipt, we do
           not run it through receipt reading. Other emails are read: the text of the email, including any code, link or other
-          personal detail in it, is sent to Google&rsquo;s Gemini service and to the AI model that our contractor Marvik runs
-          for us, whether or not the email turns out to be a receipt. This includes receipts or order confirmations that happen
+          personal detail in it, is sent to Google&rsquo;s Gemini service, whether or not the email turns out to be a receipt.
+          This includes receipts or order confirmations that happen
           to contain a code, and sign-in or verification messages that we do not recognise as such or that include an image or
           PDF file. Emails that contain something that looks like a code or a web link are also sorted for Important mail,
-          which sends them to the same AI services, with the codes we detect hidden (see &ldquo;Important mail&rdquo; below).
+          which sends them to Gemini as well, with the codes we detect hidden (see &ldquo;Important mail&rdquo; below).
           Because most emails contain a web link, this covers most of the emails sent to your PapeX address, receipts
           included.
         </p>
@@ -202,10 +202,9 @@ export default function PrivacyPolicyPage() {
             an item only when the sender&rsquo;s email passes standard email authentication checks.
           </li>
           <li>
-            <strong>Who processes it:</strong> our servers on Amazon Web Services, which receive and store the email; the AI
-            services described in Section 6, which are Google&rsquo;s Gemini service and the AI model that our contractor
-            Marvik runs for us (see &ldquo;How we sort these emails&rdquo; below); and Google (Firebase and Google Cloud),
-            which stores the Important mail items.
+            <strong>Who processes it:</strong> our servers on Amazon Web Services, which receive and store the email;
+            Google&rsquo;s Gemini service, described in Section 6 (see &ldquo;How we sort these emails&rdquo; below); and
+            Google (Firebase and Google Cloud), which stores the Important mail items.
           </li>
           <li>
             <strong>Why:</strong> to find the sign-in codes and verification links in your mail, to tell them apart from
@@ -250,10 +249,10 @@ export default function PrivacyPolicyPage() {
           </li>
           <li>
             <strong>How we sort these emails:</strong> to find these emails and decide what to show, we send emails that contain
-            something that looks like a code or a link to the AI services described in Section 6: Google&rsquo;s Gemini service
-            and the AI model that our contractor Marvik runs for us. Before we do, we hide the codes we detect, and we remove
+            something that looks like a code or a link to Google&rsquo;s Gemini service, described in Section 6. Before we do,
+            we hide the codes we detect, and we remove
             the part of each web link in the email&rsquo;s text after a &ldquo;?&rdquo; or &ldquo;#&rdquo;, which often
-            carries a sign-in token. The rest of the email is sent to them, including any code we do not detect. This hiding
+            carries a sign-in token. The rest of the email is sent to Gemini, including any code we do not detect. This hiding
             applies only to sorting: unless we recognise the email as a sign-in or verification message that is not a receipt,
             it is also read for receipts, codes and links included (see &ldquo;Your PapeX email address&rdquo; above).
           </li>
@@ -343,10 +342,13 @@ export default function PrivacyPolicyPage() {
             legal requirements, and it may process them in any country where it has facilities.
           </li>
           <li>
-            <strong>Marvik.</strong> Our contractor Marvik runs an AI model, configured by PapeX, on a server that Marvik
-            operates. It receives receipt photos, and the text of receipts and of emails sent to your PapeX email address
-            (whether or not they are receipts, and including any codes or links in them, with the same exceptions as for
-            Gemini), to read and sort them and to check the results.
+            <strong>Marvik (until October 15, 2026).</strong> Until October 15, 2026, our contractor Marvik ran an AI model,
+            configured by PapeX, on a server that Marvik operates. It received receipt photos, and the text of receipts and of
+            emails sent to your PapeX email address (whether or not they were receipts, and including any codes or links in
+            them), to read and sort them and to check the results. We no longer send information to Marvik. Information it
+            received before then may still be held on that server.
+            {/* If Marvik gives written confirmation of deletion, replace the last sentence with: "Marvik has confirmed that
+                it deleted that information on <date>." (W8 E2e.) */}
           </li>
           <li>
             <strong>Nanonets.</strong> A receipt-reading service that may receive a receipt photo, including a photo attached
