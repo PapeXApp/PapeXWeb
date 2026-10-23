@@ -102,7 +102,8 @@ export default function PrivacyPolicyPage() {
           We collect information you provide directly, information generated automatically through use of the Service, and
           information obtained from third parties. This may include your name, email address, identifiers (account ID, user
           ID, device ID) and user-generated content. It may also include optional profile details that you
-          add, such as a phone number, a username and a profile photo.
+          add, such as a username and a profile photo. If you sign in with your phone number, it includes that number (see
+          &ldquo;Signing in&rdquo; below).
         </p>
         <p>
           We also collect financial information related to transaction receipts, including purchase details, merchant names,
@@ -146,6 +147,30 @@ export default function PrivacyPolicyPage() {
           password. Sign-in is run by Google&rsquo;s Firebase Authentication, which receives your email address or the token
           that Apple or Google issues.
         </p>
+        <p>
+          <strong>Phone number.</strong> You can create an account or sign in with a US or Canadian mobile number. We send a
+          one-time code by text message through Vonage, our SMS provider. Your number is stored with your account in Firebase
+          Authentication so you can sign in with it, and so that someone who types it can find you to share a receipt.
+          Message and data rates may apply.
+        </p>
+        <p>
+          If you sign in only with your phone number and lose or change that number, you may not be able to get back into
+          your account. Add Apple, Google or email in Account to keep access.
+        </p>
+
+        <h3>Phone number on your profile</h3>
+        <p>
+          Earlier versions of the app let you add a phone number to your profile. We no longer show it in the app or use it
+          to find you. It is kept privately with your account, and the app may ask you to verify it; it is used only to fill
+          in that prompt, until you verify it or delete your account.
+        </p>
+
+        <h3>Security notices</h3>
+        <p>
+          When your phone number is added, changed or removed, when it is removed from your account because it now belongs
+          to someone else, when a new way to sign in is added, or when your account is signed in on a new device, we send a
+          notice to your devices and, if you have one, to your verified email address.
+        </p>
 
         <h3>Feedback and support</h3>
         <p>
@@ -170,7 +195,9 @@ export default function PrivacyPolicyPage() {
           When you add someone to share with by typing their email address or phone number, the app asks our servers whether
           it belongs to a PapeX account and, if it does, shows you that person&rsquo;s name and profile photo and nothing
           else from their profile. The same applies to you: someone who types your email address or phone number can find out
-          whether it belongs to a PapeX account and, if it does, sees your name and profile photo.
+          whether it belongs to a PapeX account and, if it does, sees your name and profile photo. If you add a phone number,
+          people who have it can find your PapeX name and photo to share receipts with you. You can turn this off in Account
+          &gt; Let people find me by my number.
         </p>
         {/* PUBLISH GATE (W30): this paragraph describes the 1.7.3 app. Publish it together with the profile-privacy server
             changes, and do not add a statement about what other users cannot read until those are live. */}
