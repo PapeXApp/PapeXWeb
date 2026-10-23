@@ -86,6 +86,23 @@ const FAQS: { q: string; a: React.ReactNode }[] = [
     ),
   },
   {
+    q: 'I signed up with my phone number. How do I delete my account?',
+    a: (
+      <>
+        In the app, go to Settings &gt; Advanced Settings &gt; Delete Account. If you no longer have the app, email{' '}
+        <a href="mailto:privacy@papex.app" className={styles.inlineLink}>
+          privacy@papex.app
+        </a>{' '}
+        with your phone number, and we will text it a one-time code to confirm before we delete your account and the
+        information stored with it, as described in our{' '}
+        <Link href="/privacy" className={styles.inlineLink}>
+          Privacy Policy
+        </Link>{' '}
+        (Section 7).
+      </>
+    ),
+  },
+  {
     q: 'How do I forward email receipts into the app?',
     a: "Forward receipt emails to the PapeX email address shown on your Account screen in the app.",
   },
