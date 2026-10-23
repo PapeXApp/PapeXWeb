@@ -421,6 +421,14 @@ export default function PrivacyPolicyPage() {
             (see &ldquo;Signing in&rdquo; in Section 3).
           </li>
           <li>
+            <strong>Vonage</strong> sends sign-in codes by text message. It receives your phone number and keeps records of the
+            messages under its own retention terms.
+          </li>
+          <li>
+            <strong>Apple and Google device checks</strong> (App Attest, DeviceCheck, Play Integrity, through Firebase App
+            Check) confirm that requests come from the real PapeX app; they do not tell us who you are.
+          </li>
+          <li>
             <strong>Amazon Web Services</strong> hosts the servers that process your scans and emails, receives and stores the
             emails sent to your PapeX email address, including the original emails we keep, and stores the usage reports
             described in Section 3.
