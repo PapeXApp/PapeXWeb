@@ -33,7 +33,10 @@ import {
   type User,
 } from "firebase/auth";
 import { getPapexV2Auth } from "@/lib/firebaseClientApp";
+import { validateStrongPassword } from "@/lib/passwordRules";
 import { APP_STORE_URL, rdhUniversalLink } from "@/lib/storeLinks";
+import PasswordRequirements from "./PasswordRequirements";
+import { signInSheetError } from "./signInSheetError";
 
 // Tokens (docs/PAPEX_DESIGN_KIT_FOR_WEB.md §1) — this file keeps its own
 // literal copy rather than importing ui.tsx's `T` (this is a standalone
@@ -118,14 +121,17 @@ function PrimaryButton({
   );
 }
 
-function SignInSheet({
+// Exported for app/r/signUpSheet.test.tsx (it renders the sign-up mode).
+export function SignInSheet({
   onAuthed,
   onClose,
+  initialMode = "signin",
 }: {
   onAuthed: (user: User) => void;
   onClose: () => void;
+  initialMode?: "signin" | "signup";
 }) {
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup">(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -133,8 +139,19 @@ function SignInSheet({
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setBusy(true);
     setError(null);
+    // New accounts only: check the password against papexv2's real policy
+    // (lib/passwordRules.ts) BEFORE calling Firebase, so "Receipts+2026" gets
+    // "+ doesn't count as a special character here" instead of a failed
+    // request. Signing in never checks: older accounts keep older passwords.
+    if (mode === "signup") {
+      const problem = validateStrongPassword(password);
+      if (problem) {
+        setError(problem);
+        return;
+      }
+    }
+    setBusy(true);
     try {
       const auth = getPapexV2Auth();
       const cred =
@@ -143,18 +160,7 @@ function SignInSheet({
           : await createUserWithEmailAndPassword(auth, email, password);
       onAuthed(cred.user);
     } catch (err) {
-      const code = (err as { code?: string })?.code ?? "";
-      if (code.includes("wrong-password") || code.includes("invalid-credential")) {
-        setError("Incorrect email or password.");
-      } else if (code.includes("user-not-found")) {
-        setError("No PapeX account with that email yet — try Sign up instead.");
-      } else if (code.includes("email-already-in-use")) {
-        setError("An account already exists with that email — try Sign in instead.");
-      } else if (code.includes("weak-password")) {
-        setError("Password should be at least 6 characters.");
-      } else {
-        setError("Couldn't sign in. Check your details and try again.");
-      }
+      setError(signInSheetError((err as { code?: string })?.code ?? ""));
     } finally {
       setBusy(false);
     }
@@ -196,10 +202,16 @@ function SignInSheet({
           autoComplete={mode === "signin" ? "current-password" : "new-password"}
           placeholder="Password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            // A stale "needs a special character" must not outlive the fix.
+            setError(null);
+          }}
+          aria-describedby={mode === "signup" ? "papex-password-rules" : undefined}
           className="rounded-xl border bg-transparent px-3 py-2.5 text-sm outline-none placeholder:text-white/45"
           style={{ borderColor: "rgba(255, 255, 255, 0.18)", color: "rgba(255,255,255,0.90)" }}
         />
+        {mode === "signup" && <PasswordRequirements id="papex-password-rules" password={password} />}
         {error && <p className="text-xs" style={{ color: "#FF3B30" }}>{error}</p>}
         <PrimaryButton type="submit" disabled={busy}>
           {busy ? "Please wait…" : mode === "signin" ? "Sign in" : "Sign up"}
