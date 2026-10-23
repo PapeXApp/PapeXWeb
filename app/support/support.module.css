@@ -404,6 +404,24 @@
   background: var(--orange);
 }
 
+/* --- Plain text inside a card (the deletion route on /app-support) ---------
+   A card heading (.doTitle), paragraphs and a .steps list, spaced as one run. */
+.prose {
+  font-size: var(--fs-body);
+  line-height: 1.6;
+  color: var(--flow-fg-2);
+}
+.prose > * {
+  margin: 0;
+}
+.prose > * + * {
+  margin-top: 14px;
+}
+.prose strong {
+  color: var(--flow-fg);
+  font-weight: 600;
+}
+
 /* --- Do / Don't ------------------------------------------------------------ */
 .doGrid {
   display: grid;
