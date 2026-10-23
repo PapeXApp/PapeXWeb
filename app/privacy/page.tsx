@@ -440,6 +440,16 @@ export default function PrivacyPolicyPage() {
             contained, including any code or link. Deleting the receipt or your account does not delete this copy. To ask us to
             delete it, contact us as described in Section 13.
           </li>
+          {/* G2-FINAL (swap point 1 of 3): replace the bullet above with this once original emails are deleted with the
+              account after review. Interim until then.
+          <li>
+            <strong>Original emails that became receipts.</strong> We keep the original email and its attachments for as long
+            as your account exists, so that you can view the original later. This is a complete copy, so it contains anything
+            the email contained, including any code or link. Deleting a receipt does not delete this copy; to ask us to
+            delete it, contact us as described in Section 13. When you delete your account, we delete it after a short review
+            (see &ldquo;Deleting your account&rdquo; below).
+          </li>
+          */}
           <li>
             <strong>Other emails sent to PapeX email addresses.</strong> We keep the original message as we received it,
             including any code or link in it, for 90 days after it arrives and then delete it automatically, including after
@@ -454,23 +464,38 @@ export default function PrivacyPolicyPage() {
           <li>
             <strong>Deleted receipts and photos.</strong> A receipt you delete goes to Deleted Receipts in the app, where it
             stays until you delete it there for good or the app clears it after 30 days; the app does this clearing only when
-            you open Deleted Receipts. The photos of your receipts, and your profile photo, are kept in our file storage.
-            Deleting a receipt, or your account, does not currently delete them. To ask us to delete them, contact us as
-            described in Section 13.
+            you open Deleted Receipts. Deleting a single receipt does not currently delete its photo from our file storage; to
+            ask us to delete it, contact us as described in Section 13. Deleting your account deletes all of your photos
+            immediately.
           </li>
           <li>
             <strong>Usage data.</strong> The usage reports described in Section 3 are deleted automatically 180 days after they
             are recorded. Deleting your account does not delete them sooner.
           </li>
+          {/* G2-FINAL (swap point 2 of 3): replace the Usage data bullet above with this once usage reports are deleted with
+              the account after review. Interim until then.
+          <li>
+            <strong>Usage data.</strong> The usage reports described in Section 3 are deleted automatically 180 days after they
+            are recorded. When you delete your account, we delete them after a short review (see &ldquo;Deleting your
+            account&rdquo; below), if that comes first.
+          </li>
+          */}
           <li>
             <strong>Coupon testing.</strong> We are testing a feature, not yet shown in the app, that finds offers and coupon
-            codes in emails sent to your PapeX email address. What it finds is deleted automatically after 45 days, including
-            after you delete your account.
+            codes in emails sent to your PapeX email address. What it finds is deleted automatically after 45 days, or
+            immediately when you delete your account.
           </li>
           <li>
-            <strong>Database backups.</strong> Our database keeps recovery copies for 7 days and weekly backups for 90 days.
-            Information that has been deleted or removed, such as a sign-in code removed from an Important mail item, can remain
-            in these copies until they expire.
+            <strong>Database backups.</strong> Our database keeps recovery copies for 7 days and weekly backups for 90 days, and
+            our file storage keeps deleted files recoverable for 7 days. Information that has been deleted or removed, such as a
+            sign-in code removed from an Important mail item or an account you deleted, can remain in these copies until they
+            expire.
+          </li>
+          <li>
+            <strong>Anonymous statistics.</strong> Before we delete an account, we record a few facts about it, each only as a
+            broad range or a yes/no: for example how long the account existed, roughly how many receipts, photos or emails it
+            had, and which features it used. They contain nothing that identifies you or the account, we only look at them added
+            up with at least four other deleted accounts, and we keep them.
           </li>
         </ul>
         <p>
@@ -478,15 +503,29 @@ export default function PrivacyPolicyPage() {
         </p>
         <p>
           <strong>Deleting your account.</strong> You can delete your account in the app under Settings &gt; Advanced Settings
-          &gt; Delete Account. This deletes your account and the information stored with it, including your receipts, your
-          Important mail items and the records that link your email receipts to their original emails. Some information is not
-          deleted right away, or at all: original emails that became receipts (kept indefinitely), copies of other emails
-          (deleted 90 days after they arrived), usage reports (deleted 180 days after they were recorded), coupon test data
-          (deleted after 45 days), database backups (up to 90 days) and the photos of your receipts and your profile photo in
-          our file storage (not currently deleted). If you delete your account from an older version of the app that does not
-          include Important mail, your Important mail items are not deleted; contact us as described in Section 13 to have
-          them removed.
+          &gt; Delete Account, or by contacting us as described in Section 13. Your account and the information stored with it
+          in our app database and file storage are deleted immediately, including your receipts and their photos, your profile
+          photo, your coupons and coupon photos, cards, Important mail items, settings, partner store sign-ups, feedback, and
+          the records that link your email receipts to their original emails. The original emails of your email receipts (see
+          above) and the usage reports described in Section 3 are not yet deleted with your account; usage reports are deleted
+          180 days after they were recorded, and you can ask us to delete the original emails as described in Section 13. Some
+          copies are kept for a set time: emails sent to your PapeX email address (deleted 90 days after they arrived, as
+          described above) and database backups and recovery copies (up to 90 days). We keep the anonymous statistics
+          described above. Your PapeX email address is never given to anyone else: it stays reserved, with no link to you.
+          Emails that reach it after your account is deleted are not added to any account, but until we stop accepting them we
+          may keep them, unconnected to you.
         </p>
+        {/* G2-FINAL (swap point 3 of 3): in the paragraph above, replace the sentence that starts "The original emails of
+            your email receipts (see above)" and ends "as described in Section 13." with the three sentences below. Interim
+            until original emails and usage reports are deleted with the account after review.
+
+            Two kinds of information are deleted after a short review by a member of our team: the original emails of your
+            email receipts, and the usage reports described in Section 3. We review account deletions every day; this usually
+            takes 1 to 4 days, and the deletion runs the day after the review is completed. If a review takes longer, these
+            are deleted the day after it is completed, and in any case within 30 days of your request.
+
+            Keep "and in any case within 30 days of your request" only if the 30-day outer bound will be kept; the code does
+            not enforce it. Otherwise end the last sentence at "the day after it is completed." (W29 section 6.) */}
       </section>
 
       <section>
