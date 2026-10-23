@@ -28,12 +28,17 @@
 //   5. Remove the PUBLISH GATE comment in Section 3 once its condition holds.
 //   6. Section 6 processors: the Nanonets bullet is in the past tense and assumes NANONETS_ENABLED=0 is live; the Anthropic
 //      bullet must be published before the Claude fallback is switched on. Keep Gemini current and Marvik past.
+//   7. Phone sign-in (PapeX 1.7.4): the phone paragraphs in Sections 3, 4, 6, 7 and 13 describe the 1.7.4 app. Publish them
+//      with the Terms ("Text messages") and the /app-support FAQ and deletion-steps bullet for phone accounts, before the
+//      1.7.4 submission. POLICY_DATE is a placeholder again because these edits change the policy after the 1.7.3 date
+//      (October 25, 2026); step 1 replaces it. Section 6 says nothing about how long Vonage keeps message
+//      records (not yet confirmed with the vendor); add it when known.
 
 import type { Metadata } from 'next'
 import { DEFAULT_OG_IMAGE } from '@/components/blog/image'
 import { LegalPage } from '@/components/legal/LegalPage'
 
-const POLICY_DATE = 'October 25, 2026'
+const POLICY_DATE = '{{PUBLISH_DATE}}'
 
 const OG_ALT =
   'The PapeX logo and the words Your receipt, one tap away, beside an iPhone showing a PapeX receipt'
