@@ -327,7 +327,10 @@ export default function PrivacyPolicyPage() {
         <p>
           When you allow notifications, the app gets a push token from Expo, the notification service we use, and we store it
           with your PapeX account. We keep one token per account, so notifications go only to the phone that registered most
-          recently. To send a notification, we give Expo the token and the notification: its title, its text and an internal
+          recently. The exception is security notices about your phone number and sign-in
+          methods (see &ldquo;Security notices&rdquo; above): for those we also keep the push tokens that your account has used
+          in the last 90 days, up to five, so a notice can reach phones you used earlier. Signing out does not remove them;
+          deleting your account does. To send a notification, we give Expo the token and the notification: its title, its text and an internal
           reference that the app uses to open the right item when you tap it. Expo passes it to Apple&rsquo;s or Google&rsquo;s
           notification service, which delivers it to your phone.
         </p>
@@ -546,7 +549,11 @@ export default function PrivacyPolicyPage() {
           </li>
           <li>
             <strong>Your phone number.</strong> Your verified number stays with your account until you remove it or delete
-            your account.
+            your account. With it we keep, until you delete your account, a keyed one-way code of the number, when you last
+            confirmed it with a code, when you accepted the Terms, which of your sign-in methods you have confirmed, keyed
+            codes for up to ten app installations you have used to sign in (so that we can tell a new device from a known
+            one), and the push tokens described in Section 3. If you ask us to change a number you have lost, we keep your
+            request, including the new number and the email address you gave, until you delete your account.
           </li>
           <li>
             <strong>Database backups.</strong> Our database keeps recovery copies for 7 days and weekly backups for 90 days, and
