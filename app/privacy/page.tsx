@@ -510,9 +510,14 @@ export default function PrivacyPolicyPage() {
       <section>
         <h2>10. Cookies and Tracking Technologies</h2>
         <p>
-          We use cookies, SDKs, and other tracking technologies for session management, authentication, analytics,
-          advertising measurement, and security. You may manage cookie preferences through device or browser settings,
-          though disabling cookies may limit functionality. We do not currently respond to &ldquo;Do Not Track&rdquo; signals.
+          On our website we use cookies and similar technologies for session management, authentication, analytics and
+          security, including Google Analytics and Vercel Analytics (see Section 6). The PapeX app does not use advertising
+          identifiers or advertising SDKs, and we do not track you across other companies&rsquo; apps or websites. You may
+          manage cookie preferences through device or browser settings, though disabling cookies may limit functionality. We
+          do not currently respond to &ldquo;Do Not Track&rdquo; signals.
+          {/* GA4 CHECK, before publishing (W7 U7): this is W8's no-ads wording (E5). It is true only if the GA4 property has
+              Google signals off, no Google Ads link and no ads data sharing. If any of those is on, restore "advertising
+              measurement" in the first sentence for the website and keep the sentence about the app. */}
         </p>
       </section>
 
