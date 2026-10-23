@@ -92,7 +92,7 @@ export default function PrivacyPolicyPage() {
         <p>
           We collect information you provide directly, information generated automatically through use of the Service, and
           information obtained from third parties. This may include your name, email address, identifiers (account ID, user
-          ID, device ID), search history, and user-generated content. It may also include optional profile details that you
+          ID, device ID) and user-generated content. It may also include optional profile details that you
           add, such as a phone number, a username and a profile photo.
         </p>
         <p>
@@ -332,7 +332,7 @@ export default function PrivacyPolicyPage() {
         </p>
         <ul>
           <li>
-            <strong>Google (Gemini).</strong> Every photo or PDF you scan or upload is sent to Google&rsquo;s Gemini AI service
+            <strong>Google (Gemini).</strong> Every receipt photo or PDF you scan or upload is sent to Google&rsquo;s Gemini AI service
             to check that it is a receipt and, when needed, to read it. The text of emails sent to your PapeX email address,
             whether or not they are receipts and including any codes or links in them, and their image or PDF attachments, are
             also sent to Gemini, except as described in Section 3: we do not run sign-in or verification emails that we
