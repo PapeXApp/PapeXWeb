@@ -547,10 +547,10 @@ export default function PrivacyPolicyPage() {
       <section>
         <h2>14. Sensitive Personal Data</h2>
         <p>
-          We do not ask you for sensitive personal data such as race, health or biometric data. Some of the emails and receipts
-          that you send or scan can contain sensitive details, for example sign-in codes and verification links for other
-          services, or what you bought, and we process them as described in this Policy (see Section 3). If we ever need to ask
-          for sensitive personal data, we will request explicit, informed consent and provide opt-out options.
+          We do not ask you for sensitive personal data such as race, health or biometric data. The emails and receipts that you
+          send or scan can still contain private details, for example sign-in codes and verification links for other services,
+          or what you bought and where. We process them only as described in this Policy (see Sections 3, 6 and 7). If we ever
+          need to ask for sensitive personal data, we will request explicit, informed consent and provide opt-out options.
         </p>
       </section>
 
