@@ -346,7 +346,8 @@ export default function PrivacyPolicyPage() {
           We process data to operate, maintain, and improve the Service; authenticate users; manage accounts; display and
           store digital receipts; read your receipts, photos and emails with the AI services described in Section 6; send the
           notifications you allow; share your email address with a partner store when you choose to; show you sign-in codes
-          and verification links from emails sent to your PapeX email address; prevent abuse of the Service; conduct analytics
+          and verification links from emails sent to your PapeX email address; send you sign-in codes by text message and
+          protect sign-in from abuse (rate limits and fraud checks); prevent abuse of the Service; conduct analytics
           and performance optimization; communicate service updates and security alerts; comply with legal obligations; and
           conduct research and development. We may also process anonymized or aggregated transaction data for market research,
           trend analysis, or commercial insights, provided it cannot reasonably identify an individual user.
