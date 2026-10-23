@@ -18,7 +18,14 @@
 //      It fills BOTH the "Effective Date" and the "Last Updated" line.
 //   2. Check that no placeholder is left (this must print nothing):
 //        command grep -n 'PUBLISH[_]DATE' app/privacy/page.tsx
-//   Nothing else in this file needs editing to publish.
+//   3. Deleting an account. Section 7 and "Deleting your account" assume that account data is deleted immediately (the
+//      1.7.3 account-deletion change is live). They carry INTERIM wording for original emails and usage reports. List the
+//      swap points with:
+//        command grep -n 'G2-FINAL' app/privacy/page.tsx
+//      and swap each in once those two are deleted with the account after review; then delete the comments.
+//   4. Section 10 uses the no-advertising wording. Keep it only if the GA4 property has Google signals off and no Google
+//      Ads link (see the comment in Section 10).
+//   5. Remove the PUBLISH GATE comment in Section 3 once its condition holds.
 
 import type { Metadata } from 'next'
 import { DEFAULT_OG_IMAGE } from '@/components/blog/image'
@@ -153,6 +160,18 @@ export default function PrivacyPolicyPage() {
           in later transfers; we cannot take back an email address that we have already given to a store. We delete what we
           store when you delete your account.
         </p>
+
+        <h3>Sharing with other PapeX users</h3>
+        <p>
+          If you share a receipt with another PapeX user, or you are in a group with them, they can see your name and your
+          profile photo, for example as &ldquo;Shared by&rdquo; on a receipt and in the group&rsquo;s list of members.
+          When you add someone to share with by typing their email address or phone number, the app asks our servers whether
+          it belongs to a PapeX account and, if it does, shows you that person&rsquo;s name and profile photo and nothing
+          else from their profile. The same applies to you: someone who types your email address or phone number can find out
+          whether it belongs to a PapeX account and, if it does, sees your name and profile photo.
+        </p>
+        {/* PUBLISH GATE (W30): this paragraph describes the 1.7.3 app. Publish it together with the profile-privacy server
+            changes, and do not add a statement about what other users cannot read until those are live. */}
 
         <h3>Your PapeX email address</h3>
         <p>
@@ -524,8 +543,8 @@ export default function PrivacyPolicyPage() {
             takes 1 to 4 days, and the deletion runs the day after the review is completed. If a review takes longer, these
             are deleted the day after it is completed, and in any case within 30 days of your request.
 
-            Keep "and in any case within 30 days of your request" only if the 30-day outer bound will be kept; the code does
-            not enforce it. Otherwise end the last sentence at "the day after it is completed." (W29 section 6.) */}
+            Keep "and in any case within 30 days of your request" only if reviews will always be completed within 30 days.
+            Otherwise end the last sentence at "the day after it is completed." (W29 section 6.) */}
       </section>
 
       <section>
