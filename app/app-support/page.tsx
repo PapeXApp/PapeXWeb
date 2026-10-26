@@ -8,6 +8,16 @@
 // Keep this minimal: an email contact, a few true, verified FAQ items and the
 // support request form. Do not add features here that aren't confirmed in the app.
 //
+// PapeX 1.7.3: this page is also the "Delete account URL" on the Google Play
+// Data safety form, so it must tell someone WITHOUT the app how to ask for
+// deletion: the visible "Delete your PapeX account" section (#delete-account)
+// and the FAQ answer below. Keep both in step with Section 7 ("Deleting your
+// account") and Section 13 of app/privacy/page.tsx. The retention wording in the
+// section is INTERIM (original emails and usage reports are not yet deleted
+// with the account). One swap point carries the final wording:
+//   command grep -rn 'G2-FINAL' app/privacy/page.tsx app/app-support/page.tsx
+// Swap this one when the three in the privacy page are swapped, never before.
+//
 // Web 2.1 P7 (Nico, 2026-09-29): moved off FramerPageShell onto the same
 // redesign shell as /support (SiteShell + FlowGround + in-flow footer, plane
 // watermark, WordReveal/Reveal hero, ScrollWords/ScrollReveal below) and its
@@ -52,10 +62,30 @@ export const metadata: Metadata = {
   },
 }
 
+/** Pre-filled subject only: no personal data goes into the link. */
+const DELETE_MAILTO = 'mailto:privacy@papex.app?subject=Delete%20my%20PapeX%20account'
+
 const FAQS: { q: string; a: React.ReactNode }[] = [
   {
     q: 'How do I delete my account?',
-    a: 'In the app, go to Settings > Advanced Settings > Delete Account.',
+    a: (
+      <>
+        In the app, go to Settings &gt; Advanced Settings &gt; Delete Account. If you no longer have the app, email{' '}
+        <a href={DELETE_MAILTO} className={styles.inlineLink}>
+          privacy@papex.app
+        </a>{' '}
+        from the email address you use to sign in to PapeX, with &ldquo;Delete my PapeX account&rdquo; in the subject, and
+        we will delete your account and the information stored with it as described in our{' '}
+        <Link href="/privacy" className={styles.inlineLink}>
+          Privacy Policy
+        </Link>{' '}
+        (Section 7). The steps, including for Apple and Google sign-in, are under{' '}
+        <a href="#delete-account" className={styles.inlineLink}>
+          Delete your PapeX account
+        </a>{' '}
+        above.
+      </>
+    ),
   },
   {
     q: 'How do I forward email receipts into the app?',
@@ -109,6 +139,110 @@ export default function AppSupportPage() {
                 or send us a message below, and we&rsquo;ll get back to you.
               </Reveal>
             </header>
+          </div>
+        </FlowSection>
+
+        <FlowSection ground="light" id="delete-account" className={styles.section}>
+          <div className={styles.wrap}>
+            <div className={styles.head}>
+              <ScrollWords as="h2" className={styles.h2}>
+                Delete your PapeX account
+              </ScrollWords>
+              <ScrollReveal as="p" className={styles.lead}>
+                You can delete your PapeX account in the app. If you no longer have the app, ask us by email.
+              </ScrollReveal>
+            </div>
+            <div className={`${styles.stack} ${styles.body}`}>
+              <ScrollReveal className={`${styles.card} ${styles.cardPad} ${styles.prose}`}>
+                <h3 className={styles.doTitle}>In the app</h3>
+                <p>
+                  Open PapeX and go to Settings &gt; Advanced Settings &gt; Delete Account. The app may ask you to sign in
+                  again first. You can use this whether you sign in with an email address and password, with Apple or with
+                  Google.
+                </p>
+              </ScrollReveal>
+
+              <ScrollReveal order={1} className={`${styles.card} ${styles.cardPad} ${styles.prose}`}>
+                <h3 className={styles.doTitle}>Without the app, by email</h3>
+                <ul className={styles.steps}>
+                  <li>
+                    <span aria-hidden="true" className={styles.dot} />
+                    <span>
+                      Email{' '}
+                      <a href={DELETE_MAILTO} className={styles.inlineLink}>
+                        privacy@papex.app
+                      </a>{' '}
+                      with &ldquo;Delete my PapeX account&rdquo; in the subject.
+                    </span>
+                  </li>
+                  <li>
+                    <span aria-hidden="true" className={styles.dot} />
+                    <span>Send it from the email address you use to sign in to PapeX.</span>
+                  </li>
+                  <li>
+                    <span aria-hidden="true" className={styles.dot} />
+                    <span>
+                      <strong>Signed in with Google?</strong> Send it from the email address of that Google account.
+                    </span>
+                  </li>
+                  <li>
+                    <span aria-hidden="true" className={styles.dot} />
+                    <span>
+                      <strong>Signed in with Apple?</strong> Send it from the email address of your Apple Account. If you
+                      chose Hide My Email, Apple gave us a private relay address (it ends in @privaterelay.appleid.com)
+                      instead of your real one. In that case, send the email from the address you normally use and write
+                      the relay address in your message. Apple shows it in your Apple Account settings, under Sign in with
+                      Apple. If you cannot find it, say so in your email and we will help you confirm which account is
+                      yours.
+                    </span>
+                  </li>
+                </ul>
+                <p>
+                  We may reply to ask for more information to confirm that the account is yours. We acknowledge your email
+                  within 10 days and complete your request within 45 days, as described in Section 13 of our{' '}
+                  <Link href="/privacy" className={styles.inlineLink}>
+                    Privacy Policy
+                  </Link>
+                  . Deleting in the app takes effect at once.
+                </p>
+              </ScrollReveal>
+
+              <ScrollReveal order={2} className={`${styles.card} ${styles.cardPad} ${styles.prose}`}>
+                <h3 className={styles.doTitle}>What is deleted, and what is kept</h3>
+                <p>
+                  <strong>Deleted at once</strong> when your account is deleted (in the app, or when we carry out your
+                  emailed request): your account and the information stored with it in our app database and file storage,
+                  including your receipts and their photos, your profile photo, your coupons and coupon photos, cards,
+                  Important mail items, settings, partner store sign-ups, feedback, and the records that link your email
+                  receipts to their original emails.
+                </p>
+                <p>
+                  <strong>Not yet deleted with your account:</strong> the original emails of your email receipts, and the
+                  usage reports described in our Privacy Policy. Usage reports are deleted automatically 180 days after they
+                  were recorded. To have the original emails deleted, say so in your deletion email, or email us later at
+                  the same address.
+                </p>
+                {/* G2-FINAL (app-support swap point; pair it with swap points 1 to 3 in app/privacy/page.tsx): replace the
+                    paragraph above ("Not yet deleted with your account") with the text below, in the same bold-lead form,
+                    once original emails and usage reports are deleted with the account after review. Under the Without the
+                    app card, change "complete your request within 45 days" to match.
+
+                    Deleted after a short review: the original emails of your email receipts and your app usage reports are
+                    deleted after a short review, usually within 1 to 4 days and at most 30 days.
+
+                    "At most 30 days" must hold for emailed requests too. If emailed requests can take up to 45 days (Section
+                    13), end the sentence at "usually within 1 to 4 days" or change the review limit to 45. */}
+                <p>
+                  <strong>Kept for a set time:</strong> emails sent to your PapeX email address are deleted automatically 90
+                  days after they arrived, and database backups and recovery copies are kept for up to 90 days. We also keep
+                  anonymous statistics that do not identify you or the account. The full list is in Section 7 of our{' '}
+                  <Link href="/privacy" className={styles.inlineLink}>
+                    Privacy Policy
+                  </Link>
+                  .
+                </p>
+              </ScrollReveal>
+            </div>
           </div>
         </FlowSection>
 

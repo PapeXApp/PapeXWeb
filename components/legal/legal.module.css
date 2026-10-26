@@ -78,6 +78,36 @@
 .doc section > p:last-child {
   margin-bottom: 0;
 }
+/* Sub-headings and bullet lists inside a section (the privacy policy's
+   "Important mail", "Usage data", the service-provider list...). Tailwind's
+   base layer strips list markers and heading sizes, so both are set here. */
+.doc h3 {
+  margin: clamp(22px, 2.4vw, 30px) 0 clamp(8px, 1vw, 10px);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(18px, 1.6vw, 21px);
+  line-height: 1.25;
+  color: var(--flow-fg);
+}
+.doc ul {
+  margin: 0 0 1em;
+  padding-left: 1.35em;
+  list-style: disc;
+}
+.doc li {
+  margin: 0;
+  padding-left: 0.2em;
+}
+.doc li + li {
+  margin-top: 0.6em;
+}
+.doc section > ul:last-child {
+  margin-bottom: 0;
+}
+.doc strong {
+  font-weight: 600;
+  color: var(--flow-fg);
+}
 .doc address {
   font-style: normal;
 }
