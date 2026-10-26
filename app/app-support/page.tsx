@@ -90,11 +90,12 @@ const FAQS: { q: string; a: React.ReactNode }[] = [
     a: (
       <>
         In the app, go to Settings &gt; Advanced Settings &gt; Delete Account. If you no longer have the app, email{' '}
-        <a href="mailto:privacy@papex.app" className={styles.inlineLink}>
+        <a href={DELETE_MAILTO} className={styles.inlineLink}>
           privacy@papex.app
         </a>{' '}
-        with your phone number, and we will text it a one-time code to confirm before we delete your account and the
-        information stored with it, as described in our{' '}
+        with &ldquo;Delete my PapeX account&rdquo; in the subject and your phone number in the message, and we will text
+        it a one-time code to confirm before we delete your account and the information stored with it, as described in
+        our{' '}
         <Link href="/privacy" className={styles.inlineLink}>
           Privacy Policy
         </Link>{' '}
@@ -209,6 +210,13 @@ export default function AppSupportPage() {
                       the relay address in your message. Apple shows it in your Apple Account settings, under Sign in with
                       Apple. If you cannot find it, say so in your email and we will help you confirm which account is
                       yours.
+                    </span>
+                  </li>
+                  <li>
+                    <span aria-hidden="true" className={styles.dot} />
+                    <span>
+                      <strong>Signed up with your phone number?</strong> Put the number in your message. We text it a
+                      one-time code to confirm the account is yours before we delete it.
                     </span>
                   </li>
                 </ul>
