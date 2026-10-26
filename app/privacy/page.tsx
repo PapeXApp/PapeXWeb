@@ -26,6 +26,8 @@
 //   4. Section 10 uses the no-advertising wording. Keep it only if the GA4 property has Google signals off and no Google
 //      Ads link (see the comment in Section 10).
 //   5. Remove the PUBLISH GATE comment in Section 3 once its condition holds.
+//   6. Section 6 processors: the Nanonets bullet is in the past tense and assumes NANONETS_ENABLED=0 is live; the Anthropic
+//      bullet must be published before the Claude fallback is switched on. Keep Gemini current and Marvik past.
 
 import type { Metadata } from 'next'
 import { DEFAULT_OG_IMAGE } from '@/components/blog/image'
@@ -370,8 +372,17 @@ export default function PrivacyPolicyPage() {
                 it deleted that information on <date>." (W8 E2e.) */}
           </li>
           <li>
-            <strong>Nanonets.</strong> A receipt-reading service that may receive a receipt photo, including a photo attached
-            to an email, when our other services cannot read it.
+            <strong>Nanonets (until October 24, 2026).</strong> Until October 24, 2026, a receipt-reading service, Nanonets,
+            could receive a receipt photo, including a photo attached to an email, when our other services could not read it.
+            We no longer send information to Nanonets. Information it received before then may still be held by Nanonets.
+            {/* Date = the last Nanonets call (2026-10-24 01:18Z, usage 11 of 11 lifetime; W48). Before publishing, check that
+                /health/ocr-pipeline still shows 11 used and that NANONETS_ENABLED=0 (E1) is live; if Nanonets was called
+                after that date, move the date. Retention at Nanonets is unknown (W7 U5), hence "may still be held". */}
+          </li>
+          <li>
+            <strong>Anthropic (Claude)</strong> &mdash; an AI service that may receive a receipt photo, including a photo
+            attached to an email, or the text of a receipt email, when our other services cannot read it. Anthropic processes
+            this content under commercial terms that do not allow it to use the content to train its models.
           </li>
           <li>
             <strong>Google (Firebase and Google Cloud)</strong> signs you in, stores your account, receipts, receipt and
