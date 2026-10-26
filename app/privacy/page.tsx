@@ -431,7 +431,8 @@ export default function PrivacyPolicyPage() {
           <li>
             <strong>Amazon Web Services</strong> hosts the servers that process your scans and emails, receives and stores the
             emails sent to your PapeX email address, including the original emails we keep, and stores the usage reports
-            described in Section 3.
+            described in Section 3. It also sends the emails we send you from PapeX, such as password-reset and
+            email-verification messages, through Amazon SES.
           </li>
           <li>
             <strong>Expo, Apple and Google</strong> deliver push notifications (see &ldquo;Push notifications&rdquo; in
