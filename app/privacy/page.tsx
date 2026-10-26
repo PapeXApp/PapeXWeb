@@ -18,11 +18,11 @@
 //      It fills BOTH the "Effective Date" and the "Last Updated" line.
 //   2. Check that no placeholder is left (this must print nothing):
 //        command grep -n 'PUBLISH[_]DATE' app/privacy/page.tsx
-//   3. Deleting an account. Section 7 and "Deleting your account" assume that account data is deleted immediately (the
-//      1.7.3 account-deletion change is live). They carry INTERIM wording for original emails and usage reports. List the
-//      swap points with:
-//        command grep -n 'G2-FINAL' app/privacy/page.tsx
-//      and swap each in once those two are deleted with the account after review; then delete the comments.
+//   3. Deleting an account (1.7.4 FINAL wording). Section 7 and "Deleting your account" say that account data is deleted
+//      immediately and that original emails and usage reports are deleted after a short review. Publish only once ALL of
+//      these are live: the email Lambda's retired-handle drop (papex-email fix/174-retired-handle-drop), the adapter
+//      sweep, mailer, IAM and crons (papex-adapter-backend fix/174-account-delete-live), and the first approved deletion
+//      has been observed end to end. Until then the published INTERIM wording (main 22bfaa9b) stays.
 //   4. Section 10 uses the no-advertising wording. Keep it only if the GA4 property has Google signals off and no Google
 //      Ads link (see the comment in Section 10).
 //   5. Remove the PUBLISH GATE comment in Section 3 once its condition holds.
@@ -465,21 +465,14 @@ export default function PrivacyPolicyPage() {
         <p>Some information has a specific retention period:</p>
         <ul>
           <li>
-            <strong>Original emails that became receipts.</strong> We keep the original email and its attachments
-            indefinitely, so that you can view the original later. This is a complete copy, so it contains anything the email
-            contained, including any code or link. Deleting the receipt or your account does not delete this copy. To ask us to
-            delete it, contact us as described in Section 13.
-          </li>
-          {/* G2-FINAL (swap point 1 of 3): replace the bullet above with this once original emails are deleted with the
-              account after review. Interim until then.
-          <li>
             <strong>Original emails that became receipts.</strong> We keep the original email and its attachments for as long
             as your account exists, so that you can view the original later. This is a complete copy, so it contains anything
             the email contained, including any code or link. Deleting a receipt does not delete this copy; to ask us to
-            delete it, contact us as described in Section 13. When you delete your account, we delete it after a short review
-            (see &ldquo;Deleting your account&rdquo; below).
+            delete it, contact us as described in Section 13. When you delete your account, we delete these copies after a
+            short review (see &ldquo;Deleting your account&rdquo; below). If you had already deleted a receipt for good, we
+            may no longer be able to connect a file attached to its email to your account; to have it deleted, contact us as
+            described in Section 13.
           </li>
-          */}
           <li>
             <strong>Other emails sent to PapeX email addresses.</strong> We keep the original message as we received it,
             including any code or link in it, for 90 days after it arrives and then delete it automatically, including after
@@ -500,16 +493,9 @@ export default function PrivacyPolicyPage() {
           </li>
           <li>
             <strong>Usage data.</strong> The usage reports described in Section 3 are deleted automatically 180 days after they
-            are recorded. Deleting your account does not delete them sooner.
-          </li>
-          {/* G2-FINAL (swap point 2 of 3): replace the Usage data bullet above with this once usage reports are deleted with
-              the account after review. Interim until then.
-          <li>
-            <strong>Usage data.</strong> The usage reports described in Section 3 are deleted automatically 180 days after they
             are recorded. When you delete your account, we delete them after a short review (see &ldquo;Deleting your
             account&rdquo; below), if that comes first.
           </li>
-          */}
           <li>
             <strong>Coupon testing.</strong> We are testing a feature, not yet shown in the app, that finds offers and coupon
             codes in emails sent to your PapeX email address. What it finds is deleted automatically after 45 days, or
@@ -536,26 +522,15 @@ export default function PrivacyPolicyPage() {
           &gt; Delete Account, or by contacting us as described in Section 13. Your account and the information stored with it
           in our app database and file storage are deleted immediately, including your receipts and their photos, your profile
           photo, your coupons and coupon photos, cards, Important mail items, settings, partner store sign-ups, feedback, and
-          the records that link your email receipts to their original emails. The original emails of your email receipts (see
-          above) and the usage reports described in Section 3 are not yet deleted with your account; usage reports are deleted
-          180 days after they were recorded, and you can ask us to delete the original emails as described in Section 13. Some
-          copies are kept for a set time: emails sent to your PapeX email address (deleted 90 days after they arrived, as
-          described above) and database backups and recovery copies (up to 90 days). We keep the anonymous statistics
-          described above. Your PapeX email address is never given to anyone else: it stays reserved, with no link to you.
-          Emails that reach it after your account is deleted are not added to any account, but until we stop accepting them we
-          may keep them, unconnected to you.
+          the records that link your email receipts to their original emails. Two kinds of information are deleted after a
+          short review by a member of our team, usually within 1 to 4 days: the original emails of your email receipts (see
+          above) and the usage reports described in Section 3. Some copies are kept for a set time: emails sent to your PapeX
+          email address (deleted 90 days after they arrived, as described above) and database backups and recovery copies (up
+          to 90 days). We keep the anonymous statistics described above. Your PapeX email address is never given to anyone
+          else: it stays reserved, with no link to you. Emails that reach it after your account is deleted are not added to
+          any account and are not kept, except for the copy we receive, which is deleted automatically 90 days after it
+          arrived.
         </p>
-        {/* G2-FINAL (swap point 3 of 3): in the paragraph above, replace the sentence that starts "The original emails of
-            your email receipts (see above)" and ends "as described in Section 13." with the three sentences below. Interim
-            until original emails and usage reports are deleted with the account after review.
-
-            Two kinds of information are deleted after a short review by a member of our team: the original emails of your
-            email receipts, and the usage reports described in Section 3. We review account deletions every day; this usually
-            takes 1 to 4 days, and the deletion runs the day after the review is completed. If a review takes longer, these
-            are deleted the day after it is completed, and in any case within 30 days of your request.
-
-            Keep "and in any case within 30 days of your request" only if reviews will always be completed within 30 days.
-            Otherwise end the last sentence at "the day after it is completed." (W29 section 6.) */}
       </section>
 
       <section>
