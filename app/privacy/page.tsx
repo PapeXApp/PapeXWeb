@@ -558,7 +558,9 @@ export default function PrivacyPolicyPage() {
             confirmed it with a code, when you accepted the Terms, which of your sign-in methods you have confirmed, keyed
             codes for up to ten app installations you have used to sign in (so that we can tell a new device from a known
             one), and the push tokens described in Section 3. If you ask us to change a number you have lost, we keep your
-            request, including the new number and the email address you gave, until you delete your account.
+            request, including the new number and the email address you gave, until you delete your account. If you contacted
+            us about a lost phone number, the number we used to verify that request is kept for up to 7 days, and send
+            records for up to 1 day, then deleted automatically.
           </li>
           <li>
             <strong>Database backups.</strong> Our database keeps recovery copies for 7 days and weekly backups for 90 days, and
