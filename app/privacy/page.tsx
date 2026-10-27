@@ -334,7 +334,7 @@ export default function PrivacyPolicyPage() {
           with your PapeX account. We keep one token per account, so notifications go only to the phone that registered most
           recently. The exception is security notices about your phone number and sign-in
           methods (see &ldquo;Security notices&rdquo; above): for those we also keep the push tokens that your account has used
-          in the last 90 days, up to five, so a notice can reach phones you used earlier. Signing out does not remove them;
+          in the last 90 days, up to ten, so a notice can reach phones you used earlier. Signing out does not remove them;
           deleting your account does. To send a notification, we give Expo the token and the notification: its title, its text and an internal
           reference that the app uses to open the right item when you tap it. Expo passes it to Apple&rsquo;s or Google&rsquo;s
           notification service, which delivers it to your phone.
