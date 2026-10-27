@@ -56,6 +56,8 @@ export interface StoreMenuItem {
   /** Dollars. */
   price: number;
   imageUrl?: string;
+  /** The item's own page on the merchant's online menu. */
+  url?: string;
 }
 
 export interface StoreMenuCategory {
@@ -80,6 +82,8 @@ export interface StoreDeal {
   category?: string;
   menuItemIds?: string[];
   percentOff?: number;
+  /** This promotion's own page. */
+  url?: string;
 }
 
 /** Mirror of the app's `Store`. Everything below `name` is optional. */
