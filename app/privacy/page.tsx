@@ -337,7 +337,10 @@ export default function PrivacyPolicyPage() {
           in the last 90 days, up to ten, so a notice can reach phones you used earlier. Signing out does not remove them;
           deleting your account does. To send a notification, we give Expo the token and the notification: its title, its text and an internal
           reference that the app uses to open the right item when you tap it. Expo passes it to Apple&rsquo;s or Google&rsquo;s
-          notification service, which delivers it to your phone.
+          notification service, which delivers it to your phone. We also record whether your push token belongs to an
+          iPhone or an Android phone. To check that notifications are delivered, we keep a delivery record for up to two
+          days: an identifier, the phone type, the name of the sending system, when it was sent and a one-way code of the
+          push token, but never your account or the message.
         </p>
         <p>
           Settings &gt; Notifications in the app has a switch for each kind of notification; they are on by default once you
