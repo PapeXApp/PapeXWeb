@@ -418,6 +418,9 @@ const MASKED: Array<[string, string]> = [
   [`https://papex.app/merchant/tx/${SECRET}`, "https://papex.app/merchant/tx/[sid]"],
   [`https://merchant.papex.app/tx/${SECRET}?from=1`, "https://merchant.papex.app/tx/[sid]"],
   [`https://merchant.papex.app/merchant/tx/${SECRET}`, "https://merchant.papex.app/merchant/tx/[sid]"],
+  // the RDS sticker: exactly two segments below /r
+  [`https://papex.app/r/papex-cafe/register-2?sid=${SECRET}`, "https://papex.app/r/[merchant]/[register]"],
+  [`https://papex.app/r/papex-cafe/register-2/${SECRET}`, "https://papex.app/r/[id]"],
   // forms that do not exist today are masked by default
   [`https://papex.app/r/${SECRET}`, "https://papex.app/r/[id]"],
   [`https://papex.app/rdh/${SECRET}`, "https://papex.app/rdh/[id]"],

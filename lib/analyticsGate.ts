@@ -145,6 +145,11 @@ interface RouteNode {
   children?: Record<string, RouteNode>;
   /** Mask for the one dynamic segment below this route (`[token]`, `[sid]`). */
   dynamic?: string;
+  /**
+   * Masks for a route of exactly this many dynamic segments below this one
+   * (`/r/[merchant]/[register]`, the RDS sticker). Any other depth is `[id]`.
+   */
+  dynamicPath?: string[];
 }
 
 /**
@@ -154,7 +159,7 @@ interface RouteNode {
  * lib/analyticsGate.test.ts checks this tree against the folders in app/.
  */
 const ROUTE_TREE: Record<string, RouteNode> = {
-  r: { children: { demo: {} } },
+  r: { children: { demo: {} }, dynamicPath: ["[merchant]", "[register]"] },
   w: {},
   rdh: {},
   demo: { children: { r: {} } },
@@ -185,10 +190,13 @@ function maskCredentialPath(pathname: string, merchantHost: boolean): string {
   let level = merchantHost ? MERCHANT_HOST_TREE : ROUTE_TREE;
   let node: RouteNode | undefined;
   const out: string[] = [];
-  for (const segment of path.split("/").filter(Boolean)) {
+  const segments = path.split("/").filter(Boolean);
+  for (const [i, segment] of segments.entries()) {
     const next = Object.prototype.hasOwnProperty.call(level, segment) ? level[segment] : undefined;
     if (!next) {
-      out.push(node?.dynamic ?? "[id]");
+      const rest = segments.length - i;
+      if (node?.dynamicPath && rest === node.dynamicPath.length) out.push(...node.dynamicPath);
+      else out.push(node?.dynamic ?? "[id]");
       break;
     }
     out.push(segment);
