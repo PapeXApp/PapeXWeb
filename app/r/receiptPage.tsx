@@ -45,6 +45,8 @@
 //                                           the bitmap leads only until OCR
 //                                           lands, then the structured cards
 //                                           do.
+//   `sid` valid, POS-fed (no bytes)      -> the real receipt, from /parsed.
+//                                           See POS RECEIPTS below.
 //
 // BITMAP RECEIPTS AND THE ~46 SECOND WAIT.
 //   Blaze POS prints the whole receipt as a picture (lib/starRaster.ts), so
@@ -65,6 +67,18 @@
 //   existed. Nothing about the "Receipt not available" honesty rules above
 //   depends on it — the raw byte fetch remains the sole authority on whether
 //   a receipt exists at all.
+//
+// POS RECEIPTS (KORONA via papex-adapter-backend, docs/POS_RECEIPT_DELIVERY.md).
+//   A sale the POS sent as data, not a print. Its sid has the RDH format but
+//   lives in the adapter, so the byte fetch 404s — there are NO ESC/POS bytes
+//   and no image, ever. lib/rdhParsed.ts's fetch retries the adapter on the
+//   RDH 404, and an `ok` body marked `source: "pos"` with something to show
+//   is then the one exception to "the byte fetch is the sole authority": it
+//   becomes the receipt, rendered through the same cards as everything else.
+//   The bytes still win whenever they exist (a POS body is only consulted
+//   after the byte fetch said not_found), and a POS body with nothing usable
+//   stays NOT_AVAILABLE. Save to PapeX is unchanged: the claim route already
+//   accepts POS sids.
 //
 // RECEIPT CARDS (1.7.0, contract: contracts/cards/v1/, W0 §1-§5).
 //   For a well-formed, NON-demo sid this page also asks the RDH cards service
@@ -97,7 +111,7 @@ import { headers } from "next/headers";
 import { fetchReceiptBytes, isValidSid } from "@/lib/rdh";
 import { platformFromUserAgent, rdhUniversalLink } from "@/lib/storeLinks";
 import { offerSaveLinkEnabled } from "@/lib/offerSaveLink";
-import { fetchParsedReceipt, isDutchieParsed, parsedToSummary, redactDutchieSummary } from "@/lib/rdhParsed";
+import { fetchParsedReceipt, isDutchieParsed, parsedToSummary, posReceiptOf, redactDutchieSummary } from "@/lib/rdhParsed";
 import { parseEscPos } from "@/lib/escpos";
 import { summarizeReceipt, hasStructure as computeHasStructure } from "@/lib/receiptSummary";
 import { hasVisibleContent, resolveReceiptState } from "@/lib/receiptState";
@@ -268,6 +282,9 @@ export async function renderReceiptPage(
   // doesn't, and never blocks one that it says does.
   const parsedPayload = parsedResult?.status === "ok" ? parsedResult.payload : null;
 
+  // A POS-fed receipt (header note): only when there are no bytes at all.
+  const posReceipt = result?.status === "not_found" ? posReceiptOf(parsedPayload) : null;
+
   // Blaze prints the entire receipt as a Star Line Mode raster bitmap
   // instead of sending text (see lib/starRaster.ts). When that's what
   // arrived, `parsed` is empty by construction and the bitmap IS the
@@ -280,10 +297,12 @@ export async function renderReceiptPage(
     rawSid,
     demoRequested,
     sidIsValid,
-    fetchStatus: result?.status,
-    parsedHasVisibleContent: parsed
-      ? hasVisibleContent(parsed, { hasFullPageImage: rasterPage != null })
-      : undefined,
+    fetchStatus: posReceipt ? "ok" : result?.status,
+    parsedHasVisibleContent: posReceipt
+      ? true
+      : parsed
+        ? hasVisibleContent(parsed, { hasFullPageImage: rasterPage != null })
+        : undefined,
   });
 
   // --- DEMO: bare /r. Nobody tapped anything, so no real receipt is being
@@ -325,20 +344,23 @@ export async function renderReceiptPage(
   // alone can never make that happen. `rasterPage` is the deliberate
   // exception and the reason it is a different field: a full-page Blaze
   // bitmap is the receipt itself, not decoration on one.
-  if (state.kind === "real" && parsed) {
+  if (state.kind === "real" && (parsed || posReceipt)) {
     // A Dutchie text receipt renders from the indexer's row, not the local
     // text parser, which misreads that layout (lib/rdhParsed.ts). Only rows
     // the Dutchie extractor wrote; anything else, or no /parsed answer at
     // all, renders the local parse as before, except that a receipt that
     // LOOKS like Dutchie has its customer/patient id lines redacted (rows
     // indexed before the extractor existed carry them in the raw bytes).
-    const textSummary = isDutchieParsed(parsedPayload)
-      ? parsedToSummary(parsedPayload.receipt)
-      : redactDutchieSummary(parsed);
+    // A POS receipt has no local parse at all; it renders from /parsed alone.
+    const textSummary = posReceipt
+      ? parsedToSummary(posReceipt)
+      : isDutchieParsed(parsedPayload)
+        ? parsedToSummary(parsedPayload.receipt)
+        : redactDutchieSummary(parsed!);
     // `rawSid` is re-checked purely so TypeScript can narrow it — a raster
     // page can only exist after a successful fetch for a valid sid, so this
     // is never false in practice.
-    const baseNode = rasterPage && rawSid ? (
+    const baseNode = rasterPage && rawSid && parsed ? (
       // A bitmap receipt. Its structured form either already exists (the
       // customer arrived late, or reloaded) or is ~30 s away, so this branch
       // hands off to the island that can render both and move between them.

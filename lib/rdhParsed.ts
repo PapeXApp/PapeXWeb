@@ -20,6 +20,7 @@
 // answer rather than an error.
 
 import { rdhApiBase } from "./rdh";
+import { adapterBase } from "./adapter";
 import { defaultStyle, type ReceiptLine } from "./escpos";
 import type { ReceiptSummary } from "./receiptSummary";
 
@@ -38,6 +39,11 @@ export interface ParsedLineItem {
   quantityUnit: string | null;
   /** r2: the printed unit price (`2 @ 25.00 ea` -> 25). */
   unitPrice: number | null;
+  /**
+   * The line total. Only POS rows send it as a different number from
+   * `price` (there `price` is the UNIT price); see posToSummary.
+   */
+  total: number | null;
 }
 
 /** The structured receipt, present only once there is something to show. */
@@ -45,6 +51,8 @@ export interface ParsedReceipt {
   merchantName: string | null;
   merchantAddress: string | null;
   date: string | null;
+  /** POS rows only: the local "HH:MM" of the sale. */
+  time: string | null;
   subtotal: number | null;
   tax: number | null;
   total: number | null;
@@ -85,6 +93,8 @@ export interface ParsedReceipt {
   changeDue: number | null;
   /** The loyalty block; null on non-Dutchie rows and rows before r2. */
   loyalty: ParsedLoyalty | null;
+  /** POS rows only: "refund" for a refund, else null. */
+  receiptType: string | null;
 }
 
 export interface TaxComponent {
@@ -145,6 +155,11 @@ export interface ParsedReceiptPayload {
   hasImage: boolean;
   uploadedAt: string | null;
   receipt: ParsedReceipt | null;
+  /**
+   * "pos" when the body came from the adapter's POS fallback (a KORONA sale):
+   * no ESC/POS bytes and no image exist for it. null for an RDH receipt.
+   */
+  source: "pos" | null;
 }
 
 export type ParsedFetchResult =
@@ -159,6 +174,41 @@ export type ParsedFetchResult =
  * gets the picture, which is exactly what they get today.
  */
 export async function fetchParsedReceipt(sid: string): Promise<ParsedFetchResult> {
+  const res = await fetchParsedBody(sid);
+  if (res.status !== "ok") return res;
+  const payload = normalizePayload(res.body);
+  return payload ? { status: "ok", payload } : { status: "error" };
+}
+
+export type ParsedBodyResult =
+  | { status: "ok"; body: unknown }
+  | { status: "not_found" }
+  | { status: "error" };
+
+/**
+ * The raw `/parsed` body for a sid, from whichever backend holds it. Shared by
+ * fetchParsedReceipt (the /r page) and the same-origin proxy the poller calls
+ * (app/api/r/[sid]/parsed/route.ts), so the two can never disagree about
+ * where a receipt lives.
+ *
+ * POS FALLBACK. A receipt fed by a POS integration (KORONA) carries a sid in
+ * the exact RDH format, but it lives in the adapter backend, not the RDH API
+ * — so `{RDH}/receipt/{sid}/parsed` 404s for it. On that 404 (and only then)
+ * this asks `{ADAPTER}/api/v1/pos/receipt/{sid}/parsed`, which answers with
+ * the same body shape plus `source: "pos"`. Contract:
+ * papex-adapter-backend docs/POS_RECEIPT_DELIVERY.md. An RDH error is NOT
+ * retried against the adapter: an RDH outage must look like an outage, not
+ * like a receipt that does not exist.
+ *
+ * Never throws; never logs the sid.
+ */
+export async function fetchParsedBody(sid: string): Promise<ParsedBodyResult> {
+  const rdh = await fetchJson(`${rdhApiBase()}/receipt/${sid}/parsed`);
+  if (rdh.status !== "not_found") return rdh;
+  return fetchJson(`${adapterBase()}/api/v1/pos/receipt/${sid}/parsed`);
+}
+
+async function fetchJson(url: string): Promise<ParsedBodyResult> {
   const controller = new AbortController();
   // Shorter than lib/rdh.ts's 8 s byte fetch on purpose: this one runs
   // alongside that fetch, and it must never be the thing that makes a page
@@ -166,7 +216,7 @@ export async function fetchParsedReceipt(sid: string): Promise<ParsedFetchResult
   const timeout = setTimeout(() => controller.abort(), 5000);
 
   try {
-    const res = await fetch(`${rdhApiBase()}/receipt/${sid}/parsed`, {
+    const res = await fetch(url, {
       cache: "no-store",
       signal: controller.signal,
       headers: { Accept: "application/json" },
@@ -174,9 +224,7 @@ export async function fetchParsedReceipt(sid: string): Promise<ParsedFetchResult
 
     if (res.status === 404) return { status: "not_found" };
     if (!res.ok) return { status: "error" };
-
-    const payload = normalizePayload(await res.json());
-    return payload ? { status: "ok", payload } : { status: "error" };
+    return { status: "ok", body: await res.json() };
   } catch {
     return { status: "error" };
   } finally {
@@ -209,6 +257,7 @@ export function normalizePayload(raw: unknown): ParsedReceiptPayload | null {
     hasImage: raw.hasImage === true,
     uploadedAt: typeof raw.uploadedAt === "string" ? raw.uploadedAt : null,
     receipt: normalizeReceipt(raw.receipt),
+    source: raw.source === "pos" ? "pos" : null,
   };
 }
 
@@ -218,6 +267,7 @@ function normalizeReceipt(raw: unknown): ParsedReceipt | null {
     merchantName: str(raw.merchantName),
     merchantAddress: str(raw.merchantAddress),
     date: str(raw.date),
+    time: str(raw.time),
     subtotal: num(raw.subtotal),
     tax: num(raw.tax),
     total: num(raw.total),
@@ -231,6 +281,7 @@ function normalizeReceipt(raw: unknown): ParsedReceipt | null {
           discountNotes: str(li.discountNotes),
           quantityUnit: str(li.quantityUnit),
           unitPrice: num(li.unitPrice),
+          total: num(li.total),
         }))
       : [],
     paymentMethod: str(raw.paymentMethod),
@@ -266,6 +317,7 @@ function normalizeReceipt(raw: unknown): ParsedReceipt | null {
       : [],
     changeDue: num(raw.changeDue),
     loyalty: normalizeLoyalty(raw.loyalty),
+    receiptType: str(raw.receiptType),
   };
 }
 
@@ -325,6 +377,7 @@ export function shouldKeepPolling(payload: ParsedReceiptPayload | null | undefin
  */
 export function parsedToSummary(receipt: ParsedReceipt): ReceiptSummary {
   if (receipt.extractorEngine === DUTCHIE_ENGINE) return dutchieToSummary(receipt);
+  if (isPosEngine(receipt.extractorEngine)) return posToSummary(receipt);
   return {
     merchantName: receipt.merchantName ?? undefined,
     // The backend already joins the printed address lines with ", " (the same
@@ -351,6 +404,50 @@ export function parsedToSummary(receipt: ParsedReceipt): ReceiptSummary {
     // not a line stream, and it gets its own collapsible (see app/r/ui.tsx).
     // Leaving this empty is what stops an empty monospace box rendering.
     bodyLines: [],
+  };
+}
+
+// ---- POS-fed (KORONA via the adapter, papex-adapter-backend src/pos/claims.js) ----
+//
+// Not a print at all: the POS sent the sale as data, so there are no bytes, no
+// image and no verbatim body. Two differences from an RDH row: `price` is the
+// UNIT price and `total` the line amount, and the time of sale is its own
+// field. Gated on the engine the adapter stamps ("pos" or "pos:<provider>").
+
+export function isPosEngine(engine: string | null | undefined): boolean {
+  return engine === "pos" || (typeof engine === "string" && engine.startsWith("pos:"));
+}
+
+/**
+ * The POS receipt in a /parsed payload, or null. A body only counts when it
+ * says it came from the adapter's POS fallback AND carries something to show:
+ * for a POS sid there are no bytes, so this is the ONLY evidence the receipt
+ * exists (app/r/receiptPage.tsx).
+ */
+export function posReceiptOf(payload: ParsedReceiptPayload | null | undefined): ParsedReceipt | null {
+  if (payload?.source !== "pos" || payload.parseStatus !== "ok" || !hasUsableReceipt(payload)) return null;
+  return payload.receipt;
+}
+
+function posToSummary(receipt: ParsedReceipt): ReceiptSummary {
+  return {
+    merchantName: receipt.merchantName ?? undefined,
+    addressLines: receipt.merchantAddress ? [receipt.merchantAddress] : [],
+    dateline: [receipt.date, receipt.time].filter((p): p is string => p != null).join(" ") || undefined,
+    items: receipt.lineItems.map((li) => ({
+      label: li.name,
+      name: li.name,
+      qty: li.quantity,
+      amount: li.total ?? round2(li.price * li.quantity),
+    })),
+    subtotal: receipt.subtotal ?? undefined,
+    tax: receipt.tax ?? undefined,
+    tip: undefined,
+    discount: undefined,
+    total: receipt.total ?? undefined,
+    paymentLine: paymentLineOf(receipt),
+    bodyLines: [],
+    kindLabel: receipt.receiptType === "refund" ? "Refund" : undefined,
   };
 }
 

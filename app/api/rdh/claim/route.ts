@@ -41,14 +41,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isValidSid } from "@/lib/rdh";
 import { isDemoSid } from "@/lib/demoReceipts";
-
-const DEFAULT_ADAPTER_HOST = "https://adapter.api.papex.app";
-
-function adapterBase(): string {
-  const fromEnv = process.env.ADAPTER_API_BASE?.trim();
-  const base = fromEnv && fromEnv.length > 0 ? fromEnv : DEFAULT_ADAPTER_HOST;
-  return base.replace(/\/+$/, "");
-}
+import { adapterBase } from "@/lib/adapter";
 
 // 422 is the adapter's "could not read this receipt, wrote nothing, the sid is
 // NOT consumed" answer. It MUST pass through: collapsed into the generic 502

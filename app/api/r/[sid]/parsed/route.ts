@@ -17,11 +17,18 @@
 // invisible for the life of the page, which is precisely the bug this route
 // exists to avoid.
 //
+// POS SIDS. A receipt fed by a POS integration (KORONA) has an RDH-format
+// sid but lives in the adapter backend, so the RDH API 404s for it; the shared
+// fetch (fetchParsedBody in lib/rdhParsed.ts) retries the adapter's
+// `/api/v1/pos/receipt/{sid}/parsed` on that 404 and this route returns its
+// body as is. Contract: papex-adapter-backend docs/POS_RECEIPT_DELIVERY.md.
+//
 // The sid is a capability (see Papex_RDH/lambdas/fetch/handler.js) and is
 // never logged here, matching lib/rdh.ts and the claim route.
 
 import { NextResponse } from "next/server";
-import { isValidSid, rdhApiBase } from "@/lib/rdh";
+import { isValidSid } from "@/lib/rdh";
+import { fetchParsedBody } from "@/lib/rdhParsed";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -36,28 +43,14 @@ export async function GET(
     return noStore({ error: "not_found" }, 404);
   }
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 5000);
-
-  try {
-    const res = await fetch(`${rdhApiBase()}/receipt/${sid}/parsed`, {
-      cache: "no-store",
-      signal: controller.signal,
-      headers: { Accept: "application/json" },
-    });
-
-    if (res.status === 404) return noStore({ error: "not_found" }, 404);
-    if (!res.ok) return noStore({ error: "upstream_error" }, 502);
-
-    return noStore(await res.json(), 200);
-  } catch {
-    // Timeout, DNS, TLS, connection reset. The poller treats a 502 as
-    // "try again shortly", which is the right response to all of them — and
-    // the page still has the image either way.
-    return noStore({ error: "upstream_error" }, 502);
-  } finally {
-    clearTimeout(timeout);
-  }
+  // Never throws. A 502 covers timeout, DNS, TLS, connection reset and any
+  // non-404 upstream failure: the poller treats it as "try again shortly",
+  // which is the right response to all of them — and the page still has the
+  // image either way.
+  const res = await fetchParsedBody(sid);
+  if (res.status === "not_found") return noStore({ error: "not_found" }, 404);
+  if (res.status === "error") return noStore({ error: "upstream_error" }, 502);
+  return noStore(res.body, 200);
 }
 
 function noStore(body: unknown, status: number) {
