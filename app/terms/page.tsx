@@ -20,7 +20,7 @@ import type { Metadata } from 'next'
 import { DEFAULT_OG_IMAGE } from '@/components/blog/image'
 import { LegalPage } from '@/components/legal/LegalPage'
 
-const TERMS_DATE = '{{PUBLISH_DATE}}'
+const TERMS_DATE = 'October 28, 2026'
 
 const OG_ALT =
   'The PapeX logo and the words Your receipt, one tap away, beside an iPhone showing a PapeX receipt'
