@@ -12,11 +12,9 @@
 // Data safety form, so it must tell someone WITHOUT the app how to ask for
 // deletion: the visible "Delete your PapeX account" section (#delete-account)
 // and the FAQ answer below. Keep both in step with Section 7 ("Deleting your
-// account") and Section 13 of app/privacy/page.tsx. The retention wording in the
-// section is INTERIM (original emails and usage reports are not yet deleted
-// with the account). One swap point carries the final wording:
-//   command grep -rn 'G2-FINAL' app/privacy/page.tsx app/app-support/page.tsx
-// Swap this one when the three in the privacy page are swapped, never before.
+// account") and Section 13 of app/privacy/page.tsx. 1.7.4: the retention
+// wording is FINAL (original emails and usage reports are deleted after a short
+// review); publish it only together with the privacy page's final wording.
 //
 // Web 2.1 P7 (Nico, 2026-09-29): moved off FramerPageShell onto the same
 // redesign shell as /support (SiteShell + FlowGround + in-flow footer, plane
@@ -84,6 +82,24 @@ const FAQS: { q: string; a: React.ReactNode }[] = [
           Delete your PapeX account
         </a>{' '}
         above.
+      </>
+    ),
+  },
+  {
+    q: 'I signed up with my phone number. How do I delete my account?',
+    a: (
+      <>
+        In the app, go to Settings &gt; Advanced Settings &gt; Delete Account. If you no longer have the app, email{' '}
+        <a href={DELETE_MAILTO} className={styles.inlineLink}>
+          privacy@papex.app
+        </a>{' '}
+        with &ldquo;Delete my PapeX account&rdquo; in the subject and your phone number in the message, and we will text
+        it a one-time code to confirm before we delete your account and the information stored with it, as described in
+        our{' '}
+        <Link href="/privacy" className={styles.inlineLink}>
+          Privacy Policy
+        </Link>{' '}
+        (Section 7).
       </>
     ),
   },
@@ -196,6 +212,13 @@ export default function AppSupportPage() {
                       yours.
                     </span>
                   </li>
+                  <li>
+                    <span aria-hidden="true" className={styles.dot} />
+                    <span>
+                      <strong>Signed up with your phone number?</strong> Put the number in your message. We text it a
+                      one-time code to confirm the account is yours before we delete it.
+                    </span>
+                  </li>
                 </ul>
                 <p>
                   We may reply to ask for more information to confirm that the account is yours. We acknowledge your email
@@ -217,21 +240,9 @@ export default function AppSupportPage() {
                   receipts to their original emails.
                 </p>
                 <p>
-                  <strong>Not yet deleted with your account:</strong> the original emails of your email receipts, and the
-                  usage reports described in our Privacy Policy. Usage reports are deleted automatically 180 days after they
-                  were recorded. To have the original emails deleted, say so in your deletion email, or email us later at
-                  the same address.
+                  <strong>Deleted after a short review</strong> by a member of our team, usually within 1 to 4 days: the
+                  original emails of your email receipts, and the usage reports described in our Privacy Policy.
                 </p>
-                {/* G2-FINAL (app-support swap point; pair it with swap points 1 to 3 in app/privacy/page.tsx): replace the
-                    paragraph above ("Not yet deleted with your account") with the text below, in the same bold-lead form,
-                    once original emails and usage reports are deleted with the account after review. Under the Without the
-                    app card, change "complete your request within 45 days" to match.
-
-                    Deleted after a short review: the original emails of your email receipts and your app usage reports are
-                    deleted after a short review, usually within 1 to 4 days and at most 30 days.
-
-                    "At most 30 days" must hold for emailed requests too. If emailed requests can take up to 45 days (Section
-                    13), end the sentence at "usually within 1 to 4 days" or change the review limit to 45. */}
                 <p>
                   <strong>Kept for a set time:</strong> emails sent to your PapeX email address are deleted automatically 90
                   days after they arrived, and database backups and recovery copies are kept for up to 90 days. We also keep

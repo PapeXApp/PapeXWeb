@@ -2,14 +2,25 @@
 //
 // Web 2.3 phone rework (D1): moved off the legacy FramerPageShell (and off
 // 'use client') onto the redesign shell /support and /about use, via the
-// shared LegalPage frame (components/legal). The legal text below is
-// unchanged, word for word. Metadata used to live in a sibling layout.tsx
+// shared LegalPage frame (components/legal). The legal text below was
+// unchanged, word for word, until the phone sign-in edit (PapeX 1.7.4): one
+// paragraph, "Text messages", in Section 3. Metadata used to live in a sibling layout.tsx
 // only because this page was a client component; it is a Server Component
 // again, so the metadata is back here.
+//
+// PUBLISH STEP, before this reaches main (with the privacy policy):
+//   1. Replace TERMS_DATE below with the publish date, e.g. 'December 4, 2026'.
+//      It fills BOTH the "Effective Date" and the "Last Updated" line.
+//   2. Check that no placeholder is left (this must print nothing):
+//        command grep -n 'PUBLISH[_]DATE' app/terms/page.tsx
+//   3. The app records which terms version a person accepted when they create an
+//      account (PapeXV2 constants/legal.ts, TERMS_VERSION). Keep the two in step.
 
 import type { Metadata } from 'next'
 import { DEFAULT_OG_IMAGE } from '@/components/blog/image'
 import { LegalPage } from '@/components/legal/LegalPage'
+
+const TERMS_DATE = 'October 28, 2026'
 
 const OG_ALT =
   'The PapeX logo and the words Your receipt, one tap away, beside an iPhone showing a PapeX receipt'
@@ -42,7 +53,7 @@ export default function TermsPage() {
   return (
     <LegalPage
       title="PapeX, Inc. – Terms of Service"
-      dates={['Effective Date: November 10, 2025', 'Last Updated: November 7, 2025']}
+      dates={[`Effective Date: ${TERMS_DATE}`, `Last Updated: ${TERMS_DATE}`]}
     >
       <p>
         These Terms of Agreement (the &ldquo;Terms&rdquo;) constitute a legally binding contract between you (&ldquo;User,&rdquo;
@@ -77,6 +88,10 @@ export default function TermsPage() {
           under the age of eighteen (18) must have permission from a parent or legal guardian. You agree to provide
           accurate, current, and complete registration information and to maintain the confidentiality of your account
           credentials.
+        </p>
+        <p>
+          <strong>Text messages.</strong> When you ask for a sign-in code you agree to get a one-time text from PapeX, sent by
+          Vonage. Message and data rates may apply. We don&rsquo;t send marketing texts.
         </p>
       </section>
 

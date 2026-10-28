@@ -18,22 +18,27 @@
 //      It fills BOTH the "Effective Date" and the "Last Updated" line.
 //   2. Check that no placeholder is left (this must print nothing):
 //        command grep -n 'PUBLISH[_]DATE' app/privacy/page.tsx
-//   3. Deleting an account. Section 7 and "Deleting your account" assume that account data is deleted immediately (the
-//      1.7.3 account-deletion change is live). They carry INTERIM wording for original emails and usage reports. List the
-//      swap points with:
-//        command grep -n 'G2-FINAL' app/privacy/page.tsx
-//      and swap each in once those two are deleted with the account after review; then delete the comments.
+//   3. Deleting an account (1.7.4 FINAL wording). Section 7 and "Deleting your account" say that account data is deleted
+//      immediately and that original emails and usage reports are deleted after a short review. Publish only once ALL of
+//      these are live: the email Lambda's retired-handle drop (papex-email fix/174-retired-handle-drop), the adapter
+//      sweep, mailer, IAM and crons (papex-adapter-backend fix/174-account-delete-live), and the first approved deletion
+//      has been observed end to end. Until then the published INTERIM wording (main 22bfaa9b) stays.
 //   4. Section 10 uses the no-advertising wording. Keep it only if the GA4 property has Google signals off and no Google
 //      Ads link (see the comment in Section 10).
 //   5. Remove the PUBLISH GATE comment in Section 3 once its condition holds.
 //   6. Section 6 processors: the Nanonets bullet is in the past tense and assumes NANONETS_ENABLED=0 is live; the Anthropic
 //      bullet must be published before the Claude fallback is switched on. Keep Gemini current and Marvik past.
+//   7. Phone sign-in (PapeX 1.7.4): the phone paragraphs in Sections 3, 4, 6, 7 and 13 describe the 1.7.4 app. Publish them
+//      with the Terms ("Text messages") and the /app-support FAQ and deletion-steps bullet for phone accounts, before the
+//      1.7.4 submission. POLICY_DATE is a placeholder again because these edits change the policy after the 1.7.3 date
+//      (October 25, 2026); step 1 replaces it. Section 6 says nothing about how long Vonage keeps message
+//      records (not yet confirmed with the vendor); add it when known.
 
 import type { Metadata } from 'next'
 import { DEFAULT_OG_IMAGE } from '@/components/blog/image'
 import { LegalPage } from '@/components/legal/LegalPage'
 
-const POLICY_DATE = 'October 25, 2026'
+const POLICY_DATE = 'October 28, 2026'
 
 const OG_ALT =
   'The PapeX logo and the words Your receipt, one tap away, beside an iPhone showing a PapeX receipt'
@@ -102,7 +107,8 @@ export default function PrivacyPolicyPage() {
           We collect information you provide directly, information generated automatically through use of the Service, and
           information obtained from third parties. This may include your name, email address, identifiers (account ID, user
           ID, device ID) and user-generated content. It may also include optional profile details that you
-          add, such as a phone number, a username and a profile photo.
+          add, such as a username and a profile photo. If you sign in with your phone number, it includes that number (see
+          &ldquo;Signing in&rdquo; below).
         </p>
         <p>
           We also collect financial information related to transaction receipts, including purchase details, merchant names,
@@ -146,6 +152,30 @@ export default function PrivacyPolicyPage() {
           password. Sign-in is run by Google&rsquo;s Firebase Authentication, which receives your email address or the token
           that Apple or Google issues.
         </p>
+        <p>
+          <strong>Phone number.</strong> You can create an account or sign in with a US or Canadian mobile number. We send a
+          one-time code by text message through Vonage, our SMS provider. Your number is stored with your account in Firebase
+          Authentication so you can sign in with it, and so that someone who types it can find you to share a receipt.
+          Message and data rates may apply.
+        </p>
+        <p>
+          If you sign in only with your phone number and lose or change that number, you may not be able to get back into
+          your account. Add Apple, Google or email in Account to keep access.
+        </p>
+
+        <h3>Phone number on your profile</h3>
+        <p>
+          Earlier versions of the app let you add a phone number to your profile. We no longer show it in the app or use it
+          to find you. It is kept privately with your account, and the app may ask you to verify it; it is used only to fill
+          in that prompt, until you verify it or delete your account.
+        </p>
+
+        <h3>Security notices</h3>
+        <p>
+          When your phone number is added, changed or removed, when it is removed from your account because it now belongs
+          to someone else, when a new way to sign in is added, or when your account is signed in on a new device, we send a
+          notice to your devices and, if you have one, to your verified email address.
+        </p>
 
         <h3>Feedback and support</h3>
         <p>
@@ -170,7 +200,9 @@ export default function PrivacyPolicyPage() {
           When you add someone to share with by typing their email address or phone number, the app asks our servers whether
           it belongs to a PapeX account and, if it does, shows you that person&rsquo;s name and profile photo and nothing
           else from their profile. The same applies to you: someone who types your email address or phone number can find out
-          whether it belongs to a PapeX account and, if it does, sees your name and profile photo.
+          whether it belongs to a PapeX account and, if it does, sees your name and profile photo. If you add a phone number,
+          people who have it can find your PapeX name and photo to share receipts with you. You can turn this off in Account
+          &gt; Let people find me by my number.
         </p>
         {/* PUBLISH GATE (W30): this paragraph describes the 1.7.3 app. Publish it together with the profile-privacy server
             changes, and do not add a statement about what other users cannot read until those are live. */}
@@ -300,9 +332,15 @@ export default function PrivacyPolicyPage() {
         <p>
           When you allow notifications, the app gets a push token from Expo, the notification service we use, and we store it
           with your PapeX account. We keep one token per account, so notifications go only to the phone that registered most
-          recently. To send a notification, we give Expo the token and the notification: its title, its text and an internal
+          recently. The exception is security notices about your phone number and sign-in
+          methods (see &ldquo;Security notices&rdquo; above): for those we also keep the push tokens that your account has used
+          in the last 90 days, up to ten, so a notice can reach phones you used earlier. Signing out does not remove them;
+          deleting your account does. To send a notification, we give Expo the token and the notification: its title, its text and an internal
           reference that the app uses to open the right item when you tap it. Expo passes it to Apple&rsquo;s or Google&rsquo;s
-          notification service, which delivers it to your phone.
+          notification service, which delivers it to your phone. We also record whether your push token belongs to an
+          iPhone or an Android phone. To check that notifications are delivered, we keep a delivery record for up to two
+          days: an identifier, the phone type, the name of the sending system, when it was sent and a one-way code of the
+          push token, but never your account or the message.
         </p>
         <p>
           Settings &gt; Notifications in the app has a switch for each kind of notification; they are on by default once you
@@ -319,7 +357,8 @@ export default function PrivacyPolicyPage() {
           We process data to operate, maintain, and improve the Service; authenticate users; manage accounts; display and
           store digital receipts; read your receipts, photos and emails with the AI services described in Section 6; send the
           notifications you allow; share your email address with a partner store when you choose to; show you sign-in codes
-          and verification links from emails sent to your PapeX email address; prevent abuse of the Service; conduct analytics
+          and verification links from emails sent to your PapeX email address; send you sign-in codes by text message and
+          protect sign-in from abuse (rate limits and fraud checks); prevent abuse of the Service; conduct analytics
           and performance optimization; communicate service updates and security alerts; comply with legal obligations; and
           conduct research and development. We may also process anonymized or aggregated transaction data for market research,
           trend analysis, or commercial insights, provided it cannot reasonably identify an individual user.
@@ -393,9 +432,18 @@ export default function PrivacyPolicyPage() {
             (see &ldquo;Signing in&rdquo; in Section 3).
           </li>
           <li>
+            <strong>Vonage</strong> sends sign-in codes by text message. It receives your phone number and keeps records of the
+            messages under its own retention terms.
+          </li>
+          <li>
+            <strong>Apple and Google device checks</strong> (App Attest, DeviceCheck, Play Integrity, through Firebase App
+            Check) confirm that requests come from the real PapeX app; they do not tell us who you are.
+          </li>
+          <li>
             <strong>Amazon Web Services</strong> hosts the servers that process your scans and emails, receives and stores the
             emails sent to your PapeX email address, including the original emails we keep, and stores the usage reports
-            described in Section 3.
+            described in Section 3. It also sends the emails we send you from PapeX, such as password-reset and
+            email-verification messages, through Amazon SES.
           </li>
           <li>
             <strong>Expo, Apple and Google</strong> deliver push notifications (see &ldquo;Push notifications&rdquo; in
@@ -465,21 +513,14 @@ export default function PrivacyPolicyPage() {
         <p>Some information has a specific retention period:</p>
         <ul>
           <li>
-            <strong>Original emails that became receipts.</strong> We keep the original email and its attachments
-            indefinitely, so that you can view the original later. This is a complete copy, so it contains anything the email
-            contained, including any code or link. Deleting the receipt or your account does not delete this copy. To ask us to
-            delete it, contact us as described in Section 13.
-          </li>
-          {/* G2-FINAL (swap point 1 of 3): replace the bullet above with this once original emails are deleted with the
-              account after review. Interim until then.
-          <li>
             <strong>Original emails that became receipts.</strong> We keep the original email and its attachments for as long
             as your account exists, so that you can view the original later. This is a complete copy, so it contains anything
             the email contained, including any code or link. Deleting a receipt does not delete this copy; to ask us to
-            delete it, contact us as described in Section 13. When you delete your account, we delete it after a short review
-            (see &ldquo;Deleting your account&rdquo; below).
+            delete it, contact us as described in Section 13. When you delete your account, we delete these copies after a
+            short review (see &ldquo;Deleting your account&rdquo; below). If you had already deleted a receipt for good, we
+            may no longer be able to connect a file attached to its email to your account; to have it deleted, contact us as
+            described in Section 13.
           </li>
-          */}
           <li>
             <strong>Other emails sent to PapeX email addresses.</strong> We keep the original message as we received it,
             including any code or link in it, for 90 days after it arrives and then delete it automatically, including after
@@ -500,20 +541,29 @@ export default function PrivacyPolicyPage() {
           </li>
           <li>
             <strong>Usage data.</strong> The usage reports described in Section 3 are deleted automatically 180 days after they
-            are recorded. Deleting your account does not delete them sooner.
-          </li>
-          {/* G2-FINAL (swap point 2 of 3): replace the Usage data bullet above with this once usage reports are deleted with
-              the account after review. Interim until then.
-          <li>
-            <strong>Usage data.</strong> The usage reports described in Section 3 are deleted automatically 180 days after they
             are recorded. When you delete your account, we delete them after a short review (see &ldquo;Deleting your
             account&rdquo; below), if that comes first.
           </li>
-          */}
           <li>
             <strong>Coupon testing.</strong> We are testing a feature, not yet shown in the app, that finds offers and coupon
             codes in emails sent to your PapeX email address. What it finds is deleted automatically after 45 days, or
             immediately when you delete your account.
+          </li>
+          <li>
+            <strong>Sign-in attempts.</strong> To limit abuse we keep records of sign-in attempts, with your number replaced by
+            a keyed one-way code, and an identifier of your app installation, for a few days; counts with no number for up to
+            13 months; and the area code and exchange of numbers we texted for up to 2 days, for abuse alarms. Our servers
+            also log the IP address of requests for up to 30 days for security.
+          </li>
+          <li>
+            <strong>Your phone number.</strong> Your verified number stays with your account until you remove it or delete
+            your account. With it we keep, until you delete your account, a keyed one-way code of the number, when you last
+            confirmed it with a code, when you accepted the Terms, which of your sign-in methods you have confirmed, keyed
+            codes for up to ten app installations you have used to sign in (so that we can tell a new device from a known
+            one), and the push tokens described in Section 3. If you ask us to change a number you have lost, we keep your
+            request, including the new number and the email address you gave, until you delete your account. If you contacted
+            us about a lost phone number, the number we used to verify that request is kept for up to 7 days, and send
+            records for up to 1 day, then deleted automatically.
           </li>
           <li>
             <strong>Database backups.</strong> Our database keeps recovery copies for 7 days and weekly backups for 90 days, and
@@ -533,29 +583,24 @@ export default function PrivacyPolicyPage() {
         </p>
         <p>
           <strong>Deleting your account.</strong> You can delete your account in the app under Settings &gt; Advanced Settings
-          &gt; Delete Account, or by contacting us as described in Section 13. Your account and the information stored with it
+          &gt; Delete Account, or by contacting us as described in Section 13. If you signed up with your phone number and no
+          longer have the app, email{' '}
+          <a href="mailto:privacy@papex.app">
+            privacy@papex.app
+          </a>{' '}
+          with the number; we confirm it by texting it a one-time code before deleting. Your account and the information stored with it
           in our app database and file storage are deleted immediately, including your receipts and their photos, your profile
-          photo, your coupons and coupon photos, cards, Important mail items, settings, partner store sign-ups, feedback, and
-          the records that link your email receipts to their original emails. The original emails of your email receipts (see
-          above) and the usage reports described in Section 3 are not yet deleted with your account; usage reports are deleted
-          180 days after they were recorded, and you can ask us to delete the original emails as described in Section 13. Some
-          copies are kept for a set time: emails sent to your PapeX email address (deleted 90 days after they arrived, as
-          described above) and database backups and recovery copies (up to 90 days). We keep the anonymous statistics
-          described above. Your PapeX email address is never given to anyone else: it stays reserved, with no link to you.
-          Emails that reach it after your account is deleted are not added to any account, but until we stop accepting them we
-          may keep them, unconnected to you.
+          photo, your coupons and coupon photos, cards, Important mail items, settings, partner store sign-ups, feedback, your
+          phone number and our records of your phone sign-ins, and the records that link your email receipts to their original
+          emails. Two kinds of information are deleted after a
+          short review by a member of our team, usually within 1 to 4 days: the original emails of your email receipts (see
+          above) and the usage reports described in Section 3. Some copies are kept for a set time: emails sent to your PapeX
+          email address (deleted 90 days after they arrived, as described above) and database backups and recovery copies (up
+          to 90 days). We keep the anonymous statistics described above. Your PapeX email address is never given to anyone
+          else: it stays reserved, with no link to you. Emails that reach it after your account is deleted are not added to
+          any account and are not kept, except for the copy we receive, which is deleted automatically 90 days after it
+          arrived.
         </p>
-        {/* G2-FINAL (swap point 3 of 3): in the paragraph above, replace the sentence that starts "The original emails of
-            your email receipts (see above)" and ends "as described in Section 13." with the three sentences below. Interim
-            until original emails and usage reports are deleted with the account after review.
-
-            Two kinds of information are deleted after a short review by a member of our team: the original emails of your
-            email receipts, and the usage reports described in Section 3. We review account deletions every day; this usually
-            takes 1 to 4 days, and the deletion runs the day after the review is completed. If a review takes longer, these
-            are deleted the day after it is completed, and in any case within 30 days of your request.
-
-            Keep "and in any case within 30 days of your request" only if reviews will always be completed within 30 days.
-            Otherwise end the last sentence at "the day after it is completed." (W29 section 6.) */}
       </section>
 
       <section>
@@ -615,8 +660,9 @@ export default function PrivacyPolicyPage() {
           <a href="mailto:privacy@papex.app">
             privacy@papex.app
           </a>{' '}
-          with &ldquo;Privacy Request&rdquo; in the subject line. We will acknowledge within 10 days and respond within 45 days,
-          extendable once by 45 days if needed.
+          with &ldquo;Privacy Request&rdquo; in the subject line. If you signed up with your phone number, include it; we confirm
+          it by texting it a one-time code before we act on your request. We will acknowledge within 10 days and respond within
+          45 days, extendable once by 45 days if needed.
         </p>
       </section>
 
