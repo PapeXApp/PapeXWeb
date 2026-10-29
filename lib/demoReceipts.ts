@@ -68,11 +68,13 @@
 //   be claim-safe, and a production sid pasted into `/r/demo?sid=` must still
 //   behave exactly like production.
 //
-// Pure and dependency-free (beyond `isValidSid`) so it can be unit-tested via
-// this repo's tsx-script pattern — see lib/demoReceipts.test.ts, run with
-// `npm run test:demo`.
+// Pure and dependency-free (beyond `isValidSid`, plus two type-only imports)
+// so it can be unit-tested via this repo's tsx-script pattern — see
+// lib/demoReceipts.test.ts, run with `npm run test:demo`.
 
 import { isValidSid } from "./rdh";
+import type { Card } from "./cards/types";
+import type { ReceiptSummary } from "./receiptSummary";
 
 // =============================================================================
 // THE ENRICHMENT PAYLOAD
@@ -336,6 +338,66 @@ export interface DemoReceiptEnrichment {
    *   decides what a sid may show — is what makes both true at once.
    */
   fabricated?: boolean;
+  /**
+   * The value layer authored directly as receipt cards (format v1,
+   * lib/cards/types.ts), drawn after anything projected from the sections
+   * above. For a demo whose cards those sections cannot express — a QR
+   * redemption, a fixed end date, a merchant note. `lib/cards/cards.test.ts`
+   * holds them to the same schema and zero-drop decode as projected cards.
+   */
+  cards?: Card[];
+  /**
+   * `store-first`: the store's header opens the page, then the cards, then the
+   * rest of the paper, with the disclosure last (app/r/demo/page.tsx). For a
+   * demo sent as a link, where the receipt no longer has to arrive first the
+   * way it does after a tap. Absent: the receipt-first page every booth demo
+   * renders.
+   */
+  layout?: "store-first";
+  /** See DemoReceiptCorrections. */
+  corrections?: DemoReceiptCorrections;
+}
+
+/**
+ * Fixes to the structured receipt the text summarizer (lib/receiptSummary.ts)
+ * reads off a demo's paper, for printed shapes it cannot read yet. Demo routes
+ * only; the paper itself, and therefore the "Original receipt" view, is
+ * untouched.
+ *
+ * The summarizer has no signed amounts, so a coupon row and a DISCOUNT row
+ * printed `-5.00` each arrive as a +$5.00 purchase, and the tax rate it
+ * derives divides by the PRE-discount subtotal. Fixing that is a change to
+ * every `/r` receipt, kept in parity with the adapter's and the App Clip's
+ * summarizers, so it is not done for one demo. `lib/demoBlobParity.test.ts`
+ * checks every correction against the committed copy of the paper.
+ */
+export interface DemoReceiptCorrections {
+  /**
+   * Printed rows that are not purchases, by their printed label: the parsed
+   * item's label with the orphaned minus sign the unsigned amount leaves
+   * behind stripped ("PAPEX CPN $5 OFF $25+   -" -> "PAPEX CPN $5 OFF $25+").
+   */
+  notItems: string[];
+  /** The named promos inside the printed DISCOUNT row, as `ReceiptSummary.discountLines` (NEGATIVE). */
+  discountLines?: { label: string; amount: number }[];
+  /** The printed tax line(s), as `ReceiptSummary.taxLines`, in place of the derived rate. */
+  taxLines?: { label: string; amount: number }[];
+}
+
+/** A parsed item label without the trailing "-" an unsigned amount strands. */
+export function printedItemLabel(label: string): string {
+  return label.replace(/[\s-]+$/, "");
+}
+
+/** `summary` with `corrections` applied. Pure. */
+export function applyDemoCorrections(summary: ReceiptSummary, corrections: DemoReceiptCorrections): ReceiptSummary {
+  const notItems = new Set(corrections.notItems);
+  return {
+    ...summary,
+    items: summary.items.filter((item) => !notItems.has(printedItemLabel(item.label))),
+    ...(corrections.discountLines ? { discountLines: corrections.discountLines } : {}),
+    ...(corrections.taxLines ? { taxLines: corrections.taxLines } : {}),
+  };
 }
 
 /**
@@ -588,6 +650,99 @@ export const DEMO_RECEIPTS: ReadonlyMap<string, DemoReceiptEnrichment> = new Map
         label: "Share my email with Ellsworth Market so they can send me offers like this one.",
         subLabel: "You can turn this off any time in PapeX.",
       },
+    },
+  ],
+
+  // ---------------------------------------------------------------------------
+  // DEMO 3 — A CAFÉ, NOTHING AGE-RESTRICTED.  PapeX Cafe, 2140 Chestnut St,
+  // San Francisco. Made 2026-10-28 for Nico's YC submission: a web link to
+  // `/r/demo?sid=`, never an NFC tag or the App Clip. Printed 10/28/2026
+  // 8:14 AM, to go: four items $26.00, a $5-off-$25 PapeX coupon from the
+  // last visit, tax 8.625% on the $21.00 after it ($1.81), total $22.81 on
+  // VISA 4417. Seeded by Papex_RDH_Backend scripts/demo-mint-papex-cafe.mjs.
+  //
+  // Store first, then savings, the next-visit coupon, About and Coming soon,
+  // then the paper. The cards are authored rather than projected: the
+  // sections above cannot carry a QR code, an end date or a merchant note.
+  // The coupon ends Dec 31, 2026 11:59:59 PM PT and then hides itself
+  // (hideWhenExpired) rather than reading "Expired" — the same never-say-a-
+  // false-thing-about-time rule DemoOffer argues for, for a link sent in one
+  // window rather than a sticker that lives forever.
+  // ---------------------------------------------------------------------------
+  [
+    "cafe000000000001",
+    {
+      merchantName: "PapeX Cafe",
+      receiptDate: "2026-10-28",
+      // PapeX Cafe is invented, and so is everything on its paper.
+      fabricated: true,
+      layout: "store-first",
+      corrections: {
+        notItems: ["PAPEX CPN $5 OFF $25+", "DISCOUNT"],
+        discountLines: [{ label: "PapeX coupon, $5 off $25+", amount: -5 }],
+        taxLines: [{ label: "Tax (8.625% on $21.00)", amount: 1.81 }],
+      },
+      cards: [
+        {
+          id: "cafe-savings",
+          type: "savings",
+          mode: "preview",
+          headline: "You saved $5.00 today",
+          total: "$5.00",
+          totalLabel: "saved at PapeX Cafe",
+          // Short enough not to truncate on a 320px phone; the $5-off-$25 terms are on the receipt.
+          components: [{ label: "Last visit's PapeX coupon", amount: "$5.00" }],
+        },
+        {
+          id: "cafe-offer",
+          type: "offer",
+          mode: "preview",
+          heading: "An offer from PapeX Cafe",
+          kicker: "Next visit",
+          valueLabel: "$10",
+          valueSuffix: "off",
+          qualifier: "On $50+",
+          title: "$10 off your next visit of $50 or more at PapeX Cafe",
+          terms:
+            "Valid through Dec 31, 2026. One per customer. Cannot be combined with other offers. " +
+            "Demo coupon for a fictional café: not redeemable.",
+          // Dec 31, 2026 11:59:59 PM PST.
+          validity: { expiresAt: "2027-01-01T07:59:59Z", countdown: true, hideWhenExpired: true },
+          redemption: {
+            type: "barcode",
+            symbology: "qr",
+            value: "PXC10OFF50",
+            text: "PXC10OFF50",
+            caption: "Scan at the counter",
+            scope: "shared",
+          },
+        },
+        {
+          id: "cafe-about",
+          type: "text",
+          mode: "preview",
+          heading: "About PapeX Cafe",
+          voice: "merchant",
+          icon: "clock",
+          title: "Fresh every morning on Chestnut",
+          body:
+            "Espresso, pastries baked in-house before sunrise, and breakfast sandwiches made to order. " +
+            "Open 6:30 AM to 4 PM daily. Order ahead and skip the line.",
+        },
+        {
+          id: "cafe-coming-soon",
+          type: "text",
+          mode: "preview",
+          heading: "Coming soon",
+          voice: "merchant",
+          icon: "sparkle",
+          title: "The Golden Hour Combo",
+          body:
+            "Our new Hot Honey Chicken Croissant (crispy chicken, hot honey, pickled jalapeño, herb aioli) " +
+            "with a Mango Sunrise Smoothie (mango, pineapple, orange, a little ginger). " +
+            "Landing at PapeX Cafe in November.",
+        },
+      ],
     },
   ],
 

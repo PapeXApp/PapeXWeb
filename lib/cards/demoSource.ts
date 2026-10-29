@@ -14,8 +14,9 @@
 // acceptance check in the design):
 //   fabricated  → disclosure      savings → savings    loyalty → loyalty
 //   insight     → insight         offer   → offer      emailOptIn → emailCapture
-// in the order the page has always drawn them. Nothing about the demo is
-// special-cased in the renderer; it is just the first config.
+// in the order the page has always drawn them, then any `cards` the entry
+// authors directly, as they are. Nothing about the demo is special-cased in
+// the renderer; it is just the first config.
 //
 // WHAT THIS DOES NOT OWN
 //   The offer's anchor date. How many days a voucher has left is decided by
@@ -182,6 +183,8 @@ export function projectDemoEnrichment(e: DemoReceiptEnrichment, clock: DemoCards
       consent: { textId: DEMO_CONSENT_TEXT_ID, textVersion: 1 },
     });
   }
+
+  if (e.cards) cards.push(...e.cards);
 
   return cards;
 }

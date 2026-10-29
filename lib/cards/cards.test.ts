@@ -868,8 +868,13 @@ test("demo: each enrichment section maps onto exactly one card type, in page ord
   ];
   for (const [sid, e] of DEMO_RECEIPTS) {
     const r = projectDemo(sid, GOLDEN_CLOCK);
-    const expected = SECTION_TO_TYPE.filter(([section]) => Boolean(e[section])).map(([, type]) => type);
+    // Then the entry's authored `cards`, after every projected section, as they are.
+    const expected = [
+      ...SECTION_TO_TYPE.filter(([section]) => Boolean(e[section])).map(([, type]) => type),
+      ...(e.cards ?? []).map((c) => c.type),
+    ];
     assert.deepEqual(r.cards.map((c) => c.type), expected, sid);
+    assert.deepEqual(r.cards.slice(r.cards.length - (e.cards?.length ?? 0)), e.cards ?? [], sid);
     assert.equal(r.status, expected.length > 0 ? "ok" : "none", sid);
     assert.ok(r.cards.every((c) => c.mode === "preview"), `${sid}: demo cards are preview`);
   }

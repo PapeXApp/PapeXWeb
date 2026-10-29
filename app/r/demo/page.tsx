@@ -60,6 +60,10 @@
 //   first card in the list, drawn exactly like ui.tsx's DemoDisclosure),
 //   that appears only for a receipt actually marked that way.
 //
+//   One exception to that order: an entry with `layout: "store-first"` (the
+//   PapeX Cafe link demo) opens on the store's header, puts the cards next,
+//   then the rest of the paper, and the disclosure last.
+//
 //   No SaveToPapex, and no import of it anywhere in this module's graph —
 //   see CtaRow.tsx. Claiming is single-owner per sid, so a demo tag offering
 //   Save is a tag offering an action that fails for everyone after the first
@@ -79,7 +83,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { fetchReceiptBytes } from "@/lib/rdh";
-import { getDemoEnrichment, offerDaysRemaining, resolveDemoRoute } from "@/lib/demoReceipts";
+import { applyDemoCorrections, getDemoEnrichment, offerDaysRemaining, resolveDemoRoute } from "@/lib/demoReceipts";
 import { demoResolvedCards } from "@/lib/cards/demoSource";
 import { normalizeResolvedCards } from "@/lib/cards/normalize";
 import { platformFromUserAgent } from "@/lib/storeLinks";
@@ -91,10 +95,12 @@ import {
   StateCard,
   ReceiptNotAvailable,
   ReceiptView,
+  MerchantHeaderCard,
   DemoCtaRow,
   AppCta,
 } from "../ui";
 import { CardList } from "../cards/CardList";
+import { cafeBadgeLogo } from "@/components/paths/business/PapexCafeLogo";
 import RetryButton from "../RetryButton";
 
 export const metadata: Metadata = {
@@ -147,7 +153,11 @@ export default async function DemoReceiptPage({
 
   const result = await fetchReceiptBytes(sid);
   const receipt = result.status === "ok" ? parseEscPos(result.bytes) : undefined;
-  const summary = receipt ? summarizeReceipt(receipt.lines) : undefined;
+  // The registry's corrections, for paper the text summarizer misreads (see
+  // DemoReceiptCorrections). The "Original receipt" view still shows the
+  // paper verbatim: corrections never touch `bodyLines`.
+  const parsed = receipt ? summarizeReceipt(receipt.lines) : undefined;
+  const summary = parsed && enrichment?.corrections ? applyDemoCorrections(parsed, enrichment.corrections) : parsed;
   const rasterPage = receipt?.rasterPage?.fullPage ? receipt.rasterPage : undefined;
 
   // The page owns the clock so every function under it stays pure and can be
@@ -193,6 +203,29 @@ export default async function DemoReceiptPage({
       <Shell>
         <ReceiptNotAvailable />
         <AppCta platform={platform} />
+      </Shell>
+    );
+  }
+
+  if (result.status === "ok" && summary && enrichment?.layout === "store-first") {
+    // Store first (see DemoReceiptEnrichment.layout): the store opens the
+    // page, the value layer follows, then the rest of the paper, and the
+    // disclosure closes it as a footnote under the receipt it qualifies.
+    const valueLayer = { ...cards, cards: cards.cards.filter((c) => c.type !== "disclosure") };
+    const disclosure = { ...cards, cards: cards.cards.filter((c) => c.type === "disclosure") };
+    return (
+      <Shell>
+        <MerchantHeaderCard summary={summary} logo={receipt?.logo} badge={cafeBadgeLogo(summary.merchantName)} wrap />
+        <CardList cards={valueLayer} now={now} />
+        <ReceiptView
+          summary={summary}
+          hasStructure={computeHasStructure(summary)}
+          logo={receipt?.logo}
+          rasterPage={rasterPage}
+          showHeader={false}
+        />
+        <CardList cards={disclosure} now={now} />
+        <DemoCtaRow platform={platform} />
       </Shell>
     );
   }

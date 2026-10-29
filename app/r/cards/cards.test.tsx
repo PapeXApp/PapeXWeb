@@ -367,7 +367,9 @@ test("demo parity: the card renderer draws the old value layer byte for byte, on
     "2026-11-01T23:59:59Z", // Hartwell's last second
     "2027-03-01T12:00:00Z", // a tap in March: both closed, chips gone
   ];
-  for (const sid of DEMO_RECEIPTS.keys()) {
+  for (const [sid, e] of DEMO_RECEIPTS) {
+    // Authored cards (PapeX Cafe) postdate the old renderer, which has nothing to compare them with.
+    if (e.cards) continue;
     for (const iso of clocks) {
       const now = new Date(iso);
       assert.equal(newLayer(sid, now), oldLayer(sid, now), `${sid} @ ${iso}`);

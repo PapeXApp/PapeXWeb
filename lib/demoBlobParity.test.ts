@@ -37,8 +37,16 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { parseEscPos } from "./escpos";
 import { summarizeReceipt, type ReceiptSummary } from "./receiptSummary";
-import { SEEDED_DEMO_BLOBS, type SeededDemoBlob } from "./__fixtures__/demoBlobs";
-import { DEMO_RECEIPTS, getDemoEnrichment, type DemoReceiptEnrichment } from "./demoReceipts";
+import { PAPEX_CAFE_BLOB, SEEDED_DEMO_BLOBS, type SeededDemoBlob } from "./__fixtures__/demoBlobs";
+import {
+  DEMO_RECEIPTS,
+  applyDemoCorrections,
+  formatMoney,
+  getDemoEnrichment,
+  printedItemLabel,
+  type DemoReceiptEnrichment,
+} from "./demoReceipts";
+import type { Card } from "./cards/types";
 
 let passed = 0;
 let failed = 0;
@@ -390,6 +398,117 @@ test("the disclosure line did not become a phantom line item", () => {
   }
 });
 
+// ---- PapeX Cafe: a different till, and the corrections its paper needs ---------
+//
+// Not in PAPERS: none of the Tech Week paper's lines (weekday dateline, YOU
+// SAVED, loyalty footer, APPROVED) are on it. Its figures live in authored
+// cards and in `corrections`, and every one of them is checked here.
+
+const CAFE = (() => {
+  const receipt = parseEscPos(PAPEX_CAFE_BLOB.bytes);
+  const enrichment = getDemoEnrichment(PAPEX_CAFE_BLOB.sid);
+  assert.ok(enrichment?.corrections, "PapeX Cafe: no corrections in DEMO_RECEIPTS");
+  const parsed = summarizeReceipt(receipt.lines);
+  return {
+    enrichment: enrichment!,
+    corrections: enrichment!.corrections!,
+    parsed,
+    shown: applyDemoCorrections(parsed, enrichment!.corrections!),
+    text: receipt.lines.map((l) => l.text),
+  };
+})();
+
+/** The single line of the café paper matching `re`. */
+function cafeLine(re: RegExp, what: string): RegExpExecArray {
+  const hits = CAFE.text.map((t) => re.exec(t)).filter((m): m is RegExpExecArray => m != null);
+  assert.equal(hits.length, 1, `PapeX Cafe: expected exactly one ${what} line, found ${hits.length}`);
+  return hits[0];
+}
+
+/** The café's single authored card of `type`. */
+function cafeCard<T extends Card["type"]>(type: T): Extract<Card, { type: T }> {
+  const found = (CAFE.enrichment.cards ?? []).filter((c): c is Extract<Card, { type: T }> => c.type === type);
+  assert.equal(found.length, 1, `PapeX Cafe: expected one ${type} card, found ${found.length}`);
+  return found[0];
+}
+
+test("PapeX Cafe: the committed blob matches its recorded digest", () => {
+  const digest = createHash("sha256").update(PAPEX_CAFE_BLOB.bytes).digest("hex");
+  assert.equal(digest, PAPEX_CAFE_BLOB.sha256, "PapeX Cafe: fixture bytes do not match the recorded sha256");
+});
+
+test("PapeX Cafe: the registry's store and date are the ones printed", () => {
+  assert.equal(normalizeStore(CAFE.enrichment.merchantName!), normalizeStore(CAFE.parsed.merchantName!));
+  const [, mm, dd, yyyy] = cafeLine(/^(\d{2})\/(\d{2})\/(\d{4})\s+\d{1,2}:\d{2} [AP]M\b/, "dateline");
+  assert.equal(CAFE.enrichment.receiptDate, `${yyyy}-${mm}-${dd}`);
+});
+
+test("PapeX Cafe: every row a correction drops is printed exactly once and is not a purchase", () => {
+  for (const label of CAFE.corrections.notItems) {
+    const hits = CAFE.parsed.items.filter((it) => printedItemLabel(it.label) === label);
+    assert.equal(hits.length, 1, `PapeX Cafe: "${label}" matches ${hits.length} parsed items`);
+    assert.ok(cafeLine(new RegExp(`^\\s*${label.replace(/[$+]/g, "\\$&")}\\s+-[\\d.]+$`), label), label);
+  }
+});
+
+test("PapeX Cafe: after corrections the items sum to the printed SUBTOTAL", () => {
+  const sum = CAFE.shown.items.reduce((acc, it) => acc + cents(it.amount), 0);
+  assert.equal(CAFE.shown.items.length, 4);
+  assert.equal(sum, cents(CAFE.parsed.subtotal!));
+});
+
+test("PapeX Cafe: subtotal - discount + tax is the printed total, and what VISA was charged", () => {
+  const { subtotal, discount, tax, total } = CAFE.parsed;
+  assert.equal(cents(subtotal!) - cents(discount!) + cents(tax!), cents(total!));
+  const [, charged] = cafeLine(/^VISA \*+\d{4}\s+([\d.]+)$/, "payment");
+  assert.equal(cents(Number(charged)), cents(total!));
+});
+
+test("PapeX Cafe: the named promo is the printed DISCOUNT, the tax line the printed TAX at its rate", () => {
+  const promos = CAFE.corrections.discountLines ?? [];
+  assert.equal(promos.reduce((acc, l) => acc + cents(l.amount), 0), -cents(CAFE.parsed.discount!));
+  const taxes = CAFE.corrections.taxLines ?? [];
+  assert.equal(taxes.reduce((acc, l) => acc + cents(l.amount), 0), cents(CAFE.parsed.tax!));
+  // 8.625% of the $21.00 left after the coupon, to the cent: the base the label names.
+  const [, rate] = cafeLine(/^TAX ([\d.]+)%\s+[\d.]+$/, "tax");
+  const base = cents(CAFE.parsed.subtotal!) - cents(CAFE.parsed.discount!);
+  assert.equal(Math.round((base * Number(rate)) / 100), cents(CAFE.parsed.tax!));
+  assert.ok(taxes[0].label.includes(`${rate}%`) && taxes[0].label.includes(formatMoney(base / 100)), taxes[0].label);
+});
+
+test("PapeX Cafe: the savings card is the printed discount", () => {
+  const savings = cafeCard("savings");
+  assert.equal(savings.total, formatMoney(CAFE.parsed.discount!));
+  assert.ok(savings.headline?.includes(formatMoney(CAFE.parsed.discount!)), savings.headline);
+  assert.deepEqual(
+    (savings.components ?? []).map((c) => c.amount),
+    [formatMoney(CAFE.parsed.discount!)],
+  );
+});
+
+test("PapeX Cafe: the coupon's minimum sits above the basket, and the QR says what its text says", () => {
+  const offer = cafeCard("offer");
+  const min = Number(/of \$(\d+) or more/.exec(offer.title)?.[1]);
+  assert.ok(cents(min) > cents(CAFE.parsed.total!), `$${min} minimum vs a $${CAFE.parsed.total} basket`);
+  assert.equal(offer.qualifier, `On $${min}+`);
+  assert.ok(offer.redemption?.type === "barcode");
+  assert.equal(offer.redemption.value, "PXC10OFF50");
+  assert.equal(offer.redemption.text, offer.redemption.value);
+});
+
+test("PapeX Cafe: nothing on the page or the paper is dispensary or age-gated", () => {
+  const copy = JSON.stringify(CAFE.enrichment.cards) + CAFE.text.join("\n");
+  // Case-sensitive "ID": the JSON's own lowercase "id" keys are not a check-your-ID line.
+  assert.doesNotMatch(copy, /21\+|\bID\b/);
+  assert.doesNotMatch(copy, /licen[cs]e|cannabis|excise|dispensary|age-restricted/i);
+  assert.ok((CAFE.enrichment.cards ?? []).every((c) => !("compliance" in c)));
+});
+
+test("PapeX Cafe: corrections leave the paper verbatim for the Original receipt view", () => {
+  assert.equal(CAFE.shown.bodyLines, CAFE.parsed.bodyLines);
+  assert.equal(CAFE.parsed.items.length, CAFE.shown.items.length + CAFE.corrections.notItems.length);
+});
+
 // ---- Coverage ------------------------------------------------------------------
 
 test("every enriched demo sid has a committed copy of its paper", () => {
@@ -397,10 +516,14 @@ test("every enriched demo sid has a committed copy of its paper", () => {
   // empty, it is real seeded data from a real provisioned merchant rather
   // than an invented store, and there is nothing restated to check. Any sid
   // that carries figures has figures that can be wrong.
-  const withCopies = new Set(SEEDED_DEMO_BLOBS.map((b) => b.sid));
+  const withCopies = new Set([...SEEDED_DEMO_BLOBS, PAPEX_CAFE_BLOB].map((b) => b.sid));
   for (const [sid, enrichment] of DEMO_RECEIPTS) {
     const carriesFigures =
-      enrichment.savings != null || enrichment.loyalty != null || enrichment.insight != null;
+      enrichment.savings != null ||
+      enrichment.loyalty != null ||
+      enrichment.insight != null ||
+      enrichment.cards != null ||
+      enrichment.corrections != null;
     if (!carriesFigures) continue;
     assert.ok(
       withCopies.has(sid),

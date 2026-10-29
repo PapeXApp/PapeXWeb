@@ -156,5 +156,49 @@ export const ELLSWORTH_BLOB: SeededDemoBlob = {
   bytes: bytesOf(ELLSWORTH_TEXT),
 };
 
-/** Every seeded blob this repo keeps a copy of, by sid. */
+/**
+ * The Tech Week receipts, which share one paper format (weekday dateline,
+ * YOU SAVED row, loyalty footer, APPROVED tender) that lib/demoBlobParity.test.ts
+ * checks line by line. PAPEX_CAFE_BLOB below is a different till and has its
+ * own checks there.
+ */
 export const SEEDED_DEMO_BLOBS: readonly SeededDemoBlob[] = [HARTWELLS_BLOB, ELLSWORTH_BLOB];
+
+// ---------------------------------------------------------------------------
+// PapeX Cafe — the café link demo (Nico's YC submission, 2026-10-28)
+// ---------------------------------------------------------------------------
+// Nico's text, centred with spaces as he drew it rather than with ESC a, with
+// the store printed "PapeX Cafe" rather than in capitals (Noah, 2026-10-28):
+// the header the page shows is the one the paper prints. No "DEMO RECEIPT -
+// NOT A REAL STORE" line: this paper is only ever seen inside the web page
+// that discloses it, never printed or photographed.
+const PAPEX_CAFE_TEXT = `\x1b@          PapeX Cafe
+     2140 Chestnut St
+   San Francisco, CA 94123
+
+10/28/2026  8:14 AM    TO GO
+Order #1047    Reg 1
+
+1 VANILLA ICED LATTE L     6.25
+1 BEC CROISSANT           11.50
+1 CHOCOLATE MUFFIN         4.75
+1 MADELEINE                3.50
+  PAPEX CPN $5 OFF $25+   -5.00
+
+SUBTOTAL                  26.00
+DISCOUNT                  -5.00
+TAX 8.625%                 1.81
+TOTAL                     22.81
+
+VISA ************4417     22.81
+
+  Thank you! See you tomorrow.
+\x1dV\x00`;
+
+export const PAPEX_CAFE_BLOB: SeededDemoBlob = {
+  sid: "cafe000000000001",
+  description: "PapeX Cafe — the café link demo",
+  capturedAt: "2026-10-28",
+  sha256: "4d8d6567f149d8cb9f5a22d60b84becac27975aa89e3fca76619a60cf74ec185",
+  bytes: bytesOf(PAPEX_CAFE_TEXT),
+};

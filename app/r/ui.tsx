@@ -340,6 +340,8 @@ export function MerchantHeaderCard({
   summary,
   isSample = false,
   logo,
+  badge,
+  wrap = false,
 }: {
   summary: ReceiptSummary;
   isSample?: boolean;
@@ -354,8 +356,21 @@ export function MerchantHeaderCard({
    * the sample/demo path, so the sample keeps today's monogram unconditionally.
    */
   logo?: DecodedLogo;
+  /**
+   * A drawn mark that fills the circle in place of the logo or monogram: an
+   * invented demo store's own logo (PapeX Cafe's, via `cafeBadgeLogo`, on the
+   * store-first demo layout). Never set on `/r`.
+   */
+  badge?: ReactNode;
+  /**
+   * Wrap the name and address instead of truncating them: the store-first
+   * demo header is the page's title, and nothing in it should be cut off.
+   * Every other caller keeps the one-line header.
+   */
+  wrap?: boolean;
 }) {
   const { merchantName, addressLines, dateline } = summary;
+  const fit = wrap ? "break-words" : "truncate";
   return (
     <GlassCard emphasis="standard" className="p-6">
       <div className="flex items-center gap-4">
@@ -363,7 +378,9 @@ export function MerchantHeaderCard({
           className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white"
           style={{ border: `2px solid ${T.orange}` }}
         >
-          {logo ? (
+          {badge ? (
+            badge
+          ) : logo ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={logo.avatarDataUri}
@@ -378,11 +395,11 @@ export function MerchantHeaderCard({
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <h1 className="font-barlow truncate text-2xl font-medium" style={{ color: T.text }}>
+          <h1 className={`font-barlow ${fit} text-2xl font-medium`} style={{ color: T.text }}>
             {merchantName ? <DecodedText text={merchantName} /> : "Your receipt"}
           </h1>
           {addressLines.length > 0 && (
-            <p className="mt-0.5 truncate text-sm" style={{ color: T.textMuted }}>
+            <p className={`mt-0.5 ${fit} text-sm`} style={{ color: T.textMuted }}>
               <DecodedText text={addressLines.join(", ")} />
             </p>
           )}
@@ -739,10 +756,17 @@ export function ReceiptView({
   logo,
   rasterPage,
   extracting = false,
+  showHeader = true,
 }: {
   summary: ReceiptSummary;
   hasStructure: boolean;
   isSample?: boolean;
+  /**
+   * false: leave out the logo and the merchant header, because the page has
+   * already drawn them above everything else (the store-first demo layout in
+   * app/r/demo/page.tsx). Every other caller keeps the default.
+   */
+  showHeader?: boolean;
   /** Decoded merchant logo, if any — see lib/escpos.ts. Never set on the sample/demo path. */
   logo?: DecodedLogo;
   /**
@@ -774,8 +798,8 @@ export function ReceiptView({
           {extracting && <ExtractingHint />}
         </div>
       )}
-      {logo && <LogoBlock logo={logo} />}
-      {hasStructure && <MerchantHeaderCard summary={summary} isSample={isSample} logo={logo} />}
+      {showHeader && logo && <LogoBlock logo={logo} />}
+      {showHeader && hasStructure && <MerchantHeaderCard summary={summary} isSample={isSample} logo={logo} />}
       {hasStructure && <ItemsCard summary={summary} />}
       {hasStructure && <TotalsCard summary={summary} isSample={isSample} />}
       {/* Skipped when there is no text at all — an empty, permanently-open
