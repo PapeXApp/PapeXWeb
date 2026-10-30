@@ -82,7 +82,7 @@ export default function ProfilePage() {
           Profile
         </h1>
         <p className="mt-1 text-sm" style={{ color: T.textSecondary }}>
-          What customers see on your PapeX profile. Want something changed? Send us a request.
+          Your PapeX profile. Want something changed? Send us a request.
         </p>
       </div>
       {!serviceDown && (

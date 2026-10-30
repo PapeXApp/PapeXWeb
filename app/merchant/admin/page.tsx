@@ -124,7 +124,7 @@ function AdminConsole() {
           Admin
         </h1>
         <p className="mt-1 text-sm" style={{ color: T.textSecondary }}>
-          Merchant profiles and change requests. Saves go live in the PapeX app right away.
+          Merchant profiles and change requests. Saves update this profile right away.
         </p>
       </div>
 

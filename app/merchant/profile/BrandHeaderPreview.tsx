@@ -40,7 +40,7 @@ export function BrandHeaderPreview({
   category,
   blurb,
   compact,
-  caption = "How it looks in the PapeX app",
+  caption = "Preview",
 }: BrandHeaderPreviewProps) {
   const primary = isHex(brandColor) ? brandColor : undefined;
   const secondary = primary && isHex(brandColorSecondary) ? brandColorSecondary : undefined;

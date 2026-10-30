@@ -218,7 +218,7 @@ function InboxCard({
               onChange={(e) => setNote(e.target.value)}
               rows={2}
               maxLength={CHANGE_REQUEST_LIMITS.maxAdminNoteChars}
-              placeholder="Optional. For example: done, it's live in the app."
+              placeholder="Optional. For example: done, your profile is updated."
               className="min-h-[44px]"
             />
           </div>
