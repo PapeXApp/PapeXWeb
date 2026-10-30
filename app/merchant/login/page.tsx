@@ -9,6 +9,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, ArrowRight } from "lucide-react";
+import { FullLogo } from "@/components/brand/full-logo";
 import { signIn, describeAuthError, sendPasswordResetEmail } from "@/lib/firebaseMerchantAuth";
 import { useMerchantAuth } from "../AuthContext";
 import { Button, Input, ErrorBanner } from "../ui/primitives";
@@ -75,11 +76,8 @@ export default function MerchantLoginPage() {
       }}
     >
       <div className="w-full max-w-sm">
-        <div className="mb-8 flex items-center justify-center gap-2">
-          <span className="font-barlow text-2xl font-medium tracking-tight" style={{ color: T.text }}>
-            papex
-          </span>
-          <span className="h-[8px] w-[8px] rounded-sm" style={{ background: T.orange }} aria-hidden />
+        <div className="mb-8 flex items-center justify-center" role="img" aria-label="PapeX">
+          <FullLogo size={132} letters={T.text} body="#EB7100" lines="#FFFFFF" />
         </div>
 
         <div className="rounded-[24px] border p-7 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl" style={glassCardStyle}>

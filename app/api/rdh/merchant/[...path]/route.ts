@@ -13,9 +13,10 @@
 // the CORS dependency entirely rather than adding another origin to the
 // production API for a dev convenience.
 //
-// Contract: every route under /merchant/* on the RDH API is a GET, is gated
-// by API Gateway's JWT authorizer, and resolves merchant_id server-side from
-// the token's uid. This handler therefore:
+// Contract: every route under /merchant/* on the RDH API is a GET, except
+// POST /merchant/cards/publish (the Receipts tab), is gated by API Gateway's
+// JWT authorizer, and resolves merchant_id server-side from the token's uid.
+// This handler therefore:
 //   - forwards ONLY the Authorization header (no cookies, no client headers)
 //   - forwards the query string verbatim (cursor/from/to/limit/window)
 //   - passes the upstream status straight through, so the client's existing
@@ -58,7 +59,16 @@ const ALLOWED_FIRST_SEGMENT = new Set([
   // /merchant/market/traffic-index (docs/goals/competitor-insights/
   // plan.md §3) — the allowlist keys on the first path segment only.
   "market",
+  // GET /merchant/cards/config and /merchant/cards/reach (the Receipts tab).
+  "cards",
 ]);
+
+// The only routes POST reaches. Exact path, not a first segment: this proxy
+// must never become a way to write to anything else on the RDH API.
+const ALLOWED_POST_PATHS = new Set(["cards/publish"]);
+// Same cap as the Lambda's own (lambdas/merchant-api/lib/cardConfig.js), so an
+// oversized body stops here instead of costing a round trip.
+const MAX_POST_BODY_BYTES = 64 * 1024;
 
 export async function GET(
   request: NextRequest,
@@ -96,6 +106,51 @@ export async function GET(
 
   const body = await response.arrayBuffer();
   return new NextResponse(body, {
+    status: response.status,
+    headers: {
+      "Content-Type": response.headers.get("content-type") ?? "application/json",
+      "Cache-Control": "no-store",
+    },
+  });
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ path: string[] }> }
+) {
+  const { path } = await params;
+
+  if (!path?.length || !ALLOWED_POST_PATHS.has(path.join("/"))) {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+
+  const authorization = request.headers.get("authorization");
+  if (!authorization) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
+  const body = await request.arrayBuffer();
+  if (body.byteLength > MAX_POST_BODY_BYTES) {
+    return NextResponse.json({ error: "body_too_large" }, { status: 413 });
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(`${rdhApiBase()}/merchant/${path.map(encodeURIComponent).join("/")}`, {
+      method: "POST",
+      headers: {
+        Authorization: authorization,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body,
+      cache: "no-store",
+    });
+  } catch {
+    return NextResponse.json({ error: "upstream_unavailable" }, { status: 502 });
+  }
+
+  return new NextResponse(await response.arrayBuffer(), {
     status: response.status,
     headers: {
       "Content-Type": response.headers.get("content-type") ?? "application/json",

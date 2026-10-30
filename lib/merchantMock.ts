@@ -32,6 +32,16 @@ import {
 // constant back FROM merchantApi.ts would recreate the circular-import
 // crash that module exists to avoid. See merchantTimezone.ts's comment.
 import { MERCHANT_DISPLAY_TIMEZONE } from "./merchantTimezone";
+import { lintMirror } from "./merchantReceipts/lint";
+import { isManagedCard } from "./merchantReceipts/draft";
+import { MOCK_CARD_CONFIG, MOCK_PREVIEW_RECEIPT } from "./merchantReceipts/mockConfig";
+import type {
+  CardConfig,
+  CardConfigInput,
+  CardConfigResponse,
+  CardConfigVersion,
+  CardPublishResult,
+} from "./merchantReceipts/types";
 import type {
   ListTransactionsParams,
   ExportCsvParams,
@@ -848,4 +858,112 @@ export function mockExportCsv(params: ExportCsvParams): string {
     ].join(",")
   );
   return [header.join(","), ...body].join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// Receipts tab (/merchant/cards/*)
+//
+// A local stand-in for the real publish route: same merge (identity, licence and
+// PapeX-managed cards always come from the latest version), same version rule,
+// and a lint that's tested against the real one (lib/merchantReceipts/lint.ts).
+// Versions live in this tab's sessionStorage and go nowhere else. Nothing here
+// can reach a real receipt, and the page says so.
+// ---------------------------------------------------------------------------
+
+const CARD_VERSIONS_KEY = "papex.mock.cardVersions.v1";
+const MOCK_CARD_MERCHANT = "demo-sunset-leaf-sf";
+const MOCK_FIRST_PUBLISH = "2026-10-30T19:00:00.000Z";
+
+interface MockCardVersion extends CardConfigVersion {
+  config: CardConfig;
+}
+
+let memoryCardVersions: MockCardVersion[] | null = null;
+
+/** Sorted keys, so "nothing changed" doesn't depend on key order (the real route compares a sha of the same). */
+function canonicalJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  if (value && typeof value === "object") {
+    const o = value as Record<string, unknown>;
+    return `{${Object.keys(o).sort().map((k) => `${JSON.stringify(k)}:${canonicalJson(o[k])}`).join(",")}}`;
+  }
+  return JSON.stringify(value) ?? "null";
+}
+
+function readCardVersions(): MockCardVersion[] {
+  if (memoryCardVersions) return memoryCardVersions;
+  let stored: MockCardVersion[] | null = null;
+  try {
+    const raw = window.sessionStorage.getItem(CARD_VERSIONS_KEY);
+    stored = raw ? (JSON.parse(raw) as MockCardVersion[]) : null;
+  } catch {
+    stored = null;
+  }
+  memoryCardVersions = stored ?? [
+    { version: 1, configRef: "v1-mock", receiptsFrom: MOCK_FIRST_PUBLISH, publishedAt: MOCK_FIRST_PUBLISH, config: MOCK_CARD_CONFIG },
+  ];
+  return memoryCardVersions;
+}
+
+function writeCardVersions(versions: MockCardVersion[]) {
+  memoryCardVersions = versions;
+  try {
+    window.sessionStorage.setItem(CARD_VERSIONS_KEY, JSON.stringify(versions));
+  } catch {
+    // Private window or storage off: this page load still has them in memory.
+  }
+}
+
+export async function mockGetCardConfig(version?: number): Promise<CardConfigResponse> {
+  const versions = readCardVersions();
+  const latest = versions[versions.length - 1];
+  const wanted = version === undefined ? latest : versions.find((v) => v.version === version);
+  if (!wanted) throw new Error(`mock card config version not found: ${version}`);
+  return {
+    merchantId: MOCK_CARD_MERCHANT,
+    editable: true,
+    version: wanted.version,
+    config: structuredClone(wanted.config),
+    versions: [...versions].reverse().map(({ version: v, configRef, receiptsFrom, publishedAt }) => ({ version: v, configRef, receiptsFrom, publishedAt })),
+    state: { enabled: true, revokedCardIds: [] },
+  };
+}
+
+export async function mockPublishCardConfig(input: {
+  baseVersion: number;
+  config: CardConfigInput;
+  dryRun: boolean;
+}): Promise<CardPublishResult> {
+  const versions = readCardVersions();
+  const latest = versions[versions.length - 1];
+  if (input.baseVersion !== latest.version) return { kind: "stale", latestVersion: latest.version };
+
+  const now = new Date();
+  const merged: CardConfig = {
+    ...latest.config,
+    enabled: input.config.enabled,
+    layout: { order: input.config.layout.order },
+    offers: input.config.offers,
+    cards: [...input.config.cards.filter((c) => !isManagedCard(c)), ...latest.config.cards.filter(isManagedCard)],
+  };
+  const { errors, warnings } = lintMirror({ ...merged, merchantId: MOCK_CARD_MERCHANT }, now);
+  if (errors.length) return { kind: "invalid", errors, warnings };
+  if (canonicalJson(merged) === canonicalJson(latest.config)) {
+    return { kind: "ok", dryRun: input.dryRun, noop: true, version: latest.version, warnings };
+  }
+  const version = latest.version + 1;
+  if (input.dryRun) return { kind: "ok", dryRun: true, noop: false, version, warnings };
+
+  const receiptsFrom = now.toISOString();
+  writeCardVersions([...versions, { version, configRef: `v${version}-mock`, receiptsFrom, publishedAt: receiptsFrom, config: merged }]);
+  return { kind: "ok", dryRun: false, noop: false, version, warnings, receiptsFrom };
+}
+
+export async function mockGetPreviewReceiptBytes(): Promise<{ sid: string; bytes: Uint8Array }> {
+  const lines: ReceiptLine[] = [
+    ...MOCK_PREVIEW_RECEIPT.center.map((text, i) => line(text, "center", i === 0 ? bigBold : plain)),
+    line(""),
+    ...MOCK_PREVIEW_RECEIPT.body.map((text) => line(text)),
+  ];
+  return { sid: "0123456789abcdef", bytes: encodeEscPos(lines) };
 }

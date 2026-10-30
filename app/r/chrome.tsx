@@ -54,10 +54,15 @@ export const S = {
 
 // ---- Shell ------------------------------------------------------------------
 
-export function Shell({ children }: { children: ReactNode }) {
+/**
+ * `contained`: draw inside a box instead of filling the viewport, for the
+ * merchant dashboard's receipt preview. Absent: the page /r has always rendered.
+ */
+export function Shell({ children, contained = false }: { children: ReactNode; contained?: boolean }) {
+  const height = contained ? "" : "min-h-screen ";
   return (
-    <main className={`min-h-screen w-full ${styles.shell} ${styles.shellBg}`} style={{ color: T.text }}>
-      <div className="mx-auto flex min-h-screen w-full max-w-[430px] flex-col px-4 pb-10 pt-6">
+    <main className={`${height}w-full ${styles.shell} ${styles.shellBg}`} style={{ color: T.text }}>
+      <div className={`mx-auto flex ${height}w-full max-w-[430px] flex-col px-4 pb-10 pt-6`}>
         <header className="mb-5 flex items-center gap-3 px-1">
           {/* PapeX brand logo — docs/PAPEX_DESIGN_KIT_FOR_WEB.md §4. The
               same artwork (main_logo.png, MD5-identical to

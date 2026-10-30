@@ -22,6 +22,7 @@
 // in hand from the auth context.
 
 import type { PaymentNetwork } from "./receiptSummary";
+import type { CardConfigInput, CardConfigResponse, CardPublishResult, CardReach } from "./merchantReceipts/types";
 import * as mock from "./merchantMock";
 import { demoOverridesAllowed } from "./deployEnv";
 
@@ -668,6 +669,70 @@ export async function getTrafficIndex(idToken: string, window: TrafficIndexWindo
   if (MERCHANT_MOCK) return mock.mockGetTrafficIndex(window);
   const res = await authedFetch(`/merchant/market/traffic-index${qs({ window })}`, idToken);
   return res.json();
+}
+
+/**
+ * GET /merchant/cards/config — this merchant's receipt-card config, sanitized,
+ * with its version list and request-time switches. `version` reads an older one,
+ * for restoring it. Merchant_id comes from the token, as everywhere here.
+ */
+export async function getCardConfig(idToken: string, version?: number): Promise<CardConfigResponse> {
+  if (MERCHANT_MOCK) return mock.mockGetCardConfig(version);
+  const res = await authedFetch(`/merchant/cards/config${qs({ version })}`, idToken);
+  return res.json();
+}
+
+/**
+ * GET /merchant/cards/reach — real counts of recent receipts per customer type.
+ * null when they can't be had (including mock mode, which has no real receipts
+ * to count): the page then shows no share at all rather than an invented one.
+ */
+export async function getCardReach(idToken: string): Promise<CardReach | null> {
+  if (MERCHANT_MOCK) return null;
+  try {
+    const res = await authedFetch(`/merchant/cards/reach${qs({ window: "30d" })}`, idToken);
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * POST /merchant/cards/publish — lint a config and, unless `dryRun`, write it as
+ * the next version. The lint's refusal is an answer, not a failure, so it comes
+ * back as `kind: "invalid"`; only a transport or server error throws.
+ */
+export async function publishCardConfig(
+  idToken: string,
+  input: { baseVersion: number; config: CardConfigInput; dryRun: boolean },
+): Promise<CardPublishResult> {
+  if (MERCHANT_MOCK) return mock.mockPublishCardConfig(input);
+  const res = await fetch(`${MERCHANT_API_BASE}/merchant/cards/publish`, {
+    method: "POST",
+    headers: { Accept: "application/json", "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify(input),
+    cache: "no-store",
+  });
+  const body = await res.json().catch(() => null);
+  if (res.status === 200 && body?.ok) {
+    return { kind: "ok", dryRun: body.dryRun === true, noop: body.noop === true, version: body.version, warnings: body.warnings ?? [], receiptsFrom: body.receiptsFrom };
+  }
+  if (res.status === 422) return { kind: "invalid", errors: body?.errors ?? [], warnings: body?.warnings ?? [] };
+  if (res.status === 403 && body?.error === "merchant_not_editable") return { kind: "not_editable" };
+  if (res.status === 409 && body?.error === "no_base_config") return { kind: "no_base_config" };
+  if (res.status === 409) return { kind: "stale", latestVersion: body?.latestVersion };
+  throw new MerchantApiError(`Merchant API publish failed: ${res.status}`, res.status);
+}
+
+/**
+ * The receipt the Receipts tab previews on: this merchant's most recent readable
+ * one, as raw bytes for the same parse app/r runs. null when there isn't one yet.
+ */
+export async function getPreviewReceiptBytes(idToken: string): Promise<{ sid: string; bytes: Uint8Array } | null> {
+  if (MERCHANT_MOCK) return mock.mockGetPreviewReceiptBytes();
+  const { transactions } = await listTransactions(idToken, { limit: 10 });
+  const row = transactions.find((t) => t.parseStatus === "ok") ?? transactions[0];
+  return row ? { sid: row.sid, bytes: await getReceiptBytes(idToken, row.sid) } : null;
 }
 
 /** Everything GET /merchant/export.csv accepts — same filters as listTransactions, minus pagination (an export is always the full filtered set). */

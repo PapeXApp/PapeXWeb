@@ -167,6 +167,7 @@ const ROUTE_TREE: Record<string, RouteNode> = {
       intelligence: {},
       login: {},
       profile: {},
+      receipts: {},
       tx: { dynamic: "[sid]" },
     },
   },

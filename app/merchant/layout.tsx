@@ -6,8 +6,9 @@
 // after middleware.ts's host rewrite — see lib/merchantHost.ts). Owns:
 //   - the Firebase auth provider for the whole route tree
 //   - the auth *gate*: signed-out visitors get bounced to /merchant/login
-//   - the nav chrome (Transactions / Insights / Intelligence / Devices /
-//     Profile, plus Admin for PapeX staff only; merchant identity, sign out)
+//   - the nav chrome (Transactions / Insights / Intelligence / Receipts /
+//     Devices / Profile, plus Admin for PapeX staff only; merchant identity,
+//     sign out)
 //   - the shared profile fetch (profile/ProfileContext.tsx), which is what
 //     tells the nav whether this login is an admin
 //
@@ -20,7 +21,8 @@
 import { useEffect, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { LogOut, Receipt, BarChart3, Sparkles, Radio, Store, ShieldCheck } from "lucide-react";
+import { LogOut, Receipt, ReceiptText, BarChart3, Sparkles, Radio, Store, ShieldCheck } from "lucide-react";
+import { FullLogo } from "@/components/brand/full-logo";
 import { MerchantAuthProvider, useMerchantAuth } from "./AuthContext";
 import { MerchantProfileProvider, useMerchantProfile } from "./profile/ProfileContext";
 import { LoadingBlock } from "./ui/primitives";
@@ -32,13 +34,25 @@ const NAV_ITEMS = [
   { href: "/merchant", label: "Transactions", icon: Receipt, exact: true },
   { href: "/merchant/insights", label: "Insights", icon: BarChart3, exact: false },
   { href: "/merchant/intelligence", label: "Intelligence", icon: Sparkles, exact: false },
+  { href: "/merchant/receipts", label: "Receipts", icon: ReceiptText, exact: false },
   { href: "/merchant/devices", label: "Devices", icon: Radio, exact: false },
   { href: "/merchant/profile", label: "Profile", icon: Store, exact: false },
 ];
 
 // Only rendered when the profile response says isAdmin. Sidebar + mobile top
-// bar only: five items already fill the mobile bottom bar at 390px.
+// bar only: the six items above already fill the mobile bottom bar.
 const ADMIN_ITEM = { href: "/merchant/admin", label: "Admin", icon: ShieldCheck, exact: false };
+
+/** The marketing nav's lockup, in the brand orange (the dashboard's own T.orange is the App Clip's). */
+function MerchantLogo({ size }: { size: number }) {
+  // Named on a wrapper, not with FullLogo's `title`: that renders useId ids, which
+  // differ between the server's tree and the client's whenever the shell renders on both.
+  return (
+    <span role="img" aria-label="PapeX" className="inline-flex">
+      <FullLogo size={size} letters={T.text} body="#EB7100" lines="#FFFFFF" />
+    </span>
+  );
+}
 
 function NavLinks({ pathname, isAdmin }: { pathname: string; isAdmin: boolean }) {
   const items = isAdmin ? [...NAV_ITEMS, ADMIN_ITEM] : NAV_ITEMS;
@@ -65,7 +79,10 @@ function NavLinks({ pathname, isAdmin }: { pathname: string; isAdmin: boolean })
   );
 }
 
-function AuthedShell({ children, pathname }: { children: ReactNode; pathname: string }) {
+function AuthedShell({ children, pathname: rawPathname }: { children: ReactNode; pathname: string }) {
+  // On merchant.papex.app the address bar can read /receipts while the nav links
+  // read /merchant/receipts (lib/merchantHost.ts rewrites one to the other).
+  const pathname = rawPathname.startsWith("/merchant") ? rawPathname : `/merchant${rawPathname === "/" ? "" : rawPathname}`;
   const { user, signOut } = useMerchantAuth();
   const { isAdmin } = useMerchantProfile();
   const adminActive = pathname.startsWith(ADMIN_ITEM.href);
@@ -80,12 +97,9 @@ function AuthedShell({ children, pathname }: { children: ReactNode; pathname: st
         className="fixed inset-y-0 left-0 z-20 hidden w-60 flex-col border-r px-4 py-6 md:flex"
         style={{ borderColor: T.glassBorder, background: "rgba(12,15,20,0.6)" }}
       >
-        <div className="mb-8 flex items-center gap-2 px-2">
-          <span className="font-barlow text-lg font-medium tracking-tight" style={{ color: T.text }}>
-            papex
-          </span>
-          <span className="h-[7px] w-[7px] rounded-sm" style={{ background: T.orange }} aria-hidden />
-          <span className="ml-1 text-xs font-medium uppercase tracking-wide" style={{ color: T.textMuted }}>
+        <div className="mb-8 flex items-center gap-2.5 px-2">
+          <MerchantLogo size={92} />
+          <span className="text-xs font-medium uppercase tracking-wide" style={{ color: T.textMuted }}>
             Merchant
           </span>
         </div>
@@ -118,14 +132,9 @@ function AuthedShell({ children, pathname }: { children: ReactNode; pathname: st
       {/* Mobile top bar */}
       <header
         className="fixed inset-x-0 top-0 z-20 flex items-center justify-between border-b px-4 py-3 md:hidden"
-        style={{ borderColor: T.glassBorder, background: "rgba(12,15,20,0.85)" }}
+        style={{ borderColor: T.glassBorder, background: "rgba(12,15,20,0.97)" }}
       >
-        <div className="flex items-center gap-2">
-          <span className="font-barlow text-lg font-medium" style={{ color: T.text }}>
-            papex
-          </span>
-          <span className="h-[6px] w-[6px] rounded-sm" style={{ background: T.orange }} aria-hidden />
-        </div>
+        <MerchantLogo size={68} />
         <div className="flex items-center gap-1">
           {isAdmin && (
             <Link
@@ -148,8 +157,8 @@ function AuthedShell({ children, pathname }: { children: ReactNode; pathname: st
 
       {/* Mobile bottom nav */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-20 flex items-center justify-around border-t px-2 py-2 md:hidden"
-        style={{ borderColor: T.glassBorder, background: "rgba(12,15,20,0.9)" }}
+        className="fixed inset-x-0 bottom-0 z-20 flex items-center justify-around border-t px-1 py-2 md:hidden"
+        style={{ borderColor: T.glassBorder, background: "rgba(12,15,20,0.97)" }}
       >
         {NAV_ITEMS.map(({ href, label, icon: Icon, exact }) => {
           const active = exact ? pathname === href : pathname.startsWith(href);
@@ -157,7 +166,8 @@ function AuthedShell({ children, pathname }: { children: ReactNode; pathname: st
             <Link
               key={href}
               href={href}
-              className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl py-1.5 text-[11px] font-medium"
+              // Six labels share a 375px bar: this size and tracking is what keeps "Transactions" whole.
+              className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl py-1.5 text-[10.5px] font-medium tracking-[-0.01em]"
               style={{ color: active ? T.orange : T.textMuted }}
             >
               <Icon className="h-5 w-5" strokeWidth={2} />
