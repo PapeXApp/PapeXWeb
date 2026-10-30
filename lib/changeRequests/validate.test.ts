@@ -216,6 +216,47 @@ test("unknown keys are dropped at every depth, known ones kept (merchants/{id} i
   assert.deepEqual(r.value.record.loyaltyProgram, { programName: "P", nextRewardAt: 100, nextRewardLabel: "$5 off" });
 });
 
+test("a removed field, in any form it arrives in, is absent from the validated update", () => {
+  const id = "store-doobie-nights";
+  const forms: Record<string, unknown>[] = [
+    { logoUrl: null, heroImageUrl: "", brandColor: "", website: null, menuUrl: "  ", phone: null },
+    { menu: null, deals: null, whatsNew: null, menuCategories: null },
+    { menu: [], deals: [], whatsNew: [], menuCategories: [] },
+    { hours: null },
+    { hours: {} },
+    { hours: { intervals: [] } },
+    { hours: { timezone: "America/Los_Angeles", intervals: [] } },
+    { loyaltyProgram: null },
+    { loyaltyProgram: {} },
+    { loyaltyProgram: { programName: "", nextRewardAt: null, nextRewardLabel: null } },
+    { loyaltyProgram: { somethingElse: 1 } },
+  ];
+  for (const form of forms) {
+    const r = validateMerchantRecordUpdate({ record: { ...editable(), ...form }, expectedVersion: 1 }, id);
+    assert.ok(r.ok, `${JSON.stringify(form)}: ${JSON.stringify(r)}`);
+    if (r.ok) for (const k of Object.keys(form)) assert.equal(k in r.value.record, false, k);
+  }
+});
+
+test("a loyalty program keeps its set parts and loses its blank ones", () => {
+  const record = { ...editable(), loyaltyProgram: { programName: "P", nextRewardAt: null, nextRewardLabel: "" } };
+  const r = validateMerchantRecordUpdate({ record, expectedVersion: 1 }, "store-doobie-nights");
+  assert.ok(r.ok);
+  if (r.ok) assert.deepEqual(r.value.record.loyaltyProgram, { programName: "P" });
+});
+
+test("a value of the wrong type is still refused, not taken for a removal", () => {
+  const id = "store-doobie-nights";
+  const err = (patch: object) => errorOf(validateMerchantRecordUpdate({ record: { ...editable(), ...patch }, expectedVersion: 1 }, id));
+  assert.equal(err({ deals: {} }), "invalid_record");
+  assert.equal(err({ menu: "none" }), "invalid_record");
+  assert.equal(err({ hours: "closed" }), "invalid_hours");
+  assert.equal(err({ hours: { intervals: "none" } }), "invalid_hours");
+  assert.equal(err({ loyaltyProgram: "none" }), "invalid_record");
+  assert.equal(err({ logoUrl: {} }), "invalid_url");
+  assert.equal(err({ name: null }), "invalid_name");
+});
+
 test("record.id must match the path id", () => {
   assert.equal(errorOf(validateMerchantRecordUpdate({ record: editable(), expectedVersion: 1 }, "store-template")), "id_mismatch");
 });

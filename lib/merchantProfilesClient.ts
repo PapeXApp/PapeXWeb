@@ -20,7 +20,7 @@
 // Never otherwise.
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { withoutRetiredKeys } from "./merchantProfiles/record";
+import { presentRecord, type StoredMerchantRecord } from "./merchantProfiles/record";
 import type {
   AdminAssetResponse,
   AdminMerchantResponse,
@@ -454,7 +454,9 @@ function isTimestampLike(v: unknown): v is { toDate: () => Date } {
 /**
  * The server writes ISO strings, but a Firestore console edit (or a future
  * writer) can leave a Timestamp. Convert any top-level Timestamp so the UI
- * only ever sees the contract's string shape.
+ * only ever sees the contract's string shape. A removed field is stored as
+ * `null` or `[]` for the app's sake (merchantProfiles/record.ts): to the
+ * profile page it is simply absent, the same as from the API.
  */
 function normalizeRecord(data: Record<string, unknown>, id: string): MerchantRecord {
   const out: Record<string, unknown> = {};
@@ -463,7 +465,7 @@ function normalizeRecord(data: Record<string, unknown>, id: string): MerchantRec
   out.version = typeof out.version === "number" ? out.version : Number(out.version) || 0;
   if (typeof out.updatedAt !== "string") out.updatedAt = "";
   if (typeof out.name !== "string") out.name = "";
-  return withoutRetiredKeys(out) as unknown as MerchantRecord;
+  return presentRecord(out as unknown as StoredMerchantRecord);
 }
 
 // ---- Hooks -------------------------------------------------------------------------

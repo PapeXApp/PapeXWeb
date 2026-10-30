@@ -10,8 +10,8 @@
 // can't change the store behind the API's back (Firestore can't either).
 
 import { SEED_ACCOUNTS, SEED_MERCHANTS } from "../../merchantProfiles/seed";
-import { withoutRetiredKeys } from "../../merchantProfiles/record";
-import type { MerchantAccount, MerchantHistoryEntry, MerchantRecord } from "../../merchantProfiles/types";
+import { presentRecord, type StoredMerchantRecord } from "../../merchantProfiles/record";
+import type { MerchantAccount, MerchantHistoryEntry } from "../../merchantProfiles/types";
 import type { ChangeRequest } from "../../changeRequests/types";
 import { extensionForImageType } from "../../changeRequests/validate";
 import type { MerchantData } from "./index";
@@ -41,7 +41,8 @@ interface MockBlob {
 }
 
 interface MockState {
-  records: Map<string, MerchantRecord>;
+  /** As stored, clears included, as in Firestore. */
+  records: Map<string, StoredMerchantRecord>;
   accounts: Map<string, MerchantAccount>;
   /** Oldest first. */
   history: Map<string, MerchantHistoryEntry[]>;
@@ -79,7 +80,7 @@ export function rawMockRecord(merchantId: string): Record<string, unknown> | und
 
 /** Tests: store a document as an older save left it. */
 export function putRawMockRecord(doc: Record<string, unknown> & { id: string }): void {
-  state().records.set(doc.id, clone(doc) as unknown as MerchantRecord);
+  state().records.set(doc.id, clone(doc) as unknown as StoredMerchantRecord);
 }
 
 const clone = <T>(v: T): T => structuredClone(v);
@@ -106,7 +107,7 @@ export function createMockMerchantData(): MerchantData {
 
     async getRecord(merchantId) {
       const r = state().records.get(merchantId);
-      return r ? clone(withoutRetiredKeys(r)) : null;
+      return r ? clone(presentRecord(r)) : null;
     },
 
     async listSummaries() {
@@ -116,7 +117,7 @@ export function createMockMerchantData(): MerchantData {
         if (r.merchantId && isOpenStatus(r.status)) open.set(r.merchantId, (open.get(r.merchantId) ?? 0) + 1);
       }
       return [...s.records.values()]
-        .map((r) => toSummary(r, open.get(r.id) ?? 0))
+        .map((r) => toSummary(presentRecord(r), open.get(r.id) ?? 0))
         .sort((a, b) => a.name.localeCompare(b.name));
     },
 
@@ -138,13 +139,14 @@ export function createMockMerchantData(): MerchantData {
     async updateRecord(merchantId, update, byEmail) {
       const s = state();
       const stored = s.records.get(merchantId) ?? null;
-      const current = stored && withoutRetiredKeys(stored);
+      const current = stored && presentRecord(stored);
       assertUpdatable(current, update);
       const linked = update.requestId ? s.requests.get(update.requestId) ?? null : null;
       if (update.requestId) assertRequestLinkable(linked, merchantId);
 
       const now = new Date().toISOString();
-      const next = buildNextRecord(merchantId, current?.version ?? 0, update, now);
+      const next = buildNextRecord(merchantId, stored, update, now);
+      const record = presentRecord(next);
       const historyId = newId();
       const entry = buildHistoryEntry({
         id: historyId,
@@ -153,7 +155,7 @@ export function createMockMerchantData(): MerchantData {
         by: byEmail,
         requestId: update.requestId,
         before: current ?? {},
-        after: next,
+        after: record,
       });
 
       // No await between the checks above and these writes: atomic in JS.
@@ -163,12 +165,13 @@ export function createMockMerchantData(): MerchantData {
       if (linked && update.markRequestDone) {
         s.requests.set(linked.id, { ...linked, status: "done", appliedHistoryId: historyId, updatedAt: now });
       }
-      return { record: clone(next), historyId };
+      return { record: clone(record), historyId };
     },
 
     async createRequest(requester, merchantId, input, files) {
       const s = state();
-      const record = merchantId ? s.records.get(merchantId) ?? null : null;
+      const doc = merchantId ? s.records.get(merchantId) ?? null : null;
+      const record = doc && presentRecord(doc);
       const id = newId();
       const now = new Date().toISOString();
       const attachments: StoredAttachment[] = files.map((f) => {

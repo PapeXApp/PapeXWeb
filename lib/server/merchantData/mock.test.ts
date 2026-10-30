@@ -8,6 +8,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createMockMerchantData, putRawMockRecord, rawMockRecord, resetMockStore } from "./mock";
 import { MerchantDataError } from "./shared";
+import { validateMerchantRecordUpdate } from "../../changeRequests/validate";
 import { SEED_MERCHANTS } from "../../merchantProfiles/seed";
 import type { AdminMerchantUpdate, MerchantRecord } from "../../merchantProfiles/types";
 import type { ValidatedFile } from "../../changeRequests/validate";
@@ -49,6 +50,30 @@ function editable(r: MerchantRecord): AdminMerchantUpdate["record"] {
   return copy as AdminMerchantUpdate["record"];
 }
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** One value for every field the dashboard can empty. */
+const EVERY_FIELD: Record<string, unknown> = {
+  logoUrl: "https://example.com/logo.png",
+  heroImageUrl: "https://example.com/hero.png",
+  brandColor: "#111111",
+  brandColorSecondary: "#222222",
+  category: "dispensary",
+  blurb: "Blurb",
+  website: "https://example.com",
+  address: "1 Main St",
+  phone: "(707) 555-0100",
+  hours: { timezone: "America/Los_Angeles", intervals: [{ day: 1, opensAt: "09:00", closesAt: "17:00" }] },
+  description: "Description",
+  menuCategories: ["Flower"],
+  menuUrl: "https://example.com/menu",
+  menu: [{ category: "Flower", items: [{ id: "a", name: "A", price: 1 }] }],
+  deals: [{ id: "d", title: "Deal" }],
+  whatsNew: [{ id: "u", kind: "announcement", title: "News" }],
+  loyaltyProgram: { programName: "Rewards", nextRewardAt: 100, nextRewardLabel: "$5 off" },
+};
+const LIST_FIELDS = new Set(["menuCategories", "menu", "deals", "whatsNew"]);
+const FIELD_NAMES = Object.keys(EVERY_FIELD);
+const clearFor = (k: string) => (LIST_FIELDS.has(k) ? [] : null);
 
 async function main() {
   resetMockStore();
@@ -255,6 +280,148 @@ async function main() {
     assert.equal((await createMockMerchantData().getRecord(DOOBIE))!.version, 1);
   });
 
+  // ── Removed fields: stated on the stored document, absent to every reader ──
+
+  /** A save the way the route does it: through the validator, then the backend. */
+  const save = async (edit: (r: Record<string, unknown>) => void) => {
+    const current = (await data.getRecord(DOOBIE))!;
+    const record = editable(current) as unknown as Record<string, unknown>;
+    edit(record);
+    const v = validateMerchantRecordUpdate({ record, expectedVersion: current.version }, DOOBIE);
+    assert.ok(v.ok, JSON.stringify(v));
+    if (!v.ok) throw new Error("unreachable");
+    return data.updateRecord(DOOBIE, v.value, "nico@papex.app");
+  };
+  const raw = () => rawMockRecord(DOOBIE)!;
+  const withEveryField = () => {
+    resetMockStore();
+    putRawMockRecord({ ...raw(), ...structuredClone(EVERY_FIELD), id: DOOBIE });
+  };
+
+  const emptyForms: [string, (r: Record<string, unknown>, k: string) => void][] = [
+    ["left out", (r, k) => delete r[k]],
+    ["blank string", (r, k) => void (r[k] = "")],
+    ["null", (r, k) => void (r[k] = null)],
+    ["empty list", (r, k) => void (r[k] = [])],
+  ];
+  for (const [form, empty] of emptyForms) {
+    await test(`every field the dashboard can empty, ${form}: stored as a clear, absent to readers`, async () => {
+      withEveryField();
+      const res = await save((r) => FIELD_NAMES.forEach((k) => empty(r, k)));
+      const stored = raw();
+      const record = (await data.getRecord(DOOBIE))!;
+      for (const k of FIELD_NAMES) {
+        assert.deepEqual(stored[k], clearFor(k), `stored ${k}`);
+        assert.equal(k in record, false, `getRecord ${k}`);
+        assert.equal(k in res.record, false, `save response ${k}`);
+      }
+      const [entry] = await data.listHistory(DOOBIE, 1);
+      assert.deepEqual([...entry.changedFields].sort(), [...FIELD_NAMES].sort());
+      assert.deepEqual(entry.after, {});
+      assert.deepEqual(Object.keys(entry.before).sort(), [...FIELD_NAMES].sort());
+    });
+  }
+
+  await test("hours with a timezone and no opening times count as removed hours", async () => {
+    withEveryField();
+    await save((r) => void (r.hours = { timezone: "America/Los_Angeles", intervals: [] }));
+    assert.equal(raw().hours, null);
+    assert.equal("hours" in (await data.getRecord(DOOBIE))!, false);
+  });
+
+  await test("a field the record never had stays unwritten, however it is sent", async () => {
+    for (const [form, empty] of emptyForms) {
+      resetMockStore();
+      const doc = raw();
+      for (const k of FIELD_NAMES) delete doc[k];
+      putRawMockRecord({ ...doc, id: DOOBIE });
+      await save((r) => FIELD_NAMES.forEach((k) => empty(r, k)));
+      for (const k of FIELD_NAMES) assert.equal(k in raw(), false, `${form}: ${k}`);
+    }
+  });
+
+  await test("only the emptied field is cleared", async () => {
+    withEveryField();
+    await save((r) => void (r.phone = ""));
+    assert.equal(raw().phone, null);
+    for (const k of FIELD_NAMES.filter((f) => f !== "phone")) assert.deepEqual(raw()[k], EVERY_FIELD[k], k);
+  });
+
+  await test("a clear survives later saves, which see no change, until a value replaces it", async () => {
+    withEveryField();
+    await save((r) => {
+      delete r.phone;
+      delete r.deals;
+    });
+    for (let i = 0; i < 2; i += 1) {
+      await save((r) => void (r.blurb = `Blurb ${i}`));
+      assert.equal(raw().phone, null);
+      assert.deepEqual(raw().deals, []);
+      assert.deepEqual((await data.listHistory(DOOBIE, 1))[0].changedFields, ["blurb"]);
+    }
+    await save((r) => {
+      r.phone = "(707) 555-0199";
+      r.deals = [{ id: "d2", title: "Back" }];
+    });
+    assert.equal(raw().phone, "(707) 555-0199");
+    assert.deepEqual(raw().deals, [{ id: "d2", title: "Back" }]);
+    await save((r) => void (r.phone = ""));
+    assert.equal(raw().phone, null);
+  });
+
+  await test("a loyalty part removed on its own is cleared on its own, and stays cleared", async () => {
+    withEveryField();
+    await save((r) => void (r.loyaltyProgram = { programName: "Rewards", nextRewardAt: 100 }));
+    assert.deepEqual(raw().loyaltyProgram, { programName: "Rewards", nextRewardAt: 100, nextRewardLabel: null });
+    assert.deepEqual((await data.getRecord(DOOBIE))!.loyaltyProgram, { programName: "Rewards", nextRewardAt: 100 });
+    await save((r) => void (r.blurb = "Again"));
+    assert.deepEqual(raw().loyaltyProgram, { programName: "Rewards", nextRewardAt: 100, nextRewardLabel: null });
+    assert.deepEqual((await data.listHistory(DOOBIE, 1))[0].changedFields, ["blurb"]);
+  });
+
+  await test("a program set again after a whole clear keeps its other parts cleared", async () => {
+    withEveryField();
+    await save((r) => void delete r.loyaltyProgram);
+    assert.equal(raw().loyaltyProgram, null);
+    await save((r) => void (r.loyaltyProgram = { programName: "New" }));
+    assert.deepEqual(raw().loyaltyProgram, { programName: "New", nextRewardAt: null, nextRewardLabel: null });
+    assert.deepEqual((await data.getRecord(DOOBIE))!.loyaltyProgram, { programName: "New" });
+  });
+
+  await test("a new loyalty part on a record that never had the others writes only that part", async () => {
+    resetMockStore();
+    const doc = raw();
+    delete doc.loyaltyProgram;
+    putRawMockRecord({ ...doc, id: DOOBIE });
+    await save((r) => void (r.loyaltyProgram = { programName: "First" }));
+    assert.deepEqual(raw().loyaltyProgram, { programName: "First" });
+  });
+
+  await test("creating a merchant writes no clears", async () => {
+    resetMockStore();
+    const created = "store-brand-new";
+    const v = validateMerchantRecordUpdate({ record: { id: created, name: "New", phone: "", menu: [], hours: null }, expectedVersion: 0 }, created);
+    assert.ok(v.ok);
+    if (!v.ok) return;
+    await data.updateRecord(created, v.value, "nico@papex.app");
+    const stored = rawMockRecord(created)!;
+    assert.deepEqual(Object.keys(stored).sort(), ["id", "name", "updatedAt", "version"]);
+  });
+
+  await test("a cleared logo and color leave the merchant list blank; a request can still be labelled", async () => {
+    withEveryField();
+    await save((r) => {
+      r.logoUrl = "";
+      r.brandColor = "";
+      r.deals = [];
+    });
+    const row = (await data.listSummaries()).find((s) => s.id === DOOBIE)!;
+    assert.equal("logoUrl" in row, false);
+    assert.equal("brandColor" in row, false);
+    const req = await data.createRequest(merchant, DOOBIE, { section: "deals", action: "remove", itemIds: ["gone"], message: "x" }, []);
+    assert.deepEqual(req.itemLabels, ["gone"]);
+  });
+
   // merchants/{id} is PUBLIC READ: no staff email on it, in any write path.
   await test("a save writes no staff email to the stored document; the private history has it", async () => {
     resetMockStore();
@@ -296,7 +463,11 @@ async function main() {
     assert.match(src, /tx\.set\(recRef, next\);/);
     assert.doesNotMatch(src, /merge:\s*true/);
     assert.doesNotMatch(src, /tx\.update\(recRef/);
-    assert.match(src, /buildNextRecord\(/);
+    assert.match(src, /buildNextRecord\(merchantId, stored, update, now\)/);
+    assert.match(src, /stored = storedFrom\(recSnap\)/, "the save has to see stored clears");
+    assert.match(src, /after: record,/);
+    assert.match(src, /return \{ record, historyId/, "a save answers with what readers see");
+    assert.match(src, /stored && presentRecord\(stored\)/, "readers never see a clear");
     assert.doesNotMatch(src, /updatedBy:/);
     return Promise.resolve();
   });

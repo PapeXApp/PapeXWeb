@@ -46,7 +46,7 @@
     "test:ridSaveLink": "tsx lib/ridSaveLink.test.ts",
     "test:ridSaveLinkRender": "tsx --tsconfig tsconfig.test.json app/r/ridSaveLink.test.tsx",
     "test:sharedReceiptPhoto": "tsx --tsconfig tsconfig.test.json app/r/sharedReceiptPhoto.test.tsx",
-    "test:merchantProfile": "tsx lib/changeRequests/validate.test.ts && tsx lib/server/merchantData/mock.test.ts && tsx lib/server/merchantAuth.test.ts",
+    "test:merchantProfile": "tsx lib/changeRequests/validate.test.ts && tsx lib/merchantProfiles/record.test.ts && tsx lib/server/merchantData/mock.test.ts && tsx lib/server/merchantAuth.test.ts",
     "test:signup": "tsx lib/server/signup/signup.test.ts",
     "test:offerSaveLink": "tsx lib/offerSaveLink.test.ts",
     "test:offerSaveLinkRender": "tsx --tsconfig tsconfig.test.json app/r/offerSaveLink.test.tsx",

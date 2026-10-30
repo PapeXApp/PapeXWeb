@@ -112,8 +112,9 @@ export interface LoyaltyProgram {
   nextRewardLabel?: string;
 }
 
-/** `merchants/{merchantId}`. `id` === the document id === the app's store id
- *  (e.g. "store-doobie-nights"). */
+/** `merchants/{merchantId}`, as readers see it. `id` === the document id === the
+ *  app's store id (e.g. "store-doobie-nights"). The stored document can also hold
+ *  `null` or `[]` for a removed field; see StoredMerchantRecord. */
 export interface MerchantRecord extends Store {
   loyaltyProgram?: LoyaltyProgram;
   /** Bumped by 1 on every write. */
@@ -184,6 +185,8 @@ export interface AdminMerchantResponse {
 
 /** PUT /api/merchant/admin/merchants/[id]
  *  `record` replaces the editable fields (server owns id/version/updatedAt).
+ *  A field left out, or sent empty, is removed: stored as an explicit clear if
+ *  the record had it, unwritten if not (merchantProfiles/record.ts).
  *  If `requestId` is set, the history entry links to it; if `markRequestDone`
  *  is also true, that request's status becomes "done". */
 export interface AdminMerchantUpdate {

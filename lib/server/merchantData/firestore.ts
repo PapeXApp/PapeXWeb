@@ -16,7 +16,7 @@
 // outside this repo). Fine at pilot scale; see the report for the ceiling.
 
 import type { DocumentSnapshot, Query } from "firebase-admin/firestore";
-import { withoutRetiredKeys } from "../../merchantProfiles/record";
+import { presentRecord, type StoredMerchantRecord } from "../../merchantProfiles/record";
 import type { MerchantAccount, MerchantHistoryEntry, MerchantRecord } from "../../merchantProfiles/types";
 import type { ChangeRequest } from "../../changeRequests/types";
 import { extensionForImageType, type AllowedImageType } from "../../changeRequests/validate";
@@ -45,9 +45,15 @@ const REQUESTS = "merchantChangeRequests";
 const HISTORY = "history";
 const SIGNED_URL_TTL_MS = 15 * 60 * 1000;
 
-function recordFrom(snap: DocumentSnapshot): MerchantRecord | null {
+/** The document as it is, clears included. Only a save needs this. */
+function storedFrom(snap: DocumentSnapshot): StoredMerchantRecord | null {
   if (!snap.exists) return null;
-  return withoutRetiredKeys({ ...(snap.data() as MerchantRecord), id: snap.id });
+  return { ...(snap.data() as StoredMerchantRecord), id: snap.id };
+}
+
+function recordFrom(snap: DocumentSnapshot): MerchantRecord | null {
+  const stored = storedFrom(snap);
+  return stored && presentRecord(stored);
 }
 
 function requestFrom(snap: DocumentSnapshot): StoredChangeRequest | null {
@@ -134,13 +140,15 @@ export function createFirestoreMerchantData(): MerchantData {
       const reqRef = update.requestId ? db().collection(REQUESTS).doc(update.requestId) : null;
       return db().runTransaction(async (tx) => {
         const [recSnap, reqSnap] = await Promise.all([tx.get(recRef), reqRef ? tx.get(reqRef) : Promise.resolve(null)]);
-        const current = recordFrom(recSnap);
+        const stored = storedFrom(recSnap);
+        const current = stored && presentRecord(stored);
         assertUpdatable(current, update);
         const linked = reqSnap ? requestFrom(reqSnap) : null;
         if (reqRef) assertRequestLinkable(linked, merchantId);
 
         const now = new Date().toISOString();
-        const next = buildNextRecord(merchantId, current?.version ?? 0, update, now);
+        const next = buildNextRecord(merchantId, stored, update, now);
+        const record = presentRecord(next);
         const histRef = recRef.collection(HISTORY).doc();
         const entry = buildHistoryEntry({
           id: histRef.id,
@@ -149,7 +157,7 @@ export function createFirestoreMerchantData(): MerchantData {
           by: byEmail,
           requestId: update.requestId,
           before: current ?? {},
-          after: next,
+          after: record,
         });
 
         tx.set(recRef, next); // full replace: removed fields, and any old updatedBy, really go away
@@ -158,7 +166,7 @@ export function createFirestoreMerchantData(): MerchantData {
         if (reqRef && linked && update.markRequestDone) {
           tx.update(reqRef, { status: "done", appliedHistoryId: histRef.id, updatedAt: now });
         }
-        return { record: next, historyId: histRef.id };
+        return { record, historyId: histRef.id };
       });
     },
 

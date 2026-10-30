@@ -16,7 +16,13 @@ import type {
   ChangeRequestAttachment,
   ChangeRequestSection,
 } from "../../changeRequests/types";
-import { RETIRED_RECORD_KEYS, withoutRetiredKeys } from "../../merchantProfiles/record";
+import {
+  RETIRED_RECORD_KEYS,
+  withExplicitClears,
+  withoutClearedFields,
+  withoutRetiredKeys,
+  type StoredMerchantRecord,
+} from "../../merchantProfiles/record";
 
 /** Keys the server owns on a MerchantRecord; never diffed, never taken from a client. */
 export const SERVER_OWNED_KEYS = ["version", "updatedAt"] as const;
@@ -64,22 +70,29 @@ function stripUndefined<T extends object>(obj: T): T {
 }
 
 /**
- * The record an update produces: editable fields REPLACED, server fields
- * stamped. merchants/{id} is PUBLIC READ, so who saved it is not on here: that
- * goes in the private history entry (buildHistoryEntry's `by`).
+ * The document an update stores: editable fields REPLACED, server fields
+ * stamped, and an explicit clear for each field `stored` had that the update
+ * leaves out (lib/merchantProfiles/record.ts). `stored` is the document as it
+ * is, clears included, read in the same transaction as the write. That makes
+ * this the one place clears are written, so the form editor and the raw JSON
+ * tab behave alike, and it is why they survive later saves: nothing a client
+ * loads shows them.
+ *
+ * merchants/{id} is PUBLIC READ, so who saved it is not on here: that goes in
+ * the private history entry (buildHistoryEntry's `by`).
  */
 export function buildNextRecord(
   merchantId: string,
-  currentVersion: number,
+  stored: StoredMerchantRecord | null,
   update: AdminMerchantUpdate,
   nowIso: string
-): MerchantRecord {
-  const editable: Record<string, unknown> = withoutRetiredKeys({ ...update.record });
+): StoredMerchantRecord {
+  const editable = withoutClearedFields(withoutRetiredKeys({ ...update.record }));
   for (const k of SERVER_OWNED_KEYS) delete editable[k];
   return stripUndefined({
-    ...(editable as Omit<MerchantRecord, "version" | "updatedAt">),
+    ...(withExplicitClears(editable, stored) as Omit<StoredMerchantRecord, "version" | "updatedAt">),
     id: merchantId,
-    version: currentVersion + 1,
+    version: (stored?.version ?? 0) + 1,
     updatedAt: nowIso,
   });
 }

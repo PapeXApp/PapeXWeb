@@ -17,6 +17,7 @@ import {
   type ChangeRequestStatus,
   type ChangeRequestStatusUpdate,
 } from "./types";
+import { withoutClearedFields } from "../merchantProfiles/record";
 import type { AdminMerchantUpdate, MerchantAccount, MerchantRecord } from "../merchantProfiles/types";
 
 export type ValidationResult<T> =
@@ -257,7 +258,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const HHMM_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 const SERVER_OWNED_KEYS = ["version", "updatedAt"] as const;
 /** Every editable top-level field of MerchantRecord (lib/merchantProfiles/types.ts). */
-const RECORD_KEYS = new Set([
+export const RECORD_KEYS = new Set([
   "id", "name", "logoUrl", "heroImageUrl", "brandColor", "brandColorSecondary", "category",
   "blurb", "website", "address", "phone", "hours", "description", "menuCategories", "menuUrl",
   "menu", "deals", "whatsNew", "loyaltyProgram",
@@ -301,7 +302,11 @@ function dropUnknownNestedKeys(record: Record<string, unknown>): void {
   }
   if (Array.isArray(record.deals)) record.deals = record.deals.map((d) => pickKeys(d, DEAL_KEYS));
   if (Array.isArray(record.whatsNew)) record.whatsNew = record.whatsNew.map((u) => pickKeys(u, UPDATE_KEYS));
-  if (record.loyaltyProgram !== undefined) record.loyaltyProgram = pickKeys(record.loyaltyProgram, LOYALTY_KEYS);
+  if (record.loyaltyProgram !== undefined) {
+    const program = pickKeys(record.loyaltyProgram, LOYALTY_KEYS);
+    if (Object.keys(program).length > 0) record.loyaltyProgram = program;
+    else delete record.loyaltyProgram;
+  }
 }
 
 export interface RecordUpdateOptions {
@@ -347,7 +352,9 @@ export function validateMerchantRecordUpdate(
     return fail("invalid_expected_version", "expectedVersion must be the version you loaded.");
   }
   if (!isPlainObject(raw.record)) return fail("invalid_record", "record must be an object.");
-  const record: Record<string, unknown> = { ...raw.record };
+  // Empty, in any of the forms it can arrive in, means the field isn't set. A
+  // key this leaves out is what tells the save to clear it (buildNextRecord).
+  const record = withoutClearedFields(raw.record);
   for (const k of SERVER_OWNED_KEYS) delete record[k];
   // merchants/{id} is PUBLIC READ: drop anything that isn't a known record
   // field, so a pasted private value (e.g. login emails) can't leak into it.

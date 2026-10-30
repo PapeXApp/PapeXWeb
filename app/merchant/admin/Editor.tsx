@@ -103,7 +103,12 @@ function toEditable(r: MerchantRecord): Editable {
   return rest as Editable;
 }
 
-/** Drop empty strings / undefined / NaN everywhere; drop empty top-level lists and empty hours. */
+/**
+ * Drop empty strings / undefined / NaN everywhere; drop empty top-level lists and empty hours.
+ * Left out of the save means removed: the server writes the clear the app needs
+ * if the record had the field (buildNextRecord), and only it can, because a clear
+ * already stored isn't in what this page loaded.
+ */
 function clean(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(clean);
   if (value && typeof value === "object") {
