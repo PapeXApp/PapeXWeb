@@ -20,6 +20,7 @@
 // Never otherwise.
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { withoutRetiredKeys } from "./merchantProfiles/record";
 import type {
   AdminAssetResponse,
   AdminMerchantResponse,
@@ -462,7 +463,7 @@ function normalizeRecord(data: Record<string, unknown>, id: string): MerchantRec
   out.version = typeof out.version === "number" ? out.version : Number(out.version) || 0;
   if (typeof out.updatedAt !== "string") out.updatedAt = "";
   if (typeof out.name !== "string") out.name = "";
-  return out as unknown as MerchantRecord;
+  return withoutRetiredKeys(out) as unknown as MerchantRecord;
 }
 
 // ---- Hooks -------------------------------------------------------------------------

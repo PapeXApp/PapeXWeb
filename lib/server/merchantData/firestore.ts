@@ -16,6 +16,7 @@
 // outside this repo). Fine at pilot scale; see the report for the ceiling.
 
 import type { DocumentSnapshot, Query } from "firebase-admin/firestore";
+import { withoutRetiredKeys } from "../../merchantProfiles/record";
 import type { MerchantAccount, MerchantHistoryEntry, MerchantRecord } from "../../merchantProfiles/types";
 import type { ChangeRequest } from "../../changeRequests/types";
 import { extensionForImageType, type AllowedImageType } from "../../changeRequests/validate";
@@ -46,7 +47,7 @@ const SIGNED_URL_TTL_MS = 15 * 60 * 1000;
 
 function recordFrom(snap: DocumentSnapshot): MerchantRecord | null {
   if (!snap.exists) return null;
-  return { ...(snap.data() as MerchantRecord), id: snap.id };
+  return withoutRetiredKeys({ ...(snap.data() as MerchantRecord), id: snap.id });
 }
 
 function requestFrom(snap: DocumentSnapshot): StoredChangeRequest | null {
@@ -139,7 +140,7 @@ export function createFirestoreMerchantData(): MerchantData {
         if (reqRef) assertRequestLinkable(linked, merchantId);
 
         const now = new Date().toISOString();
-        const next = buildNextRecord(merchantId, current?.version ?? 0, update, byEmail, now);
+        const next = buildNextRecord(merchantId, current?.version ?? 0, update, now);
         const histRef = recRef.collection(HISTORY).doc();
         const entry = buildHistoryEntry({
           id: histRef.id,
@@ -151,7 +152,7 @@ export function createFirestoreMerchantData(): MerchantData {
           after: next,
         });
 
-        tx.set(recRef, next); // full replace: removed fields really go away
+        tx.set(recRef, next); // full replace: removed fields, and any old updatedBy, really go away
         tx.set(histRef, entry);
         if (update.account) tx.set(db().collection(ACCOUNTS).doc(merchantId), normalizeAccount(merchantId, update.account));
         if (reqRef && linked && update.markRequestDone) {

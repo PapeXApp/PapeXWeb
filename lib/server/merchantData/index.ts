@@ -74,9 +74,9 @@ export interface MerchantData {
   /** The merchant whose account lists this dashboard email, or null. */
   findMerchantIdForEmail(email: string): Promise<string | null>;
   /**
-   * Transactional: 409 on expectedVersion mismatch, version + 1, updatedAt,
-   * updatedBy, a history entry, the account if given, and the linked
-   * request marked done if asked. expectedVersion 0 on a missing merchant
+   * Transactional: 409 on expectedVersion mismatch, version + 1, updatedAt, a
+   * history entry (byEmail goes there, never on the public record), the account
+   * if given, and the linked request marked done if asked. expectedVersion 0 on a missing merchant
    * creates it (version 1). Throws MerchantDataError.
    */
   updateRecord(merchantId: string, update: AdminMerchantUpdate, byEmail: string): Promise<AdminMerchantUpdateResponse>;

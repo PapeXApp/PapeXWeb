@@ -120,8 +120,6 @@ export interface MerchantRecord extends Store {
   version: number;
   /** ISO 8601. */
   updatedAt: string;
-  /** Email of the PapeX staff member who last wrote it. */
-  updatedBy?: string;
 }
 
 /** `merchantAccounts/{merchantId}`. PRIVATE (clients can't read it). */
@@ -185,11 +183,11 @@ export interface AdminMerchantResponse {
 }
 
 /** PUT /api/merchant/admin/merchants/[id]
- *  `record` replaces the editable fields (server owns id/version/updatedAt/updatedBy).
+ *  `record` replaces the editable fields (server owns id/version/updatedAt).
  *  If `requestId` is set, the history entry links to it; if `markRequestDone`
  *  is also true, that request's status becomes "done". */
 export interface AdminMerchantUpdate {
-  record: Omit<MerchantRecord, "version" | "updatedAt" | "updatedBy">;
+  record: Omit<MerchantRecord, "version" | "updatedAt">;
   account?: Omit<MerchantAccount, "merchantId">;
   requestId?: string;
   markRequestDone?: boolean;

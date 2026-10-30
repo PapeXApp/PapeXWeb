@@ -161,12 +161,11 @@ test("validateStatusUpdate: enum, trimmed note, length limit", () => {
 
 // ── validateMerchantRecordUpdate ───────────────────────────────────────────
 
-function editable(): Omit<MerchantRecord, "version" | "updatedAt" | "updatedBy"> {
+function editable(): Omit<MerchantRecord, "version" | "updatedAt"> {
   const r: Partial<MerchantRecord> = structuredClone(DOOBIE_NIGHTS);
   delete r.version;
   delete r.updatedAt;
-  delete r.updatedBy;
-  return r as Omit<MerchantRecord, "version" | "updatedAt" | "updatedBy">;
+  return r as Omit<MerchantRecord, "version" | "updatedAt">;
 }
 
 test("the seed record itself passes", () => {

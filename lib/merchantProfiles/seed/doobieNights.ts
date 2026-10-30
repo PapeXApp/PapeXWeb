@@ -296,5 +296,4 @@ export const DOOBIE_NIGHTS: MerchantRecord = {
   },
   version: 1,
   updatedAt: "2026-09-11T00:00:00.000Z",
-  updatedBy: "seed",
 };

@@ -5,8 +5,10 @@
 // Run with: npm run test:merchantProfile
 
 import assert from "node:assert/strict";
-import { createMockMerchantData, resetMockStore } from "./mock";
+import { readFileSync } from "node:fs";
+import { createMockMerchantData, putRawMockRecord, rawMockRecord, resetMockStore } from "./mock";
 import { MerchantDataError } from "./shared";
+import { SEED_MERCHANTS } from "../../merchantProfiles/seed";
 import type { AdminMerchantUpdate, MerchantRecord } from "../../merchantProfiles/types";
 import type { ValidatedFile } from "../../changeRequests/validate";
 
@@ -44,7 +46,6 @@ function editable(r: MerchantRecord): AdminMerchantUpdate["record"] {
   const copy: Partial<MerchantRecord> = structuredClone(r);
   delete copy.version;
   delete copy.updatedAt;
-  delete copy.updatedBy;
   return copy as AdminMerchantUpdate["record"];
 }
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -149,7 +150,7 @@ async function main() {
 
   let v2HistoryId = "";
 
-  await test("updateRecord bumps version, stamps updatedBy, writes history with exact changedFields", async () => {
+  await test("updateRecord bumps version, writes history with exact changedFields and who saved it", async () => {
     const current = (await data.getRecord(DOOBIE))!;
     const record = editable(current);
     record.blurb = "New blurb";
@@ -159,7 +160,6 @@ async function main() {
     const res = await data.updateRecord(DOOBIE, { record, expectedVersion: 1 }, "nico@papex.app");
     v2HistoryId = res.historyId;
     assert.equal(res.record.version, 2);
-    assert.equal(res.record.updatedBy, "nico@papex.app");
     assert.equal(res.record.blurb, "New blurb");
     const [entry] = await data.listHistory(DOOBIE, 20);
     assert.equal(entry.id, res.historyId);
@@ -253,6 +253,58 @@ async function main() {
     assert.equal((await createMockMerchantData().getRecord(DOOBIE))!.version, 4);
     resetMockStore();
     assert.equal((await createMockMerchantData().getRecord(DOOBIE))!.version, 1);
+  });
+
+  // merchants/{id} is PUBLIC READ: no staff email on it, in any write path.
+  await test("a save writes no staff email to the stored document; the private history has it", async () => {
+    resetMockStore();
+    const record = editable((await data.getRecord(DOOBIE))!);
+    (record as unknown as Record<string, unknown>).updatedBy = "handed-in@papex.app";
+    const res = await data.updateRecord(DOOBIE, { record, expectedVersion: 1 }, "nico@papex.app");
+    assert.equal("updatedBy" in res.record, false);
+    const stored = rawMockRecord(DOOBIE)!;
+    assert.equal("updatedBy" in stored, false);
+    assert.equal(JSON.stringify(stored).includes("nico@"), false);
+    assert.equal(JSON.stringify(stored).includes("handed-in@"), false);
+    assert.equal((await data.listHistory(DOOBIE, 1))[0].by, "nico@papex.app");
+  });
+
+  await test("the next save removes an old updatedBy, which readers never show or diff", async () => {
+    resetMockStore();
+    putRawMockRecord({ ...rawMockRecord(DOOBIE)!, id: DOOBIE, updatedBy: "old-staff@papex.app" });
+    const before = (await data.getRecord(DOOBIE))!;
+    assert.equal("updatedBy" in before, false);
+    assert.equal((await data.listSummaries()).some((s) => JSON.stringify(s).includes("old-staff")), false);
+
+    const res = await data.updateRecord(DOOBIE, { record: editable(before), expectedVersion: 1 }, "nico@papex.app");
+    assert.equal("updatedBy" in rawMockRecord(DOOBIE)!, false);
+    assert.equal(res.record.version, 2);
+    const [entry] = await data.listHistory(DOOBIE, 1);
+    assert.deepEqual(entry.changedFields, []);
+    assert.equal(JSON.stringify(entry.before).includes("old-staff"), false);
+  });
+
+  await test("seeds carry no updatedBy", () => {
+    for (const r of SEED_MERCHANTS) assert.equal("updatedBy" in r, false, r.id);
+    return Promise.resolve();
+  });
+
+  // The real backend needs Firestore, so these read its source: the behaviour
+  // above only holds there if it stays a full replace through the shared code.
+  await test("the Firestore backend stays a full replace built by the shared code", () => {
+    const src = readFileSync(new URL("./firestore.ts", import.meta.url), "utf8");
+    assert.match(src, /tx\.set\(recRef, next\);/);
+    assert.doesNotMatch(src, /merge:\s*true/);
+    assert.doesNotMatch(src, /tx\.update\(recRef/);
+    assert.match(src, /buildNextRecord\(/);
+    assert.doesNotMatch(src, /updatedBy:/);
+    return Promise.resolve();
+  });
+
+  await test("the seed script writes no updatedBy", () => {
+    const src = readFileSync(new URL("../../../scripts/seed-merchants.ts", import.meta.url), "utf8");
+    assert.doesNotMatch(src, /updatedBy/);
+    return Promise.resolve();
   });
 
   console.log(`\n${passed} passed, ${failed} failed`);

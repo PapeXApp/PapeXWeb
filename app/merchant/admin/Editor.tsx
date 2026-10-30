@@ -67,7 +67,7 @@ import {
   UpdateForm,
 } from "./editorFields";
 
-type Editable = Omit<MerchantRecord, "version" | "updatedAt" | "updatedBy">;
+type Editable = Omit<MerchantRecord, "version" | "updatedAt">;
 
 type EditorTab = "brand" | "about" | "hours" | "menu" | "deals" | "whatsNew" | "loyalty" | "account" | "json";
 
@@ -100,7 +100,6 @@ function toEditable(r: MerchantRecord): Editable {
   const rest: Partial<MerchantRecord> = { ...r };
   delete rest.version;
   delete rest.updatedAt;
-  delete rest.updatedBy;
   return rest as Editable;
 }
 
@@ -656,7 +655,7 @@ export function Editor({
       const obj = { ...(parsed as Record<string, unknown>) };
       delete obj.version;
       delete obj.updatedAt;
-      delete obj.updatedBy;
+      delete obj.updatedBy; // a paste from before updatedBy was retired
       if (typeof obj.name !== "string") throw new Error("The record needs a \"name\" string.");
       setDraft({ ...(obj as unknown as Editable), id: merchantId });
       setJsonError(null);
@@ -685,6 +684,9 @@ export function Editor({
   const ctx = { merchantId, getIdToken };
   const history = [...loaded.history].sort((a, b) => b.at.localeCompare(a.at));
   const shownHistory = historyAll ? history : history.slice(0, 6);
+  // Who saved it is private history. Named only when that entry IS this
+  // version, so an edit made outside the dashboard isn't pinned on someone else.
+  const savedBy = history[0]?.at === loaded.record.updatedAt ? history[0].by : null;
   const menu = draft.menu ?? [];
   const canSave = dirty && saving === null;
   const proposed = pinned?.proposedColors;
@@ -722,7 +724,7 @@ export function Editor({
             <p className="mt-0.5 text-xs" style={{ color: T.textMuted }}>
               <span className="font-mono">{merchantId}</span> · version {loaded.record.version}
               {loaded.record.updatedAt && ` · updated ${relativeTime(loaded.record.updatedAt)}`}
-              {loaded.record.updatedBy && ` by ${loaded.record.updatedBy}`}
+              {savedBy && ` by ${savedBy}`}
             </p>
           </div>
         </div>

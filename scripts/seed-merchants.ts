@@ -49,7 +49,7 @@ async function main(): Promise<void> {
     const ref = db.collection("merchants").doc(r.id);
     const exists = (await ref.get()).exists;
     const histRef = ref.collection("history").doc();
-    const record = { ...r, updatedAt: now, updatedBy: "seed-merchants" };
+    const record = { ...r, updatedAt: now };
     ops.push({
       path: ref.path,
       exists,

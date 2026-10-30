@@ -255,7 +255,7 @@ const MAX_NAME_CHARS = 120;
 const MAX_DASHBOARD_EMAILS = 50;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const HHMM_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
-const SERVER_OWNED_KEYS = ["version", "updatedAt", "updatedBy"] as const;
+const SERVER_OWNED_KEYS = ["version", "updatedAt"] as const;
 /** Every editable top-level field of MerchantRecord (lib/merchantProfiles/types.ts). */
 const RECORD_KEYS = new Set([
   "id", "name", "logoUrl", "heroImageUrl", "brandColor", "brandColorSecondary", "category",
@@ -432,4 +432,4 @@ export function validateMerchantRecordUpdate(
 }
 
 /** Narrow helper so callers can build the record type the backends store. */
-export type EditableRecord = Omit<MerchantRecord, "version" | "updatedAt" | "updatedBy">;
+export type EditableRecord = Omit<MerchantRecord, "version" | "updatedAt">;

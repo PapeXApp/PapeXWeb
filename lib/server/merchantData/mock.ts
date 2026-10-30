@@ -10,6 +10,7 @@
 // can't change the store behind the API's back (Firestore can't either).
 
 import { SEED_ACCOUNTS, SEED_MERCHANTS } from "../../merchantProfiles/seed";
+import { withoutRetiredKeys } from "../../merchantProfiles/record";
 import type { MerchantAccount, MerchantHistoryEntry, MerchantRecord } from "../../merchantProfiles/types";
 import type { ChangeRequest } from "../../changeRequests/types";
 import { extensionForImageType } from "../../changeRequests/validate";
@@ -70,6 +71,17 @@ export function resetMockStore(): void {
   (globalThis as unknown as Record<string, MockState | undefined>)[GLOBAL_KEY] = freshState();
 }
 
+/** Tests: a document exactly as stored, which getRecord doesn't show. */
+export function rawMockRecord(merchantId: string): Record<string, unknown> | undefined {
+  const r = state().records.get(merchantId);
+  return r ? (clone(r) as unknown as Record<string, unknown>) : undefined;
+}
+
+/** Tests: store a document as an older save left it. */
+export function putRawMockRecord(doc: Record<string, unknown> & { id: string }): void {
+  state().records.set(doc.id, clone(doc) as unknown as MerchantRecord);
+}
+
 const clone = <T>(v: T): T => structuredClone(v);
 
 function toDataUrl(blob: MockBlob): string {
@@ -94,7 +106,7 @@ export function createMockMerchantData(): MerchantData {
 
     async getRecord(merchantId) {
       const r = state().records.get(merchantId);
-      return r ? clone(r) : null;
+      return r ? clone(withoutRetiredKeys(r)) : null;
     },
 
     async listSummaries() {
@@ -125,13 +137,14 @@ export function createMockMerchantData(): MerchantData {
 
     async updateRecord(merchantId, update, byEmail) {
       const s = state();
-      const current = s.records.get(merchantId) ?? null;
+      const stored = s.records.get(merchantId) ?? null;
+      const current = stored && withoutRetiredKeys(stored);
       assertUpdatable(current, update);
       const linked = update.requestId ? s.requests.get(update.requestId) ?? null : null;
       if (update.requestId) assertRequestLinkable(linked, merchantId);
 
       const now = new Date().toISOString();
-      const next = buildNextRecord(merchantId, current?.version ?? 0, update, byEmail, now);
+      const next = buildNextRecord(merchantId, current?.version ?? 0, update, now);
       const historyId = newId();
       const entry = buildHistoryEntry({
         id: historyId,

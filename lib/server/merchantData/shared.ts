@@ -16,9 +16,10 @@ import type {
   ChangeRequestAttachment,
   ChangeRequestSection,
 } from "../../changeRequests/types";
+import { RETIRED_RECORD_KEYS, withoutRetiredKeys } from "../../merchantProfiles/record";
 
 /** Keys the server owns on a MerchantRecord; never diffed, never taken from a client. */
-export const SERVER_OWNED_KEYS = ["version", "updatedAt", "updatedBy"] as const;
+export const SERVER_OWNED_KEYS = ["version", "updatedAt"] as const;
 
 /** An attachment as stored: a storage path (or mock key), not a URL. */
 export interface StoredAttachment extends Omit<ChangeRequestAttachment, "url"> {
@@ -62,22 +63,24 @@ function stripUndefined<T extends object>(obj: T): T {
   return JSON.parse(JSON.stringify(obj)) as T;
 }
 
-/** The record an update produces: editable fields REPLACED, server fields stamped. */
+/**
+ * The record an update produces: editable fields REPLACED, server fields
+ * stamped. merchants/{id} is PUBLIC READ, so who saved it is not on here: that
+ * goes in the private history entry (buildHistoryEntry's `by`).
+ */
 export function buildNextRecord(
   merchantId: string,
   currentVersion: number,
   update: AdminMerchantUpdate,
-  byEmail: string,
   nowIso: string
 ): MerchantRecord {
-  const editable: Record<string, unknown> = { ...update.record };
+  const editable: Record<string, unknown> = withoutRetiredKeys({ ...update.record });
   for (const k of SERVER_OWNED_KEYS) delete editable[k];
   return stripUndefined({
-    ...(editable as Omit<MerchantRecord, "version" | "updatedAt" | "updatedBy">),
+    ...(editable as Omit<MerchantRecord, "version" | "updatedAt">),
     id: merchantId,
     version: currentVersion + 1,
     updatedAt: nowIso,
-    updatedBy: byEmail,
   });
 }
 
@@ -88,7 +91,7 @@ export function diffRecords(
 ): { changedFields: string[]; before: Partial<MerchantRecord>; after: Partial<MerchantRecord> } {
   const b = before as Record<string, unknown>;
   const a = after as Record<string, unknown>;
-  const skip = new Set<string>(SERVER_OWNED_KEYS);
+  const skip = new Set<string>([...SERVER_OWNED_KEYS, ...RETIRED_RECORD_KEYS]);
   const keys = [...new Set([...Object.keys(b), ...Object.keys(a)])].filter((k) => !skip.has(k)).sort();
   const changedFields: string[] = [];
   const outBefore: Record<string, unknown> = {};
