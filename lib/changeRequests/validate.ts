@@ -263,6 +263,47 @@ const RECORD_KEYS = new Set([
   "menu", "deals", "whatsNew", "loyaltyProgram",
 ]);
 
+// Nested keys get the same rule as RECORD_KEYS, because the raw JSON tab can
+// paste anything into a public document. These mirror the app's Store types
+// (PapeXV2 services/coupons/types.ts), so they include `url`, which the app
+// reads and this dashboard has no form for.
+const HOURS_KEYS = ["timezone", "intervals"];
+const INTERVAL_KEYS = ["day", "opensAt", "closesAt"];
+const MENU_CATEGORY_KEYS = ["category", "items"];
+const MENU_ITEM_KEYS = ["id", "name", "description", "price", "imageUrl", "url"];
+const DEAL_KEYS = [
+  "id", "title", "description", "schedule", "terms", "imageUrl", "imageAspectRatio", "url", "weekdays",
+  "daysOfMonth", "startsOn", "endsOn", "appliesTo", "category", "menuItemIds", "percentOff",
+];
+const UPDATE_KEYS = ["id", "kind", "title", "body", "menuItemId", "postedOn"];
+const LOYALTY_KEYS = ["programName", "nextRewardAt", "nextRewardLabel"];
+
+function pickKeys(obj: unknown, keys: string[]): Record<string, unknown> {
+  const from = obj as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const k of keys) if (k in from) out[k] = from[k];
+  return out;
+}
+
+/** Call after the shape checks: every nested value here is the shape they require. */
+function dropUnknownNestedKeys(record: Record<string, unknown>): void {
+  if (record.hours !== undefined) {
+    const hours = pickKeys(record.hours, HOURS_KEYS);
+    hours.intervals = (hours.intervals as unknown[]).map((iv) => pickKeys(iv, INTERVAL_KEYS));
+    record.hours = hours;
+  }
+  if (Array.isArray(record.menu)) {
+    record.menu = record.menu.map((cat) => {
+      const category = pickKeys(cat, MENU_CATEGORY_KEYS);
+      category.items = (category.items as unknown[]).map((item) => pickKeys(item, MENU_ITEM_KEYS));
+      return category;
+    });
+  }
+  if (Array.isArray(record.deals)) record.deals = record.deals.map((d) => pickKeys(d, DEAL_KEYS));
+  if (Array.isArray(record.whatsNew)) record.whatsNew = record.whatsNew.map((u) => pickKeys(u, UPDATE_KEYS));
+  if (record.loyaltyProgram !== undefined) record.loyaltyProgram = pickKeys(record.loyaltyProgram, LOYALTY_KEYS);
+}
+
 export interface RecordUpdateOptions {
   /** Mock mode only: uploaded assets come back as data: URLs. */
   allowDataImageUrls?: boolean;
@@ -290,7 +331,8 @@ function byteLength(s: string): number {
  * Light structural validation of an admin edit. Not a full schema: it
  * blocks the things that would break the app or open a hole (wrong id, bad
  * colors, javascript: URLs, non-arrays where the app maps over arrays,
- * oversize documents), and passes anything else through untouched.
+ * oversize documents), drops keys the record doesn't define at any depth, and
+ * passes anything else through untouched.
  */
 export function validateMerchantRecordUpdate(
   raw: unknown,
@@ -386,6 +428,7 @@ export function validateMerchantRecordUpdate(
   if (record.loyaltyProgram !== undefined && !isPlainObject(record.loyaltyProgram)) {
     return fail("invalid_record", "loyaltyProgram must be an object.");
   }
+  dropUnknownNestedKeys(record);
 
   const value: AdminMerchantUpdate = {
     record: record as AdminMerchantUpdate["record"],

@@ -14,6 +14,7 @@ import {
   validateUploadFiles,
   type ValidationResult,
 } from "./validate";
+import { SEED_MERCHANTS } from "../merchantProfiles/seed";
 import { DOOBIE_NIGHTS } from "../merchantProfiles/seed/doobieNights";
 import type { MerchantRecord } from "../merchantProfiles/types";
 
@@ -180,6 +181,39 @@ test("server-owned keys in `record` are stripped, not trusted", () => {
     assert.equal("version" in r.value.record, false);
     assert.equal("updatedBy" in r.value.record, false);
   }
+});
+
+test("a seed record passes through with nothing removed", () => {
+  for (const seed of SEED_MERCHANTS) {
+    const record: Partial<MerchantRecord> = structuredClone(seed);
+    delete record.version;
+    delete record.updatedAt;
+    const r = validateMerchantRecordUpdate({ record, expectedVersion: 1 }, seed.id);
+    assert.ok(r.ok, JSON.stringify(r));
+    if (r.ok) assert.deepEqual(r.value.record, record, seed.id);
+  }
+});
+
+test("unknown keys are dropped at every depth, known ones kept (merchants/{id} is public)", () => {
+  const leak = { dashboardEmails: ["private@example.com"] };
+  const record = {
+    ...editable(),
+    ...leak,
+    hours: { timezone: "America/Los_Angeles", intervals: [{ day: 1, opensAt: "09:00", closesAt: "17:00", ...leak }], ...leak },
+    menu: [{ category: "Flower", items: [{ id: "a", name: "A", price: 1, url: "https://example.com/a", ...leak }], ...leak }],
+    deals: [{ id: "d", title: "D", url: "https://example.com/d", percentOff: 10, ...leak }],
+    whatsNew: [{ id: "u", kind: "announcement", title: "U", ...leak }],
+    loyaltyProgram: { programName: "P", nextRewardAt: 100, nextRewardLabel: "$5 off", ...leak },
+  };
+  const r = validateMerchantRecordUpdate({ record, expectedVersion: 1 }, "store-doobie-nights");
+  assert.ok(r.ok, JSON.stringify(r));
+  if (!r.ok) return;
+  assert.equal(JSON.stringify(r.value.record).includes("private@example.com"), false);
+  assert.deepEqual(r.value.record.hours, { timezone: "America/Los_Angeles", intervals: [{ day: 1, opensAt: "09:00", closesAt: "17:00" }] });
+  assert.deepEqual(r.value.record.menu, [{ category: "Flower", items: [{ id: "a", name: "A", price: 1, url: "https://example.com/a" }] }]);
+  assert.deepEqual(r.value.record.deals, [{ id: "d", title: "D", url: "https://example.com/d", percentOff: 10 }]);
+  assert.deepEqual(r.value.record.whatsNew, [{ id: "u", kind: "announcement", title: "U" }]);
+  assert.deepEqual(r.value.record.loyaltyProgram, { programName: "P", nextRewardAt: 100, nextRewardLabel: "$5 off" });
 });
 
 test("record.id must match the path id", () => {
