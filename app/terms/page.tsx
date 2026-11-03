@@ -4,7 +4,12 @@
 // 'use client') onto the redesign shell /support and /about use, via the
 // shared LegalPage frame (components/legal). The legal text below was
 // unchanged, word for word, until the phone sign-in edit (PapeX 1.7.4): one
-// paragraph, "Text messages", in Section 3. Metadata used to live in a sibling layout.tsx
+// paragraph, "Text messages", in Section 3. Then the Logo.dev credit in Section 9
+// (2026-11-03): logo.dev's free plan requires a visible "Logos provided by
+// Logo.dev" link on a public page, and this is that page. Keep the link text and
+// href exactly as they are; logo.dev's dashboard check looks for them. It is a
+// credit, not a change to the terms, so TERMS_DATE was not moved for it.
+// Metadata used to live in a sibling layout.tsx
 // only because this page was a client component; it is a Server Component
 // again, so the metadata is back here.
 //
@@ -151,6 +156,10 @@ export default function TermsPage() {
           The Service may include integrations with third-party services, including POS systems and financial management
           applications. PapeX is not responsible for the availability, accuracy, or security of third-party services, and your
           use of such integrations is governed by their respective terms and policies.
+        </p>
+        <p>
+          Merchant logos shown in the Service come from Logo.dev.{' '}
+          <a href="https://logo.dev">Logos provided by Logo.dev</a>
         </p>
       </section>
 
