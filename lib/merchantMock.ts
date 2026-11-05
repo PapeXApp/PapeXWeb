@@ -926,6 +926,7 @@ export async function mockGetCardConfig(version?: number): Promise<CardConfigRes
     config: structuredClone(wanted.config),
     versions: [...versions].reverse().map(({ version: v, configRef, receiptsFrom, publishedAt }) => ({ version: v, configRef, receiptsFrom, publishedAt })),
     state: { enabled: true, revokedCardIds: [] },
+    liveDemo: null,
   };
 }
 

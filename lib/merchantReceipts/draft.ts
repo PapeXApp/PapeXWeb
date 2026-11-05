@@ -38,6 +38,14 @@ export interface OfferDraft {
   surfaces: LiveSurface[];
   webCardId: string;
   appCardId: string;
+  /**
+   * What this offer's cards came with that the editor doesn't edit, written back
+   * as it was: their priority (so an offer that isn't moved keeps its place
+   * among savings and text cards), whether each card is also on `preview`, and
+   * the app card's actions (a demo can leave Save off on purpose). Absent for a
+   * new offer, which gets the Doobie shape.
+   */
+  kept?: { priority?: number; webPreview: boolean; appPreview: boolean; appActions: ConfigCard["actions"] | null };
 }
 
 export interface ReceiptsDraft {
@@ -96,6 +104,7 @@ export function fromConfig(config: CardConfig): ReceiptsDraft {
     const live = cards.flatMap((c) => liveOnly(c.surfaces));
     const app = cards.find((c) => c.surfaces.includes("app"));
     const web = cards.find((c) => !c.surfaces.includes("app"));
+    const priorities = cards.map((c) => c.priority).filter((p): p is number => Number.isInteger(p));
     drafts.push({
       priority: Math.min(...cards.map((c) => c.priority ?? 100)),
       draft: {
@@ -107,6 +116,12 @@ export function fromConfig(config: CardConfig): ReceiptsDraft {
         surfaces: live.length > 0 ? ([...new Set(live)] as LiveSurface[]) : ["clip", "web", "app"],
         webCardId: web?.id ?? `${id}-web`,
         appCardId: app?.id ?? `${id}-app`,
+        kept: {
+          ...(priorities.length > 0 ? { priority: Math.min(...priorities) } : {}),
+          webPreview: web ? web.surfaces.includes("preview") : true,
+          appPreview: app ? app.surfaces.includes("preview") : true,
+          appActions: app ? (app.actions ?? null) : [SAVE_ACTION],
+        },
       },
     });
   }
@@ -136,17 +151,32 @@ function cleanTemplate(t: OfferTemplate): OfferTemplate {
   return out;
 }
 
+/**
+ * Each offer's priority, in draft order. Offers take back the priorities they
+ * came with, lowest first, so nothing moves on a publish that doesn't move them;
+ * new offers go 10 after the last. A config with none gets 10, 20, 30.
+ */
+function offerPriorities(offers: OfferDraft[]): number[] {
+  const slots = offers.map((o) => o.kept?.priority).filter((p): p is number => p !== undefined).sort((a, b) => a - b);
+  let last = slots.length > 0 ? slots[slots.length - 1] : 0;
+  return offers.map((_, i) => (i < slots.length ? slots[i] : (last += 10)));
+}
+
 export function toConfigInput(draft: ReceiptsDraft): CardConfigInput {
   const offers: Record<string, OfferTemplate> = { ...draft.otherOffers };
   const cards: ConfigCard[] = [];
+  const priorities = offerPriorities(draft.offers);
   draft.offers.forEach((o, i) => {
     offers[o.id] = cleanTemplate(o.template);
     const everyone = LOYALTY_SEGMENTS.every((s) => o.segments.includes(s));
     const live = o.on ? o.surfaces : [];
+    const webPreview = o.kept?.webPreview ?? true;
+    const appPreview = o.kept?.appPreview ?? true;
+    const appActions = o.kept ? o.kept.appActions : [SAVE_ACTION];
     const shared: Partial<ConfigCard> = {
       type: "offer",
       offer: o.id,
-      priority: (i + 1) * 10,
+      priority: priorities[i],
       ...(o.heading.trim() === "" ? {} : { heading: o.heading }),
       // An off offer with no customers picked isn't an error: it isn't going anywhere.
       ...(everyone || (live.length === 0 && o.segments.length === 0)
@@ -154,8 +184,10 @@ export function toConfigInput(draft: ReceiptsDraft): CardConfigInput {
         : { when: { fact: SEGMENT_FACT, op: "in", value: LOYALTY_SEGMENTS.filter((s) => o.segments.includes(s)) } }),
     };
     const web = (["web", "clip"] as const).filter((s) => live.includes(s));
-    if (web.length > 0) cards.push({ id: o.webCardId, surfaces: ["preview", ...web], ...shared } as ConfigCard);
-    if (live.includes("app")) cards.push({ id: o.appCardId, surfaces: ["preview", "app"], ...shared, actions: [SAVE_ACTION] } as ConfigCard);
+    if (web.length > 0) cards.push({ id: o.webCardId, surfaces: [...(webPreview ? ["preview"] : []), ...web], ...shared } as ConfigCard);
+    if (live.includes("app")) {
+      cards.push({ id: o.appCardId, surfaces: [...(appPreview ? ["preview"] : []), "app"], ...shared, ...(appActions ? { actions: appActions } : {}) } as ConfigCard);
+    }
     if (web.length === 0 && !live.includes("app")) cards.push({ id: o.webCardId, surfaces: ["preview"], ...shared } as ConfigCard);
   });
   return { enabled: draft.enabled, layout: { order: draft.order }, offers, cards: [...cards, ...draft.otherCards] };

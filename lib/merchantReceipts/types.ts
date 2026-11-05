@@ -106,6 +106,11 @@ export interface CardConfigResponse {
   versions: CardConfigVersion[];
   /** Request-time switches, which reach already-printed receipts too. */
   state: { enabled: boolean; revokedCardIds: string[] };
+  /**
+   * A demo whose demo link always shows the newest version (merchant-api
+   * LIVE_DEMO_MERCHANTS), with that link. Null or absent for everyone else.
+   */
+  liveDemo?: { link: string } | null;
 }
 
 export interface CardConfigIssue {

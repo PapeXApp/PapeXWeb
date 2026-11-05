@@ -10,7 +10,9 @@
 // WHAT THE COPY MAY PROMISE (this page is filmed). A version only decorates
 // receipts uploaded after it's published (lib/configItems.js selectConfigVersion),
 // and it reaches the cards service within its 60 s cache, so that's what's said.
-// Nothing here says a change reaches a receipt that's already printed. Whether a
+// Nothing here says a change reaches a receipt that's already printed, except
+// for a live demo (`liveDemo` on the config): its publishes start where its
+// first version did, so its demo link shows each one, and the page says that. Whether a
 // customer type can be told apart depends on what the POS prints, and the page
 // says so when the real counts show it can't.
 //
@@ -42,7 +44,8 @@ import {
   type ReceiptsDraft,
 } from "@/lib/merchantReceipts/draft";
 import { describeIssues, type PlainIssue } from "@/lib/merchantReceipts/plainLanguage";
-import type { CardConfigResponse, CardReach, LayoutOrder, LiveSurface, LoyaltySegment } from "@/lib/merchantReceipts/types";
+import { LOYALTY_SEGMENTS, type CardConfigResponse, type CardReach, type LayoutOrder, type LiveSurface, type LoyaltySegment } from "@/lib/merchantReceipts/types";
+import { publishCopy } from "./copy";
 import { Switch } from "./controls";
 import { OfferEditor } from "./OfferEditor";
 import { ReceiptPreview } from "./ReceiptPreview";
@@ -213,7 +216,7 @@ export default function ReceiptsPage() {
             ? "That's already what's live, so nothing changed."
             : MERCHANT_MOCK
               ? `Version ${res.version} saved in this browser. Mock mode: no real receipt changed.`
-              : `Version ${res.version} published. It reaches receipts printed from now on, within about a minute.`,
+              : publishCopy(fresh.liveDemo).published(res.version),
         );
       } else if (res.kind === "invalid" && config) {
         setErrors(describeIssues(res.errors, config));
@@ -275,6 +278,9 @@ export default function ReceiptsPage() {
   const liveCount = offersFor(draft, segment).filter((o) => o.surfaces.includes(surface)).length;
   const managedCards = data.config.cards.filter(isManagedCard);
   const unknownShare = reach && reach.total > 0 ? reach.segments.unknown / reach.total : null;
+  // The warning is about targeting, so it's only worth showing when an offer is targeted.
+  const targeted = draft.offers.some((o) => o.on && o.segments.length < LOYALTY_SEGMENTS.length);
+  const reachCopy = publishCopy(data.liveDemo);
   const previewSid = receipt?.sid ?? FALLBACK_SID;
 
   const preview = (
@@ -320,6 +326,18 @@ export default function ReceiptsPage() {
         </div>
       )}
       {actionError && <ErrorBanner message={actionError} />}
+      {data.liveDemo && (
+        <div
+          className="rounded-2xl border px-4 py-3 text-sm leading-relaxed"
+          style={{ borderColor: T.glassBorder, color: T.textSecondary }}
+          data-testid="live-demo-link"
+        >
+          Your demo link always shows the version you published last, within about a minute:{" "}
+          <a href={data.liveDemo.link} target="_blank" rel="noopener noreferrer" className="break-all underline" style={{ color: T.text }}>
+            {data.liveDemo.link.replace(/^https:\/\//, "")}
+          </a>
+        </div>
+      )}
 
       <Tabs
         className="xl:hidden"
@@ -357,7 +375,7 @@ export default function ReceiptsPage() {
             </label>
           </Card>
 
-          {unknownShare !== null && unknownShare >= MOSTLY_UNKNOWN && (
+          {targeted && unknownShare !== null && unknownShare >= MOSTLY_UNKNOWN && (
             <div
               className="rounded-2xl border px-4 py-3 text-sm leading-relaxed"
               style={{ borderColor: "rgba(245,165,36,0.35)", background: "rgba(245,165,36,0.1)", color: T.warning }}
@@ -481,7 +499,7 @@ export default function ReceiptsPage() {
               Versions
             </h2>
             <p className="text-sm" style={{ color: T.textSecondary }}>
-              Each publish is a new version and applies to receipts printed after it. Receipts already printed keep the offers they came with.
+              {reachCopy.versions}
             </p>
             <ul className="flex flex-col">
               {data.versions.map((v, i) => (
@@ -512,7 +530,7 @@ export default function ReceiptsPage() {
         open={confirming}
         onClose={() => setConfirming(false)}
         title={`Publish version ${(latestVersion ?? 0) + 1}?`}
-        description="Customers see this on receipts printed from now on, within about a minute. Receipts already printed keep the offers they came with."
+        description={reachCopy.sheet}
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setConfirming(false)}>

@@ -1,7 +1,8 @@
 // app/merchant/receipts/copy.ts
 //
-// The words for customer types and surfaces, in one place. The definitions are
-// what lambdas/cards/lib/loyalty.js really does with the printed loyalty lines.
+// The words for customer types, surfaces and what a publish reaches, in one
+// place. The customer-type definitions are what lambdas/cards/lib/loyalty.js
+// really does with the printed loyalty lines.
 
 import type { LiveSurface, LoyaltySegment } from "@/lib/merchantReceipts/types";
 
@@ -43,3 +44,23 @@ export const SURFACE_COPY: Record<LiveSurface, { label: string }> = {
   web: { label: "Web tap page" },
   app: { label: "PapeX app" },
 };
+
+/**
+ * What a publish reaches, in the page's words. A live demo's link always shows
+ * the newest version (merchant-api LIVE_DEMO_MERCHANTS, `liveDemo` on the
+ * config). Everyone else's publish decorates only receipts printed after it.
+ */
+export function publishCopy(liveDemo: { link: string } | null | undefined) {
+  if (liveDemo) {
+    return {
+      sheet: "Your demo link shows this within about a minute.",
+      published: (version: number) => `Version ${version} published. Your demo link shows it within about a minute.`,
+      versions: "Each publish is a new version, and your demo link always shows the newest one.",
+    };
+  }
+  return {
+    sheet: "Customers see this on receipts printed from now on, within about a minute. Receipts already printed keep the offers they came with.",
+    published: (version: number) => `Version ${version} published. It reaches receipts printed from now on, within about a minute.`,
+    versions: "Each publish is a new version and applies to receipts printed after it. Receipts already printed keep the offers they came with.",
+  };
+}

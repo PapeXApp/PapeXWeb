@@ -22,8 +22,19 @@ import { LOYALTY_SEGMENTS, type CardConfig, type LiveSurface, type LoyaltySegmen
 import { mockGetCardConfig, mockGetPreviewReceiptBytes, mockPublishCardConfig } from "../merchantMock";
 import { parseEscPos } from "../escpos";
 import { summarizeReceipt } from "../receiptSummary";
+import { publishCopy } from "../../app/merchant/receipts/copy";
 
 const here = dirname(fileURLToPath(import.meta.url));
+/** The PapeX Cafe demo's config as GET /merchant/cards/config returns it (RDH sanitizeConfig of v1). */
+const CAFE_CONFIG = JSON.parse(readFileSync(join(here, "__fixtures__", "cafeConfig.json"), "utf8")) as CardConfig;
+
+/** JSON with every object's keys sorted, so key order never decides equality. */
+function canonical(x: unknown): string {
+  return JSON.stringify(x, (_k, v) =>
+    v && typeof v === "object" && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b))) : v,
+  );
+}
+const cardSet = (cards: { id: string }[]) => [...cards].sort((a, b) => a.id.localeCompare(b.id)).map(canonical);
 
 interface ParityCase {
   name: string;
@@ -319,6 +330,62 @@ async function main() {
     const summary = summarizeReceipt(parseEscPos(bytes).lines);
     assert.equal(summary.merchantName, "SUNSET LEAF CO.");
     assert.equal(summary.total, 64.63);
+  });
+
+  // ---- WHAT THE EDITOR DOESN'T EDIT -----------------------------------------
+  await test("round trip: the café's config comes back exactly, card for card", () => {
+    const out = toConfigInput(fromConfig(CAFE_CONFIG));
+    assert.equal(canonical(out.offers), canonical(CAFE_CONFIG.offers));
+    assert.deepEqual(cardSet(out.cards), cardSet(CAFE_CONFIG.cards));
+  });
+
+  await test("round trip: an edit to the café's offer keeps its priority, its web-only card and no Save on app", () => {
+    const draft = fromConfig(CAFE_CONFIG);
+    draft.offers[0].template.valueLabel = "$12";
+    const out = toConfigInput(draft);
+    const web = out.cards.find((c) => c.id === "pxc-offer-web");
+    const app = out.cards.find((c) => c.id === "pxc-offer-app");
+    assert.equal(web?.priority, 20, "between savings (10) and About (30), as authored");
+    assert.deepEqual(web?.surfaces, ["web", "clip"]);
+    assert.deepEqual(app?.surfaces, ["preview", "app"]);
+    assert.equal(app?.actions, undefined, "the café's app card has no Save, on purpose");
+    assert.equal(out.offers["pxc-10off50-qr"].valueLabel, "$12");
+  });
+
+  await test("round trip: Sunset Leaf's offers keep the priorities and Save they came with", () => {
+    const out = toConfigInput(fromConfig(MOCK_CARD_CONFIG));
+    assert.deepEqual(cardSet(out.cards), cardSet(MOCK_CARD_CONFIG.cards));
+  });
+
+  await test("a new offer still gets the Doobie shape, after the last offer", () => {
+    const draft = fromConfig(CAFE_CONFIG);
+    draft.offers.push(newOffer(draft.offers, false));
+    const out = toConfigInput(draft);
+    const id = draft.offers[1].id;
+    const web = out.cards.find((c) => c.id === `${id}-web`);
+    const app = out.cards.find((c) => c.id === `${id}-app`);
+    assert.equal(web?.priority, 30);
+    assert.deepEqual(web?.surfaces, ["preview", "web", "clip"]);
+    assert.deepEqual(app?.actions, [{ type: "save", label: "Save to PapeX" }]);
+  });
+
+  // ---- LIVE DEMO COPY --------------------------------------------------------
+  await test("publish copy: a live demo talks about its link, everyone else about printed receipts", () => {
+    const demo = publishCopy({ link: "https://papex.app/r/demo?sid=cafe000000000001" });
+    for (const s of [demo.sheet, demo.published(4), demo.versions]) {
+      assert.match(s, /demo link/);
+      assert.doesNotMatch(s, /printed/);
+    }
+    assert.equal(demo.published(4), "Version 4 published. Your demo link shows it within about a minute.");
+    for (const plain of [publishCopy(null), publishCopy(undefined)]) {
+      assert.match(plain.sheet, /printed from now on/);
+      assert.match(plain.published(2), /^Version 2 published\. It reaches receipts printed from now on/);
+      assert.doesNotMatch(plain.versions, /demo link/);
+    }
+  });
+
+  await test("mock: the mock config is no live demo", async () => {
+    assert.equal((await mockGetCardConfig()).liveDemo, null);
   });
 
   console.log(`merchantReceipts: ${passed} tests passed`);
