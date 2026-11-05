@@ -64,6 +64,14 @@
 //   PapeX Cafe link demo) opens on the store's header, puts the cards next,
 //   then the rest of the paper, and the disclosure last.
 //
+//   An entry with `serverCards` (PapeX Cafe again) draws the cards service's
+//   surface=web answer instead of its authored cards, so the café's own
+//   Receipts-tab publishes show here within about a minute: on/off, order,
+//   and where the value layer sits (its "Where offers sit"). The store
+//   header, logo and corrected totals stay as they are. The authored cards
+//   are drawn only when that call fails (lib/cards/fetchCards.ts
+//   chooseDemoCards).
+//
 //   No SaveToPapex, and no import of it anywhere in this module's graph —
 //   see CtaRow.tsx. Claiming is single-owner per sid, so a demo tag offering
 //   Save is a tag offering an action that fails for everyone after the first
@@ -85,6 +93,7 @@ import { redirect } from "next/navigation";
 import { fetchReceiptBytes } from "@/lib/rdh";
 import { applyDemoCorrections, getDemoEnrichment, offerDaysRemaining, resolveDemoRoute } from "@/lib/demoReceipts";
 import { demoResolvedCards } from "@/lib/cards/demoSource";
+import { chooseDemoCards, fetchDemoServerCards } from "@/lib/cards/fetchCards";
 import { normalizeResolvedCards } from "@/lib/cards/normalize";
 import { platformFromUserAgent } from "@/lib/storeLinks";
 import { parseEscPos } from "@/lib/escpos";
@@ -151,7 +160,17 @@ export default async function DemoReceiptPage({
   // to no cards, and the page falls back to the bare receipt.
   const enrichment = getDemoEnrichment(sid);
 
-  const result = await fetchReceiptBytes(sid);
+  // The page owns the clock so every function under it stays pure and can be
+  // tested at simulated dates. `new Date()` is read exactly once, here, before
+  // the reads below, because a `serverCards` demo's cards call needs it too.
+  const now = new Date();
+
+  // A `serverCards` demo asks the cards service alongside the bytes, so the
+  // call costs no time the receipt read doesn't already take (2.5 s cap).
+  const [result, server] = await Promise.all([
+    fetchReceiptBytes(sid),
+    enrichment?.serverCards ? fetchDemoServerCards(sid, { now }) : Promise.resolve(null),
+  ]);
   const receipt = result.status === "ok" ? parseEscPos(result.bytes) : undefined;
   // The registry's corrections, for paper the text summarizer misreads (see
   // DemoReceiptCorrections). The "Original receipt" view still shows the
@@ -160,10 +179,8 @@ export default async function DemoReceiptPage({
   const summary = parsed && enrichment?.corrections ? applyDemoCorrections(parsed, enrichment.corrections) : parsed;
   const rasterPage = receipt?.rasterPage?.fullPage ? receipt.rasterPage : undefined;
 
-  // The page owns the clock so every function under it stays pure and can be
-  // tested at simulated dates. `new Date()` is read exactly once, here.
-  //
-  // It feeds ONE thing: the offer's "N days left" chip. The voucher's own
+  // The clock (read above) feeds ONE thing in the authored layer: the offer's
+  // "N days left" chip. The voucher's own
   // validity line is a duration ("Valid for 42 days from purchase") and is
   // true on every date there will ever be, and once the window closes the
   // chip disappears rather than turning into "Expired" — because these
@@ -178,7 +195,6 @@ export default async function DemoReceiptPage({
   // lets a re-minted demo blob move the countdown with the new printed date
   // instead of silently drifting from it — see the offer block in
   // lib/demoReceipts.ts.
-  const now = new Date();
   const daysRemaining = offerDaysRemaining(enrichment, now, summary?.dateline);
 
   // The value layer as resolved cards (format v1). demoResolvedCards stands
@@ -190,7 +206,8 @@ export default async function DemoReceiptPage({
   // into the card's `expiresAt`. The disclosure line for a `fabricated`
   // receipt (Hartwell's, Ellsworth) is the first card; see
   // DemoReceiptEnrichment.fabricated for why it is per-receipt.
-  const cards = normalizeResolvedCards(demoResolvedCards(sid, { now, offerDaysRemaining: daysRemaining }), sid);
+  const authored = normalizeResolvedCards(demoResolvedCards(sid, { now, offerDaysRemaining: daysRemaining }), sid);
+  const { cards, source } = server ? chooseDemoCards(server, authored) : { cards: authored, source: "authored" as const };
 
   // A demo tag whose blob has expired or was never seeded. Says so plainly
   // rather than inventing content — the honesty rules `/r` follows apply here
@@ -213,10 +230,13 @@ export default async function DemoReceiptPage({
     // disclosure closes it as a footnote under the receipt it qualifies.
     const valueLayer = { ...cards, cards: cards.cards.filter((c) => c.type !== "disclosure") };
     const disclosure = { ...cards, cards: cards.cards.filter((c) => c.type === "disclosure") };
+    // A served answer decides whether the value layer sits above the paper or
+    // below it; the authored fallback keeps it above.
+    const valueFirst = source === "authored" || cards.layout.order === "cards-first";
     return (
       <Shell>
         <MerchantHeaderCard summary={summary} logo={receipt?.logo} badge={cafeBadgeLogo(summary.merchantName)} wrap />
-        <CardList cards={valueLayer} now={now} />
+        {valueFirst ? <CardList cards={valueLayer} now={now} /> : null}
         <ReceiptView
           summary={summary}
           hasStructure={computeHasStructure(summary)}
@@ -224,6 +244,7 @@ export default async function DemoReceiptPage({
           rasterPage={rasterPage}
           showHeader={false}
         />
+        {valueFirst ? null : <CardList cards={valueLayer} now={now} />}
         <CardList cards={disclosure} now={now} />
         <DemoCtaRow platform={platform} />
       </Shell>

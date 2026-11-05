@@ -10,7 +10,10 @@ import { join, resolve } from "node:path";
 import {
   WEB_CAPS,
   WEB_CARDS_TIMEOUT_MS,
+  chooseDemoCards,
+  fetchDemoServerCards,
   fetchWebCards,
+  mayFetchDemoServerCards,
   mayFetchWebCards,
   restrictToWebCaps,
   startWebCards,
@@ -254,6 +257,66 @@ async function main() {
     const r = await task.promise;
     assert.equal(task.peek(), r);
     assert.deepEqual(r.cards.cards.map((c) => c.id), ["tc-offer-1"]);
+  });
+
+  // ---- serverCards demos (/r/demo, /demo/r) -----------------------------------------
+
+  const CAFE_SID = "cafe000000000001";
+  const CAFE_NOW = new Date("2026-11-05T12:00:00Z");
+  /** The café's live surface=web answer for v1, captured 2026-11-05. */
+  const CAFE_WEB = readFileSync(resolve(__dirname, "../__fixtures__/cafeServerCards.web.json"), "utf8");
+  const cafeAs = (status: string, cards: unknown[] = []) => JSON.stringify({ ...JSON.parse(CAFE_WEB), status, cards });
+
+  await test("serverCards: only a demo entry that opts in asks the service; /r still never does", async () => {
+    assert.equal(mayFetchDemoServerCards(CAFE_SID), true);
+    assert.equal(mayFetchWebCards(CAFE_SID), false, "/r is unchanged for the café");
+    for (const sid of [...[...DEMO_SIDS].filter((s) => s !== CAFE_SID), "7e57ca4d00000001", "NOT-A-SID", ""]) {
+      assert.equal(mayFetchDemoServerCards(sid), false, sid);
+      const f = fakeFetch(() => jsonRes(CAFE_WEB));
+      const r = await fetchDemoServerCards(sid, { now: CAFE_NOW, fetchImpl: f.impl });
+      assert.equal(f.seen.length, 0, `${sid} fetched`);
+      assert.equal(r.outcome, "skipped");
+    }
+  });
+
+  await test("serverCards: the café asks for surface=web with the web caps and gets its five cards", async () => {
+    const f = fakeFetch(() => jsonRes(CAFE_WEB));
+    const r = await fetchDemoServerCards(CAFE_SID, { now: CAFE_NOW, fetchImpl: f.impl });
+    assert.equal(f.seen.length, 1);
+    assert.equal(f.seen[0].url, webCardsUrl(CAFE_SID));
+    assert.equal(r.outcome, "ok");
+    assert.equal(r.served, "ok");
+    assert.deepEqual(r.cards.cards.map((c) => c.id), ["pxc-savings-web", "pxc-offer-web", "pxc-about-web", "pxc-coming-soon-web", "pxc-disclosure-web"]);
+    assert.equal(r.cards.layout.order, "cards-first");
+    assert.deepEqual(r.cards.dropped, []);
+  });
+
+  await test("serverCards: an answer is drawn as given, and only a failure falls back to the authored cards", async () => {
+    const authored = normalizeResolvedCards(JSON.parse(CAFE_WEB), CAFE_SID, { now: CAFE_NOW });
+    const run = async (respond: Parameters<typeof fakeFetch>[0], timeoutMs?: number) => {
+      const f = fakeFetch(respond);
+      return chooseDemoCards(await fetchDemoServerCards(CAFE_SID, { now: CAFE_NOW, fetchImpl: f.impl, timeoutMs }), authored);
+    };
+    const ok = await run(() => jsonRes(CAFE_WEB));
+    assert.equal(ok.source, "server");
+    assert.equal(ok.cards.cards.length, 5);
+    const off = await run(() => jsonRes(cafeAs("none")));
+    assert.equal(off.source, "server", "offers switched off: the page shows that, not the fallback");
+    assert.deepEqual(off.cards.cards, []);
+    for (const [name, respond] of [
+      ["degraded", () => jsonRes(cafeAs("degraded"))],
+      ["pending", () => jsonRes(JSON.stringify({ ...JSON.parse(cafeAs("pending")), retryAfterMs: 1500 }))],
+      ["503", () => new Response("", { status: 503 })],
+      ["not json", () => jsonRes("<html>")],
+      ["another sid", () => jsonRes(CAFE_WEB.replace(CAFE_SID, "cafe000000000002"))],
+      ["network", () => { throw new TypeError("fetch failed"); }],
+    ] as const) {
+      const r = await run(respond as Parameters<typeof fakeFetch>[0]);
+      assert.equal(r.source, "authored", name);
+      assert.equal(r.cards, authored, name);
+    }
+    const slow = await run((_url, init) => stalledBody(init?.signal), 30);
+    assert.equal(slow.source, "authored", "timeout");
   });
 
   console.log(`\n${passed} passed, ${failed} failed`);

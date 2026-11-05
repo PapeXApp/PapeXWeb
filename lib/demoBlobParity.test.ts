@@ -35,12 +35,16 @@
 
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { normalizeResolvedCards } from "./cards/normalize";
 import { parseEscPos } from "./escpos";
 import { summarizeReceipt, type ReceiptSummary } from "./receiptSummary";
 import { PAPEX_CAFE_BLOB, SEEDED_DEMO_BLOBS, type SeededDemoBlob } from "./__fixtures__/demoBlobs";
 import {
   DEMO_RECEIPTS,
   applyDemoCorrections,
+  formatDemoDisclosure,
   formatMoney,
   getDemoEnrichment,
   printedItemLabel,
@@ -401,8 +405,11 @@ test("the disclosure line did not become a phantom line item", () => {
 // ---- PapeX Cafe: a different till, and the corrections its paper needs ---------
 //
 // Not in PAPERS: none of the Tech Week paper's lines (weekday dateline, YOU
-// SAVED, loyalty footer, APPROVED) are on it. Its figures live in authored
-// cards and in `corrections`, and every one of them is checked here.
+// SAVED, loyalty footer, APPROVED) are on it. Its figures live in its cards and
+// in `corrections`, and every one of them is checked here. The cards come from
+// the cards service (`serverCards`), with the authored ones as the fallback, so
+// each card check runs on both: the authored cards, and a committed copy of the
+// service's surface=web answer for v1 (__fixtures__/cafeServerCards.web.json).
 
 const CAFE = (() => {
   const receipt = parseEscPos(PAPEX_CAFE_BLOB.bytes);
@@ -425,9 +432,20 @@ function cafeLine(re: RegExp, what: string): RegExpExecArray {
   return hits[0];
 }
 
-/** The café's single authored card of `type`. */
-function cafeCard<T extends Card["type"]>(type: T): Extract<Card, { type: T }> {
-  const found = (CAFE.enrichment.cards ?? []).filter((c): c is Extract<Card, { type: T }> => c.type === type);
+/** What /r/demo draws for the café when the cards service answers (v1). */
+const CAFE_SERVED: Card[] = normalizeResolvedCards(
+  JSON.parse(readFileSync(join(__dirname, "__fixtures__", "cafeServerCards.web.json"), "utf8")),
+  PAPEX_CAFE_BLOB.sid,
+  { now: new Date("2026-11-05T12:00:00Z") },
+).cards;
+const CAFE_SOURCES: [string, Card[]][] = [
+  ["authored", CAFE.enrichment.cards ?? []],
+  ["served", CAFE_SERVED],
+];
+
+/** The café's single card of `type` in `cards`. */
+function cafeCard<T extends Card["type"]>(type: T, cards: Card[] = CAFE.enrichment.cards ?? []): Extract<Card, { type: T }> {
+  const found = cards.filter((c): c is Extract<Card, { type: T }> => c.type === type);
   assert.equal(found.length, 1, `PapeX Cafe: expected one ${type} card, found ${found.length}`);
   return found[0];
 }
@@ -476,32 +494,46 @@ test("PapeX Cafe: the named promo is the printed DISCOUNT, the tax line the prin
   assert.ok(taxes[0].label.includes(`${rate}%`) && taxes[0].label.includes(formatMoney(base / 100)), taxes[0].label);
 });
 
-test("PapeX Cafe: the savings card is the printed discount", () => {
-  const savings = cafeCard("savings");
-  assert.equal(savings.total, formatMoney(CAFE.parsed.discount!));
-  assert.ok(savings.headline?.includes(formatMoney(CAFE.parsed.discount!)), savings.headline);
-  assert.deepEqual(
-    (savings.components ?? []).map((c) => c.amount),
-    [formatMoney(CAFE.parsed.discount!)],
-  );
-});
+for (const [source, cards] of CAFE_SOURCES) {
+  test(`PapeX Cafe (${source}): the savings card is the printed discount`, () => {
+    const savings = cafeCard("savings", cards);
+    assert.equal(savings.total, formatMoney(CAFE.parsed.discount!));
+    assert.ok(savings.headline?.includes(formatMoney(CAFE.parsed.discount!)), savings.headline);
+    assert.deepEqual(
+      (savings.components ?? []).map((c) => c.amount),
+      [formatMoney(CAFE.parsed.discount!)],
+    );
+  });
 
-test("PapeX Cafe: the coupon's minimum sits above the basket, and the QR says what its text says", () => {
-  const offer = cafeCard("offer");
-  const min = Number(/of \$(\d+) or more/.exec(offer.title)?.[1]);
-  assert.ok(cents(min) > cents(CAFE.parsed.total!), `$${min} minimum vs a $${CAFE.parsed.total} basket`);
-  assert.equal(offer.qualifier, `On $${min}+`);
-  assert.ok(offer.redemption?.type === "barcode");
-  assert.equal(offer.redemption.value, "PXC10OFF50");
-  assert.equal(offer.redemption.text, offer.redemption.value);
-});
+  test(`PapeX Cafe (${source}): the coupon's minimum sits above the basket, and the QR says what its text says`, () => {
+    const offer = cafeCard("offer", cards);
+    const min = Number(/of \$(\d+) or more/.exec(offer.title)?.[1]);
+    assert.ok(cents(min) > cents(CAFE.parsed.total!), `$${min} minimum vs a $${CAFE.parsed.total} basket`);
+    assert.equal(offer.qualifier, `On $${min}+`);
+    assert.ok(offer.redemption?.type === "barcode");
+    assert.equal(offer.redemption.value, "PXC10OFF50");
+    assert.equal(offer.redemption.text, offer.redemption.value);
+  });
 
-test("PapeX Cafe: nothing on the page or the paper is dispensary or age-gated", () => {
-  const copy = JSON.stringify(CAFE.enrichment.cards) + CAFE.text.join("\n");
-  // Case-sensitive "ID": the JSON's own lowercase "id" keys are not a check-your-ID line.
-  assert.doesNotMatch(copy, /21\+|\bID\b/);
-  assert.doesNotMatch(copy, /licen[cs]e|cannabis|excise|dispensary|age-restricted/i);
-  assert.ok((CAFE.enrichment.cards ?? []).every((c) => !("compliance" in c)));
+  test(`PapeX Cafe (${source}): nothing on the page or the paper is dispensary or age-gated`, () => {
+    const copy = JSON.stringify(cards) + CAFE.text.join("\n");
+    // Case-sensitive "ID": the JSON's own lowercase "id" keys are not a check-your-ID line.
+    assert.doesNotMatch(copy, /21\+|\bID\b/);
+    assert.doesNotMatch(copy, /licen[cs]e|cannabis|excise|dispensary|age-restricted/i);
+    assert.ok(cards.every((c) => !("compliance" in c)));
+  });
+}
+
+test("PapeX Cafe: the authored fallback says exactly what the service's v1 says", () => {
+  // Ids and mode differ (cafe-* preview cards, pxc-*-web live ones); no word may.
+  const words = (c: Card) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id, mode, ...rest } = c;
+    return rest;
+  };
+  const served = CAFE_SERVED.filter((c) => c.type !== "disclosure");
+  assert.deepEqual(served.map(words), (CAFE.enrichment.cards ?? []).map(words));
+  assert.equal(cafeCard("disclosure", CAFE_SERVED).text, formatDemoDisclosure(CAFE.enrichment));
 });
 
 test("PapeX Cafe: corrections leave the paper verbatim for the Original receipt view", () => {

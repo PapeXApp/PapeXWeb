@@ -377,6 +377,19 @@ test("demo parity: the card renderer draws the old value layer byte for byte, on
   }
 });
 
+test("PapeX Cafe's served cards (lib/__fixtures__/cafeServerCards.web.json) draw whole, QR included", () => {
+  const now = new Date("2026-11-05T12:00:00Z");
+  const r = JSON.parse(readFileSync(resolve(__dirname, "../../../lib/__fixtures__/cafeServerCards.web.json"), "utf8"));
+  const cards = normalizeResolvedCards(r, r.sid, { now });
+  assert.deepEqual(cards.dropped, []);
+  assert.equal(cards.cards.length, 5);
+  const html = renderToStaticMarkup(<CardList cards={cards} now={now} />);
+  assert.ok(html.includes('aria-label="QR code PXC10OFF50"'), "QR offer");
+  for (const s of ["You saved $5.00 today", "About PapeX Cafe", "Fresh every morning on Chestnut", "The Golden Hour Combo", "PapeX Cafe is a store created for this demo; its prices and promotions are invented."]) {
+    assert.ok(html.includes(esc(s)), `missing ${JSON.stringify(s)}`);
+  }
+});
+
 test("demo parity: Sunset Leaf (no enrichment) renders nothing, as before", () => {
   assert.equal(newLayer("5371e4f000000001", NOW), "");
 });

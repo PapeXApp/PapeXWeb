@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "sid": "cafe000000000001",
+  "status": "ok",
+  "configRef": "v1-9b83365e",
+  "merchant": {
+    "partner": false,
+    "ageRestricted": false
+  },
+  "layout": {
+    "order": "cards-first"
+  },
+  "cards": [
+    {
+      "id": "pxc-savings-web",
+      "type": "savings",
+      "mode": "live",
+      "headline": "You saved $5.00 today",
+      "total": "$5.00",
+      "totalLabel": "saved at PapeX Cafe",
+      "components": [
+        {
+          "label": "Last visit's PapeX coupon",
+          "amount": "$5.00"
+        }
+      ]
+    },
+    {
+      "id": "pxc-offer-web",
+      "type": "offer",
+      "mode": "live",
+      "heading": "An offer from PapeX Cafe",
+      "kicker": "Next visit",
+      "valueLabel": "$10",
+      "valueSuffix": "off",
+      "qualifier": "On $50+",
+      "title": "$10 off your next visit of $50 or more at PapeX Cafe",
+      "terms": "Valid through Dec 31, 2026. One per customer. Cannot be combined with other offers. Demo coupon for a fictional café: not redeemable.",
+      "validity": {
+        "expiresAt": "2027-01-01T07:59:59Z",
+        "countdown": true,
+        "hideWhenExpired": true
+      },
+      "redemption": {
+        "type": "barcode",
+        "symbology": "qr",
+        "value": "PXC10OFF50",
+        "text": "PXC10OFF50",
+        "caption": "Scan at the counter",
+        "scope": "shared"
+      }
+    },
+    {
+      "id": "pxc-about-web",
+      "type": "text",
+      "mode": "live",
+      "heading": "About PapeX Cafe",
+      "voice": "merchant",
+      "icon": "clock",
+      "title": "Fresh every morning on Chestnut",
+      "body": "Espresso, pastries baked in-house before sunrise, and breakfast sandwiches made to order. Open 6:30 AM to 4 PM daily. Order ahead and skip the line."
+    },
+    {
+      "id": "pxc-coming-soon-web",
+      "type": "text",
+      "mode": "live",
+      "heading": "Coming soon",
+      "voice": "merchant",
+      "icon": "sparkle",
+      "title": "The Golden Hour Combo",
+      "body": "Our new Hot Honey Chicken Croissant (crispy chicken, hot honey, pickled jalapeño, herb aioli) with a Mango Sunrise Smoothie (mango, pineapple, orange, a little ginger). Landing at PapeX Cafe in November."
+    },
+    {
+      "id": "pxc-disclosure-web",
+      "type": "disclosure",
+      "mode": "live",
+      "text": "PapeX Cafe is a store created for this demo; its prices and promotions are invented."
+    }
+  ]
+}

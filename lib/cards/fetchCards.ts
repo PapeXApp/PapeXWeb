@@ -13,11 +13,13 @@
 //   - NEVER IN THE RECEIPT'S WAY. `startWebCards` begins the request and hands
 //     back a task; app/r/page.tsx starts it alongside the byte and /parsed
 //     reads and never awaits it before the receipt's markup (see the page).
-//   - NEVER FOR A DEMO SID. A sid in the compiled demo registry
+//   - NEVER FOR A DEMO SID ON /r. A sid in the compiled demo registry
 //     (lib/demoReceipts.ts DEMO_RECEIPTS, via isDemoSid) never calls the
-//     service; its value layer lives on /r/demo and /demo/r and stays exactly
-//     as it is. Malformed sids never call it either. (rid links never reach
-//     this file: app/r/page.tsx routes them away first.)
+//     service from /r; its value layer lives on /r/demo and /demo/r. Those
+//     two ask the service (fetchDemoServerCards) only for an entry that opts
+//     in with `serverCards`, and keep the authored cards as the fallback.
+//     Malformed sids never call it either. (rid links never reach this file:
+//     app/r/page.tsx routes them away first.)
 //   - ONE DECODER. The body goes through lib/cards/normalize.ts's total
 //     normalizer (`parseCardsResponse`) with the render clock, so
 //     `hideWhenExpired` offers that have lapsed are dropped here too.
@@ -32,9 +34,9 @@
 // of app/r/page.tsx), and a server fetch keeps the page free of client JS.
 
 import { rdhApiBase, isValidSid } from "@/lib/rdh";
-import { isDemoSid } from "@/lib/demoReceipts";
+import { getDemoEnrichment, isDemoSid } from "@/lib/demoReceipts";
 import { parseCardsResponse, type CardDrop, type NormalizedCards } from "./normalize";
-import { CAPS_1_7_0, MAX_RESPONSE_BYTES, parseCaps, type Card } from "./types";
+import { CAPS_1_7_0, MAX_RESPONSE_BYTES, parseCaps, type Card, type CardsStatus } from "./types";
 
 /** W0 §2: the web's hard budget for the whole cards call, body included. */
 export const WEB_CARDS_TIMEOUT_MS = 2_500;
@@ -68,6 +70,12 @@ export interface WebCardsResult {
   cards: NormalizedCards;
   /** `ok` when the service answered and the envelope was accepted (even with zero cards). */
   outcome: "ok" | "skipped" | "http" | "timeout" | "network" | "oversize" | "encoding" | "rejected";
+  /**
+   * The status the service itself sent, when the body was JSON. The decoder
+   * folds `degraded` into `none`; this keeps the difference for /r/demo, where
+   * a real `none` (offers switched off) and a failure are drawn differently.
+   */
+  served?: CardsStatus;
 }
 
 const NONE: NormalizedCards = {
@@ -143,12 +151,54 @@ export function restrictToWebCaps(input: NormalizedCards): NormalizedCards {
   return { ...input, cards, dropped };
 }
 
+/** The `status` field of a body, before decoding. Never throws. */
+function servedStatus(text: string): CardsStatus | undefined {
+  try {
+    const status = (JSON.parse(text) as { status?: unknown } | null)?.status;
+    return status === "ok" || status === "pending" || status === "none" || status === "degraded" ? status : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * The whole web client pipeline for one sid. Never throws; every failure is
  * "no cards". Does not fetch for a malformed or demo sid.
  */
 export async function fetchWebCards(sid: string, opts: FetchWebCardsOptions): Promise<WebCardsResult> {
   if (!mayFetchWebCards(sid)) return none("skipped");
+  return requestWebCards(sid, opts);
+}
+
+/** Whether /r/demo asks the service about this demo sid: only an entry that opts in. */
+export function mayFetchDemoServerCards(sid: string | undefined | null): sid is string {
+  return isValidSid(sid) && getDemoEnrichment(sid)?.serverCards === true;
+}
+
+/**
+ * The same pipeline for a demo sid whose registry entry sets `serverCards`.
+ * Never throws; skipped for every other sid.
+ */
+export async function fetchDemoServerCards(sid: string, opts: FetchWebCardsOptions): Promise<WebCardsResult> {
+  if (!mayFetchDemoServerCards(sid)) return none("skipped");
+  return requestWebCards(sid, opts);
+}
+
+/**
+ * What a `serverCards` demo draws. The service's answer when it gave one,
+ * including an empty `none` (the merchant switched offers off, and the page
+ * shows that); the authored cards when the call failed, timed out, was
+ * rejected, or the service said `degraded` or `pending`. Pure.
+ */
+export function chooseDemoCards(
+  server: WebCardsResult,
+  authored: NormalizedCards,
+): { cards: NormalizedCards; source: "server" | "authored" } {
+  const answered = server.outcome === "ok" && (server.served === "ok" || server.served === "none");
+  return answered ? { cards: server.cards, source: "server" } : { cards: authored, source: "authored" };
+}
+
+async function requestWebCards(sid: string, opts: FetchWebCardsOptions): Promise<WebCardsResult> {
   const doFetch = opts.fetchImpl ?? fetch;
   const controller = new AbortController();
   let timedOut = false;
@@ -175,8 +225,9 @@ export async function fetchWebCards(sid: string, opts: FetchWebCardsOptions): Pr
       return none("encoding");
     }
     const cards = restrictToWebCaps(parseCardsResponse(text, sid, { now: opts.now }));
-    if (cards.rejected) return { cards, outcome: "rejected" };
-    return { cards, outcome: "ok" };
+    const served = servedStatus(text);
+    if (cards.rejected) return { cards, outcome: "rejected", ...(served ? { served } : {}) };
+    return { cards, outcome: "ok", ...(served ? { served } : {}) };
   } catch {
     return none(timedOut ? "timeout" : "network");
   } finally {

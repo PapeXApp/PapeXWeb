@@ -354,6 +354,16 @@ export interface DemoReceiptEnrichment {
    * renders.
    */
   layout?: "store-first";
+  /**
+   * `true`: the value layer is the cards service's answer for this sid
+   * (surface=web, lib/cards/fetchCards.ts fetchDemoServerCards), so a
+   * Receipts-tab publish for its merchant shows on /r/demo and /demo/r within
+   * about a minute. `cards` above is then only the fallback for when that call
+   * fails. Only for a demo whose RDH merchant is a live demo
+   * (Papex_RDH_Backend merchant-api LIVE_DEMO_MERCHANTS), whose publishes
+   * always reach this receipt.
+   */
+  serverCards?: true;
   /** See DemoReceiptCorrections. */
   corrections?: DemoReceiptCorrections;
 }
@@ -662,8 +672,11 @@ export const DEMO_RECEIPTS: ReadonlyMap<string, DemoReceiptEnrichment> = new Map
   // VISA 4417. Seeded by Papex_RDH_Backend scripts/demo-mint-papex-cafe.mjs.
   //
   // Store first, then savings, the next-visit coupon, About and Coming soon,
-  // then the paper. The cards are authored rather than projected: the
-  // sections above cannot carry a QR code, an end date or a merchant note.
+  // then the paper. The cards come from the cards service (serverCards), so
+  // the café's own Receipts-tab publishes show here. The authored cards below
+  // say what its first version says, and are drawn only when that call
+  // fails: the sections above cannot carry a QR code, an end date or a
+  // merchant note.
   // The coupon ends Dec 31, 2026 11:59:59 PM PT and then hides itself
   // (hideWhenExpired) rather than reading "Expired" — the same never-say-a-
   // false-thing-about-time rule DemoOffer argues for, for a link sent in one
@@ -677,6 +690,8 @@ export const DEMO_RECEIPTS: ReadonlyMap<string, DemoReceiptEnrichment> = new Map
       // PapeX Cafe is invented, and so is everything on its paper.
       fabricated: true,
       layout: "store-first",
+      // The café edits these in its own Receipts tab; the cards below are the fallback.
+      serverCards: true,
       corrections: {
         notItems: ["PAPEX CPN $5 OFF $25+", "DISCOUNT"],
         discountLines: [{ label: "PapeX coupon, $5 off $25+", amount: -5 }],
