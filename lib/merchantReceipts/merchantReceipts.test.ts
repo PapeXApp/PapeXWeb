@@ -357,6 +357,16 @@ async function main() {
     assert.deepEqual(cardSet(out.cards), cardSet(MOCK_CARD_CONFIG.cards));
   });
 
+  await test("moving an offer swaps the priorities, and every other card keeps its own", () => {
+    const draft = fromConfig(MOCK_CARD_CONFIG);
+    draft.offers.reverse();
+    const out = toConfigInput(draft);
+    const priority = (id: string) => out.cards.find((c) => c.id === id)?.priority;
+    assert.equal(priority("sl-member-web"), 10);
+    assert.equal(priority("sl-welcome-app"), 20);
+    assert.equal(priority("sl-disclosure-web"), 90);
+  });
+
   await test("a new offer still gets the Doobie shape, after the last offer", () => {
     const draft = fromConfig(CAFE_CONFIG);
     draft.offers.push(newOffer(draft.offers, false));
