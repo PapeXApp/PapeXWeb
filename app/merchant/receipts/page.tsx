@@ -42,6 +42,7 @@ import {
   toConfigInput,
   type OfferDraft,
   type ReceiptsDraft,
+  type TextDraft,
 } from "@/lib/merchantReceipts/draft";
 import { describeIssues, type PlainIssue } from "@/lib/merchantReceipts/plainLanguage";
 import { LOYALTY_SEGMENTS, type CardConfigResponse, type CardReach, type LayoutOrder, type LiveSurface, type LoyaltySegment } from "@/lib/merchantReceipts/types";
@@ -49,6 +50,7 @@ import { publishCopy } from "./copy";
 import { Switch } from "./controls";
 import { OfferEditor } from "./OfferEditor";
 import { ReceiptPreview } from "./ReceiptPreview";
+import { TextCardEditor } from "./TextCardEditor";
 import { WhoGetsWhat } from "./WhoGetsWhat";
 
 const CHECK_DEBOUNCE_MS = 400;
@@ -184,6 +186,10 @@ export default function ReceiptsPage() {
       };
     });
   }, []);
+  const updateText = useCallback((key: string, next: TextDraft) => {
+    setNotice(null);
+    setDraft((d) => (d ? { ...d, texts: d.texts.map((t) => (t.key === key ? next : t)) } : d));
+  }, []);
   const moveOffer = useCallback((index: number, delta: number) => {
     setDraft((d) => {
       if (!d) return d;
@@ -274,7 +280,8 @@ export default function ReceiptsPage() {
   }
 
   const offerErrors = (id: string) => errors.filter((e) => e.offerId === id);
-  const generalErrors = errors.filter((e) => !e.offerId);
+  const textErrors = (key: string) => errors.filter((e) => e.textKey === key);
+  const generalErrors = errors.filter((e) => !e.offerId && !e.textKey);
   const liveCount = offersFor(draft, segment).filter((o) => o.surfaces.includes(surface)).length;
   const managedCards = data.config.cards.filter(isManagedCard);
   const unknownShare = reach && reach.total > 0 ? reach.segments.unknown / reach.total : null;
@@ -419,6 +426,28 @@ export default function ReceiptsPage() {
               <Plus className="h-4 w-4" strokeWidth={2} />
               Add an offer
             </Button>
+          )}
+
+          {draft.texts.length > 0 && (
+            <div className="flex flex-col gap-3">
+              <div>
+                <h2 className="font-barlow text-lg font-medium" style={{ color: T.text }}>
+                  Notes from your store
+                </h2>
+                <p className="mt-1 text-sm" style={{ color: T.textSecondary }}>
+                  Short cards in your own words, shown with the offers.
+                </p>
+              </div>
+              {draft.texts.map((note) => (
+                <TextCardEditor
+                  key={note.key}
+                  note={note}
+                  issues={textErrors(note.key)}
+                  disabled={!editable}
+                  onChange={(next) => updateText(note.key, next)}
+                />
+              ))}
+            </div>
           )}
 
           {(data.config.compliance || managedCards.length > 0) && (

@@ -48,10 +48,28 @@ export interface OfferDraft {
   kept?: { priority?: number; webPreview: boolean; appPreview: boolean; appActions: ConfigCard["actions"] | null };
 }
 
+/**
+ * A note in the merchant's own words (a `text` card with `voice: "merchant"`,
+ * like the café's About and Coming soon), as the -web/-app pair it's stored as.
+ * Only the words and on/off are edited: ids, surfaces, priority and icon are
+ * written back as they came.
+ */
+export interface TextDraft {
+  /** The id the pair shares without its -web or -app ending. */
+  key: string;
+  on: boolean;
+  heading: string;
+  title: string;
+  body: string;
+  /** The cards as they came. */
+  cards: ConfigCard[];
+}
+
 export interface ReceiptsDraft {
   enabled: boolean;
   order: LayoutOrder;
   offers: OfferDraft[];
+  texts: TextDraft[];
   /** Cards this editor doesn't author, kept as they are. */
   otherCards: ConfigCard[];
   /** Templates behind passed-through cards. */
@@ -82,16 +100,46 @@ function canEdit(cards: ConfigCard[]): boolean {
   return cards.every((c) => c.heading === first.heading && JSON.stringify(loyaltySegments(c.when)) === JSON.stringify(loyaltySegments(first.when)));
 }
 
+/** A merchant-voice text card with nothing on it this editor can't keep. */
+function isEditableText(c: ConfigCard): boolean {
+  return c.type === "text" && c.voice === "merchant" && !c.schedule && !c.compliance && c.when === undefined;
+}
+
+/** The id a -web/-app pair shares. */
+export function textKeyOf(id: string): string {
+  return id.replace(/-(web|app)$/, "");
+}
+
+const words = (c: ConfigCard) => [c.heading, c.title, c.body, c.icon].map((v) => (typeof v === "string" ? v : ""));
+
 export function fromConfig(config: CardConfig): ReceiptsDraft {
   const byOffer = new Map<string, ConfigCard[]>();
+  const byText = new Map<string, ConfigCard[]>();
   const otherCards: ConfigCard[] = [];
   for (const card of config.cards) {
     if (card.type === "offer" && card.offer && config.offers[card.offer]) {
       byOffer.set(card.offer, [...(byOffer.get(card.offer) ?? []), card]);
+    } else if (isEditableText(card)) {
+      byText.set(textKeyOf(card.id), [...(byText.get(textKeyOf(card.id)) ?? []), card]);
     } else {
       otherCards.push(card);
     }
   }
+
+  // A pair whose two cards say different things isn't one note: kept as it is.
+  const texts: { draft: TextDraft; priority: number }[] = [];
+  for (const [key, cards] of byText) {
+    if (!cards.every((c) => JSON.stringify(words(c)) === JSON.stringify(words(cards[0])))) {
+      otherCards.push(...cards);
+      continue;
+    }
+    const [heading, title, body] = words(cards[0]);
+    texts.push({
+      priority: Math.min(...cards.map((c) => c.priority ?? 100)),
+      draft: { key, on: cards.some((c) => liveOnly(c.surfaces).length > 0), heading, title, body, cards: structuredClone(cards) },
+    });
+  }
+  texts.sort((a, b) => a.priority - b.priority);
 
   const drafts: { draft: OfferDraft; priority: number }[] = [];
   const otherOffers: Record<string, OfferTemplate> = {};
@@ -135,7 +183,40 @@ export function fromConfig(config: CardConfig): ReceiptsDraft {
   }
   drafts.sort((a, b) => a.priority - b.priority);
 
-  return { enabled: config.enabled, order: config.layout.order, offers: drafts.map((d) => d.draft), otherCards, otherOffers };
+  return {
+    enabled: config.enabled,
+    order: config.layout.order,
+    offers: drafts.map((d) => d.draft),
+    texts: texts.map((t) => t.draft),
+    otherCards,
+    otherOffers,
+  };
+}
+
+/**
+ * A note's cards with its current words. Off keeps one preview-only card, the
+ * way an off offer does, so the words survive being switched back on; on again,
+ * a pair that came in off is written as -web on web+clip and -app on app.
+ */
+function textCards(t: TextDraft): ConfigCard[] {
+  const withWords = (c: ConfigCard): ConfigCard => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { heading, title, body, ...rest } = c;
+    return {
+      ...rest,
+      ...(t.heading.trim() === "" ? {} : { heading: t.heading }),
+      ...(t.title.trim() === "" ? {} : { title: t.title }),
+      body: t.body,
+    };
+  };
+  const cameLive = t.cards.some((c) => liveOnly(c.surfaces).length > 0);
+  const base = t.cards.find((c) => !c.surfaces.includes("app")) ?? t.cards[0];
+  if (!t.on) return [withWords({ ...base, surfaces: ["preview"] })];
+  if (cameLive) return t.cards.map(withWords);
+  return [
+    withWords({ ...base, id: `${t.key}-web`, surfaces: ["preview", "web", "clip"] }),
+    withWords({ ...base, id: `${t.key}-app`, surfaces: ["preview", "app"] }),
+  ];
 }
 
 /** Optional text fields can't be empty strings in the schema: an empty box means absent. */
@@ -190,7 +271,11 @@ export function toConfigInput(draft: ReceiptsDraft): CardConfigInput {
     }
     if (web.length === 0 && !live.includes("app")) cards.push({ id: o.webCardId, surfaces: ["preview"], ...shared } as ConfigCard);
   });
-  return { enabled: draft.enabled, layout: { order: draft.order }, offers, cards: [...cards, ...draft.otherCards] };
+  for (const t of draft.texts) cards.push(...textCards(t));
+  // The order the server composes a publish in (merchant cards, then PapeX's), so
+  // the lint's /cards/N paths point at the same cards here.
+  const passThrough = [...draft.otherCards.filter((c) => !isManagedCard(c)), ...draft.otherCards.filter(isManagedCard)];
+  return { enabled: draft.enabled, layout: { order: draft.order }, offers, cards: [...cards, ...passThrough] };
 }
 
 /** The whole config the preview and the lint read: the draft on top of what PapeX manages. */

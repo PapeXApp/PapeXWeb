@@ -379,6 +379,82 @@ async function main() {
     assert.deepEqual(app?.actions, [{ type: "save", label: "Save to PapeX" }]);
   });
 
+  // ---- THE STORE'S NOTES (merchant-voice text cards) -------------------------
+  await test("notes: the café's About and Coming soon are one note each, in priority order", () => {
+    const draft = fromConfig(CAFE_CONFIG);
+    assert.deepEqual(draft.texts.map((t) => t.key), ["pxc-about", "pxc-coming-soon"]);
+    assert.equal(draft.texts[0].heading, "About PapeX Cafe");
+    assert.ok(draft.texts.every((t) => t.on));
+    assert.ok(!draft.otherCards.some((c) => c.type === "text"), "nothing left over");
+  });
+
+  await test("notes: editing the words changes only the words, on both cards", () => {
+    const draft = fromConfig(CAFE_CONFIG);
+    draft.texts[0] = { ...draft.texts[0], title: "Fresh every morning on Union", body: "New hours: 6 AM to 5 PM daily." };
+    const out = toConfigInput(draft);
+    for (const id of ["pxc-about-web", "pxc-about-app"]) {
+      const before = CAFE_CONFIG.cards.find((c) => c.id === id)!;
+      const after = out.cards.find((c) => c.id === id)!;
+      assert.equal(after.title, "Fresh every morning on Union");
+      assert.equal(after.body, "New hours: 6 AM to 5 PM daily.");
+      assert.equal(canonical({ ...after, title: before.title, body: before.body }), canonical(before), `${id}: nothing else moved`);
+    }
+  });
+
+  await test("notes: an emptied title is left out, and an emptied message is a plain-language error on that note", () => {
+    const draft = fromConfig(CAFE_CONFIG);
+    draft.texts[1] = { ...draft.texts[1], title: "", body: "" };
+    const config = draftToConfig(draft, CAFE_CONFIG);
+    const card = config.cards.find((c) => c.id === "pxc-coming-soon-web")!;
+    assert.equal("title" in card, false);
+    const { errors } = lintMirror(config as unknown as LintableDoc, NOW);
+    assert.ok(errors.some((e) => /^\/cards\/\d+\/body$/.test(e.path)), JSON.stringify(errors));
+    const plain = describeIssues(errors, config);
+    assert.ok(plain.some((p) => p.textKey === "pxc-coming-soon" && p.field === "body" && p.text === "The message can't be empty."), JSON.stringify(plain));
+  });
+
+  await test("notes: the real lint's errors for an empty message read as one sentence on that note", () => {
+    // What lambdas/merchant-api's planCardPublish answered for exactly this draft (checked 2026-11-05).
+    const draft = fromConfig(CAFE_CONFIG);
+    draft.texts[1] = { ...draft.texts[1], body: "" };
+    const config = draftToConfig(draft, CAFE_CONFIG);
+    assert.equal(config.cards[4].id, "pxc-coming-soon-web", "the server's card numbering");
+    const real = [4, 5].flatMap((i) => [
+      { path: `/cards/${i}/body`, code: "config_schema", message: "must NOT have fewer than 1 characters" },
+      { path: `/cards/${i}/body`, code: "config_schema", message: 'must match pattern "\\S"' },
+      { path: `/cards/${i}`, code: "config_schema", message: "must match exactly one schema in oneOf" },
+    ]);
+    assert.deepEqual(describeIssues(real, config), [{ textKey: "pxc-coming-soon", field: "body", text: "The message can't be empty." }]);
+  });
+
+  await test("notes: off keeps one preview-only card; on again in the same sitting gives the same cards back", () => {
+    const draft = fromConfig(CAFE_CONFIG);
+    draft.texts[1] = { ...draft.texts[1], on: false };
+    const off = toConfigInput(draft).cards.filter((c) => c.id.startsWith("pxc-coming-soon"));
+    assert.deepEqual(off.map((c) => [c.id, c.surfaces]), [["pxc-coming-soon-web", ["preview"]]]);
+    draft.texts[1] = { ...draft.texts[1], on: true };
+    assert.deepEqual(cardSet(toConfigInput(draft).cards), cardSet(CAFE_CONFIG.cards));
+  });
+
+  await test("notes: a note published off comes back on as a web+clip card and an app card", () => {
+    const draft = fromConfig(CAFE_CONFIG);
+    draft.texts[1] = { ...draft.texts[1], on: false };
+    const reloaded = fromConfig(draftToConfig(draft, CAFE_CONFIG));
+    assert.equal(reloaded.texts[1].on, false);
+    reloaded.texts[1] = { ...reloaded.texts[1], on: true };
+    const on = toConfigInput(reloaded).cards.filter((c) => c.id.startsWith("pxc-coming-soon"));
+    assert.deepEqual(on.map((c) => [c.id, c.surfaces]), [["pxc-coming-soon-web", ["preview", "web", "clip"]], ["pxc-coming-soon-app", ["preview", "app"]]]);
+    assert.ok(on.every((c) => c.body === CAFE_CONFIG.cards.find((x) => x.id === "pxc-coming-soon-web")!.body));
+  });
+
+  await test("notes: a pair whose cards say different things is left exactly as it is", () => {
+    const odd = structuredClone(CAFE_CONFIG);
+    odd.cards.find((c) => c.id === "pxc-about-app")!.body = "Something else.";
+    const draft = fromConfig(odd);
+    assert.deepEqual(draft.texts.map((t) => t.key), ["pxc-coming-soon"]);
+    assert.deepEqual(cardSet(toConfigInput(draft).cards), cardSet(odd.cards));
+  });
+
   // ---- LIVE DEMO COPY --------------------------------------------------------
   await test("publish copy: a live demo talks about its link, everyone else about printed receipts", () => {
     const demo = publishCopy({ link: "https://papex.app/r/demo?sid=cafe000000000001" });

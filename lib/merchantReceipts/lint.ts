@@ -72,6 +72,10 @@ function schemaErrors(doc: LintableDoc): string[] {
   (doc.cards ?? []).forEach((c: ConfigCard, i) => {
     if (!ID_RE.test(c.id ?? "")) paths.push(`/cards/${i}/id`);
     optional(`/cards/${i}/heading`, c.heading, 60);
+    if (c.type === "text") {
+      optional(`/cards/${i}/title`, c.title, 120);
+      text(`/cards/${i}/body`, c.body, 500);
+    }
     const when = c.when as { fact?: string; value?: unknown[] } | undefined;
     if (when?.fact === "receipt.loyalty.segment" && (!Array.isArray(when.value) || when.value.length === 0)) paths.push(`/cards/${i}/when`);
   });

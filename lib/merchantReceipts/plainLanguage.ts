@@ -5,12 +5,15 @@
 // An issue this file doesn't recognise still gets a sentence and is never shown
 // raw: it asks the merchant to contact PapeX, with the code for support.
 
+import { textKeyOf } from "./draft";
 import type { CardConfig, CardConfigIssue } from "./types";
 
 export interface PlainIssue {
   text: string;
   /** Set when the issue belongs to one offer. */
   offerId?: string;
+  /** Set when the issue belongs to one of the store's notes (draft.ts TextDraft.key). */
+  textKey?: string;
   /** Which of that offer's controls it belongs under (see FIELDS). */
   field?: string;
 }
@@ -24,6 +27,13 @@ const FIELDS: Record<string, { label: string; max?: number }> = {
   terms: { label: "The terms", max: 500 },
   "redemption/caption": { label: "The instruction above the code", max: 80 },
   "redemption/text": { label: "The text under the code", max: 80 },
+};
+
+/** A store note's fields (draft.ts TextDraft). */
+const TEXT_FIELDS: Record<string, { label: string; max: number }> = {
+  heading: { label: "The heading", max: 60 },
+  title: { label: "The title", max: 120 },
+  body: { label: "The message", max: 500 },
 };
 
 function describeText(label: string, value: unknown, max?: number): string {
@@ -72,6 +82,10 @@ export function describeIssue(issue: CardConfigIssue, config: CardConfig): Plain
   if (card) {
     const c = config.cards[Number(card[1])];
     const rest = card[2] ?? "";
+    const note = TEXT_FIELDS[rest];
+    if (c?.type === "text" && note) {
+      return { textKey: textKeyOf(c.id), field: rest, text: describeText(note.label, c[rest], note.max) };
+    }
     if (rest === "heading") return { offerId: c?.offer, field: "heading", text: describeText("The heading above the offer", c?.heading, 60) };
     if (rest.startsWith("when")) return { offerId: c?.offer, field: "audience", text: "Pick at least one customer type for this offer, or switch it off." };
   }
@@ -111,12 +125,17 @@ export function describeIssue(issue: CardConfigIssue, config: CardConfig): Plain
 const QUIET_WARNINGS = new Set(["unused_offer", "never_emitted", "expired_offer"]);
 
 export function describeIssues(issues: CardConfigIssue[], config: CardConfig): PlainIssue[] {
+  // A field that fails the schema fails its whole card too (`/cards/4/body` and
+  // `/cards/4`). The field's message says what to fix; the card's would only say
+  // "contact PapeX".
+  const cardsWithFieldIssues = new Set(issues.map((i) => /^(\/cards\/\d+)\//.exec(i.path)?.[1]).filter(Boolean));
   const seen = new Set<string>();
   const out: PlainIssue[] = [];
   for (const issue of issues) {
     if (QUIET_WARNINGS.has(issue.code)) continue;
+    if (issue.code === "config_schema" && cardsWithFieldIssues.has(issue.path)) continue;
     const plain = describeIssue(issue, config);
-    const key = `${plain.offerId ?? ""}|${plain.field ?? ""}|${plain.text}`;
+    const key = `${plain.offerId ?? plain.textKey ?? ""}|${plain.field ?? ""}|${plain.text}`;
     if (!seen.has(key)) {
       seen.add(key);
       out.push(plain);
