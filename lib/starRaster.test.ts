@@ -422,6 +422,65 @@ test("feeds only, with no printed rows, is not a receipt", () => {
   assert.equal(parseEscPos(bytes).rasterPage, undefined);
 });
 
+// ---- 10. A capture that stops before the end of the job is flagged ---------
+//
+// Real captures are sometimes cut short: the device stopped receiving the job
+// mid-row, leaving raster mode open and the last row incomplete. The page must
+// say the receipt is incomplete, never show the top as the whole receipt.
+
+const TRUNC_JOB = buildStarRasterJob({
+  widthBytes: 72,
+  blocks: [
+    { rows: 150, feedAfter: 20 },
+    { rows: 150, feedAfter: 0 },
+  ],
+});
+const EXIT_LEN = 4; // trailing ESC * r B
+
+test("a whole job (raster mode exited after the last row) is complete", () => {
+  const img = decodeStarRaster(TRUNC_JOB.bytes);
+  assert.ok(img);
+  assert.equal(img!.complete, true);
+  assert.equal(parseEscPos(TRUNC_JOB.bytes).rasterPage?.complete, true);
+});
+
+test("a job cut mid-row is incomplete, and the rows before the cut still render", () => {
+  // Drop the exit command and half of the last row.
+  const cut = TRUNC_JOB.bytes.subarray(0, TRUNC_JOB.bytes.length - EXIT_LEN - 36);
+  const img = decodeStarRaster(cut);
+  assert.ok(img);
+  assert.equal(img!.complete, false);
+  assert.equal(img!.heightPx, TRUNC_JOB.expectedHeight - 1);
+  const page = parseEscPos(cut).rasterPage;
+  assert.ok(page?.fullPage, "still shown as the receipt image");
+  assert.equal(page?.complete, false);
+});
+
+test("a job cut exactly at a row boundary (no ESC * r B) is incomplete", () => {
+  const cut = TRUNC_JOB.bytes.subarray(0, TRUNC_JOB.bytes.length - EXIT_LEN);
+  const img = decodeStarRaster(cut);
+  assert.ok(img);
+  assert.equal(img!.complete, false);
+  assert.equal(img!.heightPx, TRUNC_JOB.expectedHeight);
+});
+
+test("trailing non-raster commands after the exit don't make a whole job incomplete", () => {
+  // A 'b' with an overlong length after ESC * r B, outside raster mode, plus
+  // ETB — the shape of a real job's tail must never read as a cut row.
+  const tail = [0x17, 0x62, 0xff, 0x00, 0x1b, 0x1d, 0x03, 0x04];
+  const bytes = new Uint8Array([...TRUNC_JOB.bytes, ...tail]);
+  assert.equal(decodeStarRaster(bytes)!.complete, true);
+});
+
+test("rows with no ESC * r A at all are not judged (complete)", () => {
+  const rows: number[] = [];
+  for (let r = 0; r < 120; r++) rows.push(...rasterRow(fillPattern(72, r)));
+  const bytes = new Uint8Array([...ESC_R, 0x50, 0x30, 0x00, ...rows, ...ESC_R, 0x59, 0x31, 0x00, ...ESC_R, 0x59, 0x31, 0x00]);
+  const img = decodeStarRaster(bytes);
+  assert.ok(img);
+  assert.equal(img!.complete, true);
+});
+
 // ---- Summary ---------------------------------------------------------------
 
 console.log(`\n${passed} passed, ${failed} failed`);

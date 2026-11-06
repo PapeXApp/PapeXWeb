@@ -202,6 +202,12 @@ export interface DecodedRasterPage {
    * logo, i.e. as nothing to show.
    */
   fullPage: boolean;
+  /**
+   * False when the capture stopped before the end of the print job, so the
+   * bitmap is only the top of the receipt (see StarRasterBitmap.complete).
+   * The page must say so rather than show it as the whole receipt.
+   */
+  complete: boolean;
 }
 
 export interface Receipt {
@@ -1216,6 +1222,7 @@ function tryDecodeStarRasterPage(bytes: Uint8Array): DecodedRasterPage | undefin
       source: "Star Line Mode raster",
       fullPage:
         bmp.heightPx >= FULL_PAGE_MIN_HEIGHT_DOTS && bmp.widthPx >= FULL_PAGE_MIN_WIDTH_DOTS,
+      complete: bmp.complete,
     };
   } catch {
     // Contract: never throw. Fall back to the text parser.

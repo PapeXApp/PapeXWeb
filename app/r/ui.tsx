@@ -297,6 +297,32 @@ function RasterReceiptCard({ page }: { page: DecodedRasterPage }) {
   );
 }
 
+// ---- Incomplete capture notice ------------------------------------------------
+//
+// The print job stopped before the end (lib/starRaster.ts, `complete`), so
+// the bitmap is only the top of the receipt. Without this line a cut-off
+// receipt reads as the whole receipt — a total that is simply not there, or
+// a receipt that "ends" at the tax lines. Shown under the image when the
+// image is the receipt, and above the cards when structure exists.
+
+export function IncompleteReceiptNotice() {
+  return (
+    <div role="status" className="flex items-start gap-2 px-1 pt-2">
+      <AlertTriangle
+        className="mt-0.5 h-4 w-4 shrink-0"
+        style={{ color: T.warning }}
+        strokeWidth={2}
+        aria-hidden
+      />
+      <p className="text-sm" style={{ color: S.textSecondary }}>
+        <span style={{ color: S.text }}>Part of this receipt is missing.</span>{" "}
+        The print didn&apos;t reach PapeX in full, so the bottom is cut off. If
+        you need the whole receipt, ask the store for a copy.
+      </p>
+    </div>
+  );
+}
+
 // ---- "Extracting" hint (shown under the image while OCR is still running) ----
 //
 // The honest version of a loading state. OCR takes ~46 s and the customer gets
@@ -789,12 +815,15 @@ export function ReceiptView({
   // OCR breaks that: the same receipt can now have both, and when it does the
   // extracted fields lead and the picture becomes the source document.
   const imageIsPrimary = rasterPage != null && !hasStructure;
+  const incomplete = rasterPage?.complete === false;
 
   return (
     <div className="flex flex-col gap-4">
+      {!imageIsPrimary && incomplete && <IncompleteReceiptNotice />}
       {imageIsPrimary && rasterPage && (
         <div>
           <RasterReceiptCard page={rasterPage} />
+          {incomplete && <IncompleteReceiptNotice />}
           {extracting && <ExtractingHint />}
         </div>
       )}
